@@ -1,4 +1,4 @@
-# AIEL - Sistema de Gestión para ONG
+# AIEL - Sistema de Gestión de Asociaciones
 
 Sistema integral de gestión para organizaciones no gubernamentales, desarrollado con FastAPI, Strawberry GraphQL y SQLAlchemy.
 
