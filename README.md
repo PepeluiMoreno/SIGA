@@ -1,6 +1,6 @@
-# AIEL - Sistema de Gestión de Asociaciones
+# SIGA - Sistema Integral de Gestión de Asociaciones
 
-Sistema integral de gestión para organizaciones no gubernamentales, desarrollado con FastAPI, Strawberry GraphQL y SQLAlchemy.
+Sistema integral de gestión para organizaciones no gubernamentales y asociaciones, desarrollado con FastAPI, Strawberry GraphQL y SQLAlchemy.
 
 ## Tecnologías
 
@@ -148,8 +148,8 @@ backend/
 
 1. Clonar el repositorio:
 ```bash
-git clone https://github.com/tu-usuario/AIEL.git
-cd AIEL/backend
+git clone https://github.com/PepeluiMoreno/SIGA.git
+cd SIGA/backend
 ```
 
 2. Crear entorno virtual:
