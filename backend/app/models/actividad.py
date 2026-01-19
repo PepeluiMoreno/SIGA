@@ -19,7 +19,7 @@ class TipoActividad(Base):
     """Tipos de actividad: TAREA_CAMPANIA, ACTIVIDAD_ANUAL, REUNION, EVENTO, FORMACION."""
     __tablename__ = "tipo_actividad"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     codigo: Mapped[str] = mapped_column(String(20), unique=True)
     nombre: Mapped[str] = mapped_column(String(100))
     descripcion: Mapped[str | None] = mapped_column(Text)
@@ -32,7 +32,7 @@ class EstadoActividad(Base):
     """Estados de actividad: PLANIFICADA, EN_CURSO, COMPLETADA, CANCELADA, APLAZADA."""
     __tablename__ = "estado_actividad"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     codigo: Mapped[str] = mapped_column(String(20), unique=True)
     nombre: Mapped[str] = mapped_column(String(100))
     orden: Mapped[int] = mapped_column(Integer, default=0)
@@ -45,7 +45,7 @@ class EstadoPropuesta(Base):
     """Estados de propuesta: BORRADOR, PENDIENTE, EN_REVISION, APROBADA, RECHAZADA."""
     __tablename__ = "estado_propuesta"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     codigo: Mapped[str] = mapped_column(String(20), unique=True)
     nombre: Mapped[str] = mapped_column(String(100))
     orden: Mapped[int] = mapped_column(Integer, default=0)
@@ -58,7 +58,7 @@ class TipoRecurso(Base):
     """Tipos de recurso: ECONOMICO, LOCAL, DESPLAZAMIENTO, MATERIAL, CATERING, etc."""
     __tablename__ = "tipo_recurso"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     codigo: Mapped[str] = mapped_column(String(20), unique=True)
     nombre: Mapped[str] = mapped_column(String(100))
     descripcion: Mapped[str | None] = mapped_column(String(500))
@@ -70,7 +70,7 @@ class TipoKPI(Base):
     """Tipos de medición KPI: NUMERICO, PORCENTAJE, BOOLEANO, MONETARIO."""
     __tablename__ = "tipo_kpi"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     codigo: Mapped[str] = mapped_column(String(20), unique=True)
     nombre: Mapped[str] = mapped_column(String(100))
     formato: Mapped[str | None] = mapped_column(String(50))  # "{value}%", "€{value}", etc.

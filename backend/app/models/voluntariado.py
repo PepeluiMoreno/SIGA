@@ -9,7 +9,7 @@ class CategoriaCompetencia(Base):
     """Categorías de competencias: TECNICA, IDIOMAS, COMUNICACION, etc."""
     __tablename__ = "categoria_competencia"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     codigo: Mapped[str] = mapped_column(String(20), unique=True)
     nombre: Mapped[str] = mapped_column(String(100))
     descripcion: Mapped[str | None] = mapped_column(String(500))
@@ -20,7 +20,7 @@ class Competencia(Base):
     """Competencias/Skills disponibles (RF-VC001)."""
     __tablename__ = "competencia"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     codigo: Mapped[str] = mapped_column(String(30), unique=True)
     nombre: Mapped[str] = mapped_column(String(100))
     descripcion: Mapped[str | None] = mapped_column(String(500))
@@ -35,7 +35,7 @@ class NivelCompetencia(Base):
     """Niveles de dominio: BASICO, INTERMEDIO, AVANZADO, EXPERTO."""
     __tablename__ = "nivel_competencia"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     codigo: Mapped[str] = mapped_column(String(20), unique=True)
     nombre: Mapped[str] = mapped_column(String(50))
     orden: Mapped[int] = mapped_column(Integer, default=0)
@@ -71,7 +71,7 @@ class TipoDocumento(Base):
     """Tipos de documento: CV, CERTIFICADO, AUTORIZACION, FOTO, etc."""
     __tablename__ = "tipo_documento_voluntario"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     codigo: Mapped[str] = mapped_column(String(20), unique=True)
     nombre: Mapped[str] = mapped_column(String(100))
     descripcion: Mapped[str | None] = mapped_column(String(500))
@@ -83,7 +83,7 @@ class DocumentoMiembro(Base):
     """Documentos de un miembro: CV, certificados, etc. (RF-VC004)."""
     __tablename__ = "documento_miembro"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     miembro_id: Mapped[int] = mapped_column(ForeignKey("miembro.id"))
     tipo_documento_id: Mapped[int] = mapped_column(ForeignKey("tipo_documento_voluntario.id"))
 
@@ -116,7 +116,7 @@ class TipoFormacion(Base):
     """Tipos de formación: CURSO, TALLER, CERTIFICACION, TITULO, etc."""
     __tablename__ = "tipo_formacion"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     codigo: Mapped[str] = mapped_column(String(20), unique=True)
     nombre: Mapped[str] = mapped_column(String(100))
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -126,7 +126,7 @@ class FormacionMiembro(Base):
     """Formación recibida por un miembro (RF-VC004)."""
     __tablename__ = "formacion_miembro"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     miembro_id: Mapped[int] = mapped_column(ForeignKey("miembro.id"))
     tipo_formacion_id: Mapped[int] = mapped_column(ForeignKey("tipo_formacion.id"))
 

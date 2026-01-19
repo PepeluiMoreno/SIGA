@@ -11,7 +11,7 @@ class TipoGrupo(Base):
     """Tipos de grupo: PERMANENTE, TEMPORAL, TECNICO, COMUNICACION, etc."""
     __tablename__ = "tipo_grupo"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     codigo: Mapped[str] = mapped_column(String(20), unique=True)
     nombre: Mapped[str] = mapped_column(String(100))
     descripcion: Mapped[str | None] = mapped_column(String(500))
@@ -23,7 +23,7 @@ class GrupoTrabajo(Base):
     """Grupo de trabajo de la ONG."""
     __tablename__ = "grupo_trabajo"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     codigo: Mapped[str] = mapped_column(String(20), unique=True)
     nombre: Mapped[str] = mapped_column(String(200))
     descripcion: Mapped[str | None] = mapped_column(Text)
@@ -73,7 +73,7 @@ class RolGrupo(Base):
     """Roles dentro de un grupo: COORDINADOR, MIEMBRO, SECRETARIO, etc."""
     __tablename__ = "rol_grupo"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     codigo: Mapped[str] = mapped_column(String(20), unique=True)
     nombre: Mapped[str] = mapped_column(String(100))
     descripcion: Mapped[str | None] = mapped_column(String(500))
@@ -114,7 +114,7 @@ class EstadoTarea(Base):
     """Estados de tarea: PENDIENTE, EN_PROGRESO, COMPLETADA, CANCELADA."""
     __tablename__ = "estado_tarea"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     codigo: Mapped[str] = mapped_column(String(20), unique=True)
     nombre: Mapped[str] = mapped_column(String(100))
     orden: Mapped[int] = mapped_column(Integer, default=0)
@@ -127,7 +127,7 @@ class TareaGrupo(Base):
     """Tareas asignadas dentro de un grupo de trabajo."""
     __tablename__ = "tarea_grupo"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     grupo_id: Mapped[int] = mapped_column(ForeignKey("grupo_trabajo.id"))
 
     titulo: Mapped[str] = mapped_column(String(200))
@@ -163,7 +163,7 @@ class ReunionGrupo(Base):
     """Reuniones de un grupo de trabajo."""
     __tablename__ = "reunion_grupo"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     grupo_id: Mapped[int] = mapped_column(ForeignKey("grupo_trabajo.id"))
 
     titulo: Mapped[str] = mapped_column(String(200))

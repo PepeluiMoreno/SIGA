@@ -15,24 +15,24 @@ class EstadoPlanificacion(Base):
     """Estados de planificación: BORRADOR, APROBADO, EN_EJECUCION, CERRADO."""
     __tablename__ = "estado_planificacion"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    codigo: Mapped[str] = mapped_column(String(20), unique=True)
-    nombre: Mapped[str] = mapped_column(String(100))
-    orden: Mapped[int] = mapped_column(Integer, default=0)
-    color: Mapped[str | None] = mapped_column(String(7))  # Hex color
-    es_final: Mapped[bool] = mapped_column(Boolean, default=False)
-    activo: Mapped[bool] = mapped_column(Boolean, default=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+   codigo: Mapped[str] = mapped_column(String(20), unique=True)
+   nombre: Mapped[str] = mapped_column(String(100))
+   orden: Mapped[int] = mapped_column(Integer, default=0)
+   color: Mapped[str | None] = mapped_column(String(7))  # Hex color
+   es_final: Mapped[bool] = mapped_column(Boolean, default=False)
+   activo: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
 class CategoriaPartida(Base):
     """Categorías de partida presupuestaria: PERSONAL, INFRAESTRUCTURA, CAMPAÑAS, etc."""
     __tablename__ = "categoria_partida"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    codigo: Mapped[str] = mapped_column(String(20), unique=True)
-    nombre: Mapped[str] = mapped_column(String(100))
-    descripcion: Mapped[str | None] = mapped_column(String(500))
-    activo: Mapped[bool] = mapped_column(Boolean, default=True)
+   id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+   codigo: Mapped[str] = mapped_column(String(20), unique=True)
+   nombre: Mapped[str] = mapped_column(String(100))
+   descripcion: Mapped[str | None] = mapped_column(String(500))
+   activo: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
 class PartidaPresupuestaria(Base, SoftDeleteMixin, AuditoriaMixin):
