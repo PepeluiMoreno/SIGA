@@ -3,7 +3,14 @@ from sqlalchemy.orm import DeclarativeBase
 
 from .config import get_settings
 
-engine = create_async_engine(get_settings().database_url, echo=False)
+engine = create_async_engine(
+    get_settings().database_url,
+    echo=False,
+    connect_args={
+        "statement_cache_size": 0,
+        "prepared_statement_cache_size": 0,
+    }
+)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
@@ -12,5 +19,16 @@ class Base(DeclarativeBase):
 
 
 async def get_db() -> AsyncSession:
+    async with async_session() as session:
+        yield session
+
+
+def get_database_url() -> str:
+    """Obtiene la URL de la base de datos desde la configuración."""
+    return get_settings().database_url
+
+
+async def get_session() -> AsyncSession:
+    """Obtiene una sesión de base de datos (para uso en resolvers GraphQL)."""
     async with async_session() as session:
         yield session

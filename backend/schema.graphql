@@ -1,0 +1,3773 @@
+"""Aggregation fields"""
+type AccionCampaniaAggregate {
+  avg: AccionCampaniaNumericFields!
+  count: Int
+  max: AccionCampaniaMinMaxFields!
+  min: AccionCampaniaMinMaxFields!
+  stddevPop: AccionCampaniaNumericFields!
+  stddevSamp: AccionCampaniaNumericFields!
+  sum: AccionCampaniaSumFields!
+  varPop: AccionCampaniaNumericFields!
+  varSamp: AccionCampaniaNumericFields!
+}
+
+"""GraphQL type"""
+type AccionCampaniaMinMaxFields {
+  nombre: String
+  descripcion: String
+  fecha: Date
+  horaInicio: String
+  horaFin: String
+  lugar: String
+  direccion: String
+  voluntariosNecesarios: Int
+  voluntariosConfirmados: Int
+  materialesNecesarios: String
+  observaciones: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type AccionCampaniaNumericFields {
+  voluntariosNecesarios: Float
+  voluntariosConfirmados: Float
+}
+
+"""GraphQL type"""
+type AccionCampaniaSumFields {
+  nombre: String
+  descripcion: String
+  horaInicio: String
+  horaFin: String
+  lugar: String
+  direccion: String
+  voluntariosNecesarios: Int
+  voluntariosConfirmados: Int
+  materialesNecesarios: String
+  observaciones: String
+}
+
+"""GraphQL type"""
+type AccionCampaniaType {
+  campania: CampaniaType!
+  id: UUID!
+  campaniaId: UUID!
+  nombre: String!
+  descripcion: String
+  fecha: Date!
+  horaInicio: String
+  horaFin: String
+  lugar: String
+  direccion: String
+  voluntariosNecesarios: Int!
+  voluntariosConfirmados: Int!
+  materialesNecesarios: String
+  observaciones: String
+  completada: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type ActividadAggregate {
+  avg: ActividadNumericFields!
+  count: Int
+  max: ActividadMinMaxFields!
+  min: ActividadMinMaxFields!
+  stddevPop: ActividadNumericFields!
+  stddevSamp: ActividadNumericFields!
+  sum: ActividadSumFields!
+  varPop: ActividadNumericFields!
+  varSamp: ActividadNumericFields!
+}
+
+"""GraphQL type"""
+type ActividadMinMaxFields {
+  codigo: String
+  nombre: String
+  descripcion: String
+  prioridad: Int
+  fechaInicio: Date
+  fechaFin: Date
+  horaInicio: Time
+  horaFin: Time
+  lugar: String
+  direccion: String
+  urlOnline: String
+  dotacionEconomica: Decimal
+  gastoReal: Decimal
+  voluntariosNecesarios: Int
+  voluntariosConfirmados: Int
+  fechaCompletada: DateTime
+  resultados: String
+  observaciones: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type ActividadNumericFields {
+  prioridad: Float
+  dotacionEconomica: Decimal
+  gastoReal: Decimal
+  voluntariosNecesarios: Float
+  voluntariosConfirmados: Float
+}
+
+"""GraphQL type"""
+type ActividadSumFields {
+  codigo: String
+  nombre: String
+  descripcion: String
+  prioridad: Int
+  lugar: String
+  direccion: String
+  urlOnline: String
+  dotacionEconomica: Decimal
+  gastoReal: Decimal
+  voluntariosNecesarios: Int
+  voluntariosConfirmados: Int
+  resultados: String
+  observaciones: String
+}
+
+"""GraphQL type"""
+type ActividadType {
+  tipoActividad: TipoActividadType!
+  estado: EstadoActividadType!
+  propuesta: PropuestaActividadType!
+  tareasAggregate: TareaActividadAggregate!
+
+  """Fetch objects from the TareaActividadType collection"""
+  tareas: [TareaActividadType!]!
+  recursosAggregate: RecursoActividadAggregate!
+
+  """Fetch objects from the RecursoActividadType collection"""
+  recursos: [RecursoActividadType!]!
+  participantesAggregate: ParticipanteActividadAggregate!
+
+  """Fetch objects from the ParticipanteActividadType collection"""
+  participantes: [ParticipanteActividadType!]!
+  gruposTrabajoAggregate: GrupoActividadAggregate!
+
+  """Fetch objects from the GrupoActividadType collection"""
+  gruposTrabajo: [GrupoActividadType!]!
+  kpisAggregate: KPIActividadAggregate!
+
+  """Fetch objects from the KPIActividadType collection"""
+  kpis: [KPIActividadType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  propuestaId: UUID
+  tipoActividadId: UUID!
+  estadoId: UUID!
+  prioridad: Int!
+  fechaInicio: Date!
+  fechaFin: Date!
+  horaInicio: Time
+  horaFin: Time
+  esTodoElDia: Boolean!
+  lugar: String
+  direccion: String
+  esOnline: Boolean!
+  urlOnline: String
+  campaniaId: UUID
+  coordinadorId: UUID!
+  grupoTrabajoId: UUID
+  esColectiva: Boolean!
+  partidaId: UUID
+  dotacionEconomica: Decimal!
+  gastoReal: Decimal!
+  voluntariosNecesarios: Int!
+  voluntariosConfirmados: Int!
+  completada: Boolean!
+  fechaCompletada: DateTime
+  resultados: String
+  observaciones: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type AgrupacionTerritorialAggregate {
+  avg: AgrupacionTerritorialNumericFields!
+  count: Int
+  max: AgrupacionTerritorialMinMaxFields!
+  min: AgrupacionTerritorialMinMaxFields!
+  stddevPop: AgrupacionTerritorialNumericFields!
+  stddevSamp: AgrupacionTerritorialNumericFields!
+  sum: AgrupacionTerritorialSumFields!
+  varPop: AgrupacionTerritorialNumericFields!
+  varSamp: AgrupacionTerritorialNumericFields!
+}
+
+"""GraphQL type"""
+type AgrupacionTerritorialMinMaxFields {
+  codigo: String
+  nombre: String
+  nombreCorto: String
+  tipo: String
+  nivel: Int
+  email: String
+  telefono: String
+  web: String
+  descripcion: String
+  activo: Boolean
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type AgrupacionTerritorialNumericFields {
+  nivel: Float
+  activo: Boolean
+}
+
+"""GraphQL type"""
+type AgrupacionTerritorialSumFields {
+  codigo: String
+  nombre: String
+  nombreCorto: String
+  tipo: String
+  nivel: Int
+  email: String
+  telefono: String
+  web: String
+  descripcion: String
+  activo: Boolean
+}
+
+"""GraphQL type"""
+type AgrupacionTerritorialType {
+  pais: PaisType!
+  provincia: ProvinciaType!
+  municipio: MunicipioType!
+  direccion: DireccionType!
+  agrupacionPadre: AgrupacionTerritorialType!
+  agrupacionesHijasAggregate: AgrupacionTerritorialAggregate!
+
+  """Fetch objects from the AgrupacionTerritorialType collection"""
+  agrupacionesHijas: [AgrupacionTerritorialType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  nombreCorto: String
+  tipo: String!
+  agrupacionPadreId: UUID
+  nivel: Int!
+  paisId: UUID!
+  provinciaId: UUID
+  municipioId: UUID
+  direccionId: UUID
+  email: String
+  telefono: String
+  web: String
+  descripcion: String
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type AsistenteReunionAggregate {
+  count: Int
+  max: AsistenteReunionMinMaxFields!
+  min: AsistenteReunionMinMaxFields!
+  sum: AsistenteReunionSumFields!
+}
+
+"""GraphQL type"""
+type AsistenteReunionMinMaxFields {
+  observaciones: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type AsistenteReunionSumFields {
+  observaciones: String
+}
+
+"""GraphQL type"""
+type AsistenteReunionType {
+  reunion: ReunionGrupoType!
+  id: UUID!
+  reunionId: UUID!
+  miembroId: UUID!
+  confirmado: Boolean!
+  asistio: Boolean
+  observaciones: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type AsociacionAggregate {
+  avg: AsociacionNumericFields!
+  count: Int
+  max: AsociacionMinMaxFields!
+  min: AsociacionMinMaxFields!
+  stddevPop: AsociacionNumericFields!
+  stddevSamp: AsociacionNumericFields!
+  sum: AsociacionSumFields!
+  varPop: AsociacionNumericFields!
+  varSamp: AsociacionNumericFields!
+}
+
+"""GraphQL type"""
+type AsociacionMinMaxFields {
+  nombre: String
+  nombreCorto: String
+  siglas: String
+  cifNif: String
+  registroOficial: String
+  numeroRegistro: String
+  fechaConstitucion: Date
+  ambito: String
+  email: String
+  telefono: String
+  web: String
+  personaContactoNombre: String
+  personaContactoCargo: String
+  personaContactoEmail: String
+  personaContactoTelefono: String
+  descripcion: String
+  actividadesPrincipales: String
+  numeroSocios: Int
+  fechaAlta: Date
+  fechaBaja: Date
+  motivoBaja: String
+  valoracion: Int
+  observaciones: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type AsociacionNumericFields {
+  numeroSocios: Float
+  valoracion: Float
+}
+
+"""GraphQL type"""
+type AsociacionSumFields {
+  nombre: String
+  nombreCorto: String
+  siglas: String
+  cifNif: String
+  registroOficial: String
+  numeroRegistro: String
+  ambito: String
+  email: String
+  telefono: String
+  web: String
+  personaContactoNombre: String
+  personaContactoCargo: String
+  personaContactoEmail: String
+  personaContactoTelefono: String
+  descripcion: String
+  actividadesPrincipales: String
+  numeroSocios: Int
+  motivoBaja: String
+  valoracion: Int
+  observaciones: String
+}
+
+"""GraphQL type"""
+type AsociacionType {
+  tipo: TipoAsociacionType!
+  direccion: DireccionType!
+  provincia: ProvinciaType!
+  conveniosAggregate: ConvenioAggregate!
+
+  """Fetch objects from the ConvenioType collection"""
+  convenios: [ConvenioType!]!
+  id: UUID!
+  nombre: String!
+  nombreCorto: String
+  siglas: String
+  tipoId: UUID!
+  cifNif: String
+  registroOficial: String
+  numeroRegistro: String
+  fechaConstitucion: Date
+  direccionId: UUID
+  provinciaId: UUID
+  ambito: String!
+  email: String
+  telefono: String
+  web: String
+  personaContactoNombre: String
+  personaContactoCargo: String
+  personaContactoEmail: String
+  personaContactoTelefono: String
+  descripcion: String
+  actividadesPrincipales: String
+  numeroSocios: Int
+  activo: Boolean!
+  fechaAlta: Date!
+  fechaBaja: Date
+  motivoBaja: String
+  valoracion: Int
+  observaciones: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type CampaniaAggregate {
+  avg: CampaniaNumericFields!
+  count: Int
+  max: CampaniaMinMaxFields!
+  min: CampaniaMinMaxFields!
+  stddevPop: CampaniaNumericFields!
+  stddevSamp: CampaniaNumericFields!
+  sum: CampaniaSumFields!
+  varPop: CampaniaNumericFields!
+  varSamp: CampaniaNumericFields!
+}
+
+"""GraphQL type"""
+type CampaniaMinMaxFields {
+  codigo: String
+  nombre: String
+  descripcionCorta: String
+  descripcionLarga: String
+  fechaInicioPlan: Date
+  fechaFinPlan: Date
+  fechaInicioReal: Date
+  fechaFinReal: Date
+  objetivoPrincipal: String
+  metaRecaudacion: Decimal
+  metaParticipantes: Int
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type CampaniaNumericFields {
+  metaRecaudacion: Decimal
+  metaParticipantes: Float
+}
+
+"""GraphQL type"""
+type CampaniaSumFields {
+  codigo: String
+  nombre: String
+  descripcionCorta: String
+  descripcionLarga: String
+  objetivoPrincipal: String
+  metaRecaudacion: Decimal
+  metaParticipantes: Int
+}
+
+"""GraphQL type"""
+type CampaniaType {
+  tipoCampania: TipoCampaniaType!
+  estado: EstadoCampaniaType!
+  agrupacion: AgrupacionTerritorialType!
+  accionesAggregate: AccionCampaniaAggregate!
+
+  """Fetch objects from the AccionCampaniaType collection"""
+  acciones: [AccionCampaniaType!]!
+  participantesAggregate: ParticipanteCampaniaAggregate!
+
+  """Fetch objects from the ParticipanteCampaniaType collection"""
+  participantes: [ParticipanteCampaniaType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcionCorta: String
+  descripcionLarga: String
+  tipoCampaniaId: UUID!
+  estadoId: UUID!
+  fechaInicioPlan: Date
+  fechaFinPlan: Date
+  fechaInicioReal: Date
+  fechaFinReal: Date
+  objetivoPrincipal: String
+  metaRecaudacion: Decimal
+  metaParticipantes: Int
+  responsableId: UUID
+  agrupacionId: UUID
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type CategoriaCompetenciaType {
+  competenciasAggregate: CompetenciaAggregate!
+
+  """Fetch objects from the CompetenciaType collection"""
+  competencias: [CompetenciaType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type CategoriaPartidaType {
+  partidasAggregate: PartidaPresupuestariaAggregate!
+
+  """Fetch objects from the PartidaPresupuestariaType collection"""
+  partidas: [PartidaPresupuestariaType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type CompetenciaAggregate {
+  count: Int
+  max: CompetenciaMinMaxFields!
+  min: CompetenciaMinMaxFields!
+  sum: CompetenciaSumFields!
+}
+
+"""GraphQL type"""
+type CompetenciaMinMaxFields {
+  codigo: String
+  nombre: String
+  descripcion: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type CompetenciaSumFields {
+  codigo: String
+  nombre: String
+  descripcion: String
+}
+
+"""GraphQL type"""
+type CompetenciaType {
+  categoria: CategoriaCompetenciaType!
+  miembrosCompetenciaAggregate: MiembroCompetenciaAggregate!
+
+  """Fetch objects from the MiembroCompetenciaType collection"""
+  miembrosCompetencia: [MiembroCompetenciaType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  categoriaId: UUID!
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type ConfiguracionType {
+  historialAggregate: HistorialConfiguracionAggregate!
+
+  """Fetch objects from the HistorialConfiguracionType collection"""
+  historial: [HistorialConfiguracionType!]!
+  id: UUID!
+  clave: String!
+  valor: String!
+  tipoDato: String!
+  descripcion: String
+  modificable: Boolean!
+  grupo: String!
+  orden: Int!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type ConvenioAggregate {
+  avg: ConvenioNumericFields!
+  count: Int
+  max: ConvenioMinMaxFields!
+  min: ConvenioMinMaxFields!
+  stddevPop: ConvenioNumericFields!
+  stddevSamp: ConvenioNumericFields!
+  sum: ConvenioSumFields!
+  varPop: ConvenioNumericFields!
+  varSamp: ConvenioNumericFields!
+}
+
+"""GraphQL type"""
+type ConvenioMinMaxFields {
+  codigo: String
+  nombre: String
+  tipo: String
+  fechaFirma: Date
+  fechaInicio: Date
+  fechaFin: Date
+  objeto: String
+  compromisosAsociacion: String
+  compromisosPropios: String
+  beneficios: String
+  importeAportacion: Decimal
+  periodicidadAportacion: String
+  documentoUrl: String
+  anexosUrls: String
+  responsableOrganizacion: String
+  responsableAsociacion: String
+  observaciones: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type ConvenioNumericFields {
+  importeAportacion: Decimal
+}
+
+"""GraphQL type"""
+type ConvenioSumFields {
+  codigo: String
+  nombre: String
+  tipo: String
+  objeto: String
+  compromisosAsociacion: String
+  compromisosPropios: String
+  beneficios: String
+  importeAportacion: Decimal
+  periodicidadAportacion: String
+  documentoUrl: String
+  anexosUrls: String
+  responsableOrganizacion: String
+  responsableAsociacion: String
+  observaciones: String
+}
+
+"""GraphQL type"""
+type ConvenioType {
+  asociacion: AsociacionType!
+  estado: EstadoConvenioType!
+  id: UUID!
+  asociacionId: UUID!
+  codigo: String!
+  nombre: String!
+  tipo: String!
+  fechaFirma: Date!
+  fechaInicio: Date!
+  fechaFin: Date
+  renovable: Boolean!
+  objeto: String!
+  compromisosAsociacion: String
+  compromisosPropios: String
+  beneficios: String
+  tieneAportacionEconomica: Boolean!
+  importeAportacion: Decimal
+  periodicidadAportacion: String
+  documentoUrl: String
+  anexosUrls: String
+  responsableOrganizacion: String
+  responsableAsociacion: String
+  estadoId: UUID!
+  observaciones: String
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type CuotaAnualType {
+  estado: EstadoCuotaType!
+  ordenesCobroAggregate: OrdenCobroAggregate!
+
+  """Fetch objects from the OrdenCobroType collection"""
+  ordenesCobro: [OrdenCobroType!]!
+  id: UUID!
+  miembroId: UUID!
+  ejercicio: Int!
+  agrupacionId: UUID!
+  importe: Decimal!
+  importePagado: Decimal!
+  estadoId: UUID!
+  modoIngreso: String
+  fechaPago: Date
+  fechaVencimiento: Date
+  observaciones: String
+  referenciaPago: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Date (isoformat)"""
+scalar Date
+
+"""Date with time (isoformat)"""
+scalar DateTime
+
+"""Decimal (fixed-point)"""
+scalar Decimal
+
+"""Aggregation fields"""
+type DireccionAggregate {
+  avg: DireccionNumericFields!
+  count: Int
+  max: DireccionMinMaxFields!
+  min: DireccionMinMaxFields!
+  stddevPop: DireccionNumericFields!
+  stddevSamp: DireccionNumericFields!
+  sum: DireccionSumFields!
+  varPop: DireccionNumericFields!
+  varSamp: DireccionNumericFields!
+}
+
+"""GraphQL type"""
+type DireccionMinMaxFields {
+  tipo: String
+  viaTipo: String
+  viaNombre: String
+  numero: String
+  piso: String
+  puerta: String
+  bloque: String
+  escalera: String
+  codigoPostal: String
+  localidad: String
+  observaciones: String
+  coordenadasLat: String
+  coordenadasLon: String
+  validada: Boolean
+  fechaValidacion: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type DireccionNumericFields {
+  validada: Boolean
+}
+
+"""GraphQL type"""
+type DireccionSumFields {
+  tipo: String
+  viaTipo: String
+  viaNombre: String
+  numero: String
+  piso: String
+  puerta: String
+  bloque: String
+  escalera: String
+  codigoPostal: String
+  localidad: String
+  observaciones: String
+  coordenadasLat: String
+  coordenadasLon: String
+  validada: Boolean
+  fechaValidacion: String
+}
+
+"""GraphQL type"""
+type DireccionType {
+  pais: PaisType!
+  provincia: ProvinciaType!
+  municipio: MunicipioType!
+  id: UUID!
+  tipo: String!
+  viaTipo: String
+  viaNombre: String!
+  numero: String
+  piso: String
+  puerta: String
+  bloque: String
+  escalera: String
+  codigoPostal: String!
+  municipioId: UUID
+  provinciaId: UUID!
+  paisId: UUID!
+  localidad: String
+  observaciones: String
+  coordenadasLat: String
+  coordenadasLon: String
+  validada: Boolean!
+  fechaValidacion: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type DocumentoMiembroAggregate {
+  avg: DocumentoMiembroNumericFields!
+  count: Int
+  max: DocumentoMiembroMinMaxFields!
+  min: DocumentoMiembroMinMaxFields!
+  stddevPop: DocumentoMiembroNumericFields!
+  stddevSamp: DocumentoMiembroNumericFields!
+  sum: DocumentoMiembroSumFields!
+  varPop: DocumentoMiembroNumericFields!
+  varSamp: DocumentoMiembroNumericFields!
+}
+
+"""GraphQL type"""
+type DocumentoMiembroMinMaxFields {
+  nombre: String
+  descripcion: String
+  archivoUrl: String
+  archivoNombre: String
+  archivoTipo: String
+  archivoTamano: Int
+  fechaSubida: DateTime
+  fechaCaducidad: Date
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type DocumentoMiembroNumericFields {
+  archivoTamano: Float
+}
+
+"""GraphQL type"""
+type DocumentoMiembroSumFields {
+  nombre: String
+  descripcion: String
+  archivoUrl: String
+  archivoNombre: String
+  archivoTipo: String
+  archivoTamano: Int
+}
+
+"""GraphQL type"""
+type DocumentoMiembroType {
+  tipoDocumento: TipoDocumentoVoluntarioType!
+  id: UUID!
+  miembroId: UUID!
+  tipoDocumentoId: UUID!
+  nombre: String!
+  descripcion: String
+  archivoUrl: String!
+  archivoNombre: String!
+  archivoTipo: String
+  archivoTamano: Int
+  fechaSubida: DateTime!
+  fechaCaducidad: Date
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type DonacionAggregate {
+  avg: DonacionNumericFields!
+  count: Int
+  max: DonacionMinMaxFields!
+  min: DonacionMinMaxFields!
+  stddevPop: DonacionNumericFields!
+  stddevSamp: DonacionNumericFields!
+  sum: DonacionSumFields!
+  varPop: DonacionNumericFields!
+  varSamp: DonacionNumericFields!
+}
+
+"""GraphQL type"""
+type DonacionConceptoType {
+  donacionesAggregate: DonacionAggregate!
+
+  """Fetch objects from the DonacionType collection"""
+  donaciones: [DonacionType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type DonacionMinMaxFields {
+  donanteNombre: String
+  donanteEmail: String
+  donanteTelefono: String
+  donanteDni: String
+  importe: Decimal
+  gastos: Decimal
+  fecha: Date
+  modoIngreso: String
+  referenciaPago: String
+  fechaCertificado: Date
+  observaciones: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type DonacionNumericFields {
+  importe: Decimal
+  gastos: Decimal
+}
+
+"""GraphQL type"""
+type DonacionSumFields {
+  donanteNombre: String
+  donanteEmail: String
+  donanteTelefono: String
+  donanteDni: String
+  importe: Decimal
+  gastos: Decimal
+  modoIngreso: String
+  referenciaPago: String
+  observaciones: String
+}
+
+"""GraphQL type"""
+type DonacionType {
+  concepto: DonacionConceptoType!
+  estado: EstadoDonacionType!
+  id: UUID!
+  miembroId: UUID
+  conceptoId: UUID
+  campaniaId: UUID
+  donanteNombre: String
+  donanteEmail: String
+  donanteTelefono: String
+  donanteDni: String
+  importe: Decimal!
+  gastos: Decimal!
+  fecha: Date!
+  modoIngreso: String
+  referenciaPago: String
+  estadoId: UUID!
+  certificadoEmitido: Boolean!
+  fechaCertificado: Date
+  observaciones: String
+  anonima: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type EstadoActividadType {
+  actividadesAggregate: ActividadAggregate!
+
+  """Fetch objects from the ActividadType collection"""
+  actividades: [ActividadType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  orden: Int!
+  color: String
+  esFinal: Boolean!
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type EstadoCampaniaType {
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  orden: Int!
+  esInicial: Boolean!
+  esFinal: Boolean!
+  activo: Boolean!
+  color: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type EstadoConvenioType {
+  conveniosAggregate: ConvenioAggregate!
+
+  """Fetch objects from the ConvenioType collection"""
+  convenios: [ConvenioType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  orden: Int!
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type EstadoCuotaType {
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  orden: Int!
+  esInicial: Boolean!
+  esFinal: Boolean!
+  activo: Boolean!
+  color: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type EstadoDonacionType {
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  orden: Int!
+  esInicial: Boolean!
+  esFinal: Boolean!
+  activo: Boolean!
+  color: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type EstadoOrdenCobroType {
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  orden: Int!
+  esInicial: Boolean!
+  esFinal: Boolean!
+  activo: Boolean!
+  color: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type EstadoParticipanteType {
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  orden: Int!
+  esInicial: Boolean!
+  esFinal: Boolean!
+  activo: Boolean!
+  color: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type EstadoPlanificacionType {
+  planificacionesAggregate: PlanificacionAnualAggregate!
+
+  """Fetch objects from the PlanificacionAnualType collection"""
+  planificaciones: [PlanificacionAnualType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  orden: Int!
+  color: String
+  esFinal: Boolean!
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type EstadoPropuestaType {
+  propuestasAggregate: PropuestaActividadAggregate!
+
+  """Fetch objects from the PropuestaActividadType collection"""
+  propuestas: [PropuestaActividadType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  orden: Int!
+  color: String
+  esFinal: Boolean!
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type EstadoRemesaType {
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  orden: Int!
+  esInicial: Boolean!
+  esFinal: Boolean!
+  activo: Boolean!
+  color: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type EstadoTareaType {
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  orden: Int!
+  esInicial: Boolean!
+  esFinal: Boolean!
+  activo: Boolean!
+  color: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type FormacionMiembroAggregate {
+  avg: FormacionMiembroNumericFields!
+  count: Int
+  max: FormacionMiembroMinMaxFields!
+  min: FormacionMiembroMinMaxFields!
+  stddevPop: FormacionMiembroNumericFields!
+  stddevSamp: FormacionMiembroNumericFields!
+  sum: FormacionMiembroSumFields!
+  varPop: FormacionMiembroNumericFields!
+  varSamp: FormacionMiembroNumericFields!
+}
+
+"""GraphQL type"""
+type FormacionMiembroMinMaxFields {
+  titulo: String
+  institucion: String
+  descripcion: String
+  fechaInicio: Date
+  fechaFin: Date
+  horas: Int
+  competenciasAdquiridas: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type FormacionMiembroNumericFields {
+  horas: Float
+}
+
+"""GraphQL type"""
+type FormacionMiembroSumFields {
+  titulo: String
+  institucion: String
+  descripcion: String
+  horas: Int
+  competenciasAdquiridas: String
+}
+
+"""GraphQL type"""
+type FormacionMiembroType {
+  tipoFormacion: TipoFormacionType!
+  id: UUID!
+  miembroId: UUID!
+  tipoFormacionId: UUID!
+  titulo: String!
+  institucion: String
+  descripcion: String
+  fechaInicio: Date
+  fechaFin: Date
+  horas: Int
+  certificado: Boolean!
+  competenciasAdquiridas: String
+  esInterna: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type GrupoActividadAggregate {
+  avg: GrupoActividadNumericFields!
+  count: Int
+  max: GrupoActividadMinMaxFields!
+  min: GrupoActividadMinMaxFields!
+  stddevPop: GrupoActividadNumericFields!
+  stddevSamp: GrupoActividadNumericFields!
+  sum: GrupoActividadSumFields!
+  varPop: GrupoActividadNumericFields!
+  varSamp: GrupoActividadNumericFields!
+}
+
+"""GraphQL type"""
+type GrupoActividadMinMaxFields {
+  tareasAsignadas: String
+  horasEstimadas: Decimal
+  horasReales: Decimal
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type GrupoActividadNumericFields {
+  horasEstimadas: Decimal
+  horasReales: Decimal
+}
+
+"""GraphQL type"""
+type GrupoActividadSumFields {
+  tareasAsignadas: String
+  horasEstimadas: Decimal
+  horasReales: Decimal
+}
+
+"""GraphQL type"""
+type GrupoActividadType {
+  actividad: ActividadType!
+  id: UUID!
+  actividadId: UUID!
+  grupoTrabajoId: UUID!
+  tareasAsignadas: String
+  horasEstimadas: Decimal
+  horasReales: Decimal
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type GrupoPropuestaAggregate {
+  avg: GrupoPropuestaNumericFields!
+  count: Int
+  max: GrupoPropuestaMinMaxFields!
+  min: GrupoPropuestaMinMaxFields!
+  stddevPop: GrupoPropuestaNumericFields!
+  stddevSamp: GrupoPropuestaNumericFields!
+  sum: GrupoPropuestaSumFields!
+  varPop: GrupoPropuestaNumericFields!
+  varSamp: GrupoPropuestaNumericFields!
+}
+
+"""GraphQL type"""
+type GrupoPropuestaMinMaxFields {
+  tareasAsignadas: String
+  horasEstimadas: Decimal
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type GrupoPropuestaNumericFields {
+  horasEstimadas: Decimal
+}
+
+"""GraphQL type"""
+type GrupoPropuestaSumFields {
+  tareasAsignadas: String
+  horasEstimadas: Decimal
+}
+
+"""GraphQL type"""
+type GrupoPropuestaType {
+  propuesta: PropuestaActividadType!
+  id: UUID!
+  propuestaId: UUID!
+  grupoTrabajoId: UUID!
+  tareasAsignadas: String
+  horasEstimadas: Decimal
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type GrupoTrabajoAggregate {
+  avg: GrupoTrabajoNumericFields!
+  count: Int
+  max: GrupoTrabajoMinMaxFields!
+  min: GrupoTrabajoMinMaxFields!
+  stddevPop: GrupoTrabajoNumericFields!
+  stddevSamp: GrupoTrabajoNumericFields!
+  sum: GrupoTrabajoSumFields!
+  varPop: GrupoTrabajoNumericFields!
+  varSamp: GrupoTrabajoNumericFields!
+}
+
+"""GraphQL type"""
+type GrupoTrabajoMinMaxFields {
+  codigo: String
+  nombre: String
+  descripcion: String
+  fechaInicio: Date
+  fechaFin: Date
+  objetivo: String
+  presupuestoAsignado: Decimal
+  presupuestoEjecutado: Decimal
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type GrupoTrabajoNumericFields {
+  presupuestoAsignado: Decimal
+  presupuestoEjecutado: Decimal
+}
+
+"""GraphQL type"""
+type GrupoTrabajoSumFields {
+  codigo: String
+  nombre: String
+  descripcion: String
+  objetivo: String
+  presupuestoAsignado: Decimal
+  presupuestoEjecutado: Decimal
+}
+
+"""GraphQL type"""
+type GrupoTrabajoType {
+  tipoGrupo: TipoGrupoType!
+  agrupacion: AgrupacionTerritorialType!
+  miembrosAggregate: MiembroGrupoAggregate!
+
+  """Fetch objects from the MiembroGrupoType collection"""
+  miembros: [MiembroGrupoType!]!
+  tareasAggregate: TareaGrupoAggregate!
+
+  """Fetch objects from the TareaGrupoType collection"""
+  tareas: [TareaGrupoType!]!
+  reunionesAggregate: ReunionGrupoAggregate!
+
+  """Fetch objects from the ReunionGrupoType collection"""
+  reuniones: [ReunionGrupoType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  tipoGrupoId: UUID!
+  campaniaId: UUID
+  fechaInicio: Date
+  fechaFin: Date
+  objetivo: String
+  presupuestoAsignado: Decimal
+  presupuestoEjecutado: Decimal!
+  activo: Boolean!
+  agrupacionId: UUID
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type HistorialConfiguracionAggregate {
+  count: Int
+  max: HistorialConfiguracionMinMaxFields!
+  min: HistorialConfiguracionMinMaxFields!
+  sum: HistorialConfiguracionSumFields!
+}
+
+"""GraphQL type"""
+type HistorialConfiguracionMinMaxFields {
+  valorAnterior: String
+  valorNuevo: String
+  motivoCambio: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type HistorialConfiguracionSumFields {
+  valorAnterior: String
+  valorNuevo: String
+  motivoCambio: String
+}
+
+"""GraphQL type"""
+type HistorialConfiguracionType {
+  configuracion: ConfiguracionType!
+  id: UUID!
+  configuracionId: UUID!
+  valorAnterior: String!
+  valorNuevo: String!
+  motivoCambio: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type HistorialEstadoType {
+  usuario: UsuarioType!
+  id: UUID!
+  entidadTipo: String!
+  entidadId: String!
+  estadoAnteriorCodigo: String
+  estadoNuevoCodigo: String!
+  motivo: String
+  fechaCambio: DateTime!
+  usuarioId: UUID
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type HistorialSeguridadType {
+  usuario: UsuarioType!
+  id: UUID!
+  eventoTipo: String!
+  severidad: String!
+  usuarioId: UUID
+  ipAddress: String!
+  userAgent: String
+  descripcion: String!
+  datosAdicionales: String
+  fechaEvento: DateTime!
+  exitoso: Boolean!
+  codigoError: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type IPBloqueadaType {
+  bloqueadoPor: UsuarioType!
+  id: UUID!
+  ipAddress: String!
+  motivo: String!
+  intentosFallidos: Int!
+  fechaBloqueo: DateTime!
+  fechaDesbloqueo: DateTime
+  bloqueadoPermanente: Boolean!
+  bloqueadoPorId: UUID
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type ImporteCuotaAnioType {
+  id: UUID!
+  ejercicio: Int!
+  importe: Decimal!
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type IntentoAccesoType {
+  usuario: UsuarioType!
+  id: UUID!
+  identificador: String!
+  usuarioId: UUID
+  ipAddress: String!
+  userAgent: String
+  fechaIntento: DateTime!
+  exitoso: Boolean!
+  motivoFallo: String
+  bloqueadoTrasIntento: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type KPIActividadAggregate {
+  avg: KPIActividadNumericFields!
+  count: Int
+  max: KPIActividadMinMaxFields!
+  min: KPIActividadMinMaxFields!
+  stddevPop: KPIActividadNumericFields!
+  stddevSamp: KPIActividadNumericFields!
+  sum: KPIActividadSumFields!
+  varPop: KPIActividadNumericFields!
+  varSamp: KPIActividadNumericFields!
+}
+
+"""GraphQL type"""
+type KPIActividadMinMaxFields {
+  valorObjetivo: Decimal
+  peso: Decimal
+  valorActual: Decimal
+  fechaUltimaMedicion: DateTime
+  porcentajeLogro: Decimal
+  observaciones: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type KPIActividadNumericFields {
+  valorObjetivo: Decimal
+  peso: Decimal
+  valorActual: Decimal
+  porcentajeLogro: Decimal
+}
+
+"""GraphQL type"""
+type KPIActividadSumFields {
+  valorObjetivo: Decimal
+  peso: Decimal
+  valorActual: Decimal
+  porcentajeLogro: Decimal
+  observaciones: String
+}
+
+"""GraphQL type"""
+type KPIActividadType {
+  actividad: ActividadType!
+  kpi: KPIType!
+  medicionesAggregate: MedicionKPIAggregate!
+
+  """Fetch objects from the MedicionKPIType collection"""
+  mediciones: [MedicionKPIType!]!
+  id: UUID!
+  actividadId: UUID!
+  kpiId: UUID!
+  valorObjetivo: Decimal!
+  peso: Decimal!
+  valorActual: Decimal
+  fechaUltimaMedicion: DateTime
+  porcentajeLogro: Decimal
+  observaciones: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type KPIAggregate {
+  avg: KPINumericFields!
+  count: Int
+  max: KPIMinMaxFields!
+  min: KPIMinMaxFields!
+  stddevPop: KPINumericFields!
+  stddevSamp: KPINumericFields!
+  sum: KPISumFields!
+  varPop: KPINumericFields!
+  varSamp: KPINumericFields!
+}
+
+"""GraphQL type"""
+type KPIMinMaxFields {
+  codigo: String
+  nombre: String
+  descripcion: String
+  unidad: String
+  valorObjetivoDefecto: Decimal
+  valorMinimo: Decimal
+  formula: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type KPINumericFields {
+  valorObjetivoDefecto: Decimal
+  valorMinimo: Decimal
+}
+
+"""GraphQL type"""
+type KPISumFields {
+  codigo: String
+  nombre: String
+  descripcion: String
+  unidad: String
+  valorObjetivoDefecto: Decimal
+  valorMinimo: Decimal
+  formula: String
+}
+
+"""GraphQL type"""
+type KPIType {
+  tipoKpi: TipoKPIType!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  tipoKpiId: UUID!
+  unidad: String
+  valorObjetivoDefecto: Decimal
+  valorMinimo: Decimal
+  formula: String
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type MedicionKPIAggregate {
+  avg: MedicionKPINumericFields!
+  count: Int
+  max: MedicionKPIMinMaxFields!
+  min: MedicionKPIMinMaxFields!
+  stddevPop: MedicionKPINumericFields!
+  stddevSamp: MedicionKPINumericFields!
+  sum: MedicionKPISumFields!
+  varPop: MedicionKPINumericFields!
+  varSamp: MedicionKPINumericFields!
+}
+
+"""GraphQL type"""
+type MedicionKPIMinMaxFields {
+  valorMedido: Decimal
+  fechaMedicion: DateTime
+  observaciones: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type MedicionKPINumericFields {
+  valorMedido: Decimal
+}
+
+"""GraphQL type"""
+type MedicionKPISumFields {
+  valorMedido: Decimal
+  observaciones: String
+}
+
+"""GraphQL type"""
+type MedicionKPIType {
+  kpiActividad: KPIActividadType!
+  id: UUID!
+  kpiActividadId: UUID!
+  valorMedido: Decimal!
+  fechaMedicion: DateTime!
+  medidoPorId: UUID
+  observaciones: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type MiembroAggregate {
+  avg: MiembroNumericFields!
+  count: Int
+  max: MiembroMinMaxFields!
+  min: MiembroMinMaxFields!
+  stddevPop: MiembroNumericFields!
+  stddevSamp: MiembroNumericFields!
+  sum: MiembroSumFields!
+  varPop: MiembroNumericFields!
+  varSamp: MiembroNumericFields!
+}
+
+"""Aggregation fields"""
+type MiembroCompetenciaAggregate {
+  count: Int
+  max: MiembroCompetenciaMinMaxFields!
+  min: MiembroCompetenciaMinMaxFields!
+  sum: MiembroCompetenciaSumFields!
+}
+
+"""GraphQL type"""
+type MiembroCompetenciaMinMaxFields {
+  fechaVerificacion: Date
+  observaciones: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type MiembroCompetenciaSumFields {
+  observaciones: String
+}
+
+"""GraphQL type"""
+type MiembroCompetenciaType {
+  competencia: CompetenciaType!
+  nivel: NivelCompetenciaType!
+  id: UUID!
+  miembroId: UUID!
+  competenciaId: UUID!
+  nivelId: UUID!
+  verificado: Boolean!
+  fechaVerificacion: Date
+  observaciones: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type MiembroGrupoAggregate {
+  count: Int
+  max: MiembroGrupoMinMaxFields!
+  min: MiembroGrupoMinMaxFields!
+  sum: MiembroGrupoSumFields!
+}
+
+"""GraphQL type"""
+type MiembroGrupoMinMaxFields {
+  fechaIncorporacion: Date
+  fechaBaja: Date
+  responsabilidades: String
+  observaciones: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type MiembroGrupoSumFields {
+  responsabilidades: String
+  observaciones: String
+}
+
+"""GraphQL type"""
+type MiembroGrupoType {
+  grupo: GrupoTrabajoType!
+  rolGrupo: RolGrupoType!
+  id: UUID!
+  grupoId: UUID!
+  miembroId: UUID!
+  rolGrupoId: UUID!
+  fechaIncorporacion: Date!
+  fechaBaja: Date
+  activo: Boolean!
+  responsabilidades: String
+  observaciones: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type MiembroMinMaxFields {
+  nombre: String
+  apellido1: String
+  apellido2: String
+  fechaNacimiento: Date
+  tipoDocumento: String
+  numeroDocumento: String
+  direccion: String
+  codigoPostal: String
+  localidad: String
+  telefono: String
+  telefono2: String
+  email: String
+  iban: String
+  fechaAlta: Date
+  fechaBaja: Date
+  motivoBaja: String
+  disponibilidad: String
+  horasDisponiblesSemana: Int
+  experienciaVoluntariado: String
+  intereses: String
+  observacionesVoluntariado: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type MiembroNumericFields {
+  horasDisponiblesSemana: Float
+}
+
+"""GraphQL type"""
+type MiembroSumFields {
+  nombre: String
+  apellido1: String
+  apellido2: String
+  tipoDocumento: String
+  numeroDocumento: String
+  direccion: String
+  codigoPostal: String
+  localidad: String
+  telefono: String
+  telefono2: String
+  email: String
+  iban: String
+  motivoBaja: String
+  disponibilidad: String
+  horasDisponiblesSemana: Int
+  experienciaVoluntariado: String
+  intereses: String
+  observacionesVoluntariado: String
+}
+
+"""GraphQL type"""
+type MiembroType {
+  tipoMiembro: TipoMiembroType!
+  agrupacion: AgrupacionTerritorialType!
+  paisDocumento: PaisType!
+  paisDomicilio: PaisType!
+  provincia: ProvinciaType!
+  id: UUID!
+  nombre: String!
+  apellido1: String!
+  apellido2: String
+  fechaNacimiento: Date
+  tipoMiembroId: UUID!
+  tipoDocumento: String
+  numeroDocumento: String
+  paisDocumentoId: UUID
+  direccion: String
+  codigoPostal: String
+  localidad: String
+  provinciaId: UUID
+  paisDomicilioId: UUID
+  telefono: String
+  telefono2: String
+  email: String
+  agrupacionId: UUID
+  iban: String
+  fechaAlta: Date!
+  fechaBaja: Date
+  motivoBaja: String
+  activo: Boolean!
+  esVoluntario: Boolean!
+  disponibilidad: String
+  horasDisponiblesSemana: Int
+  experienciaVoluntariado: String
+  intereses: String
+  observacionesVoluntariado: String
+  puedeConducir: Boolean!
+  vehiculoPropio: Boolean!
+  disponibilidadViajar: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type MunicipioAggregate {
+  avg: MunicipioNumericFields!
+  count: Int
+  max: MunicipioMinMaxFields!
+  min: MunicipioMinMaxFields!
+  stddevPop: MunicipioNumericFields!
+  stddevSamp: MunicipioNumericFields!
+  sum: MunicipioSumFields!
+  varPop: MunicipioNumericFields!
+  varSamp: MunicipioNumericFields!
+}
+
+"""GraphQL type"""
+type MunicipioMinMaxFields {
+  codigo: String
+  nombre: String
+  codigoPostal: String
+  activo: Boolean
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type MunicipioNumericFields {
+  activo: Boolean
+}
+
+"""GraphQL type"""
+type MunicipioSumFields {
+  codigo: String
+  nombre: String
+  codigoPostal: String
+  activo: Boolean
+}
+
+"""GraphQL type"""
+type MunicipioType {
+  provincia: ProvinciaType!
+  direccionesAggregate: DireccionAggregate!
+
+  """Fetch objects from the DireccionType collection"""
+  direcciones: [DireccionType!]!
+  id: UUID!
+  provinciaId: UUID!
+  codigo: String!
+  nombre: String!
+  codigoPostal: String
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type NivelCompetenciaType {
+  miembrosCompetenciaAggregate: MiembroCompetenciaAggregate!
+
+  """Fetch objects from the MiembroCompetenciaType collection"""
+  miembrosCompetencia: [MiembroCompetenciaType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  orden: Int!
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type NotificacionAggregate {
+  avg: NotificacionNumericFields!
+  count: Int
+  max: NotificacionMinMaxFields!
+  min: NotificacionMinMaxFields!
+  stddevPop: NotificacionNumericFields!
+  stddevSamp: NotificacionNumericFields!
+  sum: NotificacionSumFields!
+  varPop: NotificacionNumericFields!
+  varSamp: NotificacionNumericFields!
+}
+
+"""GraphQL type"""
+type NotificacionMinMaxFields {
+  titulo: String
+  mensaje: String
+  canal: String
+  estado: String
+  fechaCreacion: DateTime
+  fechaEnvio: DateTime
+  fechaLectura: DateTime
+  fechaExpiracion: DateTime
+  urlAccion: String
+  intentosEnvio: Int
+  ultimoError: String
+  entidadTipo: String
+  entidadId: String
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type NotificacionNumericFields {
+  intentosEnvio: Float
+}
+
+"""GraphQL type"""
+type NotificacionSumFields {
+  titulo: String
+  mensaje: String
+  canal: String
+  estado: String
+  urlAccion: String
+  intentosEnvio: Int
+  ultimoError: String
+  entidadTipo: String
+  entidadId: String
+}
+
+"""GraphQL type"""
+type NotificacionType {
+  tipo: TipoNotificacionType!
+  usuario: UsuarioType!
+  id: UUID!
+  tipoId: UUID!
+  usuarioId: UUID!
+  titulo: String!
+  mensaje: String!
+  canal: String!
+  estado: String!
+  fechaCreacion: DateTime!
+  fechaEnvio: DateTime
+  fechaLectura: DateTime
+  fechaExpiracion: DateTime
+  leida: Boolean!
+  archivada: Boolean!
+  requiereAccion: Boolean!
+  accionCompletada: Boolean!
+  urlAccion: String
+  intentosEnvio: Int!
+  ultimoError: String
+  entidadTipo: String
+  entidadId: String
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type OrdenCobroAggregate {
+  avg: OrdenCobroNumericFields!
+  count: Int
+  max: OrdenCobroMinMaxFields!
+  min: OrdenCobroMinMaxFields!
+  stddevPop: OrdenCobroNumericFields!
+  stddevSamp: OrdenCobroNumericFields!
+  sum: OrdenCobroSumFields!
+  varPop: OrdenCobroNumericFields!
+  varSamp: OrdenCobroNumericFields!
+}
+
+"""GraphQL type"""
+type OrdenCobroMinMaxFields {
+  importe: Decimal
+  referenciaMandato: String
+  iban: String
+  fechaProcesamiento: Date
+  codigoRechazo: String
+  motivoRechazo: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type OrdenCobroNumericFields {
+  importe: Decimal
+}
+
+"""GraphQL type"""
+type OrdenCobroSumFields {
+  importe: Decimal
+  referenciaMandato: String
+  iban: String
+  codigoRechazo: String
+  motivoRechazo: String
+}
+
+"""GraphQL type"""
+type OrdenCobroType {
+  remesa: RemesaType!
+  cuota: CuotaAnualType!
+  estado: EstadoOrdenCobroType!
+  id: UUID!
+  remesaId: UUID!
+  cuotaId: UUID!
+  importe: Decimal!
+  referenciaMandato: String
+  iban: String
+  estadoId: UUID!
+  fechaProcesamiento: Date
+  codigoRechazo: String
+  motivoRechazo: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type PaisType {
+  provinciasAggregate: ProvinciaAggregate!
+
+  """Fetch objects from the ProvinciaType collection"""
+  provincias: [ProvinciaType!]!
+  direccionesAggregate: DireccionAggregate!
+
+  """Fetch objects from the DireccionType collection"""
+  direcciones: [DireccionType!]!
+  id: UUID!
+  codigo: String!
+  codigoIso3: String!
+  nombre: String!
+  nombreOficial: String
+  codigoTelefono: String
+  continente: String
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type ParticipanteActividadAggregate {
+  avg: ParticipanteActividadNumericFields!
+  count: Int
+  max: ParticipanteActividadMinMaxFields!
+  min: ParticipanteActividadMinMaxFields!
+  stddevPop: ParticipanteActividadNumericFields!
+  stddevSamp: ParticipanteActividadNumericFields!
+  sum: ParticipanteActividadSumFields!
+  varPop: ParticipanteActividadNumericFields!
+  varSamp: ParticipanteActividadNumericFields!
+}
+
+"""GraphQL type"""
+type ParticipanteActividadMinMaxFields {
+  rol: String
+  horasAportadas: Decimal
+  observaciones: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type ParticipanteActividadNumericFields {
+  horasAportadas: Decimal
+}
+
+"""GraphQL type"""
+type ParticipanteActividadSumFields {
+  rol: String
+  horasAportadas: Decimal
+  observaciones: String
+}
+
+"""GraphQL type"""
+type ParticipanteActividadType {
+  actividad: ActividadType!
+  id: UUID!
+  actividadId: UUID!
+  miembroId: UUID!
+  rol: String!
+  confirmado: Boolean!
+  asistio: Boolean
+  horasAportadas: Decimal!
+  observaciones: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type ParticipanteCampaniaAggregate {
+  avg: ParticipanteCampaniaNumericFields!
+  count: Int
+  max: ParticipanteCampaniaMinMaxFields!
+  min: ParticipanteCampaniaMinMaxFields!
+  stddevPop: ParticipanteCampaniaNumericFields!
+  stddevSamp: ParticipanteCampaniaNumericFields!
+  sum: ParticipanteCampaniaSumFields!
+  varPop: ParticipanteCampaniaNumericFields!
+  varSamp: ParticipanteCampaniaNumericFields!
+}
+
+"""GraphQL type"""
+type ParticipanteCampaniaMinMaxFields {
+  horasAportadas: Decimal
+  fechaInscripcion: DateTime
+  fechaConfirmacion: DateTime
+  observaciones: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type ParticipanteCampaniaNumericFields {
+  horasAportadas: Decimal
+}
+
+"""GraphQL type"""
+type ParticipanteCampaniaSumFields {
+  horasAportadas: Decimal
+  observaciones: String
+}
+
+"""GraphQL type"""
+type ParticipanteCampaniaType {
+  campania: CampaniaType!
+  rolParticipante: RolParticipanteType!
+  id: UUID!
+  campaniaId: UUID!
+  miembroId: UUID!
+  rolParticipanteId: UUID!
+  horasAportadas: Decimal
+  confirmado: Boolean!
+  asistio: Boolean
+  fechaInscripcion: DateTime!
+  fechaConfirmacion: DateTime
+  observaciones: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type PartidaPresupuestariaAggregate {
+  avg: PartidaPresupuestariaNumericFields!
+  count: Int
+  max: PartidaPresupuestariaMinMaxFields!
+  min: PartidaPresupuestariaMinMaxFields!
+  stddevPop: PartidaPresupuestariaNumericFields!
+  stddevSamp: PartidaPresupuestariaNumericFields!
+  sum: PartidaPresupuestariaSumFields!
+  varPop: PartidaPresupuestariaNumericFields!
+  varSamp: PartidaPresupuestariaNumericFields!
+}
+
+"""GraphQL type"""
+type PartidaPresupuestariaMinMaxFields {
+  codigo: String
+  nombre: String
+  descripcion: String
+  ejercicio: Int
+  tipo: String
+  importePresupuestado: Decimal
+  importeComprometido: Decimal
+  importeEjecutado: Decimal
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type PartidaPresupuestariaNumericFields {
+  ejercicio: Float
+  importePresupuestado: Decimal
+  importeComprometido: Decimal
+  importeEjecutado: Decimal
+}
+
+"""GraphQL type"""
+type PartidaPresupuestariaSumFields {
+  codigo: String
+  nombre: String
+  descripcion: String
+  ejercicio: Int
+  tipo: String
+  importePresupuestado: Decimal
+  importeComprometido: Decimal
+  importeEjecutado: Decimal
+}
+
+"""GraphQL type"""
+type PartidaPresupuestariaType {
+  categoria: CategoriaPartidaType
+  planificacion: PlanificacionAnualType
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  ejercicio: Int!
+  tipo: String!
+  categoriaId: UUID
+  importePresupuestado: Decimal!
+  importeComprometido: Decimal!
+  importeEjecutado: Decimal!
+  activo: Boolean!
+  planificacionId: UUID
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type PlanificacionAnualAggregate {
+  avg: PlanificacionAnualNumericFields!
+  count: Int
+  max: PlanificacionAnualMinMaxFields!
+  min: PlanificacionAnualMinMaxFields!
+  stddevPop: PlanificacionAnualNumericFields!
+  stddevSamp: PlanificacionAnualNumericFields!
+  sum: PlanificacionAnualSumFields!
+  varPop: PlanificacionAnualNumericFields!
+  varSamp: PlanificacionAnualNumericFields!
+}
+
+"""GraphQL type"""
+type PlanificacionAnualMinMaxFields {
+  ejercicio: Int
+  nombre: String
+  descripcion: String
+  objetivos: String
+  fechaAprobacion: Date
+  presupuestoTotal: Decimal
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type PlanificacionAnualNumericFields {
+  ejercicio: Float
+  presupuestoTotal: Decimal
+}
+
+"""GraphQL type"""
+type PlanificacionAnualSumFields {
+  ejercicio: Int
+  nombre: String
+  descripcion: String
+  objetivos: String
+  presupuestoTotal: Decimal
+}
+
+"""GraphQL type"""
+type PlanificacionAnualType {
+  estado: EstadoPlanificacionType!
+  partidasAggregate: PartidaPresupuestariaAggregate!
+
+  """Fetch objects from the PartidaPresupuestariaType collection"""
+  partidas: [PartidaPresupuestariaType!]!
+  id: UUID!
+  ejercicio: Int!
+  nombre: String!
+  descripcion: String
+  objetivos: String
+  estadoId: UUID!
+  fechaAprobacion: Date
+  presupuestoTotal: Decimal!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type PreferenciaNotificacionAggregate {
+  avg: PreferenciaNotificacionNumericFields!
+  count: Int
+  max: PreferenciaNotificacionMinMaxFields!
+  min: PreferenciaNotificacionMinMaxFields!
+  stddevPop: PreferenciaNotificacionNumericFields!
+  stddevSamp: PreferenciaNotificacionNumericFields!
+  sum: PreferenciaNotificacionSumFields!
+  varPop: PreferenciaNotificacionNumericFields!
+  varSamp: PreferenciaNotificacionNumericFields!
+}
+
+"""GraphQL type"""
+type PreferenciaNotificacionMinMaxFields {
+  frecuencia: String
+  horaPreferida: Int
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type PreferenciaNotificacionNumericFields {
+  horaPreferida: Float
+}
+
+"""GraphQL type"""
+type PreferenciaNotificacionSumFields {
+  frecuencia: String
+  horaPreferida: Int
+}
+
+"""GraphQL type"""
+type PreferenciaNotificacionType {
+  usuario: UsuarioType!
+  tipo: TipoNotificacionType!
+  id: UUID!
+  usuarioId: UUID!
+  tipoId: UUID!
+  emailHabilitado: Boolean!
+  smsHabilitado: Boolean!
+  pushHabilitado: Boolean!
+  inappHabilitado: Boolean!
+  frecuencia: String!
+  horaPreferida: Int
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type PropuestaActividadAggregate {
+  avg: PropuestaActividadNumericFields!
+  count: Int
+  max: PropuestaActividadMinMaxFields!
+  min: PropuestaActividadMinMaxFields!
+  stddevPop: PropuestaActividadNumericFields!
+  stddevSamp: PropuestaActividadNumericFields!
+  sum: PropuestaActividadSumFields!
+  varPop: PropuestaActividadNumericFields!
+  varSamp: PropuestaActividadNumericFields!
+}
+
+"""GraphQL type"""
+type PropuestaActividadMinMaxFields {
+  codigo: String
+  titulo: String
+  descripcion: String
+  justificacion: String
+  fechaPresentacion: Date
+  fechaResolucion: Date
+  motivoResolucion: String
+  fechaInicioPropuesta: Date
+  fechaFinPropuesta: Date
+  presupuestoSolicitado: Decimal
+  presupuestoAprobado: Decimal
+  observaciones: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type PropuestaActividadNumericFields {
+  presupuestoSolicitado: Decimal
+  presupuestoAprobado: Decimal
+}
+
+"""GraphQL type"""
+type PropuestaActividadSumFields {
+  codigo: String
+  titulo: String
+  descripcion: String
+  justificacion: String
+  motivoResolucion: String
+  presupuestoSolicitado: Decimal
+  presupuestoAprobado: Decimal
+  observaciones: String
+}
+
+"""GraphQL type"""
+type PropuestaActividadType {
+  estado: EstadoPropuestaType!
+  tareasAggregate: TareaPropuestaAggregate!
+
+  """Fetch objects from the TareaPropuestaType collection"""
+  tareas: [TareaPropuestaType!]!
+  recursosAggregate: RecursoPropuestaAggregate!
+
+  """Fetch objects from the RecursoPropuestaType collection"""
+  recursos: [RecursoPropuestaType!]!
+  gruposAsignadosAggregate: GrupoPropuestaAggregate!
+
+  """Fetch objects from the GrupoPropuestaType collection"""
+  gruposAsignados: [GrupoPropuestaType!]!
+  id: UUID!
+  codigo: String!
+  titulo: String!
+  descripcion: String
+  justificacion: String
+  proponenteId: UUID!
+  estadoId: UUID!
+  fechaPresentacion: Date
+  fechaResolucion: Date
+  motivoResolucion: String
+  campaniaId: UUID
+  fechaInicioPropuesta: Date
+  fechaFinPropuesta: Date
+  presupuestoSolicitado: Decimal!
+  presupuestoAprobado: Decimal
+  partidaId: UUID
+  observaciones: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type ProvinciaAggregate {
+  avg: ProvinciaNumericFields!
+  count: Int
+  max: ProvinciaMinMaxFields!
+  min: ProvinciaMinMaxFields!
+  stddevPop: ProvinciaNumericFields!
+  stddevSamp: ProvinciaNumericFields!
+  sum: ProvinciaSumFields!
+  varPop: ProvinciaNumericFields!
+  varSamp: ProvinciaNumericFields!
+}
+
+"""GraphQL type"""
+type ProvinciaMinMaxFields {
+  codigo: String
+  nombre: String
+  activo: Boolean
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type ProvinciaNumericFields {
+  activo: Boolean
+}
+
+"""GraphQL type"""
+type ProvinciaSumFields {
+  codigo: String
+  nombre: String
+  activo: Boolean
+}
+
+"""GraphQL type"""
+type ProvinciaType {
+  pais: PaisType!
+  municipiosAggregate: MunicipioAggregate!
+
+  """Fetch objects from the MunicipioType collection"""
+  municipios: [MunicipioType!]!
+  direccionesAggregate: DireccionAggregate!
+
+  """Fetch objects from the DireccionType collection"""
+  direcciones: [DireccionType!]!
+  id: UUID!
+  paisId: UUID!
+  codigo: String!
+  nombre: String!
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+type Query {
+  """Fetch objects from the UsuarioType collection"""
+  usuarios: [UsuarioType!]!
+
+  """Fetch objects from the UsuarioRolType collection"""
+  usuarioRoles: [UsuarioRolType!]!
+
+  """Fetch objects from the ConfiguracionType collection"""
+  configuraciones: [ConfiguracionType!]!
+
+  """Fetch objects from the ReglaValidacionConfigType collection"""
+  reglasValidacionConfig: [ReglaValidacionConfigType!]!
+
+  """Fetch objects from the HistorialConfiguracionType collection"""
+  historialConfiguracion: [HistorialConfiguracionType!]!
+
+  """Fetch objects from the EstadoCuotaType collection"""
+  estadosCuota: [EstadoCuotaType!]!
+
+  """Fetch objects from the EstadoCampaniaType collection"""
+  estadosCampania: [EstadoCampaniaType!]!
+
+  """Fetch objects from the EstadoTareaType collection"""
+  estadosTarea: [EstadoTareaType!]!
+
+  """Fetch objects from the EstadoParticipanteType collection"""
+  estadosParticipante: [EstadoParticipanteType!]!
+
+  """Fetch objects from the EstadoOrdenCobroType collection"""
+  estadosOrdenCobro: [EstadoOrdenCobroType!]!
+
+  """Fetch objects from the EstadoRemesaType collection"""
+  estadosRemesa: [EstadoRemesaType!]!
+
+  """Fetch objects from the EstadoDonacionType collection"""
+  estadosDonacion: [EstadoDonacionType!]!
+
+  """Fetch objects from the HistorialEstadoType collection"""
+  historialEstado: [HistorialEstadoType!]!
+
+  """Fetch objects from the SesionType collection"""
+  sesiones: [SesionType!]!
+
+  """Fetch objects from the HistorialSeguridadType collection"""
+  historialSeguridad: [HistorialSeguridadType!]!
+
+  """Fetch objects from the IPBloqueadaType collection"""
+  ipsBloqueadas: [IPBloqueadaType!]!
+
+  """Fetch objects from the IntentoAccesoType collection"""
+  intentosAcceso: [IntentoAccesoType!]!
+
+  """Fetch objects from the PaisType collection"""
+  paises: [PaisType!]!
+
+  """Fetch objects from the ProvinciaType collection"""
+  provincias: [ProvinciaType!]!
+
+  """Fetch objects from the MunicipioType collection"""
+  municipios: [MunicipioType!]!
+
+  """Fetch objects from the DireccionType collection"""
+  direcciones: [DireccionType!]!
+
+  """Fetch objects from the AgrupacionTerritorialType collection"""
+  agrupacionesTerritoriales: [AgrupacionTerritorialType!]!
+
+  """Fetch objects from the TipoNotificacionType collection"""
+  tiposNotificacion: [TipoNotificacionType!]!
+
+  """Fetch objects from the NotificacionType collection"""
+  notificaciones: [NotificacionType!]!
+
+  """Fetch objects from the PreferenciaNotificacionType collection"""
+  preferenciasNotificacion: [PreferenciaNotificacionType!]!
+
+  """Fetch objects from the ImporteCuotaAnioType collection"""
+  importesCuotaAnio: [ImporteCuotaAnioType!]!
+
+  """Fetch objects from the CuotaAnualType collection"""
+  cuotasAnuales: [CuotaAnualType!]!
+
+  """Fetch objects from the DonacionConceptoType collection"""
+  donacionConceptos: [DonacionConceptoType!]!
+
+  """Fetch objects from the DonacionType collection"""
+  donaciones: [DonacionType!]!
+
+  """Fetch objects from the RemesaType collection"""
+  remesas: [RemesaType!]!
+
+  """Fetch objects from the OrdenCobroType collection"""
+  ordenesCobro: [OrdenCobroType!]!
+
+  """Fetch objects from the EstadoPlanificacionType collection"""
+  estadosPlanificacion: [EstadoPlanificacionType!]!
+
+  """Fetch objects from the CategoriaPartidaType collection"""
+  categoriasPartida: [CategoriaPartidaType!]!
+
+  """Fetch objects from the PartidaPresupuestariaType collection"""
+  partidasPresupuestarias: [PartidaPresupuestariaType!]!
+
+  """Fetch objects from the PlanificacionAnualType collection"""
+  planificacionesAnuales: [PlanificacionAnualType!]!
+
+  """Fetch objects from the TipoAsociacionType collection"""
+  tiposAsociacion: [TipoAsociacionType!]!
+
+  """Fetch objects from the AsociacionType collection"""
+  asociaciones: [AsociacionType!]!
+
+  """Fetch objects from the EstadoConvenioType collection"""
+  estadosConvenio: [EstadoConvenioType!]!
+
+  """Fetch objects from the ConvenioType collection"""
+  convenios: [ConvenioType!]!
+
+  """Fetch objects from the TipoMiembroType collection"""
+  tiposMiembro: [TipoMiembroType!]!
+
+  """Fetch objects from the MiembroType collection"""
+  miembros: [MiembroType!]!
+
+  """Fetch objects from the TipoCampaniaType collection"""
+  tiposCampania: [TipoCampaniaType!]!
+
+  """Fetch objects from the CampaniaType collection"""
+  campanias: [CampaniaType!]!
+
+  """Fetch objects from the RolParticipanteType collection"""
+  rolesParticipante: [RolParticipanteType!]!
+
+  """Fetch objects from the AccionCampaniaType collection"""
+  accionesCampania: [AccionCampaniaType!]!
+
+  """Fetch objects from the ParticipanteCampaniaType collection"""
+  participantesCampania: [ParticipanteCampaniaType!]!
+
+  """Fetch objects from the TipoActividadType collection"""
+  tiposActividad: [TipoActividadType!]!
+
+  """Fetch objects from the EstadoActividadType collection"""
+  estadosActividad: [EstadoActividadType!]!
+
+  """Fetch objects from the EstadoPropuestaType collection"""
+  estadosPropuesta: [EstadoPropuestaType!]!
+
+  """Fetch objects from the TipoRecursoType collection"""
+  tiposRecurso: [TipoRecursoType!]!
+
+  """Fetch objects from the TipoKPIType collection"""
+  tiposKpi: [TipoKPIType!]!
+
+  """Fetch objects from the PropuestaActividadType collection"""
+  propuestasActividad: [PropuestaActividadType!]!
+
+  """Fetch objects from the TareaPropuestaType collection"""
+  tareasPropuesta: [TareaPropuestaType!]!
+
+  """Fetch objects from the RecursoPropuestaType collection"""
+  recursosPropuesta: [RecursoPropuestaType!]!
+
+  """Fetch objects from the GrupoPropuestaType collection"""
+  gruposPropuesta: [GrupoPropuestaType!]!
+
+  """Fetch objects from the ActividadType collection"""
+  actividades: [ActividadType!]!
+
+  """Fetch objects from the TareaActividadType collection"""
+  tareasActividad: [TareaActividadType!]!
+
+  """Fetch objects from the RecursoActividadType collection"""
+  recursosActividad: [RecursoActividadType!]!
+
+  """Fetch objects from the GrupoActividadType collection"""
+  gruposActividad: [GrupoActividadType!]!
+
+  """Fetch objects from the ParticipanteActividadType collection"""
+  participantesActividad: [ParticipanteActividadType!]!
+
+  """Fetch objects from the KPIType collection"""
+  kpis: [KPIType!]!
+
+  """Fetch objects from the KPIActividadType collection"""
+  kpisActividad: [KPIActividadType!]!
+
+  """Fetch objects from the MedicionKPIType collection"""
+  medicionesKpi: [MedicionKPIType!]!
+
+  """Fetch objects from the TipoGrupoType collection"""
+  tiposGrupo: [TipoGrupoType!]!
+
+  """Fetch objects from the RolGrupoType collection"""
+  rolesGrupo: [RolGrupoType!]!
+
+  """Fetch objects from the GrupoTrabajoType collection"""
+  gruposTrabajo: [GrupoTrabajoType!]!
+
+  """Fetch objects from the MiembroGrupoType collection"""
+  miembrosGrupo: [MiembroGrupoType!]!
+
+  """Fetch objects from the TareaGrupoType collection"""
+  tareasGrupo: [TareaGrupoType!]!
+
+  """Fetch objects from the ReunionGrupoType collection"""
+  reunionesGrupo: [ReunionGrupoType!]!
+
+  """Fetch objects from the AsistenteReunionType collection"""
+  asistentesReunion: [AsistenteReunionType!]!
+
+  """Fetch objects from the CategoriaCompetenciaType collection"""
+  categoriasCompetencia: [CategoriaCompetenciaType!]!
+
+  """Fetch objects from the CompetenciaType collection"""
+  competencias: [CompetenciaType!]!
+
+  """Fetch objects from the NivelCompetenciaType collection"""
+  nivelesCompetencia: [NivelCompetenciaType!]!
+
+  """Fetch objects from the MiembroCompetenciaType collection"""
+  miembrosCompetencia: [MiembroCompetenciaType!]!
+
+  """Fetch objects from the TipoDocumentoVoluntarioType collection"""
+  tiposDocumentoVoluntario: [TipoDocumentoVoluntarioType!]!
+
+  """Fetch objects from the DocumentoMiembroType collection"""
+  documentosMiembro: [DocumentoMiembroType!]!
+
+  """Fetch objects from the TipoFormacionType collection"""
+  tiposFormacion: [TipoFormacionType!]!
+
+  """Fetch objects from the FormacionMiembroType collection"""
+  formacionesMiembro: [FormacionMiembroType!]!
+}
+
+"""Aggregation fields"""
+type RecursoActividadAggregate {
+  avg: RecursoActividadNumericFields!
+  count: Int
+  max: RecursoActividadMinMaxFields!
+  min: RecursoActividadMinMaxFields!
+  stddevPop: RecursoActividadNumericFields!
+  stddevSamp: RecursoActividadNumericFields!
+  sum: RecursoActividadSumFields!
+  varPop: RecursoActividadNumericFields!
+  varSamp: RecursoActividadNumericFields!
+}
+
+"""GraphQL type"""
+type RecursoActividadMinMaxFields {
+  descripcion: String
+  cantidad: Int
+  importePresupuestado: Decimal
+  importeReal: Decimal
+  proveedor: String
+  facturaReferencia: String
+  fechaFactura: Date
+  fechaPago: Date
+  observaciones: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type RecursoActividadNumericFields {
+  cantidad: Float
+  importePresupuestado: Decimal
+  importeReal: Decimal
+}
+
+"""GraphQL type"""
+type RecursoActividadSumFields {
+  descripcion: String
+  cantidad: Int
+  importePresupuestado: Decimal
+  importeReal: Decimal
+  proveedor: String
+  facturaReferencia: String
+  observaciones: String
+}
+
+"""GraphQL type"""
+type RecursoActividadType {
+  actividad: ActividadType!
+  tipoRecurso: TipoRecursoType!
+  id: UUID!
+  actividadId: UUID!
+  tipoRecursoId: UUID!
+  descripcion: String!
+  cantidad: Int!
+  importePresupuestado: Decimal!
+  importeReal: Decimal!
+  proveedor: String
+  facturaReferencia: String
+  fechaFactura: Date
+  pagado: Boolean!
+  fechaPago: Date
+  observaciones: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type RecursoPropuestaAggregate {
+  avg: RecursoPropuestaNumericFields!
+  count: Int
+  max: RecursoPropuestaMinMaxFields!
+  min: RecursoPropuestaMinMaxFields!
+  stddevPop: RecursoPropuestaNumericFields!
+  stddevSamp: RecursoPropuestaNumericFields!
+  sum: RecursoPropuestaSumFields!
+  varPop: RecursoPropuestaNumericFields!
+  varSamp: RecursoPropuestaNumericFields!
+}
+
+"""GraphQL type"""
+type RecursoPropuestaMinMaxFields {
+  descripcion: String
+  cantidad: Int
+  importeUnitarioEstimado: Decimal
+  importeTotalEstimado: Decimal
+  importeAprobado: Decimal
+  proveedor: String
+  observaciones: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type RecursoPropuestaNumericFields {
+  cantidad: Float
+  importeUnitarioEstimado: Decimal
+  importeTotalEstimado: Decimal
+  importeAprobado: Decimal
+}
+
+"""GraphQL type"""
+type RecursoPropuestaSumFields {
+  descripcion: String
+  cantidad: Int
+  importeUnitarioEstimado: Decimal
+  importeTotalEstimado: Decimal
+  importeAprobado: Decimal
+  proveedor: String
+  observaciones: String
+}
+
+"""GraphQL type"""
+type RecursoPropuestaType {
+  propuesta: PropuestaActividadType!
+  tipoRecurso: TipoRecursoType!
+  id: UUID!
+  propuestaId: UUID!
+  tipoRecursoId: UUID!
+  descripcion: String!
+  cantidad: Int!
+  importeUnitarioEstimado: Decimal!
+  importeTotalEstimado: Decimal!
+  importeAprobado: Decimal
+  proveedor: String
+  observaciones: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type ReglaValidacionConfigType {
+  id: UUID!
+  configClave: String!
+  tipoDato: String!
+  minValor: Float
+  maxValor: Float
+  maxLongitud: Int
+  decimales: Int
+  patternRegex: String
+  valoresPermitidos: String
+  descripcion: String
+  mensajeError: String
+  activa: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type RemesaType {
+  ordenesAggregate: OrdenCobroAggregate!
+
+  """Fetch objects from the OrdenCobroType collection"""
+  ordenes: [OrdenCobroType!]!
+  estado: EstadoRemesaType!
+  id: UUID!
+  referencia: String!
+  fechaCreacion: Date!
+  fechaEnvio: Date
+  fechaCobro: Date!
+  importeTotal: Decimal!
+  gastos: Decimal!
+  numOrdenes: Int!
+  estadoId: UUID!
+  archivoSepa: String
+  mensajeId: String
+  observaciones: String
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type ReunionGrupoAggregate {
+  count: Int
+  max: ReunionGrupoMinMaxFields!
+  min: ReunionGrupoMinMaxFields!
+  sum: ReunionGrupoSumFields!
+}
+
+"""GraphQL type"""
+type ReunionGrupoMinMaxFields {
+  titulo: String
+  descripcion: String
+  fecha: Date
+  horaInicio: String
+  horaFin: String
+  lugar: String
+  urlOnline: String
+  ordenDelDia: String
+  acta: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type ReunionGrupoSumFields {
+  titulo: String
+  descripcion: String
+  horaInicio: String
+  horaFin: String
+  lugar: String
+  urlOnline: String
+  ordenDelDia: String
+  acta: String
+}
+
+"""GraphQL type"""
+type ReunionGrupoType {
+  grupo: GrupoTrabajoType!
+  asistentesAggregate: AsistenteReunionAggregate!
+
+  """Fetch objects from the AsistenteReunionType collection"""
+  asistentes: [AsistenteReunionType!]!
+  id: UUID!
+  grupoId: UUID!
+  titulo: String!
+  descripcion: String
+  fecha: Date!
+  horaInicio: String
+  horaFin: String
+  lugar: String
+  urlOnline: String
+  ordenDelDia: String
+  acta: String
+  realizada: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type RolGrupoType {
+  miembrosGrupoAggregate: MiembroGrupoAggregate!
+
+  """Fetch objects from the MiembroGrupoType collection"""
+  miembrosGrupo: [MiembroGrupoType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  esCoordinador: Boolean!
+  puedeEditar: Boolean!
+  puedeAprobarGastos: Boolean!
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type RolParticipanteType {
+  participantesAggregate: ParticipanteCampaniaAggregate!
+
+  """Fetch objects from the ParticipanteCampaniaType collection"""
+  participantes: [ParticipanteCampaniaType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  esVoluntario: Boolean!
+  esCoordinador: Boolean!
+  esDonante: Boolean!
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type SesionAggregate {
+  count: Int
+  max: SesionMinMaxFields!
+  min: SesionMinMaxFields!
+  sum: SesionSumFields!
+}
+
+"""GraphQL type"""
+type SesionMinMaxFields {
+  token: String
+  refreshToken: String
+  ipAddress: String
+  userAgent: String
+  fechaInicio: DateTime
+  fechaExpiracion: DateTime
+  ultimaActividad: DateTime
+  dispositivo: String
+  navegador: String
+  sistemaOperativo: String
+  ubicacion: String
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type SesionSumFields {
+  token: String
+  refreshToken: String
+  ipAddress: String
+  userAgent: String
+  dispositivo: String
+  navegador: String
+  sistemaOperativo: String
+  ubicacion: String
+}
+
+"""GraphQL type"""
+type SesionType {
+  usuario: UsuarioType!
+  id: UUID!
+  usuarioId: UUID!
+  token: String!
+  refreshToken: String
+  ipAddress: String!
+  userAgent: String
+  fechaInicio: DateTime!
+  fechaExpiracion: DateTime!
+  ultimaActividad: DateTime!
+  activa: Boolean!
+  dispositivo: String
+  navegador: String
+  sistemaOperativo: String
+  ubicacion: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type TareaActividadAggregate {
+  avg: TareaActividadNumericFields!
+  count: Int
+  max: TareaActividadMinMaxFields!
+  min: TareaActividadMinMaxFields!
+  stddevPop: TareaActividadNumericFields!
+  stddevSamp: TareaActividadNumericFields!
+  sum: TareaActividadSumFields!
+  varPop: TareaActividadNumericFields!
+  varSamp: TareaActividadNumericFields!
+}
+
+"""GraphQL type"""
+type TareaActividadMinMaxFields {
+  nombre: String
+  descripcion: String
+  orden: Int
+  fechaLimite: Date
+  fechaCompletada: DateTime
+  horasEstimadas: Decimal
+  horasReales: Decimal
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type TareaActividadNumericFields {
+  orden: Float
+  horasEstimadas: Decimal
+  horasReales: Decimal
+}
+
+"""GraphQL type"""
+type TareaActividadSumFields {
+  nombre: String
+  descripcion: String
+  orden: Int
+  horasEstimadas: Decimal
+  horasReales: Decimal
+}
+
+"""GraphQL type"""
+type TareaActividadType {
+  actividad: ActividadType!
+  estado: EstadoTareaType!
+  id: UUID!
+  actividadId: UUID!
+  nombre: String!
+  descripcion: String
+  orden: Int!
+  grupoTrabajoId: UUID
+  responsableId: UUID
+  estadoId: UUID!
+  fechaLimite: Date
+  fechaCompletada: DateTime
+  horasEstimadas: Decimal
+  horasReales: Decimal
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type TareaGrupoAggregate {
+  avg: TareaGrupoNumericFields!
+  count: Int
+  max: TareaGrupoMinMaxFields!
+  min: TareaGrupoMinMaxFields!
+  stddevPop: TareaGrupoNumericFields!
+  stddevSamp: TareaGrupoNumericFields!
+  sum: TareaGrupoSumFields!
+  varPop: TareaGrupoNumericFields!
+  varSamp: TareaGrupoNumericFields!
+}
+
+"""GraphQL type"""
+type TareaGrupoMinMaxFields {
+  titulo: String
+  descripcion: String
+  prioridad: Int
+  fechaCreacion: DateTime
+  fechaLimite: Date
+  fechaCompletada: DateTime
+  horasEstimadas: Decimal
+  horasReales: Decimal
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type TareaGrupoNumericFields {
+  prioridad: Float
+  horasEstimadas: Decimal
+  horasReales: Decimal
+}
+
+"""GraphQL type"""
+type TareaGrupoSumFields {
+  titulo: String
+  descripcion: String
+  prioridad: Int
+  horasEstimadas: Decimal
+  horasReales: Decimal
+}
+
+"""GraphQL type"""
+type TareaGrupoType {
+  grupo: GrupoTrabajoType!
+  estado: EstadoTareaType!
+  id: UUID!
+  grupoId: UUID!
+  titulo: String!
+  descripcion: String
+  asignadoAId: UUID
+  estadoId: UUID!
+  prioridad: Int!
+  fechaCreacion: DateTime!
+  fechaLimite: Date
+  fechaCompletada: DateTime
+  horasEstimadas: Decimal
+  horasReales: Decimal
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Aggregation fields"""
+type TareaPropuestaAggregate {
+  avg: TareaPropuestaNumericFields!
+  count: Int
+  max: TareaPropuestaMinMaxFields!
+  min: TareaPropuestaMinMaxFields!
+  stddevPop: TareaPropuestaNumericFields!
+  stddevSamp: TareaPropuestaNumericFields!
+  sum: TareaPropuestaSumFields!
+  varPop: TareaPropuestaNumericFields!
+  varSamp: TareaPropuestaNumericFields!
+}
+
+"""GraphQL type"""
+type TareaPropuestaMinMaxFields {
+  nombre: String
+  descripcion: String
+  orden: Int
+  fechaInicioEstimada: Date
+  fechaFinEstimada: Date
+  horasEstimadas: Decimal
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type TareaPropuestaNumericFields {
+  orden: Float
+  horasEstimadas: Decimal
+}
+
+"""GraphQL type"""
+type TareaPropuestaSumFields {
+  nombre: String
+  descripcion: String
+  orden: Int
+  horasEstimadas: Decimal
+}
+
+"""GraphQL type"""
+type TareaPropuestaType {
+  propuesta: PropuestaActividadType!
+  id: UUID!
+  propuestaId: UUID!
+  nombre: String!
+  descripcion: String
+  orden: Int!
+  grupoTrabajoId: UUID
+  responsableId: UUID
+  fechaInicioEstimada: Date
+  fechaFinEstimada: Date
+  horasEstimadas: Decimal
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""Time (isoformat)"""
+scalar Time
+
+"""GraphQL type"""
+type TipoActividadType {
+  actividadesAggregate: ActividadAggregate!
+
+  """Fetch objects from the ActividadType collection"""
+  actividades: [ActividadType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  requiereGrupo: Boolean!
+  requierePresupuesto: Boolean!
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type TipoAsociacionType {
+  asociacionesAggregate: AsociacionAggregate!
+
+  """Fetch objects from the AsociacionType collection"""
+  asociaciones: [AsociacionType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type TipoCampaniaType {
+  campaniasAggregate: CampaniaAggregate!
+
+  """Fetch objects from the CampaniaType collection"""
+  campanias: [CampaniaType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type TipoDocumentoVoluntarioType {
+  documentosAggregate: DocumentoMiembroAggregate!
+
+  """Fetch objects from the DocumentoMiembroType collection"""
+  documentos: [DocumentoMiembroType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  requiereCaducidad: Boolean!
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type TipoFormacionType {
+  formacionesAggregate: FormacionMiembroAggregate!
+
+  """Fetch objects from the FormacionMiembroType collection"""
+  formaciones: [FormacionMiembroType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type TipoGrupoType {
+  gruposAggregate: GrupoTrabajoAggregate!
+
+  """Fetch objects from the GrupoTrabajoType collection"""
+  grupos: [GrupoTrabajoType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  esPermanente: Boolean!
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type TipoKPIType {
+  kpisAggregate: KPIAggregate!
+
+  """Fetch objects from the KPIType collection"""
+  kpis: [KPIType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  formato: String
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type TipoMiembroType {
+  miembrosAggregate: MiembroAggregate!
+
+  """Fetch objects from the MiembroType collection"""
+  miembros: [MiembroType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  requiereCuota: Boolean!
+  puedeVotar: Boolean!
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type TipoNotificacionType {
+  notificacionesAggregate: NotificacionAggregate!
+
+  """Fetch objects from the NotificacionType collection"""
+  notificaciones: [NotificacionType!]!
+  preferenciasAggregate: PreferenciaNotificacionAggregate!
+
+  """Fetch objects from the PreferenciaNotificacionType collection"""
+  preferencias: [PreferenciaNotificacionType!]!
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  categoria: String!
+  permiteEmail: Boolean!
+  permiteSms: Boolean!
+  permitePush: Boolean!
+  permiteInapp: Boolean!
+  prioridad: String!
+  requiereAccion: Boolean!
+  activo: Boolean!
+  templateAsunto: String
+  templateCuerpo: String
+  templateSms: String
+  icono: String
+  color: String
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type TipoRecursoType {
+  id: UUID!
+  codigo: String!
+  nombre: String!
+  descripcion: String
+  requiereImporte: Boolean!
+  activo: Boolean!
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+scalar UUID
+
+"""Aggregation fields"""
+type UsuarioRolAggregate {
+  avg: UsuarioRolNumericFields!
+  count: Int
+  max: UsuarioRolMinMaxFields!
+  min: UsuarioRolMinMaxFields!
+  stddevPop: UsuarioRolNumericFields!
+  stddevSamp: UsuarioRolNumericFields!
+  sum: UsuarioRolSumFields!
+  varPop: UsuarioRolNumericFields!
+  varSamp: UsuarioRolNumericFields!
+}
+
+"""GraphQL type"""
+type UsuarioRolMinMaxFields {
+  rolId: Int
+  fechaCreacion: DateTime
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+}
+
+"""GraphQL type"""
+type UsuarioRolNumericFields {
+  rolId: Float
+}
+
+"""GraphQL type"""
+type UsuarioRolSumFields {
+  rolId: Int
+}
+
+"""GraphQL type"""
+type UsuarioRolType {
+  usuario: UsuarioType!
+  id: UUID!
+  usuarioId: UUID!
+  rolId: Int!
+  agrupacionId: UUID
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
+
+"""GraphQL type"""
+type UsuarioType {
+  rolesAggregate: UsuarioRolAggregate!
+
+  """Fetch objects from the UsuarioRolType collection"""
+  roles: [UsuarioRolType!]!
+  sesionesAggregate: SesionAggregate!
+
+  """Fetch objects from the SesionType collection"""
+  sesiones: [SesionType!]!
+  id: UUID!
+  email: String!
+  passwordHash: String!
+  activo: Boolean!
+  ultimoAcceso: DateTime
+  intentosLogin: Int!
+  bloqueadoHasta: DateTime
+  fechaCreacion: DateTime!
+  fechaModificacion: DateTime
+  fechaEliminacion: DateTime
+  eliminado: Boolean!
+  creadoPorId: UUID!
+  modificadoPorId: UUID!
+}
