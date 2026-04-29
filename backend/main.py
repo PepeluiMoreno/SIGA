@@ -15,7 +15,6 @@ from app.graphql.schema_simple import schema
 graphql_app = GraphQLRouter(
     schema,
     context_getter=get_context,
-    graphiql=True,  # Habilitar GraphiQL playground
 )
 
 # Crear aplicación FastAPI
