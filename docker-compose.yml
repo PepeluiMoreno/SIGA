@@ -1,0 +1,42 @@
+services:
+  backend:
+    build: ./backend
+    container_name: ${APP_PREFIX}_backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+
+  frontend:
+    build: ./frontend
+    container_name: ${APP_PREFIX}_frontend
+    restart: always
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+
+  db:
+    image: postgres:17-alpine
+    container_name: ${APP_PREFIX}_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
+
+networks:
+  internal:
+
+volumes:
+  pgdata:

@@ -1,5 +1,5 @@
 """
-Punto de entrada de la aplicación AIEL.
+Punto de entrada de la aplicación SIGA.
 
 API GraphQL con generación automática desde modelos SQLAlchemy usando Strawchemy.
 """
@@ -20,7 +20,7 @@ graphql_app = GraphQLRouter(
 
 # Crear aplicación FastAPI
 app = FastAPI(
-    title="AIEL API",
+    title="SIGA API",
     description="API GraphQL para gestión de asociación política con generación automática desde SQLAlchemy",
     version="0.1.0",
 )
@@ -42,7 +42,7 @@ app.include_router(graphql_app, prefix="/graphql")
 async def root():
     """Endpoint raíz con información de la API."""
     return {
-        "name": "AIEL API",
+        "name": "SIGA API",
         "version": "0.1.0",
         "graphql": "/graphql",
         "playground": "/graphql (GraphiQL)",
