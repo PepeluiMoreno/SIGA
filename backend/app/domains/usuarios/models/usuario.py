@@ -42,30 +42,33 @@ class Usuario(BaseModel):
 
 
 class UsuarioRol(BaseModel):
-    """Un usuario puede tener múltiples roles."""
+    """Un usuario puede tener múltiples roles, opcionalmente con ámbito territorial."""
     __tablename__ = "usuarios_roles"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    usuario_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=False, index=True)
-    rol_id: Mapped[int] = mapped_column(nullable=False, index=True)  # TODO: ForeignKey("roles.id")
+    usuario_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("usuarios.id"), nullable=False, index=True
+    )
+    rol_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("roles.id"), nullable=False, index=True
+    )
 
     # Ámbito del rol (ej: coordinador de agrupación X)
-    agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, nullable=True)  # TODO: ForeignKey("agrupaciones_territoriales.id")
+    agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("agrupaciones_territoriales.id"), nullable=True, index=True
+    )
 
     usuario: Mapped["Usuario"] = relationship(
         back_populates="roles",
         foreign_keys=[usuario_id],
         lazy="selectin"
     )
-    # rol: Mapped["Rol"] = relationship(lazy="selectin")
-    # agrupacion: Mapped[Optional["AgrupacionTerritorial"]] = relationship(lazy="selectin")
+    rol: Mapped["Rol"] = relationship(lazy="selectin")
 
     def __repr__(self) -> str:
-        return f"<UsuarioRol(usuario_id='{self.usuario_id}', rol_id={self.rol_id})>"
+        return f"<UsuarioRol(usuario_id='{self.usuario_id}', rol_id='{self.rol_id}')>"
 
 
 # Forward refs para type hints
-# from ...miembros.models.miembro import Miembro  # noqa: E402,F401
-# from ...core.models.tipologias import Rol  # noqa: E402,F401
-# from ...miembros.models.agrupacion import AgrupacionTerritorial  # noqa: E402,F401
+from ...administracion.models.rol import Rol  # noqa: E402,F401
 from ...core.models.seguridad import Sesion  # noqa: E402,F401
