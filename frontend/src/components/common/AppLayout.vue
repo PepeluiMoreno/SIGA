@@ -150,6 +150,9 @@
           </div>
         </nav>
 
+        <!-- Backend status indicator -->
+        <BackendStatus />
+
         <!-- User Panel (abajo) -->
         <div class="border-t border-purple-800">
           <div class="p-4 bg-purple-800">
@@ -197,6 +200,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
+import BackendStatus from '@/components/common/BackendStatus.vue'
 
 defineProps({
   title: {
