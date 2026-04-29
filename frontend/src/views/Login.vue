@@ -6,7 +6,7 @@
           <img src="@/assets/logo.png" alt="Europa Laica" class="h-20 w-auto" />
         </div>
         <h2 class="mt-6 text-center text-xl font-extrabold text-purple-700">
-          Administración Integral (AIEL versión beta)
+          SIGA (beta release)
         </h2>
         <p class="mt-2 text-center text-sm text-gray-600">
           Inicia sesión para acceder al sistema
