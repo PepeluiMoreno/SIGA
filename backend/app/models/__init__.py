@@ -32,14 +32,11 @@ from ..domains.financiero.models import (
     EstadoPlanificacion, CategoriaPartida, PartidaPresupuestaria, PlanificacionAnual
 )
 
-# TODO: Migrar estos imports cuando se actualicen los dominios correspondientes
-# from ..domains.core.models.tipologias import TipoMiembro, Rol, Transaccion, RolTransaccion
-# from ..domains.miembros.models.agrupacion import AgrupacionTerritorial
-# from ..domains.miembros.models.miembro import Miembro
-# from ..domains.campanas.models.campania import (...)
-# from ..domains.grupos.models.grupo_trabajo import (...)
-# from ..domains.voluntariado.models.voluntariado import (...)
-# from ..domains.actividades.models.actividad import (...)
+# Dominio Administración
+from ..domains.administracion.models import Transaccion, Rol, RolTransaccion, LogAuditoria
+
+# Dominio Miembros — nuevos modelos de Militancia
+from ..domains.miembros.models import Skill, MiembroSkill, FranjaDisponibilidad, HistorialAgrupacion, SolicitudTraslado
 
 __all__ = [
     'Base',

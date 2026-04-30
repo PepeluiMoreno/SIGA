@@ -5,6 +5,7 @@ import { useDebugStore } from '@/stores/debug.js'
 import Dashboard from '@/views/Dashboard.vue'
 import Login from '@/views/Login.vue'
 import ListaMiembros from '@/views/miembros/ListaMiembros.vue'
+import ListaAgrupaciones from '@/views/miembros/ListaAgrupaciones.vue'
 import ListaCampanias from '@/views/campanias/ListaCampanias.vue'
 import ListaGrupos from '@/views/grupos/ListaGrupos.vue'
 import ListaFinanciero from '@/views/financiero/ListaFinanciero.vue'
@@ -30,6 +31,12 @@ const routes = [
     path: '/miembros',
     component: ListaMiembros,
     name: 'Miembros',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/agrupaciones',
+    component: ListaAgrupaciones,
+    name: 'Agrupaciones',
     meta: { requiresAuth: true }
   },
   {

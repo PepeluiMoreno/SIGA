@@ -88,6 +88,13 @@ class Query(AuthQuery):
     tiposCargo: list[TipoCargoType] = strawchemy.field()
     miembros: list[MiembroType] = strawchemy.field(filter_input=MiembroFilter)
 
+    # === MILITANCIA ===
+    skills: list[SkillType] = strawchemy.field()
+    miembrosSkills: list[MiembroSkillType] = strawchemy.field()
+    franjasDisponibilidad: list[FranjaDisponibilidadType] = strawchemy.field()
+    historialAgrupaciones: list[HistorialAgrupacionType] = strawchemy.field()
+    solicitudesTraslado: list[SolicitudTrasladoType] = strawchemy.field()
+
     # === CAMPAÑAS ===
     tiposCampania: list[TipoCampaniaType] = strawchemy.field(filter_input=TipoCampaniaFilter)
     campanias: list[CampaniaType] = strawchemy.field(filter_input=CampaniaFilter)

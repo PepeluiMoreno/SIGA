@@ -1,12 +1,12 @@
 {
-  "version": "1.0.0",
-  "fecha_actualizacion": "2024-01-15",
+  "version": "1.1.0",
+  "fecha_actualizacion": "2026-04-30",
   "transacciones": [
     {
       "codigo": "SOL_LIST",
       "nombre": "Listar solicitudes de admisión",
       "descripcion": "Ver listado de solicitudes pendientes de aprobación",
-      "modulo": "administracion_miembros",
+      "modulo": "militancia",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -15,7 +15,7 @@
       "codigo": "SOL_VIEW",
       "nombre": "Ver detalle de solicitud",
       "descripcion": "Ver información completa de una solicitud de admisión",
-      "modulo": "administracion_miembros",
+      "modulo": "militancia",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -24,7 +24,7 @@
       "codigo": "SOL_CREATE",
       "nombre": "Crear solicitud de admisión",
       "descripcion": "Registrar nueva solicitud de miembro (acceso público/miembro)",
-      "modulo": "administracion_miembros",
+      "modulo": "militancia",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -33,7 +33,7 @@
       "codigo": "SOL_APPROVE",
       "nombre": "Aprobar solicitud",
       "descripcion": "Aprobar solicitud de admisión y generar nuevo miembro",
-      "modulo": "administracion_miembros",
+      "modulo": "militancia",
       "tipo": "aprobacion",
       "activa": true,
       "sistema": true
@@ -42,7 +42,7 @@
       "codigo": "SOL_REJECT",
       "nombre": "Rechazar solicitud",
       "descripcion": "Rechazar solicitud de admisión con motivo",
-      "modulo": "administracion_miembros",
+      "modulo": "militancia",
       "tipo": "aprobacion",
       "activa": true,
       "sistema": true
@@ -51,7 +51,7 @@
       "codigo": "SOC_LIST",
       "nombre": "Listar miembros",
       "descripcion": "Ver listado de miembros registrados",
-      "modulo": "administracion_miembros",
+      "modulo": "militancia",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -60,7 +60,7 @@
       "codigo": "SOC_VIEW",
       "nombre": "Ver detalle de miembro",
       "descripcion": "Ver información completa de un miembro",
-      "modulo": "administracion_miembros",
+      "modulo": "militancia",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -69,7 +69,7 @@
       "codigo": "SOC_CREATE",
       "nombre": "Crear miembro manualmente",
       "descripcion": "Alta directa de miembro sin solicitud previa",
-      "modulo": "administracion_miembros",
+      "modulo": "militancia",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -78,7 +78,7 @@
       "codigo": "SOC_EDIT",
       "nombre": "Editar datos de miembro",
       "descripcion": "Modificar información personal y de contacto del miembro",
-      "modulo": "administracion_miembros",
+      "modulo": "militancia",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -87,7 +87,7 @@
       "codigo": "SOC_DEACTIVATE",
       "nombre": "Dar de baja miembro",
       "descripcion": "Baja temporal o definitiva de un miembro",
-      "modulo": "administracion_miembros",
+      "modulo": "militancia",
       "tipo": "critica",
       "activa": true,
       "sistema": true
@@ -96,7 +96,7 @@
       "codigo": "SOC_REACTIVATE",
       "nombre": "Reactivar miembro",
       "descripcion": "Reactivar miembro dado de baja temporal",
-      "modulo": "administracion_miembros",
+      "modulo": "militancia",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -105,7 +105,7 @@
       "codigo": "SOC_CHANGE_TYPE",
       "nombre": "Cambiar tipo de miembro",
       "descripcion": "Modificar categoría de miembro (numerario, infantil, etc.)",
-      "modulo": "administracion_miembros",
+      "modulo": "militancia",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -114,7 +114,7 @@
       "codigo": "SOC_BLOCK",
       "nombre": "Bloquear/Suspender miembro",
       "descripcion": "Suspender temporalmente derechos de un miembro",
-      "modulo": "administracion_miembros",
+      "modulo": "militancia",
       "tipo": "critica",
       "activa": true,
       "sistema": true
@@ -123,7 +123,7 @@
       "codigo": "SOC_EXPORT",
       "nombre": "Exportar datos de miembros",
       "descripcion": "Exportar listados a Excel/CSV",
-      "modulo": "administracion_miembros",
+      "modulo": "militancia",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -132,7 +132,7 @@
       "codigo": "TIPOSOC_MANAGE",
       "nombre": "Gestionar tipos de miembro",
       "descripcion": "Crear, editar y eliminar categorías de miembro",
-      "modulo": "administracion_miembros",
+      "modulo": "militancia",
       "tipo": "configuracion",
       "activa": true,
       "sistema": true
@@ -141,7 +141,7 @@
       "codigo": "TRAS_REQUEST",
       "nombre": "Solicitar traslado territorial",
       "descripcion": "Solicitar cambio de agrupación territorial",
-      "modulo": "traslados",
+      "modulo": "militancia",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -150,7 +150,7 @@
       "codigo": "TRAS_LIST",
       "nombre": "Listar solicitudes de traslado",
       "descripcion": "Ver solicitudes de traslado pendientes de aprobación",
-      "modulo": "traslados",
+      "modulo": "militancia",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -159,7 +159,7 @@
       "codigo": "TRAS_APPROVE",
       "nombre": "Aprobar traslado",
       "descripcion": "Aprobar solicitud de traslado territorial",
-      "modulo": "traslados",
+      "modulo": "militancia",
       "tipo": "aprobacion",
       "activa": true,
       "sistema": true
@@ -168,7 +168,7 @@
       "codigo": "TRAS_REJECT",
       "nombre": "Rechazar traslado",
       "descripcion": "Rechazar solicitud de traslado territorial",
-      "modulo": "traslados",
+      "modulo": "militancia",
       "tipo": "aprobacion",
       "activa": true,
       "sistema": true
@@ -177,7 +177,25 @@
       "codigo": "TRAS_CANCEL",
       "nombre": "Cancelar traslado propio",
       "descripcion": "Cancelar solicitud de traslado antes de aprobación",
-      "modulo": "traslados",
+      "modulo": "militancia",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "TRAS_APPROVE_DEST",
+      "nombre": "Aprobar traslado en destino",
+      "descripcion": "Aprobar solicitud de traslado desde la agrupación de destino",
+      "modulo": "militancia",
+      "tipo": "aprobacion",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "TRAS_EXECUTE",
+      "nombre": "Ejecutar traslado aprobado",
+      "descripcion": "Ejecutar efectivamente el traslado una vez aprobado por ambas partes",
+      "modulo": "militancia",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -186,7 +204,7 @@
       "codigo": "CUOT_LIST",
       "nombre": "Listar cuotas",
       "descripcion": "Ver listado de cuotas de miembros",
-      "modulo": "tesoreria",
+      "modulo": "contable",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -195,7 +213,7 @@
       "codigo": "CUOT_GENERATE",
       "nombre": "Generar cuotas anuales",
       "descripcion": "Crear cuotas automáticas para todos los miembros activos",
-      "modulo": "tesoreria",
+      "modulo": "contable",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -204,7 +222,7 @@
       "codigo": "CUOT_PAY",
       "nombre": "Registrar pago de cuota",
       "descripcion": "Marcar cuota como pagada total o parcialmente",
-      "modulo": "tesoreria",
+      "modulo": "contable",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -213,7 +231,7 @@
       "codigo": "CUOT_EXEMPT",
       "nombre": "Exentar cuota",
       "descripcion": "Marcar cuota como exenta de pago",
-      "modulo": "tesoreria",
+      "modulo": "contable",
       "tipo": "critica",
       "activa": true,
       "sistema": true
@@ -222,7 +240,7 @@
       "codigo": "CUOT_CANCEL",
       "nombre": "Anular cuota",
       "descripcion": "Anular cuota previamente generada",
-      "modulo": "tesoreria",
+      "modulo": "contable",
       "tipo": "critica",
       "activa": true,
       "sistema": true
@@ -231,7 +249,7 @@
       "codigo": "REM_CREATE",
       "nombre": "Crear remesa SEPA",
       "descripcion": "Generar nueva remesa de cobros bancarios",
-      "modulo": "tesoreria",
+      "modulo": "contable",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -240,7 +258,7 @@
       "codigo": "REM_XML",
       "nombre": "Generar XML SEPA",
       "descripcion": "Crear archivo XML para enviar al banco",
-      "modulo": "tesoreria",
+      "modulo": "contable",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -249,7 +267,7 @@
       "codigo": "REM_SEND",
       "nombre": "Enviar remesa al banco",
       "descripcion": "Marcar remesa como enviada al banco",
-      "modulo": "tesoreria",
+      "modulo": "contable",
       "tipo": "critica",
       "activa": true,
       "sistema": true
@@ -258,7 +276,7 @@
       "codigo": "REM_PROCESS",
       "nombre": "Procesar respuesta del banco",
       "descripcion": "Registrar cobros y rechazos de la remesa",
-      "modulo": "tesoreria",
+      "modulo": "contable",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -267,7 +285,7 @@
       "codigo": "REM_LIST",
       "nombre": "Listar remesas",
       "descripcion": "Ver listado de remesas SEPA",
-      "modulo": "tesoreria",
+      "modulo": "contable",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -276,7 +294,7 @@
       "codigo": "DON_LIST",
       "nombre": "Listar donaciones",
       "descripcion": "Ver listado de donaciones recibidas",
-      "modulo": "tesoreria",
+      "modulo": "contable",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -285,7 +303,7 @@
       "codigo": "DON_CREATE",
       "nombre": "Registrar donación",
       "descripcion": "Registrar nueva donación recibida",
-      "modulo": "tesoreria",
+      "modulo": "contable",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -294,7 +312,7 @@
       "codigo": "DON_CERT",
       "nombre": "Emitir certificado fiscal",
       "descripcion": "Generar certificado de donación para deducción",
-      "modulo": "tesoreria",
+      "modulo": "contable",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -303,7 +321,7 @@
       "codigo": "FIN_REPORTS",
       "nombre": "Ver informes financieros",
       "descripcion": "Acceder a informes y estadísticas financieras",
-      "modulo": "tesoreria",
+      "modulo": "contable",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -312,7 +330,7 @@
       "codigo": "FIN_EXPORT",
       "nombre": "Exportar informes financieros",
       "descripcion": "Descargar informes en PDF/Excel",
-      "modulo": "tesoreria",
+      "modulo": "contable",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -402,7 +420,7 @@
       "codigo": "CAMP_LIST",
       "nombre": "Listar campañas",
       "descripcion": "Ver listado de campañas",
-      "modulo": "campanas",
+      "modulo": "actividad",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -411,7 +429,7 @@
       "codigo": "CAMP_VIEW",
       "nombre": "Ver detalle de campaña",
       "descripcion": "Ver información completa de una campaña",
-      "modulo": "campanas",
+      "modulo": "actividad",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -420,7 +438,7 @@
       "codigo": "CAMP_CREATE",
       "nombre": "Crear campaña",
       "descripcion": "Crear nueva campaña",
-      "modulo": "campanas",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -429,7 +447,7 @@
       "codigo": "CAMP_EDIT",
       "nombre": "Editar campaña",
       "descripcion": "Modificar campaña existente",
-      "modulo": "campanas",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -438,7 +456,7 @@
       "codigo": "CAMP_ACTIVATE",
       "nombre": "Activar campaña",
       "descripcion": "Cambiar estado de campaña a activa",
-      "modulo": "campanas",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -447,7 +465,7 @@
       "codigo": "CAMP_CLOSE",
       "nombre": "Finalizar campaña",
       "descripcion": "Cerrar y finalizar campaña",
-      "modulo": "campanas",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -456,7 +474,7 @@
       "codigo": "CAMP_CANCEL",
       "nombre": "Cancelar campaña",
       "descripcion": "Cancelar campaña planificada",
-      "modulo": "campanas",
+      "modulo": "actividad",
       "tipo": "critica",
       "activa": true,
       "sistema": true
@@ -465,7 +483,7 @@
       "codigo": "PART_ENROLL",
       "nombre": "Inscribir participante en campaña",
       "descripcion": "Añadir participante a una campaña",
-      "modulo": "campanas",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -474,7 +492,7 @@
       "codigo": "PART_REMOVE",
       "nombre": "Dar de baja participante",
       "descripcion": "Eliminar participante de campaña",
-      "modulo": "campanas",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -483,7 +501,7 @@
       "codigo": "PART_HOURS",
       "nombre": "Registrar horas de voluntariado",
       "descripcion": "Anotar horas trabajadas en campaña",
-      "modulo": "campanas",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -492,7 +510,7 @@
       "codigo": "EVT_LIST",
       "nombre": "Listar eventos",
       "descripcion": "Ver listado de eventos",
-      "modulo": "eventos",
+      "modulo": "actividad",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -501,7 +519,7 @@
       "codigo": "EVT_VIEW",
       "nombre": "Ver detalle de evento",
       "descripcion": "Ver información completa del evento",
-      "modulo": "eventos",
+      "modulo": "actividad",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -510,7 +528,7 @@
       "codigo": "EVT_CREATE",
       "nombre": "Crear evento",
       "descripcion": "Organizar nuevo evento",
-      "modulo": "eventos",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -519,7 +537,7 @@
       "codigo": "EVT_EDIT",
       "nombre": "Editar evento",
       "descripcion": "Modificar evento existente",
-      "modulo": "eventos",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -528,7 +546,7 @@
       "codigo": "EVT_CANCEL",
       "nombre": "Cancelar evento",
       "descripcion": "Cancelar evento programado",
-      "modulo": "eventos",
+      "modulo": "actividad",
       "tipo": "critica",
       "activa": true,
       "sistema": true
@@ -537,7 +555,7 @@
       "codigo": "EVT_REGISTER",
       "nombre": "Inscribirse en evento",
       "descripcion": "Registrarse como asistente a evento",
-      "modulo": "eventos",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -546,7 +564,7 @@
       "codigo": "EVT_MANAGE_REG",
       "nombre": "Gestionar inscripciones",
       "descripcion": "Aprobar/rechazar inscripciones a evento",
-      "modulo": "eventos",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -555,7 +573,7 @@
       "codigo": "EVT_ATTENDANCE",
       "nombre": "Registrar asistencia",
       "descripcion": "Check-in de asistentes al evento",
-      "modulo": "eventos",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -564,7 +582,7 @@
       "codigo": "VOL_LIST",
       "nombre": "Listar voluntarios",
       "descripcion": "Ver listado de voluntarios",
-      "modulo": "voluntariado",
+      "modulo": "actividad",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -573,7 +591,7 @@
       "codigo": "VOL_VIEW",
       "nombre": "Ver perfil de voluntario",
       "descripcion": "Ver información completa del voluntario",
-      "modulo": "voluntariado",
+      "modulo": "actividad",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -582,7 +600,7 @@
       "codigo": "OPP_LIST",
       "nombre": "Listar oportunidades de voluntariado",
       "descripcion": "Ver oportunidades disponibles",
-      "modulo": "voluntariado",
+      "modulo": "actividad",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -591,7 +609,7 @@
       "codigo": "OPP_CREATE",
       "nombre": "Crear oportunidad de voluntariado",
       "descripcion": "Publicar nueva oportunidad",
-      "modulo": "voluntariado",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -600,7 +618,7 @@
       "codigo": "OPP_APPLY",
       "nombre": "Postularse a oportunidad",
       "descripcion": "Solicitar participar en oportunidad",
-      "modulo": "voluntariado",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -609,7 +627,7 @@
       "codigo": "ASG_APPROVE",
       "nombre": "Aprobar asignación de voluntario",
       "descripcion": "Aceptar voluntario para oportunidad",
-      "modulo": "voluntariado",
+      "modulo": "actividad",
       "tipo": "aprobacion",
       "activa": true,
       "sistema": true
@@ -618,8 +636,125 @@
       "codigo": "SKILL_MANAGE",
       "nombre": "Gestionar competencias",
       "descripcion": "Añadir/validar habilidades de voluntarios",
-      "modulo": "voluntariado",
+      "modulo": "actividad",
       "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SKILL_LIST",
+      "nombre": "Ver catálogo de habilidades",
+      "descripcion": "Ver catálogo de habilidades/competencias disponibles",
+      "modulo": "militancia",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SKILL_ASSIGN",
+      "nombre": "Asignar habilidad a miembro",
+      "descripcion": "Asignar una habilidad del catálogo a un miembro",
+      "modulo": "militancia",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SKILL_ASSIGN_OWN",
+      "nombre": "Declarar habilidades propias",
+      "descripcion": "El socio declara sus propias habilidades en su ficha",
+      "modulo": "militancia",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SKILL_VALIDATE",
+      "nombre": "Validar habilidad de miembro",
+      "descripcion": "Validar/certificar habilidad declarada por un miembro",
+      "modulo": "militancia",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SOC_EDIT_OWN",
+      "nombre": "Editar propia ficha de miembro",
+      "descripcion": "El socio edita sus propios datos personales y de contacto",
+      "modulo": "militancia",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "AVAIL_VIEW",
+      "nombre": "Ver disponibilidad de miembro",
+      "descripcion": "Ver el calendario de disponibilidad de un miembro",
+      "modulo": "militancia",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "AVAIL_EDIT",
+      "nombre": "Gestionar disponibilidad",
+      "descripcion": "Administrador gestiona disponibilidad de un miembro",
+      "modulo": "militancia",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "AVAIL_EDIT_OWN",
+      "nombre": "Gestionar propia disponibilidad",
+      "descripcion": "El socio gestiona su propio calendario de disponibilidad",
+      "modulo": "militancia",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "MBR_HISTORY",
+      "nombre": "Ver histórico de miembro",
+      "descripcion": "Ver historial de participación, cuotas y traslados de un miembro",
+      "modulo": "militancia",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "MBR_HISTORY_OWN",
+      "nombre": "Ver propio histórico",
+      "descripcion": "El socio consulta su propio historial de participación y cuotas",
+      "modulo": "militancia",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "MBR_QUOTA_EDIT_OWN",
+      "nombre": "Modificar propia cuota",
+      "descripcion": "El socio modifica su cuota y forma de pago",
+      "modulo": "militancia",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "RGPD_REQUEST",
+      "nombre": "Solicitar supresión de datos",
+      "descripcion": "El socio solicita la supresión de sus datos personales (RGPD)",
+      "modulo": "militancia",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "RGPD_ANONYMIZE",
+      "nombre": "Anonimizar datos de miembro",
+      "descripcion": "Anonimizar datos personales de un miembro (RGPD)",
+      "modulo": "militancia",
+      "tipo": "critica",
       "activa": true,
       "sistema": true
     },
@@ -627,7 +762,7 @@
       "codigo": "TEAM_LIST",
       "nombre": "Listar equipos de trabajo",
       "descripcion": "Ver equipos de trabajo existentes",
-      "modulo": "equipos",
+      "modulo": "actividad",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -636,7 +771,7 @@
       "codigo": "TEAM_VIEW",
       "nombre": "Ver detalle de equipo",
       "descripcion": "Ver información completa del equipo",
-      "modulo": "equipos",
+      "modulo": "actividad",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -645,7 +780,7 @@
       "codigo": "TEAM_CREATE",
       "nombre": "Crear equipo de trabajo",
       "descripcion": "Crear nuevo equipo",
-      "modulo": "equipos",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -654,7 +789,7 @@
       "codigo": "TEAM_EDIT",
       "nombre": "Editar equipo",
       "descripcion": "Modificar equipo existente",
-      "modulo": "equipos",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -663,7 +798,7 @@
       "codigo": "TEAM_DISSOLVE",
       "nombre": "Disolver equipo",
       "descripcion": "Eliminar equipo de trabajo",
-      "modulo": "equipos",
+      "modulo": "actividad",
       "tipo": "critica",
       "activa": true,
       "sistema": true
@@ -672,7 +807,7 @@
       "codigo": "TMBR_ADD",
       "nombre": "Añadir miembro a equipo",
       "descripcion": "Incorporar miembro al equipo",
-      "modulo": "equipos",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -681,7 +816,7 @@
       "codigo": "TMBR_REMOVE",
       "nombre": "Remover miembro de equipo",
       "descripcion": "Sacar miembro del equipo",
-      "modulo": "equipos",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -690,7 +825,7 @@
       "codigo": "TASK_CREATE",
       "nombre": "Crear tarea",
       "descripcion": "Asignar nueva tarea al equipo",
-      "modulo": "equipos",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -699,7 +834,7 @@
       "codigo": "TASK_UPDATE",
       "nombre": "Actualizar tarea",
       "descripcion": "Cambiar estado/asignación de tarea",
-      "modulo": "equipos",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -708,7 +843,7 @@
       "codigo": "MEET_SCHEDULE",
       "nombre": "Programar reunión",
       "descripcion": "Crear nueva reunión de equipo",
-      "modulo": "equipos",
+      "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -717,7 +852,7 @@
       "codigo": "AGR_LIST",
       "nombre": "Listar agrupaciones territoriales",
       "descripcion": "Ver estructura territorial completa",
-      "modulo": "agrupaciones",
+      "modulo": "militancia",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -726,7 +861,7 @@
       "codigo": "AGR_VIEW",
       "nombre": "Ver detalle de agrupación",
       "descripcion": "Ver información completa de agrupación",
-      "modulo": "agrupaciones",
+      "modulo": "militancia",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -735,7 +870,7 @@
       "codigo": "AGR_CREATE",
       "nombre": "Crear agrupación territorial",
       "descripcion": "Crear nueva delegación territorial",
-      "modulo": "agrupaciones",
+      "modulo": "militancia",
       "tipo": "configuracion",
       "activa": true,
       "sistema": true
@@ -744,7 +879,7 @@
       "codigo": "AGR_EDIT",
       "nombre": "Editar agrupación",
       "descripcion": "Modificar datos de delegación",
-      "modulo": "agrupaciones",
+      "modulo": "militancia",
       "tipo": "configuracion",
       "activa": true,
       "sistema": true
@@ -753,7 +888,7 @@
       "codigo": "AGR_DEACTIVATE",
       "nombre": "Desactivar agrupación",
       "descripcion": "Cerrar delegación territorial",
-      "modulo": "agrupaciones",
+      "modulo": "militancia",
       "tipo": "critica",
       "activa": true,
       "sistema": true
@@ -762,7 +897,7 @@
       "codigo": "POS_ASSIGN",
       "nombre": "Asignar cargo",
       "descripcion": "Nombrar coordinador/secretario/tesorero",
-      "modulo": "agrupaciones",
+      "modulo": "militancia",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -771,7 +906,7 @@
       "codigo": "POS_REMOVE",
       "nombre": "Remover cargo",
       "descripcion": "Cesar de cargo a persona",
-      "modulo": "agrupaciones",
+      "modulo": "militancia",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
@@ -933,7 +1068,7 @@
       "codigo": "RPT_MEMBERS",
       "nombre": "Informes de miembros",
       "descripcion": "Ver estadísticas e informes de miembros",
-      "modulo": "informes",
+      "modulo": "contable",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -942,7 +1077,7 @@
       "codigo": "RPT_FINANCE",
       "nombre": "Informes financieros",
       "descripcion": "Ver estadísticas e informes económicos",
-      "modulo": "informes",
+      "modulo": "contable",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -951,7 +1086,7 @@
       "codigo": "RPT_CAMPAIGNS",
       "nombre": "Informes de campañas",
       "descripcion": "Ver resultados y métricas de campañas",
-      "modulo": "informes",
+      "modulo": "contable",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -960,7 +1095,7 @@
       "codigo": "RPT_VOLUNTEERS",
       "nombre": "Informes de voluntariado",
       "descripcion": "Ver estadísticas de voluntarios",
-      "modulo": "informes",
+      "modulo": "contable",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -969,7 +1104,7 @@
       "codigo": "RPT_CUSTOM",
       "nombre": "Informes personalizados",
       "descripcion": "Crear y ejecutar informes a medida",
-      "modulo": "informes",
+      "modulo": "contable",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
@@ -978,7 +1113,7 @@
       "codigo": "DASH_EXEC",
       "nombre": "Dashboard ejecutivo",
       "descripcion": "Vista general de indicadores clave",
-      "modulo": "informes",
+      "modulo": "contable",
       "tipo": "consulta",
       "activa": true,
       "sistema": true

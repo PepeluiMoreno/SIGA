@@ -31,10 +31,8 @@
       <aside class="w-64 bg-purple-900 min-h-[calc(100vh-64px)] flex flex-col sticky top-16">
         <!-- Navigation -->
         <nav class="flex-1 p-4 overflow-y-auto">
-          <div class="mb-6">
-            <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">
-              Navegación Principal
-            </h2>
+          <!-- Dashboard -->
+          <div class="mb-5">
             <ul class="space-y-1">
               <li>
                 <router-link
@@ -46,21 +44,49 @@
                   <span>Dashboard</span>
                 </router-link>
               </li>
+            </ul>
+          </div>
+
+          <!-- Militancia -->
+          <div class="mb-5">
+            <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 px-3">
+              Militancia
+            </h2>
+            <ul class="space-y-1">
               <li>
                 <router-link
                   to="/miembros"
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path === '/miembros' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
+                  :class="$route.path.startsWith('/miembros') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
                 >
-                  <span class="mr-3">👥</span>
-                  <span>Militancia</span>
+                  <span class="mr-3">👤</span>
+                  <span>Miembros</span>
                 </router-link>
               </li>
               <li>
                 <router-link
+                  to="/agrupaciones"
+                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                  :class="$route.path.startsWith('/agrupaciones') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
+                >
+                  <span class="mr-3">🗺️</span>
+                  <span>Agrupaciones</span>
+                </router-link>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Actividad -->
+          <div class="mb-5">
+            <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 px-3">
+              Actividad
+            </h2>
+            <ul class="space-y-1">
+              <li>
+                <router-link
                   to="/campanias"
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path === '/campanias' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
+                  :class="$route.path.startsWith('/campanias') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
                 >
                   <span class="mr-3">🚩</span>
                   <span>Campañas</span>
@@ -70,7 +96,7 @@
                 <router-link
                   to="/grupos"
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path === '/grupos' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
+                  :class="$route.path.startsWith('/grupos') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
                 >
                   <span class="mr-3">👥</span>
                   <span>Grupos de Trabajo</span>
@@ -78,22 +104,31 @@
               </li>
               <li>
                 <router-link
-                  to="/financiero"
-                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path === '/financiero' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
-                >
-                  <span class="mr-3">💰</span>
-                  <span>Gestión Financiera</span>
-                </router-link>
-              </li>
-              <li>
-                <router-link
                   to="/voluntarios"
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path === '/voluntarios' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
+                  :class="$route.path.startsWith('/voluntarios') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
                 >
                   <span class="mr-3">❤️</span>
                   <span>Voluntarios</span>
+                </router-link>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Contable -->
+          <div class="mb-5">
+            <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 px-3">
+              Contable
+            </h2>
+            <ul class="space-y-1">
+              <li>
+                <router-link
+                  to="/financiero"
+                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                  :class="$route.path.startsWith('/financiero') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
+                >
+                  <span class="mr-3">💰</span>
+                  <span>Gestión Financiera</span>
                 </router-link>
               </li>
             </ul>

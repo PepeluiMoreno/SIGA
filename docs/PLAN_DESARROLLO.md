@@ -10,7 +10,8 @@ Fuente única de verdad funcional: [REQUISITOS_FUNCIONALES.md](REQUISITOS_FUNCIO
 - **Convenciones de modelo**: `Mapped[...] / mapped_column(...)`, PKs `Uuid`, herencia de `BaseModel`.
 - **Granularidad por módulo**: fases gruesas — modelo de datos → API → UI → integración.
 - **Entregable por módulo**: CRUD completo de sus entidades cubriendo los casos de uso del requisito.
-- **Orden de módulos**: Administración → Militancia → Campañas → Contable.
+- **Orden de módulos**: Administración → Militancia → Actividad → Contable.
+- **Estructura de módulos**: 4 módulos de aplicación (navegación/permisos). Ver tabla de transacciones abajo.
 - **RBAC y auditoría**: capa transversal de infraestructura (middleware/dependencias GraphQL), no responsabilidad explícita de cada resolver.
 - **Entorno y despliegue**: ver [anexos/peculiraridades_entorno.md](anexos/peculiraridades_entorno.md). Resumen: staging en `vp2.europalaica.org`, expuesto en `siga.staging.europalaica.org` vía Traefik (`traefik_public`), imágenes en GHCR, CI/CD desde GitHub, sin valores hardcodeados (secrets de GitHub, docker-compose de producción generado dinámicamente en el despliegue).
 
@@ -59,13 +60,15 @@ Bloques previos al módulo 1 que sostienen todo lo demás.
 
 **Integración**: vinculación miembro ↔ Usuario (módulo 1) cuando proceda; flujo de traslados territoriales.
 
-## Módulo 3 — Campañas
+## Módulo 3 — Actividad
 
-**Modelo**: Campaign, Activity, Task, Assignment, dependencias entre actividades, estados (planificada / activa / bloqueada / finalizada).
+Agrupa todo lo relacionado con la actividad organizada de la asociación: campañas, grupos de trabajo, voluntariado y eventos.
 
-**API**: CRUD jerárquico de la cadena Campaign → Activity → Task → Assignment, motor de matching automático contra Militancia, balanceo de carga, detección de conflictos, métricas (avance, desviación temporal, consumo de horas).
+**Modelo**: Campaña, Actividad, Tarea, Asignación, GrupoTrabajo, MiembroGrupo, OportunidadVoluntariado, Evento; estados y dependencias entre actividades.
 
-**UI Vue 3**: planificador de campaña, timeline, vista de asignaciones, dashboard de seguimiento.
+**API**: CRUD jerárquico Campaña → Actividad → Tarea → Asignación; matching automático con Militancia (skills + disponibilidad); balanceo de carga; métricas de avance y desviación.
+
+**UI Vue 3**: planificador de campaña, timeline, gestión de grupos de trabajo, vista de voluntariado, gestión de eventos.
 
 **Integración**: consume Skills y Disponibilidad de Militancia; emite eventos al motor contable.
 
@@ -78,6 +81,16 @@ Bloques previos al módulo 1 que sostienen todo lo demás.
 **UI Vue 3**: libro diario, plan de cuentas, configuración de reglas, informes, asistente de cierre.
 
 **Integración**: consume eventos de Campañas y de tesorería existente; respeta inmutabilidad y trazabilidad.
+
+## Tabla de módulos y transacciones
+
+| Módulo | Contenido funcional | Prefijos de transacción |
+|--------|---------------------|------------------------|
+| **administracion** | Usuarios, Roles, Auditoría, Configuración | USR_*, ROL_*, AUD_*, CFG_*, PERM_*, USRROL_* |
+| **militancia** | Miembros, Agrupaciones, Traslados, Skills, Disponibilidad, RGPD | SOC_*, SOL_*, TRAS_*, AGR_*, POS_*, SKILL_*, AVAIL_*, MBR_*, RGPD_*, TIPOSOC_* |
+| **actividad** | Campañas, Actividades, Grupos de trabajo, Voluntariado, Eventos | CAMP_*, PART_*, TEAM_*, TASK_*, TMBR_*, VOL_*, OPP_*, ASG_*, EVT_*, MEET_* |
+| **contable** | Cuotas, Remesas, Donaciones, Informes financieros | CUOT_*, REM_*, DON_*, FIN_*, RPT_*, DASH_* |
+| *(transversal)* | Comunicaciones internas | MSG_*, TPL_* |
 
 ## Lo que queda fuera de este plan (por ahora)
 

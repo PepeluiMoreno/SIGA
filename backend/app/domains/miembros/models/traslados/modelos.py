@@ -1,7 +1,15 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, Date, DateTime, ForeignKey, Enum
-from sqlalchemy.orm import relationship
-from datetime import datetime, date
+"""Modelo de solicitudes de traslado territorial."""
+
+import uuid
 import enum
+from datetime import date, datetime
+from typing import Optional
+
+from sqlalchemy import String, Uuid, ForeignKey, Date, DateTime, Boolean, Text, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .....infrastructure.base_model import BaseModel
+
 
 class EstadoTraslado(str, enum.Enum):
     PENDIENTE = "PENDIENTE"
@@ -14,70 +22,58 @@ class EstadoTraslado(str, enum.Enum):
     CANCELADO = "CANCELADO"
 
 
-class SolicitudTraslado(Base):
-    __tablename__ = "solicitudes_traslado"
-    
-    id = Column(Integer, primary_key=True)
-    
-    # miembro que solicita el traslado
-    miembro_id = Column(Integer, ForeignKey('miembros.id'), nullable=False)
-    
-    # Agrupaciones
-    agrupacion_origen_id = Column(Integer, ForeignKey('agrupaciones_territoriales.id'), nullable=False)
-    agrupacion_destino_id = Column(Integer, ForeignKey('agrupaciones_territoriales.id'), nullable=False)
-    
-    # Motivo del traslado
-    motivo = Column(Text, nullable=False)
-    
-    # Estado
-    estado = Column(Enum(EstadoTraslado), default=EstadoTraslado.PENDIENTE)
-    
-    # Fechas
-    fecha_solicitud = Column(DateTime, default=datetime.utcnow)
-    fecha_efectiva_deseada = Column(Date)  # Cuándo quiere que sea efectivo el traslado
-    
-    # Aprobaciones
-    aprobado_origen = Column(Boolean, default=False)
-    fecha_aprobacion_origen = Column(DateTime)
-    coordinador_origen_id = Column(Integer, ForeignKey('usuarios.id'))
-    observaciones_origen = Column(Text)
-    
-    aprobado_destino = Column(Boolean, default=False)
-    fecha_aprobacion_destino = Column(DateTime)
-    coordinador_destino_id = Column(Integer, ForeignKey('usuarios.id'))
-    observaciones_destino = Column(Text)
-    
-    # Rechazo
-    motivo_rechazo = Column(Text)
-    
+class SolicitudTraslado(BaseModel):
+    """Solicitud de traslado de un miembro entre agrupaciones territoriales.
+
+    Flujo: PENDIENTE → APROBADO_ORIGEN + APROBADO_DESTINO → APROBADO → EJECUTADO
+           En cualquier punto → RECHAZADO_ORIGEN / RECHAZADO_DESTINO / CANCELADO
+    """
+    __tablename__ = 'solicitudes_traslado'
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+
+    miembro_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('miembros.id'), nullable=False, index=True
+    )
+    agrupacion_origen_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('agrupaciones_territoriales.id'), nullable=False
+    )
+    agrupacion_destino_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('agrupaciones_territoriales.id'), nullable=False
+    )
+
+    motivo: Mapped[str] = mapped_column(Text, nullable=False)
+    estado: Mapped[str] = mapped_column(String(30), default=EstadoTraslado.PENDIENTE, nullable=False, index=True)
+    fecha_solicitud: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+    fecha_efectiva_deseada: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+
+    # Aprobación coordinador de origen
+    aprobado_origen: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    fecha_aprobacion_origen: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    coordinador_origen_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('usuarios.id'), nullable=True
+    )
+    observaciones_origen: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Aprobación coordinador de destino
+    aprobado_destino: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    fecha_aprobacion_destino: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    coordinador_destino_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('usuarios.id'), nullable=True
+    )
+    observaciones_destino: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    motivo_rechazo: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
     # Ejecución
-    fecha_ejecucion = Column(DateTime)
-    usuario_ejecutor_id = Column(Integer, ForeignKey('usuarios.id'))
-    
-    # Datos del traslado ejecutado
-    numero_miembro_anterior = Column(String(50))
-    numero_miembro_nuevo = Column(String(50))
-    equipos_dados_baja = Column(Text)  # JSON con lista de equipos
-    
-    # Observaciones generales
-    observaciones = Column(Text)
-    
-    # Control
-    activo = Column(Boolean, default=True)
-    
+    fecha_ejecucion: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    usuario_ejecutor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('usuarios.id'), nullable=True
+    )
+    observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
     # Relaciones
-    miembro = relationship("miembro", back_populates="solicitudes_traslado")
-    agrupacion_origen = relationship("AgrupacionTerritorial", foreign_keys=[agrupacion_origen_id])
-    agrupacion_destino = relationship("AgrupacionTerritorial", foreign_keys=[agrupacion_destino_id])
-    coordinador_origen = relationship("Usuario", foreign_keys=[coordinador_origen_id])
-    coordinador_destino = relationship("Usuario", foreign_keys=[coordinador_destino_id])
-    usuario_ejecutor = relationship("Usuario", foreign_keys=[usuario_ejecutor_id])
+    miembro = relationship('Miembro', lazy='selectin')
 
-
-# Actualizar modelo miembro para añadir relación
-# En backend/app/modulos/administracion_miembros/modelos.py
-class miembro(Base):
-    # ... campos existentes ...
-    
-    # Añadir:
-    solicitudes_traslado = relationship("SolicitudTraslado", back_populates="miembro")
+    def __repr__(self) -> str:
+        return f"<SolicitudTraslado(miembro={self.miembro_id}, estado='{self.estado}')>"

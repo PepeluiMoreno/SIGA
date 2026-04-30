@@ -251,7 +251,10 @@ class ConvenioType:
 
 
 # === MIEMBROS ===
-from ..domains.miembros.models import TipoMiembro, Miembro, EstadoMiembro, MotivoBaja, TipoCargo, MiembroSegmentacion
+from ..domains.miembros.models import (
+    TipoMiembro, Miembro, EstadoMiembro, MotivoBaja, TipoCargo, MiembroSegmentacion,
+    Skill, MiembroSkill, FranjaDisponibilidad, HistorialAgrupacion, SolicitudTraslado,
+)
 
 @strawchemy.type(TipoMiembro, include="all", override=True)
 class TipoMiembroType:
@@ -282,6 +285,29 @@ class MiembroType:
 @strawchemy.type(MiembroSegmentacion, include="all", override=True)
 class MiembroSegmentacionType:
     """Vista materializada para segmentación de miembros en campañas."""
+    pass
+
+
+# === MILITANCIA ===
+
+@strawchemy.type(Skill, include="all", override=True)
+class SkillType:
+    pass
+
+@strawchemy.type(MiembroSkill, include="all", override=True)
+class MiembroSkillType:
+    skill: Optional['SkillType'] = None
+
+@strawchemy.type(FranjaDisponibilidad, include="all", override=True)
+class FranjaDisponibilidadType:
+    pass
+
+@strawchemy.type(HistorialAgrupacion, include="all", override=True)
+class HistorialAgrupacionType:
+    pass
+
+@strawchemy.type(SolicitudTraslado, include="all", override=True)
+class SolicitudTrasladoType:
     pass
 
 
