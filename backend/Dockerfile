@@ -35,4 +35,4 @@ USER siga
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "alembic upgrade head && python -m app.scripts.bootstrap && exec uvicorn main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "python -m app.scripts.wait_for_db && alembic upgrade head && python -m app.scripts.bootstrap && exec uvicorn main:app --host 0.0.0.0 --port 8000"]
