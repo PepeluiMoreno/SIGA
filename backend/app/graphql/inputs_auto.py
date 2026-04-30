@@ -290,7 +290,10 @@ class AgrupacionTerritorialFilter:
 # MIEMBROS
 # ============================================================================
 
-from ..domains.miembros.models import TipoMiembro, EstadoMiembro, MotivoBaja, Miembro
+from ..domains.miembros.models import (
+    TipoMiembro, EstadoMiembro, MotivoBaja, Miembro,
+    Skill, MiembroSkill, FranjaDisponibilidad, HistorialAgrupacion, SolicitudTraslado,
+)
 
 
 @strawchemy.input(TipoMiembro, mode="create_input", include="all", exclude=get_exclude_fields(TipoMiembro))
@@ -350,6 +353,85 @@ class MiembroUpdateInput:
 
 @strawchemy.filter(Miembro, include="all")
 class MiembroFilter:
+    pass
+
+
+# ============================================================================
+# MILITANCIA — Skills, Disponibilidad, Historial, Traslados
+# ============================================================================
+
+@strawchemy.input(Skill, mode="create_input", include="all", exclude=get_exclude_fields(Skill))
+class SkillCreateInput:
+    pass
+
+
+@strawchemy.input(Skill, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Skill))
+class SkillUpdateInput:
+    pass
+
+
+@strawchemy.filter(Skill, include="all")
+class SkillFilter:
+    pass
+
+
+@strawchemy.input(MiembroSkill, mode="create_input", include="all", exclude=get_exclude_fields(MiembroSkill))
+class MiembroSkillCreateInput:
+    pass
+
+
+@strawchemy.input(MiembroSkill, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(MiembroSkill))
+class MiembroSkillUpdateInput:
+    pass
+
+
+@strawchemy.filter(MiembroSkill, include="all")
+class MiembroSkillFilter:
+    pass
+
+
+@strawchemy.input(FranjaDisponibilidad, mode="create_input", include="all", exclude=get_exclude_fields(FranjaDisponibilidad))
+class FranjaDisponibilidadCreateInput:
+    pass
+
+
+@strawchemy.input(FranjaDisponibilidad, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(FranjaDisponibilidad))
+class FranjaDisponibilidadUpdateInput:
+    pass
+
+
+@strawchemy.filter(FranjaDisponibilidad, include="all")
+class FranjaDisponibilidadFilter:
+    pass
+
+
+@strawchemy.input(HistorialAgrupacion, mode="create_input", include="all", exclude=get_exclude_fields(HistorialAgrupacion))
+class HistorialAgrupacionCreateInput:
+    pass
+
+
+@strawchemy.input(HistorialAgrupacion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(HistorialAgrupacion))
+class HistorialAgrupacionUpdateInput:
+    pass
+
+
+@strawchemy.filter(HistorialAgrupacion, include="all")
+class HistorialAgrupacionFilter:
+    pass
+
+
+@strawchemy.input(SolicitudTraslado, mode="create_input", include="all", exclude=get_exclude_fields(SolicitudTraslado))
+class SolicitudTrasladoCreateInput:
+    pass
+
+
+@strawchemy.input(SolicitudTraslado, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(SolicitudTraslado))
+class SolicitudTrasladoUpdateInput:
+    pass
+
+
+@strawchemy.filter(SolicitudTraslado, include="all")
+class SolicitudTrasladoFilter:
     pass
 
 

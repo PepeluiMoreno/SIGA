@@ -88,6 +88,23 @@ class Mutation(AuthMutation):
     actualizar_miembro: MiembroType = strawchemy.update_by_ids(MiembroUpdateInput)
     eliminar_miembros: list[MiembroType] = strawchemy.delete(MiembroFilter)
 
+    # === MILITANCIA ===
+    crear_skill: SkillType = strawchemy.create(SkillCreateInput)
+    actualizar_skill: SkillType = strawchemy.update_by_ids(SkillUpdateInput)
+    eliminar_skills: list[SkillType] = strawchemy.delete(SkillFilter)
+
+    crear_miembro_skill: MiembroSkillType = strawchemy.create(MiembroSkillCreateInput)
+    actualizar_miembro_skill: MiembroSkillType = strawchemy.update_by_ids(MiembroSkillUpdateInput)
+    eliminar_miembros_skill: list[MiembroSkillType] = strawchemy.delete(MiembroSkillFilter)
+
+    crear_franja_disponibilidad: FranjaDisponibilidadType = strawchemy.create(FranjaDisponibilidadCreateInput)
+    actualizar_franja_disponibilidad: FranjaDisponibilidadType = strawchemy.update_by_ids(FranjaDisponibilidadUpdateInput)
+    eliminar_franjas_disponibilidad: list[FranjaDisponibilidadType] = strawchemy.delete(FranjaDisponibilidadFilter)
+
+    crear_solicitud_traslado: SolicitudTrasladoType = strawchemy.create(SolicitudTrasladoCreateInput)
+    actualizar_solicitud_traslado: SolicitudTrasladoType = strawchemy.update_by_ids(SolicitudTrasladoUpdateInput)
+    eliminar_solicitudes_traslado: list[SolicitudTrasladoType] = strawchemy.delete(SolicitudTrasladoFilter)
+
     # === CAMPAÑAS ===
     crear_tipo_campania: TipoCampaniaType = strawchemy.create(TipoCampaniaCreateInput)
     actualizar_tipo_campania: TipoCampaniaType = strawchemy.update_by_ids(TipoCampaniaUpdateInput)

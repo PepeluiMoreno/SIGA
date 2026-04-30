@@ -229,6 +229,119 @@
         <FieldTextarea v-model="miembro.observaciones" label="Observaciones" :edit-mode="editMode" rows="8" />
       </div>
 
+      <!-- Tab: Skills -->
+      <div v-show="activeTab === 'skills'" class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-medium text-gray-900">Habilidades y competencias</h3>
+          <button
+            @click="mostrarFormSkill = !mostrarFormSkill"
+            class="px-3 py-1.5 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"
+          >
+            + Añadir habilidad
+          </button>
+        </div>
+
+        <!-- Formulario nueva habilidad -->
+        <div v-if="mostrarFormSkill" class="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Habilidad del catálogo</label>
+              <select v-model="nuevaSkill.skillId" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500">
+                <option value="">Seleccionar...</option>
+                <option v-for="s in skillsCatalogo" :key="s.id" :value="s.id">{{ s.nombre }}{{ s.categoria ? ` (${s.categoria})` : '' }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Nivel</label>
+              <select v-model="nuevaSkill.nivel" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500">
+                <option value="">Sin especificar</option>
+                <option value="BASICO">Básico</option>
+                <option value="INTERMEDIO">Intermedio</option>
+                <option value="AVANZADO">Avanzado</option>
+                <option value="EXPERTO">Experto</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex gap-2 justify-end">
+            <button @click="mostrarFormSkill = false; nuevaSkill = { skillId: '', nivel: '' }" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">Cancelar</button>
+            <button @click="guardarSkill" :disabled="!nuevaSkill.skillId" class="px-3 py-1.5 text-sm text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50">Guardar</button>
+          </div>
+        </div>
+
+        <!-- Lista de skills del miembro -->
+        <div v-if="loadingSkills" class="text-center py-6 text-gray-500 text-sm">Cargando habilidades...</div>
+        <div v-else-if="miembroSkills.length === 0" class="text-center py-8 text-gray-400 text-sm">No hay habilidades registradas para este miembro.</div>
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div v-for="ms in miembroSkills" :key="ms.id" class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+            <div>
+              <p class="text-sm font-medium text-gray-900">{{ ms.skill?.nombre }}</p>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span v-if="ms.nivel" class="text-xs text-gray-500">{{ ms.nivel }}</span>
+                <span v-if="ms.validado" class="text-xs text-green-600 font-medium">✓ Validado</span>
+              </div>
+            </div>
+            <button @click="eliminarSkill(ms.id)" class="text-xs text-red-500 hover:text-red-700 ml-3">Eliminar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Franjas de disponibilidad -->
+      <div v-show="activeTab === 'franjas'" class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-medium text-gray-900">Franjas horarias semanales</h3>
+          <button
+            @click="mostrarFormFranja = !mostrarFormFranja"
+            class="px-3 py-1.5 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"
+          >
+            + Añadir franja
+          </button>
+        </div>
+
+        <!-- Formulario nueva franja -->
+        <div v-if="mostrarFormFranja" class="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Día</label>
+              <select v-model="nuevaFranja.diaSemana" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500">
+                <option v-for="(dia, i) in diasSemana" :key="i" :value="i">{{ dia }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Hora inicio</label>
+              <input v-model="nuevaFranja.horaInicio" type="time" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Hora fin</label>
+              <input v-model="nuevaFranja.horaFin" type="time" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
+            </div>
+          </div>
+          <div class="flex gap-2 justify-end">
+            <button @click="mostrarFormFranja = false; nuevaFranja = { diaSemana: 0, horaInicio: '', horaFin: '' }" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">Cancelar</button>
+            <button @click="guardarFranja" :disabled="!nuevaFranja.horaInicio || !nuevaFranja.horaFin" class="px-3 py-1.5 text-sm text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50">Guardar</button>
+          </div>
+        </div>
+
+        <!-- Tabla visual por días -->
+        <div v-if="loadingFranjas" class="text-center py-6 text-gray-500 text-sm">Cargando franjas...</div>
+        <div v-else-if="franjas.length === 0" class="text-center py-8 text-gray-400 text-sm">No hay franjas de disponibilidad registradas.</div>
+        <div v-else class="space-y-2">
+          <div v-for="(dia, i) in diasSemana" :key="i" class="flex items-center gap-3">
+            <span class="w-12 text-sm font-medium text-gray-600">{{ dia }}</span>
+            <div class="flex flex-wrap gap-2 flex-1">
+              <div
+                v-for="f in franjasPorDia[i]"
+                :key="f.id"
+                class="flex items-center gap-2 bg-purple-100 text-purple-800 text-xs font-medium px-3 py-1 rounded-full"
+              >
+                <span>{{ f.horaInicio }} – {{ f.horaFin }}</span>
+                <button @click="eliminarFranja(f.id)" class="text-purple-500 hover:text-red-600 font-bold leading-none">×</button>
+              </div>
+            </div>
+            <span v-if="!franjasPorDia[i]?.length" class="text-xs text-gray-300 italic">Sin disponibilidad</span>
+          </div>
+        </div>
+      </div>
+
       <div v-if="editMode" class="mt-8 pt-6 border-t border-gray-200 flex justify-end gap-3">
         <button
           @click="toggleEditMode"
@@ -251,6 +364,8 @@
 <script setup>
 import { computed, defineComponent, h, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { gql } from 'graphql-request'
+import { graphqlClient } from '@/graphql/client.js'
 import { useMiembro } from '@/composables/useMiembro'
 
 const route = useRoute()
@@ -262,6 +377,8 @@ const tabs = [
   { id: 'personal', name: 'Datos personales' },
   { id: 'membresia', name: 'Militancia' },
   { id: 'voluntariado', name: 'Disponibilidad y perfil' },
+  { id: 'skills', name: 'Skills' },
+  { id: 'franjas', name: 'Horarios' },
   { id: 'observaciones', name: 'Observaciones' },
 ]
 
@@ -282,10 +399,140 @@ const sexoOptions = [
   { value: 'X', label: 'Otro / no especificado' },
 ]
 
+// ── Skills ────────────────────────────────────────────────────────────────
+const miembroSkills = ref([])
+const skillsCatalogo = ref([])
+const loadingSkills = ref(false)
+const mostrarFormSkill = ref(false)
+const nuevaSkill = ref({ skillId: '', nivel: '' })
+
+const QUERY_SKILLS_MIEMBRO = gql`
+  query MiembroSkills($miembroId: UUID!) {
+    miembrosSkills(filter: { miembroId: { eq: $miembroId } }) {
+      id miembroId nivel validado
+      skill { id nombre categoria }
+    }
+  }
+`
+const QUERY_SKILLS_CATALOGO = gql`
+  query Skills { skills(filter: { activo: { eq: true } }) { id nombre categoria } }
+`
+const MUTATION_CREATE_SKILL = gql`
+  mutation CrearMiembroSkill($data: MiembroSkillCreateInput!) {
+    crearMiembroSkill(data: $data) { id }
+  }
+`
+const MUTATION_DELETE_SKILL = gql`
+  mutation EliminarMiembroSkills($filter: MiembroSkillFilter!) {
+    eliminarMiembrosSkill(filter: $filter) { id }
+  }
+`
+
+async function cargarSkills() {
+  if (!route.params.id) return
+  loadingSkills.value = true
+  try {
+    const [r1, r2] = await Promise.all([
+      graphqlClient.request(QUERY_SKILLS_MIEMBRO, { miembroId: route.params.id }),
+      graphqlClient.request(QUERY_SKILLS_CATALOGO),
+    ])
+    miembroSkills.value = r1.miembrosSkills || []
+    skillsCatalogo.value = r2.skills || []
+  } finally {
+    loadingSkills.value = false
+  }
+}
+
+async function guardarSkill() {
+  if (!nuevaSkill.value.skillId) return
+  await graphqlClient.request(MUTATION_CREATE_SKILL, {
+    data: {
+      miembroId: route.params.id,
+      skillId: nuevaSkill.value.skillId,
+      nivel: nuevaSkill.value.nivel || null,
+      validado: false,
+    },
+  })
+  mostrarFormSkill.value = false
+  nuevaSkill.value = { skillId: '', nivel: '' }
+  await cargarSkills()
+}
+
+async function eliminarSkill(id) {
+  await graphqlClient.request(MUTATION_DELETE_SKILL, { filter: { id: { eq: id } } })
+  await cargarSkills()
+}
+
+// ── Franjas de disponibilidad ──────────────────────────────────────────────
+const franjas = ref([])
+const loadingFranjas = ref(false)
+const mostrarFormFranja = ref(false)
+const nuevaFranja = ref({ diaSemana: 0, horaInicio: '', horaFin: '' })
+const diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+
+const franjasPorDia = computed(() => {
+  const grupos = {}
+  for (const f of franjas.value) {
+    if (!grupos[f.diaSemana]) grupos[f.diaSemana] = []
+    grupos[f.diaSemana].push(f)
+  }
+  return grupos
+})
+
+const QUERY_FRANJAS = gql`
+  query Franjas($miembroId: UUID!) {
+    franjasDisponibilidad(filter: { miembroId: { eq: $miembroId }, activa: { eq: true } }) {
+      id diaSemana horaInicio horaFin notas activa
+    }
+  }
+`
+const MUTATION_CREATE_FRANJA = gql`
+  mutation CrearFranja($data: FranjaDisponibilidadCreateInput!) {
+    crearFranjaDisponibilidad(data: $data) { id }
+  }
+`
+const MUTATION_DELETE_FRANJA = gql`
+  mutation EliminarFranjas($filter: FranjaDisponibilidadFilter!) {
+    eliminarFranjasDisponibilidad(filter: $filter) { id }
+  }
+`
+
+async function cargarFranjas() {
+  if (!route.params.id) return
+  loadingFranjas.value = true
+  try {
+    const r = await graphqlClient.request(QUERY_FRANJAS, { miembroId: route.params.id })
+    franjas.value = (r.franjasDisponibilidad || []).sort((a, b) => a.diaSemana - b.diaSemana || a.horaInicio.localeCompare(b.horaInicio))
+  } finally {
+    loadingFranjas.value = false
+  }
+}
+
+async function guardarFranja() {
+  if (!nuevaFranja.value.horaInicio || !nuevaFranja.value.horaFin) return
+  await graphqlClient.request(MUTATION_CREATE_FRANJA, {
+    data: {
+      miembroId: route.params.id,
+      diaSemana: nuevaFranja.value.diaSemana,
+      horaInicio: nuevaFranja.value.horaInicio,
+      horaFin: nuevaFranja.value.horaFin,
+      activa: true,
+    },
+  })
+  mostrarFormFranja.value = false
+  nuevaFranja.value = { diaSemana: 0, horaInicio: '', horaFin: '' }
+  await cargarFranjas()
+}
+
+async function eliminarFranja(id) {
+  await graphqlClient.request(MUTATION_DELETE_FRANJA, { filter: { id: { eq: id } } })
+  await cargarFranjas()
+}
+
 onMounted(async () => {
   await loadCatalogos()
   if (route.params.id) {
-    await fetchMiembro(route.params.id)
+    await Promise.all([fetchMiembro(route.params.id), cargarSkills(), cargarFranjas()])
   }
 })
 
