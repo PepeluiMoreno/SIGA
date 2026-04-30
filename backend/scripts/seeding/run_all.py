@@ -4,7 +4,6 @@ import asyncio
 import sys
 from pathlib import Path
 
-# Anadir el directorio raiz al path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from scripts.seeding.roles import seed_roles
@@ -13,8 +12,6 @@ from scripts.seeding.estados_miembro import seed_estados_miembro
 from scripts.seeding.agrupaciones import seed_agrupaciones
 from scripts.seeding.transacciones import seed_transacciones, seed_permisos
 from scripts.seeding.miembros import seed_miembros
-from scripts.seeding.presupuesto import seed_planificacion_y_partidas
-from scripts.seeding.actividades import seed_all_actividades
 
 
 async def main():
@@ -22,32 +19,26 @@ async def main():
     print("SEEDING SIGA DATABASE")
     print("=" * 50)
 
-    print("\n[1/9] Roles...")
+    print("\n[1/7] Roles...")
     await seed_roles()
 
-    print("\n[2/9] Tipos de miembro...")
+    print("\n[2/7] Tipos de miembro...")
     await seed_tipos_miembro()
 
-    print("\n[3/9] Estados de miembro...")
+    print("\n[3/7] Estados de miembro...")
     await seed_estados_miembro()
 
-    print("\n[4/9] Agrupaciones territoriales...")
+    print("\n[4/7] Agrupaciones territoriales...")
     await seed_agrupaciones()
 
-    print("\n[5/9] Transacciones...")
+    print("\n[5/7] Transacciones...")
     await seed_transacciones()
 
-    print("\n[6/9] Permisos rol-transaccion...")
+    print("\n[6/7] Permisos rol-transaccion...")
     await seed_permisos()
 
-    print("\n[7/9] Miembros ficticios...")
+    print("\n[7/7] Miembros ficticios...")
     await seed_miembros()
-
-    print("\n[8/9] Planificacion y partidas presupuestarias...")
-    await seed_planificacion_y_partidas()
-
-    print("\n[9/9] Propuestas y actividades...")
-    await seed_all_actividades()
 
     print("\n" + "=" * 50)
     print("SEEDING COMPLETADO")
