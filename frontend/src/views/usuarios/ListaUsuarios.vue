@@ -1,7 +1,7 @@
 <template>
   <AppLayout title="Usuarios" subtitle="Gestión de usuarios del sistema SIGA">
     <!-- Resumen -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       <div class="bg-purple-50 rounded-lg shadow p-4 border border-purple-100">
         <div class="flex items-center">
           <div class="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center mr-3">
@@ -24,24 +24,13 @@
           </div>
         </div>
       </div>
-      <div class="bg-blue-50 rounded-lg shadow p-4 border border-blue-100">
-        <div class="flex items-center">
-          <div class="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center mr-3">
-            <span class="text-lg">🔐</span>
-          </div>
-          <div>
-            <p class="text-sm text-gray-500">Administradores</p>
-            <p class="text-xl font-bold text-blue-600">{{ resumen.admins }}</p>
-          </div>
-        </div>
-      </div>
       <div class="bg-yellow-50 rounded-lg shadow p-4 border border-yellow-100">
         <div class="flex items-center">
           <div class="h-10 w-10 rounded-lg bg-yellow-100 flex items-center justify-center mr-3">
             <span class="text-lg">🕒</span>
           </div>
           <div>
-            <p class="text-sm text-gray-500">Último acceso hoy</p>
+            <p class="text-sm text-gray-500">Acceso hoy</p>
             <p class="text-xl font-bold text-yellow-600">{{ resumen.activosHoy }}</p>
           </div>
         </div>
@@ -52,47 +41,34 @@
     <div class="mb-6 bg-white rounded-lg shadow p-4 border border-gray-100">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex-1">
-          <div class="relative">
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Buscar usuarios..."
-              class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              @input="onSearch"
-            />
-            <div class="absolute left-3 top-2.5">
-              <span>🔍</span>
-            </div>
-          </div>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Buscar por email..."
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          />
         </div>
         <div class="flex gap-2">
-          <select v-model="filters.rol" class="border border-gray-300 rounded-lg px-3 py-2">
-            <option value="">Todos los roles</option>
-            <option value="Admin">Administrador</option>
-            <option value="Gestor">Gestor</option>
-            <option value="Usuario">Usuario</option>
-          </select>
           <select v-model="filters.activo" class="border border-gray-300 rounded-lg px-3 py-2">
             <option value="">Todos</option>
             <option value="true">Activos</option>
             <option value="false">Inactivos</option>
           </select>
-          <button class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-            + Nuevo Usuario
-          </button>
         </div>
       </div>
     </div>
 
-    <!-- Loading -->
     <div v-if="loading" class="text-center py-12">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
       <p class="mt-2 text-gray-600">Cargando usuarios...</p>
     </div>
 
-    <!-- Tabla de usuarios -->
+    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
+      {{ error }}
+    </div>
+
     <div v-else class="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
-      <div v-if="usuarios.length === 0" class="text-center py-12">
+      <div v-if="usuariosFiltrados.length === 0" class="text-center py-12">
         <div class="mx-auto h-12 w-12 text-gray-400 mb-4">
           <span class="text-4xl">👤</span>
         </div>
@@ -105,44 +81,27 @@
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Último acceso</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="usuario in usuarios" :key="usuario.id" class="hover:bg-gray-50">
+          <tr v-for="u in usuariosFiltrados" :key="u.id" class="hover:bg-gray-50">
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
                 <div class="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center mr-3">
-                  <span class="text-sm font-medium text-purple-700">{{ usuario.iniciales }}</span>
-                </div>
-                <div>
-                  <div class="text-sm font-medium text-gray-900">{{ usuario.nombre }}</div>
-                  <div class="text-xs text-gray-500">{{ usuario.cargo }}</div>
+                  <span class="text-sm font-medium text-purple-700">{{ iniciales(u.email) }}</span>
                 </div>
               </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ usuario.email }}
-            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ u.email }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <span :class="getRolClass(usuario.rol)">{{ usuario.rol }}</span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span :class="usuario.activo ? 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800' : 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800'">
-                {{ usuario.activo ? 'Activo' : 'Inactivo' }}
+              <span :class="u.activo ? 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800' : 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800'">
+                {{ u.activo ? 'Activo' : 'Inactivo' }}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ usuario.ultimoAcceso }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm">
-              <button @click="editarUsuario(usuario)" class="text-purple-600 hover:text-purple-800 mr-3">Editar</button>
-              <button @click="toggleActivo(usuario)" :class="usuario.activo ? 'text-yellow-600 hover:text-yellow-800' : 'text-green-600 hover:text-green-800'">
-                {{ usuario.activo ? 'Desactivar' : 'Activar' }}
-              </button>
+              {{ formatFecha(u.ultimoAcceso) }}
             </td>
           </tr>
         </tbody>
@@ -152,72 +111,69 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { gql } from 'graphql-request'
 import AppLayout from '@/components/common/AppLayout.vue'
+import { graphqlClient } from '@/graphql/client.js'
+
+const USUARIOS_QUERY = gql`
+  query Usuarios {
+    usuarios {
+      id
+      email
+      activo
+      ultimoAcceso
+    }
+  }
+`
 
 const loading = ref(false)
+const error = ref('')
 const usuarios = ref([])
 const searchQuery = ref('')
+const filters = ref({ activo: '' })
 
-const resumen = ref({
-  total: 1,
-  activos: 1,
-  admins: 1,
-  activosHoy: 1
+const usuariosFiltrados = computed(() => {
+  return usuarios.value.filter((u) => {
+    if (searchQuery.value && !u.email.toLowerCase().includes(searchQuery.value.toLowerCase())) return false
+    if (filters.value.activo === 'true' && !u.activo) return false
+    if (filters.value.activo === 'false' && u.activo) return false
+    return true
+  })
 })
 
-const filters = ref({
-  rol: '',
-  activo: ''
+const resumen = computed(() => {
+  const total = usuarios.value.length
+  const activos = usuarios.value.filter((u) => u.activo).length
+  const hoy = new Date().toISOString().slice(0, 10)
+  const activosHoy = usuarios.value.filter((u) => u.ultimoAcceso?.slice(0, 10) === hoy).length
+  return { total, activos, activosHoy }
 })
 
-onMounted(() => {
-  loadUsuarios()
-})
+function iniciales(email) {
+  if (!email) return '??'
+  return email.slice(0, 2).toUpperCase()
+}
 
-const loadUsuarios = async () => {
+function formatFecha(iso) {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return '—'
+  return d.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })
+}
+
+async function cargar() {
   loading.value = true
-  // TODO: Reemplazar por llamada a API GraphQL
-  setTimeout(() => {
-    usuarios.value = [
-      {
-        id: 1,
-        nombre: 'Administrador',
-        iniciales: 'AD',
-        email: 'admin@europalaica.org',
-        cargo: 'Administrador del Sistema',
-        rol: 'Admin',
-        activo: true,
-        ultimoAcceso: 'Hoy'
-      }
-    ]
+  error.value = ''
+  try {
+    const data = await graphqlClient.request(USUARIOS_QUERY)
+    usuarios.value = data.usuarios
+  } catch (e) {
+    error.value = e?.response?.errors?.[0]?.message || 'Error cargando usuarios'
+  } finally {
     loading.value = false
-  }, 500)
-}
-
-const onSearch = () => {
-  console.log('Buscando:', searchQuery.value)
-}
-
-const getRolClass = (rol) => {
-  const classes = {
-    'Admin': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800',
-    'Gestor': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800',
-    'Usuario': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800'
   }
-  return classes[rol] || 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800'
 }
 
-const editarUsuario = (usuario) => {
-  console.log('Editar usuario:', usuario)
-}
-
-const toggleActivo = (usuario) => {
-  console.log('Toggle activo:', usuario)
-  usuario.activo = !usuario.activo
-}
-
-watch(filters, () => {
-  loadUsuarios()
-}, { deep: true })
+onMounted(cargar)
 </script>

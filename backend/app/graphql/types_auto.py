@@ -12,10 +12,35 @@ from typing import Optional
 import strawberry
 from . import strawchemy
 
+# === ADMINISTRACION ===
+from ..domains.administracion.models import (
+    Transaccion,
+    Rol,
+    RolTransaccion,
+    LogAuditoria,
+)
+
+@strawchemy.type(Transaccion, include="all", override=True)
+class TransaccionType:
+    pass
+
+@strawchemy.type(Rol, include="all", override=True)
+class RolType:
+    pass
+
+@strawchemy.type(RolTransaccion, include="all", override=True)
+class RolTransaccionType:
+    pass
+
+@strawchemy.type(LogAuditoria, include="all", override=True)
+class LogAuditoriaType:
+    pass
+
+
 # === USUARIOS ===
 from ..domains.usuarios.models import Usuario, UsuarioRol
 
-@strawchemy.type(Usuario, include="all", override=True)
+@strawchemy.type(Usuario, exclude=["password_hash"], override=True)
 class UsuarioType:
     pass
 

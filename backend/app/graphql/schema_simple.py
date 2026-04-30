@@ -23,6 +23,12 @@ class Query(AuthQuery):
     Strawberry convierte automáticamente los campos de los tipos a camelCase.
     """
 
+    # === ADMINISTRACION ===
+    roles: list[RolType] = strawchemy.field()
+    transacciones: list[TransaccionType] = strawchemy.field()
+    rolesTransacciones: list[RolTransaccionType] = strawchemy.field()
+    logsAuditoria: list[LogAuditoriaType] = strawchemy.field()
+
     # === USUARIOS ===
     usuarios: list[UsuarioType] = strawchemy.field()
     usuarioRoles: list[UsuarioRolType] = strawchemy.field()
