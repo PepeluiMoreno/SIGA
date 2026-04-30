@@ -115,6 +115,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/transacciones',
+    component: () => import('@/views/administracion/ListaTransacciones.vue'),
+    name: 'Transacciones',
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/auditoria',
     component: () => import('@/views/administracion/LogAuditoria.vue'),
     name: 'Auditoria',

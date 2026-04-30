@@ -162,6 +162,16 @@
               </li>
               <li>
                 <router-link
+                  to="/transacciones"
+                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                  :class="$route.path === '/transacciones' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
+                >
+                  <ListBulletIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
+                  <span>Transacciones</span>
+                </router-link>
+              </li>
+              <li>
+                <router-link
                   to="/auditoria"
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
                   :class="$route.path === '/auditoria' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
@@ -266,6 +276,7 @@ import {
   HeartIcon,
   BanknotesIcon,
   KeyIcon,
+  ListBulletIcon,
   ClipboardDocumentListIcon,
   AdjustmentsHorizontalIcon,
   GlobeAltIcon,
