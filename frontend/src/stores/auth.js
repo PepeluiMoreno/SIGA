@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { gql } from 'graphql-request'
 
 import { graphqlClient, setAuthToken } from '@/graphql/client.js'
+import { useDebugStore } from '@/stores/debug.js'
 
 const LOGIN_MUTATION = gql`
   mutation Login($email: String!, $password: String!) {
@@ -37,6 +38,11 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('siga_token', authData.token)
     localStorage.setItem('siga_user', JSON.stringify(authData.user))
     setAuthToken(authData.token)
+    try {
+      useDebugStore().refreshSnapshot()
+    } catch {
+      // noop outside debug mode or before Pinia is active
+    }
   }
 
   function clearAuth() {
@@ -45,6 +51,11 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('siga_token')
     localStorage.removeItem('siga_user')
     setAuthToken(null)
+    try {
+      useDebugStore().refreshSnapshot()
+    } catch {
+      // noop outside debug mode or before Pinia is active
+    }
   }
 
   async function login(email, password) {

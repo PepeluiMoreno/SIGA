@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useDebugStore } from '@/stores/debug.js'
 
 // Importa las vistas
 import Dashboard from '@/views/Dashboard.vue'
@@ -153,6 +154,18 @@ const router = createRouter({
 // Guard de navegación para autenticación
 router.beforeEach((to, from, next) => {
   const isAuthenticated = localStorage.getItem('siga_token')
+  const debugStore = useDebugStore()
+
+  if (debugStore.enabled) {
+    debugStore.refreshSnapshot()
+    debugStore.addEvent('router.beforeEach', 'Evaluando navegación', {
+      from: from.fullPath,
+      to: to.fullPath,
+      requiresAuth: Boolean(to.meta.requiresAuth),
+      guest: Boolean(to.meta.guest),
+      isAuthenticated: Boolean(isAuthenticated),
+    })
+  }
 
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login')
@@ -161,6 +174,26 @@ router.beforeEach((to, from, next) => {
   } else {
     next()
   }
+})
+
+router.afterEach((to, from) => {
+  const debugStore = useDebugStore()
+  if (!debugStore.enabled) return
+
+  debugStore.refreshSnapshot()
+  debugStore.addEvent('router.afterEach', 'Navegación completada', {
+    from: from.fullPath,
+    to: to.fullPath,
+  })
+})
+
+router.onError((error, to) => {
+  const debugStore = useDebugStore()
+  if (!debugStore.enabled) return
+
+  debugStore.captureError('router.error', error, {
+    to: to?.fullPath,
+  })
 })
 
 export default router
