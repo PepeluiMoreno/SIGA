@@ -60,3 +60,28 @@ Variables canónicas:
 - Imágenes: `ghcr.io/pepeluimoreno/siga-backend` y `ghcr.io/pepeluimoreno/siga-frontend`.
 - Contenedores: `${APP_PREFIX}_backend`, `${APP_PREFIX}_frontend`, `${APP_PREFIX}_db`.
 - Routers Traefik: `${APP_PREFIX}-api` (con `PathPrefix(/api)` y `stripprefix`), `${APP_PREFIX}-web` (host raíz).
+
+## Política de borrado: soft-delete por defecto + papelera + hard-delete restringido
+
+Regla general: **ningún borrado destruye datos por defecto**. Todo modelo que herede `BaseModel` ya incluye `eliminado`/`fecha_eliminacion`/`fecha_modificacion` y se elimina marcando `eliminado=True` (soft-delete).
+
+### Papelera de reciclaje (Trash)
+
+- Cada módulo expone una vista de "Papelera" donde se listan los registros con `eliminado=True`.
+- Desde la papelera se puede **restaurar** (`eliminado=False`) o **borrar permanentemente** (hard-delete).
+- Los registros en papelera **no aparecen** en las consultas habituales: las queries por defecto filtran `eliminado=False`.
+
+### Modal de confirmación de borrado (soft-delete)
+
+Toda acción de borrado en la UI abre un modal que cumple:
+
+1. **Advertencia explícita de cascada**: lista clara y completa de qué entidades relacionadas quedarán afectadas (p. ej. "Se eliminarán también: 12 cuotas asociadas, 3 inscripciones a campañas, 1 vinculación con un grupo de trabajo").
+2. **Checkbox "Borrado permanente"** que activa hard-delete en lugar de soft-delete.
+3. El checkbox de **borrado permanente solo es visible/funcional para usuarios con rol de superadministrador**. Para el resto, no aparece o aparece deshabilitado con tooltip explicativo.
+4. Botón de confirmación destructivo (rojo) y botón de cancelar prominente.
+
+### Hard-delete
+
+- Elimina físicamente el registro de la BD.
+- **Solo disponible para `SUPERADMIN`** (transacción asociada al borrado permanente).
+- Auditoría: cada hard-delete genera entrada en `logs_auditoria` con `accion=ELIMINAR`, descripción detallada y, si es posible, copia del registro en `datos_anteriores`.

@@ -99,6 +99,19 @@ const routes = [
     meta: { requiresAuth: true },
     props: true
   },
+  // Rutas de Administración
+  {
+    path: '/roles',
+    component: () => import('@/views/administracion/ListaRoles.vue'),
+    name: 'Roles',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/auditoria',
+    component: () => import('@/views/administracion/LogAuditoria.vue'),
+    name: 'Auditoria',
+    meta: { requiresAuth: true }
+  },
   // Rutas de Parametrización
   {
     path: '/parametrizacion',
@@ -139,7 +152,7 @@ const router = createRouter({
 
 // Guard de navegación para autenticación
 router.beforeEach((to, from, next) => {
-  const isAuthenticated = localStorage.getItem('aiel_token')
+  const isAuthenticated = localStorage.getItem('siga_token')
 
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login')

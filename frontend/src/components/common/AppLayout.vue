@@ -117,6 +117,26 @@
               </li>
               <li>
                 <router-link
+                  to="/roles"
+                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                  :class="$route.path === '/roles' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
+                >
+                  <span class="mr-3">🔑</span>
+                  <span>Roles</span>
+                </router-link>
+              </li>
+              <li>
+                <router-link
+                  to="/auditoria"
+                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                  :class="$route.path === '/auditoria' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
+                >
+                  <span class="mr-3">📜</span>
+                  <span>Auditoría</span>
+                </router-link>
+              </li>
+              <li>
+                <router-link
                   to="/parametrizacion"
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
                   :class="$route.path.startsWith('/parametrizacion') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
