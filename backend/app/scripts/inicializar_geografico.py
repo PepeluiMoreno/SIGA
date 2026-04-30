@@ -2,6 +2,7 @@
 
 import uuid
 import asyncio
+from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -176,7 +177,8 @@ async def inicializar_municipios(session: AsyncSession, provincias_map: dict) ->
                 codigo=municipio_data['codigo'],
                 nombre=municipio_data['nombre'],
                 codigo_postal=municipio_data.get('codigo_postal'),
-                activo=True
+                activo=True,
+                fecha_creacion=datetime.utcnow(),
             )
             session.add(municipio)
             print(f"  * Municipio creado: {municipio_data['nombre']}")
