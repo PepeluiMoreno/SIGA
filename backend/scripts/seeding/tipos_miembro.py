@@ -8,24 +8,23 @@ from app.models import TipoMiembro
 
 
 TIPOS_MIEMBRO = [
-    {"codigo": "miembro", "nombre": "miembro", "requiere_cuota": True},
-    {"codigo": "SIMPATIZANTE", "nombre": "Simpatizante", "requiere_cuota": False},
+    {"nombre": "Miembro",      "descripcion": "Miembro de pleno derecho",         "requiere_cuota": True,  "puede_votar": True,  "orden": 1},
+    {"nombre": "Simpatizante", "descripcion": "Simpatizante de la organización",  "requiere_cuota": False, "puede_votar": False, "orden": 2},
+    {"nombre": "Honorífico",   "descripcion": "Miembro honorífico",               "requiere_cuota": False, "puede_votar": False, "orden": 3},
 ]
 
 
 async def seed_tipos_miembro():
     async with async_session() as db:
-        for tipo_data in TIPOS_MIEMBRO:
+        for data in TIPOS_MIEMBRO:
             result = await db.execute(
-                select(TipoMiembro).where(TipoMiembro.codigo == tipo_data["codigo"])
+                select(TipoMiembro).where(TipoMiembro.nombre == data["nombre"])
             )
             if not result.scalar_one_or_none():
-                tipo = TipoMiembro(**tipo_data, activo=True)
-                db.add(tipo)
-                print(f"  + TipoMiembro: {tipo_data['codigo']}")
+                db.add(TipoMiembro(**data, activo=True))
+                print(f"  + TipoMiembro: {data['nombre']}")
             else:
-                print(f"  = TipoMiembro ya existe: {tipo_data['codigo']}")
-
+                print(f"  = TipoMiembro ya existe: {data['nombre']}")
         await db.commit()
         print("Tipos de miembro completados.")
 

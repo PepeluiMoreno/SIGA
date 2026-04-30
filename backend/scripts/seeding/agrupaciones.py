@@ -4,41 +4,73 @@ import asyncio
 from sqlalchemy import select
 
 from app.core.database import async_session
-from app.models import AgrupacionTerritorial
+from app.domains.geografico.models.direccion import AgrupacionTerritorial, Pais
 
 
-# Agrupaciones territoriales de Europa Laica (según laicismo.org)
-# La primera es la nacional (es_nacional=True), para miembros con membresía directa
+# Europa Laica primero (NACIONAL, nivel 4), luego autonómicas (nivel 3) hijas de ella.
+# nombre_corto se usa como clave idempotente y para búsqueda desde miembros.py.
 AGRUPACIONES = [
-    {"codigo": "EL", "nombre": "Europa Laica", "es_nacional": True},
-    {"codigo": "AND", "nombre": "Andalucía Laica", "es_nacional": False},
-    {"codigo": "ARA", "nombre": "Aragón Laico", "es_nacional": False},
-    {"codigo": "AST", "nombre": "Asturias Laica", "es_nacional": False},
-    {"codigo": "CAN", "nombre": "Canarias Laica", "es_nacional": False},
-    {"codigo": "CAT", "nombre": "Catalunya Laica", "es_nacional": False},
-    {"codigo": "EUS", "nombre": "Euskadi Laica", "es_nacional": False},
-    {"codigo": "EXT", "nombre": "Extremadura Laica", "es_nacional": False},
-    {"codigo": "GAL", "nombre": "Galicia Laica", "es_nacional": False},
-    {"codigo": "MAD", "nombre": "Madrid Laica", "es_nacional": False},
-    {"codigo": "MUR", "nombre": "Murcia Laica", "es_nacional": False},
-    {"codigo": "VAL", "nombre": "País Valenciano Laico", "es_nacional": False},
+    {
+        "nombre": "Europa Laica",
+        "nombre_corto": "EL",
+        "tipo": "NACIONAL",
+        "nivel": 4,
+        "email": "info@laicismo.org",
+        "web": "https://laicismo.org",
+        "padre": None,
+    },
+    {"nombre": "Andalucía Laica",        "nombre_corto": "AND", "tipo": "AUTONOMICO", "nivel": 3, "padre": "EL"},
+    {"nombre": "Aragón Laico",           "nombre_corto": "ARA", "tipo": "AUTONOMICO", "nivel": 3, "padre": "EL"},
+    {"nombre": "Asturias Laica",         "nombre_corto": "AST", "tipo": "AUTONOMICO", "nivel": 3, "padre": "EL"},
+    {"nombre": "Canarias Laica",         "nombre_corto": "CAN", "tipo": "AUTONOMICO", "nivel": 3, "padre": "EL"},
+    {"nombre": "Catalunya Laica",        "nombre_corto": "CAT", "tipo": "AUTONOMICO", "nivel": 3, "padre": "EL"},
+    {"nombre": "Euskadi Laica",          "nombre_corto": "EUS", "tipo": "AUTONOMICO", "nivel": 3, "padre": "EL"},
+    {"nombre": "Extremadura Laica",      "nombre_corto": "EXT", "tipo": "AUTONOMICO", "nivel": 3, "padre": "EL"},
+    {"nombre": "Galicia Laica",          "nombre_corto": "GAL", "tipo": "AUTONOMICO", "nivel": 3, "padre": "EL"},
+    {"nombre": "Madrid Laica",           "nombre_corto": "MAD", "tipo": "AUTONOMICO", "nivel": 3, "padre": "EL"},
+    {"nombre": "Murcia Laica",           "nombre_corto": "MUR", "tipo": "AUTONOMICO", "nivel": 3, "padre": "EL"},
+    {"nombre": "País Valenciano Laico",  "nombre_corto": "VAL", "tipo": "AUTONOMICO", "nivel": 3, "padre": "EL"},
 ]
 
 
 async def seed_agrupaciones():
     async with async_session() as db:
-        for agrup_data in AGRUPACIONES:
+        # Obtener España (requerida como pais_id, NOT NULL en el modelo)
+        pais_result = await db.execute(select(Pais).where(Pais.codigo == "ES"))
+        espana = pais_result.scalar_one_or_none()
+        if not espana:
+            print("  ! ERROR: País España (codigo='ES') no encontrado. Ejecuta inicializar_geografico.py primero.")
+            return
+
+        # Índice nombre_corto → agrupacion para resolver jerarquía padre-hijo
+        creadas: dict[str, AgrupacionTerritorial] = {}
+
+        for data in AGRUPACIONES:
+            padre_corto = data.pop("padre")
+
             result = await db.execute(
                 select(AgrupacionTerritorial).where(
-                    AgrupacionTerritorial.codigo == agrup_data["codigo"]
+                    AgrupacionTerritorial.nombre_corto == data["nombre_corto"]
                 )
             )
-            if not result.scalar_one_or_none():
-                agrupacion = AgrupacionTerritorial(**agrup_data, activo=True)
-                db.add(agrupacion)
-                print(f"  + Agrupación: {agrup_data['nombre']}")
-            else:
-                print(f"  = Agrupación ya existe: {agrup_data['nombre']}")
+            existing = result.scalar_one_or_none()
+            if existing:
+                print(f"  = Agrupación ya existe: {data['nombre']}")
+                creadas[data["nombre_corto"]] = existing
+                continue
+
+            agrupacion_padre_id = creadas[padre_corto].id if padre_corto else None
+
+            agrupacion = AgrupacionTerritorial(
+                **data,
+                pais_id=espana.id,
+                agrupacion_padre_id=agrupacion_padre_id,
+                activo=True,
+            )
+            db.add(agrupacion)
+            await db.flush()  # Para que .id esté disponible como padre antes del siguiente
+            creadas[data["nombre_corto"]] = agrupacion
+            print(f"  + Agrupación: {data['nombre']}")
 
         await db.commit()
         print("Agrupaciones territoriales completadas.")

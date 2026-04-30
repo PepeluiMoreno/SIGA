@@ -40,7 +40,7 @@
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
                   :class="$route.path === '/' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
                 >
-                  <span class="mr-3">🏠</span>
+                  <HomeIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Dashboard</span>
                 </router-link>
               </li>
@@ -59,7 +59,7 @@
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
                   :class="$route.path.startsWith('/miembros') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
                 >
-                  <span class="mr-3">👤</span>
+                  <UserIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Miembros</span>
                 </router-link>
               </li>
@@ -69,7 +69,7 @@
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
                   :class="$route.path.startsWith('/agrupaciones') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
                 >
-                  <span class="mr-3">🗺️</span>
+                  <MapPinIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Agrupaciones</span>
                 </router-link>
               </li>
@@ -88,7 +88,7 @@
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
                   :class="$route.path.startsWith('/campanias') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
                 >
-                  <span class="mr-3">🚩</span>
+                  <FlagIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Campañas</span>
                 </router-link>
               </li>
@@ -98,7 +98,7 @@
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
                   :class="$route.path.startsWith('/grupos') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
                 >
-                  <span class="mr-3">👥</span>
+                  <UserGroupIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Grupos de Trabajo</span>
                 </router-link>
               </li>
@@ -108,7 +108,7 @@
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
                   :class="$route.path.startsWith('/voluntarios') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
                 >
-                  <span class="mr-3">❤️</span>
+                  <HeartIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Voluntarios</span>
                 </router-link>
               </li>
@@ -127,7 +127,7 @@
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
                   :class="$route.path.startsWith('/financiero') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
                 >
-                  <span class="mr-3">💰</span>
+                  <BanknotesIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Gestión Financiera</span>
                 </router-link>
               </li>
@@ -136,7 +136,7 @@
 
           <!-- Administración -->
           <div class="mb-6">
-            <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">
+            <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3 px-3">
               Administración
             </h2>
             <ul class="space-y-1">
@@ -146,7 +146,7 @@
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
                   :class="$route.path === '/usuarios' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
                 >
-                  <span class="mr-3">⚙️</span>
+                  <UsersIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Usuarios</span>
                 </router-link>
               </li>
@@ -156,7 +156,7 @@
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
                   :class="$route.path === '/roles' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
                 >
-                  <span class="mr-3">🔑</span>
+                  <KeyIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Roles</span>
                 </router-link>
               </li>
@@ -166,7 +166,7 @@
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
                   :class="$route.path === '/auditoria' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
                 >
-                  <span class="mr-3">📜</span>
+                  <ClipboardDocumentListIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Auditoría</span>
                 </router-link>
               </li>
@@ -176,7 +176,7 @@
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
                   :class="$route.path.startsWith('/parametrizacion') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
                 >
-                  <span class="mr-3">🛠️</span>
+                  <AdjustmentsHorizontalIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Parametrización</span>
                 </router-link>
               </li>
@@ -185,19 +185,19 @@
 
           <!-- Ayuda -->
           <div>
-            <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">
+            <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3 px-3">
               Ayuda
             </h2>
             <ul class="space-y-1">
               <li>
                 <a href="https://laicismo.org" target="_blank" class="flex items-center px-3 py-2 text-sm font-medium text-purple-200 rounded-md hover:bg-purple-800 hover:text-white transition-colors">
-                  <span class="mr-3">🌐</span>
+                  <GlobeAltIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Web Europa Laica</span>
                 </a>
               </li>
               <li>
                 <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-purple-200 rounded-md hover:bg-purple-800 hover:text-white transition-colors">
-                  <span class="mr-3">📖</span>
+                  <BookOpenIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Documentación</span>
                 </a>
               </li>
@@ -256,6 +256,21 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import BackendStatus from '@/components/common/BackendStatus.vue'
+import {
+  HomeIcon,
+  UserIcon,
+  UsersIcon,
+  MapPinIcon,
+  FlagIcon,
+  UserGroupIcon,
+  HeartIcon,
+  BanknotesIcon,
+  KeyIcon,
+  ClipboardDocumentListIcon,
+  AdjustmentsHorizontalIcon,
+  GlobeAltIcon,
+  BookOpenIcon,
+} from '@heroicons/vue/24/outline'
 
 defineProps({
   title: {

@@ -35,8 +35,11 @@ from ..domains.financiero.models import (
 # Dominio Administración
 from ..domains.administracion.models import Transaccion, Rol, RolTransaccion, LogAuditoria
 
-# Dominio Miembros — nuevos modelos de Militancia
-from ..domains.miembros.models import Skill, MiembroSkill, FranjaDisponibilidad, HistorialAgrupacion, SolicitudTraslado
+# Dominio Miembros
+from ..domains.miembros.models import (
+    TipoMiembro, EstadoMiembro, MotivoBaja, TipoCargo, Miembro,
+    Skill, MiembroSkill, FranjaDisponibilidad, HistorialAgrupacion, SolicitudTraslado,
+)
 
 __all__ = [
     'Base',
