@@ -25,7 +25,7 @@ SCRIPTS = [
     ("2_importar_geografico", "Importar datos geográficos (países, provincias)"),
     ("3_importar_agrupaciones", "Importar agrupaciones territoriales"),
     ("3b_establecer_jerarquia", "Establecer jerarquía de agrupaciones"),
-    ("4_importar_miembros", "Importar miembros (socios)"),
+    ("4_importar_miembros", "Importar miembros (miembros)"),
     ("5_importar_importes_cuota", "Importar catálogo de importes de cuota"),
     ("6_importar_cuotas_anuales", "Importar historial de cuotas anuales"),
     ("7_importar_financiero", "Importar datos financieros (donaciones, remesas)"),

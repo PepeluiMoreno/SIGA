@@ -11,9 +11,9 @@
             </div>
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600">Total Socios</p>
-            <p class="text-2xl font-bold text-gray-900">{{ stats.totalSocios }}</p>
-            <p class="text-sm text-green-600 mt-1">↑ {{ stats.nuevosSociosMes }} este mes</p>
+            <p class="text-sm font-medium text-gray-600">Total miembros</p>
+            <p class="text-2xl font-bold text-gray-900">{{ stats.totalmiembros }}</p>
+            <p class="text-sm text-green-600 mt-1">↑ {{ stats.nuevosmiembrosMes }} este mes</p>
           </div>
         </div>
       </div>
@@ -200,8 +200,8 @@ import AppLayout from '@/components/common/AppLayout.vue'
 
 // Estadísticas
 const stats = ref({
-  totalSocios: 1247,
-  nuevosSociosMes: 23,
+  totalmiembros: 1247,
+  nuevosmiembrosMes: 23,
   campaniasActivas: 5,
   campaniasPlanificadas: 3,
   gruposActivos: 18,
@@ -250,7 +250,7 @@ const actividadReciente = ref([
     id: 1,
     usuario: 'María García',
     iniciales: 'MG',
-    accion: 'registró 5 nuevos socios de Madrid',
+    accion: 'registró 5 nuevos miembros de Madrid',
     fecha: 'Hace 2 horas'
   },
   {

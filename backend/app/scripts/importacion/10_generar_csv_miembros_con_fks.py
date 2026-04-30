@@ -19,7 +19,7 @@ ESTADO_ACTIVO_ID = 'e1e721ff-47cf-457d-9075-3d26585bbb60'
 ESTADO_BAJA_ID = 'd8f71531-affb-4435-b654-bed41e66dcab'
 MOTIVO_BAJA_VOLUNTARIA_ID = '185c7b6d-868c-44e9-b386-2576423ffbff'
 MOTIVO_FALLECIMIENTO_ID = '49145bb3-fd13-40cc-85a7-d71cda16c7a6'
-TIPO_SOCIO_ID = '54e92576-219d-41cb-a544-b005b2d48b34'
+TIPO_miembro_ID = '54e92576-219d-41cb-a544-b005b2d48b34'
 TIPO_SIMPATIZANTE_ID = '037696ee-2648-4c67-8e59-55f7f9f40e30'
 
 
@@ -219,7 +219,7 @@ async def main():
             if 'simpatizante' in tipo_mysql:
                 tipo_miembro_id = TIPO_SIMPATIZANTE_ID
             else:
-                tipo_miembro_id = TIPO_SOCIO_ID
+                tipo_miembro_id = TIPO_miembro_ID
 
             # Procesar teléfonos (prioridad: móvil > casa > trabajo)
             telefonos = []
@@ -240,8 +240,8 @@ async def main():
 
             # Combinar observaciones (incluir las de bajas/fallecidos)
             obs = []
-            if m.get('COMENTARIOSOCIO') and str(m['COMENTARIOSOCIO']).strip():
-                obs.append(str(m['COMENTARIOSOCIO']).strip())
+            if m.get('COMENTARIOmiembro') and str(m['COMENTARIOmiembro']).strip():
+                obs.append(str(m['COMENTARIOmiembro']).strip())
             if m.get('OBSERVACIONES') and str(m['OBSERVACIONES']).strip():
                 obs.append(str(m['OBSERVACIONES']).strip())
             if obs_extra:

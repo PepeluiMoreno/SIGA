@@ -1,7 +1,7 @@
 <template>
   <CatalogoGenerico
     titulo="Motivos de Baja"
-    subtitulo="Razones para dar de baja a un socio"
+    subtitulo="Razones para dar de baja a un miembro"
     nombre-singular="Motivo de Baja"
     icono="📝"
     query-name="motivosBaja"

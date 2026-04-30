@@ -139,7 +139,7 @@ class Organizacion(BaseModel, ContactoCompletoMixin):
 
     # Información adicional
     descripcion: Mapped[Optional[str]]
-    numero_socios: Mapped[Optional[int]]
+    numero_miembros: Mapped[Optional[int]]
     activo: Mapped[bool]
 ```
 

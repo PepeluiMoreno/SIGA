@@ -19,11 +19,11 @@
 - **Voluntario** (requiere_cuota=false, puede_votar=false, es_voluntario=true)
 - **Simpatizante** (requiere_cuota=false, puede_votar=false, es_voluntario=false)
 
-Valores de TIPOMIEMBRO en MySQL: "socio", "simpatizante", "administrador", "voluntario"
+Valores de TIPOMIEMBRO en MySQL: "miembro", "simpatizante", "administrador", "voluntario"
 
 ### 3. Agrupación del miembro
 **Decisión**: SÍ, inferir de última cuota
-- Buscar en CUOTAANIOSOCIO el registro más reciente por CODSOCIO
+- Buscar en CUOTAANIOmiembro el registro más reciente por CODmiembro
 - `agrupacion_id` ← Buscar UUID de agrupación por CODAGRUPACION
 
 ### 4. Provincia de agrupación
@@ -33,7 +33,7 @@ Valores de TIPOMIEMBRO en MySQL: "socio", "simpatizante", "administrador", "volu
 
 ### 5. Importe de cuota
 **Decisión**: Confirmado mapeo propuesto
-- `importe` ← IMPORTECUOTAANIOSOCIO (lo que DEBE pagar)
+- `importe` ← IMPORTECUOTAANIOmiembro (lo que DEBE pagar)
 - `importe_pagado` ← IMPORTECUOTAANIOPAGADA (lo pagado REAL)
 - `gastos_gestion` ← IMPORTEGASTOSABONOCUOTA
 
@@ -44,7 +44,7 @@ Valores de TIPOMIEMBRO en MySQL: "socio", "simpatizante", "administrador", "volu
 - ABONADA-PARTE → PENDIENTE (con importe_pagado parcial)
 - NOABONADA-DEVUELTA → VENCIDA
 - NOABONADA-ERROR-CUENTA → PENDIENTE
-- BAJA-SOCIO → EXENTA
+- BAJA-miembro → EXENTA
 - OTROS → PENDIENTE
 
 ---
@@ -83,7 +83,7 @@ observaciones: text (opcional)
 ```
 
 **Funcionalidad**:
-- Permite cuotas diferenciadas por tipo (socio 50€, estudiante 25€, etc.)
+- Permite cuotas diferenciadas por tipo (miembro 50€, estudiante 25€, etc.)
 - Mantiene histórico: cada cambio de cuota crea nuevo registro
 - Constraint único: (ejercicio, tipo_miembro_id) para evitar duplicados por ejercicio
 
@@ -122,14 +122,14 @@ referencia_pago: str
 **Ejemplo**:
 ```
 Ejercicio 2025:
-- Socio → 50.00 € (nombre_cuota: "General")
+- miembro → 50.00 € (nombre_cuota: "General")
 - Simpatizante → 30.00 € (nombre_cuota: "Apoyo")
 - Estudiante → 25.00 € (nombre_cuota: "Reducida Estudiante")
 - Parado → 20.00 € (nombre_cuota: "Reducida Desempleo")
 ```
 
 **Histórico automático**:
-- Si en 2026 cambia la cuota de socio a 55€ → nuevo registro
+- Si en 2026 cambia la cuota de miembro a 55€ → nuevo registro
 - Las cuotas de 2025 se mantienen inalteradas (histórico)
 
 **Asignación de cuota a miembro**:
@@ -149,7 +149,7 @@ Ejercicio 2025:
 | MySQL | PostgreSQL | Transformación | Notas |
 |-------|-----------|----------------|-------|
 | CODUSER | NO MAPEAR | Generar UUID nuevo | Guardar mapeo temporal CODUSER→UUID |
-| TIPOMIEMBRO | tipo_miembro_id | Buscar UUID por código | "socio" / "simpatizante" / "administrador" |
+| TIPOMIEMBRO | tipo_miembro_id | Buscar UUID por código | "miembro" / "simpatizante" / "administrador" |
 | NUMDOCUMENTOMIEMBRO | numero_documento | **ENCRIPTAR** | Usar EncriptacionService |
 | APE1, APE2, NOM | apellido1, apellido2, nombre | Directo | - |
 | FECHANAC | fecha_nacimiento | NULL si '0000-00-00' | - |
@@ -161,20 +161,20 @@ Ejercicio 2025:
 | CODPAISDOM | pais_domicilio_id | Buscar UUID por ISO | '--' → NULL |
 | DIRECCION, CP, LOCALIDAD | direccion, codigo_postal, localidad | Directo | - |
 | CODPROV | provincia_id | Buscar UUID por código | - |
-| OBSERVACIONES + COMENTARIOSOCIO | observaciones_voluntariado | Concatenar | - |
-| (de CUOTAANIOSOCIO) | agrupacion_id | Inferir de última cuota | - |
-| (inferir) | fecha_alta | Año mínimo CUOTAANIOSOCIO | - |
+| OBSERVACIONES + COMENTARIOmiembro | observaciones_voluntariado | Concatenar | - |
+| (de CUOTAANIOmiembro) | agrupacion_id | Inferir de última cuota | - |
+| (inferir) | fecha_alta | Año mínimo CUOTAANIOmiembro | - |
 | (EMAILERROR='BAJA') | fecha_baja, motivo_baja | Inferir | - |
 
-### CUOTAANIOSOCIO → cuotas_anuales
+### CUOTAANIOmiembro → cuotas_anuales
 
 | MySQL | PostgreSQL | Transformación | Notas |
 |-------|-----------|----------------|-------|
 | ANIOCUOTA | ejercicio | Convertir a int | - |
-| CODSOCIO | miembro_id | Buscar UUID por CODUSER | Usar mapeo temporal |
+| CODmiembro | miembro_id | Buscar UUID por CODUSER | Usar mapeo temporal |
 | CODAGRUPACION | agrupacion_id | Buscar UUID por código | - |
 | CODCUOTA + NOMBRECUOTA | importe_cuota_anio_id | Buscar por ejercicio+tipo | FK opcional (trazabilidad) |
-| IMPORTECUOTAANIOSOCIO | importe | Directo | Lo que debe |
+| IMPORTECUOTAANIOmiembro | importe | Directo | Lo que debe |
 | IMPORTECUOTAANIOPAGADA | importe_pagado | Directo | Lo pagado real |
 | IMPORTEGASTOSABONOCUOTA | gastos_gestion | Directo | - |
 | ESTADOCUOTA | estado_id | Mapear valores | Ver tabla mapeo estados |

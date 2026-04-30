@@ -12,7 +12,7 @@ Plan General de Contabilidad de Entidades Sin Fines Lucrativos
 Real Decreto 1491/2011
 1.2 Funcionalidad
 Ingresos
-Cuotas de socios
+Cuotas de miembros
 Donaciones
 Subvenciones
 Ingresos extraordinarios
@@ -131,14 +131,14 @@ seguimiento continuo sin corte contable
 
 Gestionar el ciclo de vida de los miembros y su capacidad operativa dentro de la organización.
 
-4.2 Datos de socio
+4.2 Datos de miembro
 identidad
 estado (activo, baja, suspensión)
 territorio
 historial de participación
 4.3 Sistema de habilidades
 catálogo de skills
-nivel por socio
+nivel por miembro
 validación de habilidades
 4.4 Disponibilidad
 calendario de horas disponibles
@@ -153,7 +153,7 @@ carga acumulada
 disponibilidad voluntaria
 restricciones
 4.7 Matching interno
-relación socio ↔ tareas
+relación miembro ↔ tareas
 basado en:
 skill match
 disponibilidad

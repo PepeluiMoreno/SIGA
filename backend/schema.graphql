@@ -356,7 +356,7 @@ type AsociacionMinMaxFields {
   personaContactoTelefono: String
   descripcion: String
   actividadesPrincipales: String
-  numeroSocios: Int
+  numeromiembros: Int
   fechaAlta: Date
   fechaBaja: Date
   motivoBaja: String
@@ -369,7 +369,7 @@ type AsociacionMinMaxFields {
 
 """GraphQL type"""
 type AsociacionNumericFields {
-  numeroSocios: Float
+  numeromiembros: Float
   valoracion: Float
 }
 
@@ -391,7 +391,7 @@ type AsociacionSumFields {
   personaContactoTelefono: String
   descripcion: String
   actividadesPrincipales: String
-  numeroSocios: Int
+  numeromiembros: Int
   motivoBaja: String
   valoracion: Int
   observaciones: String
@@ -427,7 +427,7 @@ type AsociacionType {
   personaContactoTelefono: String
   descripcion: String
   actividadesPrincipales: String
-  numeroSocios: Int
+  numeromiembros: Int
   activo: Boolean!
   fechaAlta: Date!
   fechaBaja: Date

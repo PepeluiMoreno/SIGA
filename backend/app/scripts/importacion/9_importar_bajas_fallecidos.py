@@ -7,7 +7,7 @@ Importa:
 
 Los CSVs se generaron desde las tablas MySQL:
 - miembroeliminado5anios (604 registros)
-- sociosfallecidos (43 registros)
+- miembrosfallecidos (43 registros)
 """
 import asyncio
 import csv
@@ -24,7 +24,7 @@ from sqlalchemy import select, text
 ESTADO_BAJA_ID = uuid.UUID('d8f71531-affb-4435-b654-bed41e66dcab')
 MOTIVO_FALLECIMIENTO_ID = uuid.UUID('49145bb3-fd13-40cc-85a7-d71cda16c7a6')
 MOTIVO_BAJA_VOLUNTARIA_ID = uuid.UUID('185c7b6d-868c-44e9-b386-2576423ffbff')
-TIPO_SOCIO_ID = uuid.UUID('54e92576-219d-41cb-a544-b005b2d48b34')
+TIPO_miembro_ID = uuid.UUID('54e92576-219d-41cb-a544-b005b2d48b34')
 
 DATABASE_URL = 'postgresql+asyncpg://siga:siga_dev_2024@localhost:5432/siga'
 
@@ -124,7 +124,7 @@ async def importar_miembros_baja(session: AsyncSession, data_dir: Path) -> int:
                         'nombre': nombre,
                         'apellido1': apellido1,
                         'apellido2': apellido2,
-                        'tipo_miembro_id': TIPO_SOCIO_ID,
+                        'tipo_miembro_id': TIPO_miembro_ID,
                         'estado_id': ESTADO_BAJA_ID,
                         'motivo_baja_id': MOTIVO_BAJA_VOLUNTARIA_ID,
                         'tipo_documento': tipo_documento,
@@ -156,7 +156,7 @@ async def importar_miembros_fallecidos(session: AsyncSession, data_dir: Path) ->
     Importa miembros fallecidos desde miembros_fallecidos.csv.
 
     Campos del CSV:
-    CODSOCIO, CODUSER, NOM, APE1, APE2, SEXO, FECHAALTA, FECHABAJA, FECHANAC,
+    CODmiembro, CODUSER, NOM, APE1, APE2, SEXO, FECHAALTA, FECHABAJA, FECHANAC,
     NOMAGRUPACION, CODAGRUPACION, NOMBREPAISDOM, NOMPROVINCIA, LOCALIDAD, CP,
     OBSERVACIONES, ESTADO_MIEMBRO, MOTIVO_BAJA
     """
@@ -227,7 +227,7 @@ async def importar_miembros_fallecidos(session: AsyncSession, data_dir: Path) ->
                         'apellido2': apellido2,
                         'sexo': sexo,
                         'fecha_nacimiento': fecha_nacimiento,
-                        'tipo_miembro_id': TIPO_SOCIO_ID,
+                        'tipo_miembro_id': TIPO_miembro_ID,
                         'estado_id': ESTADO_BAJA_ID,
                         'motivo_baja_id': MOTIVO_FALLECIMIENTO_ID,
                         'localidad': localidad,

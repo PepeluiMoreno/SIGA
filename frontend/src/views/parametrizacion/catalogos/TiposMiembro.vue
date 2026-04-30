@@ -1,8 +1,8 @@
 <template>
   <CatalogoGenerico
-    titulo="Tipos de Socio"
-    subtitulo="Configuración de tipos de socio"
-    nombre-singular="Tipo de Socio"
+    titulo="Tipos de miembro"
+    subtitulo="Configuración de tipos de miembro"
+    nombre-singular="Tipo de miembro"
     icono="👤"
     query-name="tiposMiembro"
     :query-string="GET_TIPOS_MIEMBRO"

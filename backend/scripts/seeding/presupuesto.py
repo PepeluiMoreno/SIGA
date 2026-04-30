@@ -80,7 +80,7 @@ async def seed_planificacion_y_partidas():
         "ejercicio": 2026,
         "nombre": "Plan Anual 2026",
         "descripcion": "Planificación de actividades para el ejercicio 2026",
-        "objetivos": "1. Aumentar la visibilidad de la organización\\n2. Captar 200 nuevos socios\\n3. Organizar 4 campañas nacionales",
+        "objetivos": "1. Aumentar la visibilidad de la organización\\n2. Captar 200 nuevos miembros\\n3. Organizar 4 campañas nacionales",
         "estadoId": estado_borrador["id"],
         "presupuestoTotal": "50000.00"
     }

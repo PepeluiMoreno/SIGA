@@ -62,7 +62,7 @@ class ValidadorImportacion:
             'PROVINCIA',
             'AGRUPACIONTERRITORIAL',
             'MIEMBRO',
-            'CUOTAANIOSOCIO',
+            'CUOTAANIOmiembro',
             'IMPORTEDESCUOTAANIO',
             'DONACION',
             'REMESAS_SEPAXML'
@@ -157,7 +157,7 @@ class ValidadorImportacion:
             print(f"  ✓ Miembros: {pg_miembros}/{mysql_miembros}")
 
         # Cuotas
-        mysql_cuotas = self.metricas_mysql.get('CUOTAANIOSOCIO', 0)
+        mysql_cuotas = self.metricas_mysql.get('CUOTAANIOmiembro', 0)
         pg_cuotas = self.metricas_postgres.get('cuotas', 0)
 
         if mysql_cuotas > 0 and pg_cuotas < mysql_cuotas * 0.9:

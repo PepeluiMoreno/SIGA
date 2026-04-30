@@ -18,9 +18,9 @@ Sistema integral de gestión para organizaciones no gubernamentales y asociacion
 - Gestión de sesiones
 - Control de acceso por transacciones
 
-### 2. Gestión de Miembros/Socios
+### 2. Gestión de Miembros/miembros
 - Alta, baja y modificación de miembros
-- Tipos de miembro: Socio, Simpatizante, etc.
+- Tipos de miembro: miembro, Simpatizante, etc.
 - Datos personales y de contacto
 - Documentación (DNI, NIE, Pasaporte)
 - Datos bancarios (IBAN para domiciliación)
@@ -33,7 +33,7 @@ Sistema integral de gestión para organizaciones no gubernamentales y asociacion
 - Gestión de miembros por agrupación
 
 ### 4. Módulo Financiero
-- **Cuotas anuales**: Gestión de cuotas de socios por año
+- **Cuotas anuales**: Gestión de cuotas de miembros por año
 - **Estados de cuota**: Pendiente, Cobrada, Cobrada Parcial, Exento, Devuelta
 - **Donaciones**: Registro de donaciones con conceptos predefinidos
 - **Remesas SEPA**: Generación de lotes de cobros bancarios
@@ -113,7 +113,7 @@ backend/
 │   │   └── permissions.py   # Decoradores de permisos
 │   ├── models/
 │   │   ├── usuario.py       # Usuarios y roles
-│   │   ├── miembro.py       # Miembros/socios
+│   │   ├── miembro.py       # Miembros/miembros
 │   │   ├── agrupacion.py    # Agrupaciones territoriales
 │   │   ├── financiero.py    # Cuotas, donaciones, remesas
 │   │   ├── campania.py      # Campañas y acciones

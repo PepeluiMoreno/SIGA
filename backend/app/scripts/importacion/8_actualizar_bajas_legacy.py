@@ -2,7 +2,7 @@
 Script para actualizar miembros con datos de bajas legacy.
 
 Actualiza:
-1. sociosfallecidos → motivo_baja_id = FALLECIMIENTO
+1. miembrosfallecidos → motivo_baja_id = FALLECIMIENTO
 2. miembroeliminado5anios → datos_anonimizados = true
 
 Este script debe ejecutarse DESPUÉS de importar miembros.
@@ -63,7 +63,7 @@ class ActualizadorBajasLegacy:
         print(f"  [OK] Motivo VOLUNTARIA: {self.motivo_voluntaria_id[:8]}...")
 
     async def actualizar_fallecidos(self, session: AsyncSession):
-        """Actualiza miembros de sociosfallecidos con motivo FALLECIMIENTO."""
+        """Actualiza miembros de miembrosfallecidos con motivo FALLECIMIENTO."""
         print("\nActualizando fallecidos...", flush=True)
 
         if not self.motivo_fallecimiento_id:
@@ -74,7 +74,7 @@ class ActualizadorBajasLegacy:
             async with mysql_conn.cursor() as cursor:
                 await cursor.execute("""
                     SELECT CODUSER, FECHABAJA, OBSERVACIONES
-                    FROM sociosfallecidos
+                    FROM miembrosfallecidos
                 """)
                 rows = await cursor.fetchall()
 

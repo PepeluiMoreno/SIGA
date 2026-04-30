@@ -22,7 +22,7 @@ async def crear_catalogos_base(session: AsyncSession):
 
     # Tipos de Miembro
     tipos_miembro = [
-        ('SOCIO', 'Socio', 'Miembro de pleno derecho', True, True, 1),
+        ('miembro', 'miembro', 'Miembro de pleno derecho', True, True, 1),
         ('SIMPATIZANTE', 'Simpatizante', 'Simpatizante sin cuota', False, False, 2),
         ('VOLUNTARIO', 'Voluntario', 'Voluntario activo', False, False, 3),
         ('COLABORADOR', 'Colaborador', 'Colaborador externo', False, False, 4),
@@ -106,7 +106,7 @@ async def crear_catalogos_base(session: AsyncSession):
 
     # Tipos de Campania
     tipos_campania = [
-        ('CAPTACION', 'Captacion', 'Campania de captacion de socios'),
+        ('CAPTACION', 'Captacion', 'Campania de captacion de miembros'),
         ('SENSIBILIZACION', 'Sensibilizacion', 'Campania de sensibilizacion'),
         ('RECAUDACION', 'Recaudacion', 'Campania de recaudacion de fondos'),
         ('FIRMAS', 'Recogida de firmas', 'Campania de recogida de firmas'),

@@ -10,19 +10,19 @@ from app.models.tipologias import TipoTransaccion
 
 # Transacciones organizadas por módulo
 TRANSACCIONES = [
-    # === SOCIOS ===
-    {"codigo": "ALTA_SOCIO", "nombre": "Alta de socio", "tipo": TipoTransaccion.MUTATION, "modulo": "socios"},
-    {"codigo": "CONFIRMAR_ALTA_SOCIO", "nombre": "Confirmar alta de socio", "tipo": TipoTransaccion.MUTATION, "modulo": "socios"},
-    {"codigo": "BAJA_SOCIO", "nombre": "Baja de socio", "tipo": TipoTransaccion.MUTATION, "modulo": "socios"},
-    {"codigo": "VER_SOCIO", "nombre": "Ver datos de socio", "tipo": TipoTransaccion.QUERY, "modulo": "socios"},
-    {"codigo": "ACTUALIZAR_SOCIO", "nombre": "Actualizar datos de socio", "tipo": TipoTransaccion.MUTATION, "modulo": "socios"},
-    {"codigo": "LISTAR_SOCIOS", "nombre": "Listar socios", "tipo": TipoTransaccion.QUERY, "modulo": "socios"},
-    {"codigo": "EXPORTAR_SOCIOS", "nombre": "Exportar socios a Excel", "tipo": TipoTransaccion.QUERY, "modulo": "socios"},
+    # === miembroS ===
+    {"codigo": "ALTA_miembro", "nombre": "Alta de miembro", "tipo": TipoTransaccion.MUTATION, "modulo": "miembros"},
+    {"codigo": "CONFIRMAR_ALTA_miembro", "nombre": "Confirmar alta de miembro", "tipo": TipoTransaccion.MUTATION, "modulo": "miembros"},
+    {"codigo": "BAJA_miembro", "nombre": "Baja de miembro", "tipo": TipoTransaccion.MUTATION, "modulo": "miembros"},
+    {"codigo": "VER_miembro", "nombre": "Ver datos de miembro", "tipo": TipoTransaccion.QUERY, "modulo": "miembros"},
+    {"codigo": "ACTUALIZAR_miembro", "nombre": "Actualizar datos de miembro", "tipo": TipoTransaccion.MUTATION, "modulo": "miembros"},
+    {"codigo": "LISTAR_miembroS", "nombre": "Listar miembros", "tipo": TipoTransaccion.QUERY, "modulo": "miembros"},
+    {"codigo": "EXPORTAR_miembroS", "nombre": "Exportar miembros a Excel", "tipo": TipoTransaccion.QUERY, "modulo": "miembros"},
 
     # === SIMPATIZANTES ===
     {"codigo": "ALTA_SIMPATIZANTE", "nombre": "Alta de simpatizante", "tipo": TipoTransaccion.MUTATION, "modulo": "simpatizantes"},
     {"codigo": "BAJA_SIMPATIZANTE", "nombre": "Baja de simpatizante", "tipo": TipoTransaccion.MUTATION, "modulo": "simpatizantes"},
-    {"codigo": "SIMPATIZANTE_A_SOCIO", "nombre": "Convertir simpatizante a socio", "tipo": TipoTransaccion.MUTATION, "modulo": "simpatizantes"},
+    {"codigo": "SIMPATIZANTE_A_miembro", "nombre": "Convertir simpatizante a miembro", "tipo": TipoTransaccion.MUTATION, "modulo": "simpatizantes"},
 
     # === CUOTAS ===
     {"codigo": "VER_CUOTAS", "nombre": "Ver cuotas", "tipo": TipoTransaccion.QUERY, "modulo": "cuotas"},
@@ -52,7 +52,7 @@ TRANSACCIONES = [
     {"codigo": "ACTUALIZAR_AGRUPACION", "nombre": "Actualizar agrupación", "tipo": TipoTransaccion.MUTATION, "modulo": "agrupaciones"},
 
     # === EMAILS ===
-    {"codigo": "ENVIAR_EMAIL_SOCIOS", "nombre": "Enviar email a socios", "tipo": TipoTransaccion.MUTATION, "modulo": "emails"},
+    {"codigo": "ENVIAR_EMAIL_miembroS", "nombre": "Enviar email a miembros", "tipo": TipoTransaccion.MUTATION, "modulo": "emails"},
     {"codigo": "ENVIAR_EMAIL_SIMPATIZANTES", "nombre": "Enviar email a simpatizantes", "tipo": TipoTransaccion.MUTATION, "modulo": "emails"},
     {"codigo": "ENVIAR_AVISO_COBRO", "nombre": "Enviar aviso de próximo cobro", "tipo": TipoTransaccion.MUTATION, "modulo": "emails"},
 
@@ -75,22 +75,22 @@ TRANSACCIONES = [
 
 # Permisos: qué roles pueden ejecutar qué transacciones
 PERMISOS = {
-    "SOCIO": [
-        "VER_SOCIO", "ACTUALIZAR_SOCIO", "PAGAR_CUOTA", "CREAR_DONACION",
+    "miembro": [
+        "VER_miembro", "ACTUALIZAR_miembro", "PAGAR_CUOTA", "CREAR_DONACION",
     ],
     "SIMPATIZANTE": [
-        "ALTA_SIMPATIZANTE", "SIMPATIZANTE_A_SOCIO",
+        "ALTA_SIMPATIZANTE", "SIMPATIZANTE_A_miembro",
     ],
     "PRESIDENTE": [
-        "LISTAR_SOCIOS", "VER_SOCIO", "ACTUALIZAR_SOCIO", "ALTA_SOCIO", "BAJA_SOCIO",
-        "CONFIRMAR_ALTA_SOCIO", "EXPORTAR_SOCIOS",
+        "LISTAR_miembroS", "VER_miembro", "ACTUALIZAR_miembro", "ALTA_miembro", "BAJA_miembro",
+        "CONFIRMAR_ALTA_miembro", "EXPORTAR_miembroS",
         "VER_AGRUPACIONES", "ACTUALIZAR_AGRUPACION",
-        "ENVIAR_EMAIL_SOCIOS",
+        "ENVIAR_EMAIL_miembroS",
         "VER_ESTADISTICAS", "EXPORTAR_INFORME_ANUAL",
         "ASIGNAR_ROL_COORDINADOR", "ASIGNAR_ROL_PRESIDENTE", "ASIGNAR_ROL_TESORERO",
     ],
     "TESORERO": [
-        "LISTAR_SOCIOS", "VER_SOCIO", "ACTUALIZAR_SOCIO", "ALTA_SOCIO", "BAJA_SOCIO",
+        "LISTAR_miembroS", "VER_miembro", "ACTUALIZAR_miembro", "ALTA_miembro", "BAJA_miembro",
         "VER_CUOTAS", "CREAR_CUOTA", "ANOTAR_INGRESO_CUOTA", "VER_TOTALES_CUOTAS",
         "EXPORTAR_CUOTAS", "GESTIONAR_CUOTAS_VIGENTES",
         "VER_DONACIONES", "ANOTAR_INGRESO_DONACION", "ANULAR_DONACION",
@@ -100,9 +100,9 @@ PERMISOS = {
         "ENVIAR_AVISO_COBRO",
     ],
     "COORDINADOR": [
-        "LISTAR_SOCIOS", "VER_SOCIO", "ACTUALIZAR_SOCIO", "ALTA_SOCIO", "BAJA_SOCIO",
-        "EXPORTAR_SOCIOS",
-        "ENVIAR_EMAIL_SOCIOS",
+        "LISTAR_miembroS", "VER_miembro", "ACTUALIZAR_miembro", "ALTA_miembro", "BAJA_miembro",
+        "EXPORTAR_miembroS",
+        "ENVIAR_EMAIL_miembroS",
     ],
     "GESTOR_SIMPS": [
         "ENVIAR_EMAIL_SIMPATIZANTES",

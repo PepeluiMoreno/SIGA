@@ -64,7 +64,7 @@ Modelo unificado con todos los campos:
 #### Campos específicos de asociaciones externas (EXTERNAS):
 - `persona_contacto_nombre`, `persona_contacto_cargo`
 - `persona_contacto_email`, `persona_contacto_telefono`
-- `numero_socios`
+- `numero_miembros`
 - `valoracion` (1-5 estrellas)
 - `registro_oficial`, `numero_registro`, `fecha_constitucion`
 - Relación → `convenios`
@@ -250,7 +250,7 @@ type Organizacion {
 
   # Asociaciones externas
   personaContactoNombre: String
-  numeroSocios: Int
+  numeromiembros: Int
   convenios: [Convenio!]!
   tieneConvenioVigente: Boolean!
 

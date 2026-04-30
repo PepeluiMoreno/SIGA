@@ -5,48 +5,48 @@ import json
 
 from app.core.database import get_session
 from app.modulos.traslados.modelos import SolicitudTraslado, EstadoTraslado
-from app.modulos.administracion_socios.modelos import Socio
+from app.modulos.administracion_miembros.modelos import miembro
 from app.modulos.equipos.modelos import MiembroEquipo, Equipo
 from app.modulos.agrupaciones_territoriales.modelos import AgrupacionTerritorial
 from app.modulos.comunicaciones.servicios import ServicioComunicaciones
-from app.modulos.administracion_socios.servicios import ServicioGestionSocios
+from app.modulos.administracion_miembros.servicios import ServicioGestionmiembros
 
 
 class ServicioTraslados:
     
     def __init__(self):
         self.servicio_comunicaciones = ServicioComunicaciones()
-        self.servicio_socios = ServicioGestionSocios()
+        self.servicio_miembros = ServicioGestionmiembros()
     
     async def crear_solicitud_traslado(
         self,
-        socio_id: int,
+        miembro_id: int,
         agrupacion_destino_id: int,
         motivo: str,
         fecha_efectiva_deseada: Optional[date] = None
     ) -> SolicitudTraslado:
         """Crear nueva solicitud de traslado"""
         
-        # Obtener socio y validar
-        socio = await self.obtener_socio(socio_id)
+        # Obtener miembro y validar
+        miembro = await self.obtener_miembro(miembro_id)
         
-        if socio.estado != EstadoSocio.ACTIVO:
-            raise ValueError("Solo pueden solicitar traslado los socios activos")
+        if miembro.estado != Estadomiembro.ACTIVO:
+            raise ValueError("Solo pueden solicitar traslado los miembros activos")
         
-        agrupacion_origen_id = socio.agrupacion_territorial_id
+        agrupacion_origen_id = miembro.agrupacion_territorial_id
         
         # Validar que no sea la misma agrupación
         if agrupacion_origen_id == agrupacion_destino_id:
             raise ValueError("No puedes trasladarte a la misma agrupación")
         
         # Validar que no tenga traslados pendientes
-        traslado_pendiente = await self.tiene_traslado_pendiente(socio_id)
+        traslado_pendiente = await self.tiene_traslado_pendiente(miembro_id)
         if traslado_pendiente:
             raise ValueError("Ya tienes una solicitud de traslado pendiente")
         
         # Crear solicitud
         solicitud = SolicitudTraslado(
-            socio_id=socio_id,
+            miembro_id=miembro_id,
             agrupacion_origen_id=agrupacion_origen_id,
             agrupacion_destino_id=agrupacion_destino_id,
             motivo=motivo,
@@ -161,7 +161,7 @@ class ServicioTraslados:
             session.add(solicitud)
             await session.commit()
         
-        # Notificar al socio
+        # Notificar al miembro
         await self._notificar_rechazo(solicitud)
         
         return solicitud
@@ -169,14 +169,14 @@ class ServicioTraslados:
     async def _ejecutar_traslado(self, solicitud: SolicitudTraslado):
         """Ejecutar el traslado una vez aprobado por ambos coordinadores"""
         
-        socio = solicitud.socio
+        miembro = solicitud.miembro
         
         # 1. Guardar datos anteriores
-        solicitud.numero_socio_anterior = socio.numero_socio
+        solicitud.numero_miembro_anterior = miembro.numero_miembro
         
         # 2. Dar de baja de equipos territoriales de origen
         equipos_baja = await self._dar_baja_equipos_territoriales(
-            socio.id,
+            miembro.id,
             solicitud.agrupacion_origen_id
         )
         solicitud.equipos_dados_baja = json.dumps([
@@ -184,17 +184,17 @@ class ServicioTraslados:
             for e in equipos_baja
         ])
         
-        # 3. Cambiar agrupación territorial y generar nuevo número de socio
-        await self.servicio_socios.cambiar_agrupacion(
-            socio_id=socio.id,
+        # 3. Cambiar agrupación territorial y generar nuevo número de miembro
+        await self.servicio_miembros.cambiar_agrupacion(
+            miembro_id=miembro.id,
             nueva_agrupacion_id=solicitud.agrupacion_destino_id,
             motivo=f"Traslado aprobado. Solicitud #{solicitud.id}",
             usuario_id=solicitud.coordinador_destino_id
         )
         
-        # Recargar socio para obtener nuevo número
-        await self._refrescar_socio(socio)
-        solicitud.numero_socio_nuevo = socio.numero_socio
+        # Recargar miembro para obtener nuevo número
+        await self._refrescar_miembro(miembro)
+        solicitud.numero_miembro_nuevo = miembro.numero_miembro
         
         # 4. Recalcular recursos disponibles de ambas agrupaciones
         await self._recalcular_recursos_agrupacion(solicitud.agrupacion_origen_id)
@@ -204,14 +204,14 @@ class ServicioTraslados:
         solicitud.estado = EstadoTraslado.EJECUTADO
         solicitud.fecha_ejecucion = datetime.utcnow()
         
-        # 6. Notificar al socio y coordinadores
+        # 6. Notificar al miembro y coordinadores
         await self._notificar_traslado_ejecutado(solicitud)
     
     async def _dar_baja_equipos_territoriales(
         self,
-        socio_id: int,
+        miembro_id: int,
         agrupacion_origen_id: int
     ) -> List[Equipo]:
         """
-        Dar de baja al socio de todos los equipos de trabajo 
+        Dar de baja al miembro de todos los equipos de trabajo 
         que pertenez

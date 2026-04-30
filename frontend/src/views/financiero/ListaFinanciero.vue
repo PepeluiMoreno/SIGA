@@ -567,7 +567,7 @@ const loadTransacciones = async () => {
       {
         id: 1,
         fecha: '2025-01-15',
-        concepto: 'Cuota anual socio 2025',
+        concepto: 'Cuota anual miembro 2025',
         miembro: 'María García López',
         tipo: 'CUOTA',
         estado: 'COBRADA',
@@ -587,7 +587,7 @@ const loadTransacciones = async () => {
       {
         id: 3,
         fecha: '2025-01-13',
-        concepto: 'Cuota anual socio 2025',
+        concepto: 'Cuota anual miembro 2025',
         miembro: 'Ana López Fernández',
         tipo: 'CUOTA',
         estado: 'PENDIENTE',
@@ -607,7 +607,7 @@ const loadTransacciones = async () => {
       {
         id: 5,
         fecha: '2025-01-10',
-        concepto: 'Cuota anual socio 2025',
+        concepto: 'Cuota anual miembro 2025',
         miembro: 'Carlos Sánchez Vega',
         tipo: 'CUOTA',
         estado: 'DEVUELTA',

@@ -27,7 +27,7 @@ La migración se organizó en scripts secuenciales numerados:
 | `2_importar_geografico.py` | Importa países y provincias | Script 1 |
 | `3_importar_agrupaciones.py` | Importa agrupaciones territoriales | Script 2 |
 | `3b_establecer_jerarquia_agrupaciones.py` | Establece relaciones padre-hijo | Script 3 |
-| `4_importar_miembros.py` | Importa miembros (socios) | Script 3b |
+| `4_importar_miembros.py` | Importa miembros (miembros) | Script 3b |
 | `5_importar_importes_cuota.py` | Importa tarifas de cuotas por año | Script 1 |
 | `6_importar_cuotas_anuales.py` | Importa cuotas de miembros | Scripts 4, 5 |
 | `7_importar_financiero_complementario.py` | Importa donaciones, remesas, órdenes | Script 6 |
@@ -67,14 +67,14 @@ Se implementaron múltiples estrategias según el volumen de datos:
 |-------|------------|------------------|
 | `MIEMBRO` | `miembros` | Encriptación DNI/IBAN, normalización nombres |
 | `MIEMBROELIMINADO5ANIOS` | `miembros` | Marcados como `datos_anonimizados=true` |
-| `SOCIOSFALLECIDOS` | `miembros` | `motivo_baja_id=FALLECIMIENTO` |
-| `socio` (campo SIMPATIZANTE) | `tipo_miembro_id` | SIMPATIZANTE si `SIMPATIZANTE=1` |
+| `miembroSFALLECIDOS` | `miembros` | `motivo_baja_id=FALLECIMIENTO` |
+| `miembro` (campo SIMPATIZANTE) | `tipo_miembro_id` | SIMPATIZANTE si `SIMPATIZANTE=1` |
 
 ### 3.3 Tablas Financieras
 
 | MySQL | PostgreSQL | Transformaciones |
 |-------|------------|------------------|
-| `CUOTAANIOSOCIO` | `cuotas_anuales` | Estado calculado, modo ingreso mapeado |
+| `CUOTAANIOmiembro` | `cuotas_anuales` | Estado calculado, modo ingreso mapeado |
 | `IMPORTEDESCUOTAANIO` | `importes_cuota_anio` | Replicado por tipo de miembro |
 | `DONACION` | `donaciones` | Asociación con campañas por concepto |
 | `DONACIONCONCEPTOS` | `donaciones_conceptos` | Códigos truncados a 20 caracteres |
@@ -177,7 +177,7 @@ Los siguientes campos se encriptan en reposo usando AES-256:
 | Tipo | Cantidad | Motivo |
 |------|----------|--------|
 | Donaciones sin fecha | Variable | `FECHAINGRESO` nulo o inválido |
-| Órdenes sin miembro | Variable | `CODSOCIO` no encontrado en mapeo |
+| Órdenes sin miembro | Variable | `CODmiembro` no encontrado en mapeo |
 | Órdenes sin remesa | Variable | Referencia SEPA no encontrada |
 | Órdenes sin cuota | Variable | Cuota del ejercicio no existe |
 

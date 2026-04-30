@@ -1,4 +1,4 @@
-"""Modelo de miembros (socios) de la organización."""
+"""Modelo de miembros (miembros) de la organización."""
 
 import uuid
 from datetime import date
@@ -16,7 +16,7 @@ EDAD_JOVEN_LIMITE = 30  # Menores de 30 años se consideran jóvenes
 
 
 class TipoMiembro(BaseModel):
-    """Tipos de miembro (socio, simpatizante, colaborador, etc.)."""
+    """Tipos de miembro (miembro, simpatizante, colaborador, etc.)."""
     __tablename__ = 'tipos_miembro'
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
@@ -37,7 +37,7 @@ class TipoMiembro(BaseModel):
 
 
 class Miembro(BaseModel):
-    """Miembro (socio) de la organización."""
+    """Miembro (miembro) de la organización."""
     __tablename__ = 'miembros'
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)

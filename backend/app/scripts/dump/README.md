@@ -32,7 +32,7 @@ pip install aiomysql asyncpg sqlalchemy[asyncio]
 | 2 | `2_importar_geografico.py` | Países, provincias, municipios | MySQL* |
 | 3 | `3_importar_agrupaciones.py` | Agrupaciones territoriales | MySQL* |
 | 3b | `3b_establecer_jerarquia.py` | Jerarquía de agrupaciones | PostgreSQL |
-| 4 | `4_importar_miembros.py` | Miembros (socios) con encriptación | MySQL |
+| 4 | `4_importar_miembros.py` | Miembros (miembros) con encriptación | MySQL |
 | 5 | `5_importar_importes_cuota.py` | Catálogo de importes de cuota | MySQL |
 | 6 | `6_importar_cuotas_anuales.py` | Historial de cuotas anuales | MySQL |
 | 7 | `7_importar_financiero.py` | Donaciones, remesas, órdenes de cobro | MySQL |

@@ -1,7 +1,7 @@
 <template>
   <CatalogoGenerico
     titulo="Situaciones"
-    subtitulo="Situaciones por las que pasa un socio"
+    subtitulo="Situaciones por las que pasa un miembro"
     nombre-singular="Situación"
     icono="📊"
     query-name="estadosMiembro"

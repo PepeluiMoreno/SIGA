@@ -46,7 +46,7 @@
 
 ### Miembros
 - Tipos de Miembro
-- Miembros (Socios)
+- Miembros (miembros)
 
 ### Campañas
 - Tipos de Campaña

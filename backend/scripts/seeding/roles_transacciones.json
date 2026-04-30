@@ -178,7 +178,7 @@
       "CAMP_LIST", "CAMP_VIEW",
       "RPT_VOLUNTEERS"
     ],
-    "SOCIO": [
+    "miembro": [
       "SOL_CREATE",
       "SOC_VIEW",
       "TRAS_REQUEST", "TRAS_CANCEL",

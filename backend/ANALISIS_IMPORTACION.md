@@ -30,18 +30,18 @@
 - `ESTADO` (activa/inactiva/baja) → calcular estado
 - `CUENTAAGRUPIBAN1`, `CUENTAAGRUPIBAN2` → datos bancarios (encriptar)
 
-### 3. Miembros/Socios
+### 3. Miembros/miembros
 | Tabla Origen | Tabla Destino | Notas |
 |-------------|---------------|-------|
-| `MIEMBRO` | `miembros` | Principal - contiene socios y simpatizantes |
-| `SOCIO` | `miembros` (filtro tipo) | Posible redundancia |
+| `MIEMBRO` | `miembros` | Principal - contiene miembros y simpatizantes |
+| `miembro` | `miembros` (filtro tipo) | Posible redundancia |
 | `SIMPATIZANTE` | `miembros` (filtro tipo) | Posible redundancia |
 | `MIEMBROELIMINADO5ANIOS` | miembros (con fecha_baja) | Histórico de bajas |
-| `SOCIOSFALLECIDOS` | miembros (motivo_baja) | Fallecidos |
+| `miembroSFALLECIDOS` | miembros (motivo_baja) | Fallecidos |
 
 **Campos clave en MIEMBRO**:
 - `CODUSER` (int) → NO usar como UUID, generar nuevo
-- `TIPOMIEMBRO` (socio/simpatizante) → `tipos_miembro`
+- `TIPOMIEMBRO` (miembro/simpatizante) → `tipos_miembro`
 - `NUMDOCUMENTOMIEMBRO` → numero_documento (encriptar)
 - `TIPODOCUMENTOMIEMBRO` → tipo_documento
 - `APE1`, `APE2`, `NOM` → apellido1, apellido2, nombre
@@ -54,7 +54,7 @@
 ### 4. Cuotas y Finanzas
 | Tabla Origen | Tabla Destino | Notas |
 |-------------|---------------|-------|
-| `CUOTAANIOSOCIO` | `cuotas_anuales` | Cuotas por año y socio |
+| `CUOTAANIOmiembro` | `cuotas_anuales` | Cuotas por año y miembro |
 | `IMPORTEDESCUOTAANIO` | `importes_cuota_anio` | Importes de cuota por año |
 | `ORDENES_COBRO` | `ordenes_cobro` | Órdenes de cobro |
 | `REMESAS_SEPAXML` | `remesas` | Remesas SEPA |
@@ -90,7 +90,7 @@ Estas tablas NO tienen equivalente directo en el nuevo modelo DDD:
 - `ERRORES` → logs
 - `EXCELANDALUCIA`, `EXCELESTATAL`, `EXCELTODOS` → exports temporales
 - `CONFIRMAREMAILALTAGESTOR` → proceso de confirmación obsoleto
-- `SOCIOSCONFIRMAR` → proceso de confirmación obsoleto
+- `miembroSCONFIRMAR` → proceso de confirmación obsoleto
 - `CODIGOSBIC` → catálogo bancario (posiblemente obsoleto)
 - `PAGOGASTOS_borrar` → tabla temporal
 - `Donacion_Medalla_PayPal_Sant_EXP_puntoD_2019_10_03_Final` → export temporal
@@ -107,7 +107,7 @@ Estas tablas NO tienen equivalente directo en el nuevo modelo DDD:
    - Generar UUIDs nuevos
 
 3. **Tipos de Miembro** (generar desde valores únicos de `TIPOMIEMBRO`)
-   - Crear tipos: "socio", "simpatizante", "colaborador"
+   - Crear tipos: "miembro", "simpatizante", "colaborador"
    - Asignar propiedades (requiere_cuota, puede_votar)
 
 4. **Estados de Cuota** (generar catálogo)
@@ -120,7 +120,7 @@ Estas tablas NO tienen equivalente directo en el nuevo modelo DDD:
 4. **ENCRIPTAR** IBANs antes de guardar
 
 ### Fase 3: Miembros
-1. Consolidar `MIEMBRO`, `SOCIO`, `SIMPATIZANTE`
+1. Consolidar `MIEMBRO`, `miembro`, `SIMPATIZANTE`
 2. Generar UUIDs nuevos (NO usar CODUSER)
 3. Relacionar con:
    - tipo_miembro_id (buscar por código)
@@ -135,11 +135,11 @@ Estas tablas NO tienen equivalente directo en el nuevo modelo DDD:
    - `COLABORA` → observaciones_voluntariado, intereses
 6. Procesar eliminados:
    - `MIEMBROELIMINADO5ANIOS` → fecha_baja + motivo_baja
-   - `SOCIOSFALLECIDOS` → fecha_baja + motivo_baja="Fallecido"
+   - `miembroSFALLECIDOS` → fecha_baja + motivo_baja="Fallecido"
 
 ### Fase 4: Cuotas y Finanzas
 1. **Importes de cuota por año** (`IMPORTEDESCUOTAANIO` → `importes_cuota_anio`)
-2. **Cuotas anuales** (`CUOTAANIOSOCIO` → `cuotas_anuales`)
+2. **Cuotas anuales** (`CUOTAANIOmiembro` → `cuotas_anuales`)
    - Relacionar con miembro_id (por CODUSER → buscar miembro)
    - Calcular estado_id basado en datos de pago
 3. **Donaciones** (`DONACION` → `donaciones`)

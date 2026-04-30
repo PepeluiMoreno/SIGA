@@ -8,7 +8,7 @@ from app.models import Rol
 
 
 ROLES = [
-    {"codigo": "SOCIO", "nombre": "Socio", "descripcion": "Miembro asociado de Europa Laica"},
+    {"codigo": "miembro", "nombre": "miembro", "descripcion": "Miembro asociado de Europa Laica"},
     {"codigo": "SIMPATIZANTE", "nombre": "Simpatizante", "descripcion": "Usuario simpatizante (no miembro)"},
     {"codigo": "PRESIDENTE", "nombre": "Presidente/Vicepresidente/Secretaría", "descripcion": "Gestión ejecutiva de la asociación"},
     {"codigo": "TESORERO", "nombre": "Tesorero", "descripcion": "Gestión financiera y de cuotas"},

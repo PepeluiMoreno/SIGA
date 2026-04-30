@@ -394,11 +394,11 @@ class ImportadorFinancieroComplementario:
             async with mysql_conn.cursor() as cursor:
                 await cursor.execute("""
                     SELECT
-                        CODSOCIO, ANIOCUOTA, NOMARCHIVOSEPAXML,
-                        IMPORTECUOTAANIOSOCIO, IMPORTECUOTAANIOPAGADA, ESTADOCUOTA,
+                        CODmiembro, ANIOCUOTA, NOMARCHIVOSEPAXML,
+                        IMPORTECUOTAANIOmiembro, IMPORTECUOTAANIOPAGADA, ESTADOCUOTA,
                         FECHAORDENCOBRO, FECHAPAGO
                     FROM ordenes_cobro
-                    ORDER BY ANIOCUOTA, CODSOCIO
+                    ORDER BY ANIOCUOTA, CODmiembro
                 """)
 
                 batch = []
@@ -410,16 +410,16 @@ class ImportadorFinancieroComplementario:
                         break
 
                     for row in rows:
-                        codsocio = int(row[0]) if row[0] else None
+                        codmiembro = int(row[0]) if row[0] else None
                         ejercicio = int(row[1]) if row[1] else None
                         referencia_remesa = str(row[2]).strip()[:100] if row[2] else None
 
-                        if not codsocio or not ejercicio:
+                        if not codmiembro or not ejercicio:
                             self.stats['ordenes_omitidas'] += 1
                             continue
 
                         # Obtener miembro_id
-                        miembro_id = self.cache_miembros.get(codsocio)
+                        miembro_id = self.cache_miembros.get(codmiembro)
                         if not miembro_id:
                             self.stats['ordenes_omitidas'] += 1
                             continue

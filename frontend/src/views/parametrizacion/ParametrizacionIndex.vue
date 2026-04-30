@@ -70,7 +70,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 const categoriaActiva = ref('miembros')
 
 const categorias = [
-  { id: 'miembros', nombre: 'Socios' },
+  { id: 'miembros', nombre: 'miembros' },
   { id: 'financiero', nombre: 'Financiero' },
   { id: 'campanias', nombre: 'Campañas' },
   { id: 'actividades', nombre: 'Actividades' },
@@ -79,25 +79,25 @@ const categorias = [
 ]
 
 const catalogos = [
-  // Socios
+  // miembros
   {
     categoria: 'miembros',
-    nombre: 'Tipos de Socio',
-    descripcion: 'Socio, Simpatizante, Voluntario, etc.',
+    nombre: 'Tipos de miembro',
+    descripcion: 'miembro, Simpatizante, Voluntario, etc.',
     icono: '👤',
     ruta: '/parametrizacion/tipos-miembro'
   },
   {
     categoria: 'miembros',
     nombre: 'Situaciones',
-    descripcion: 'Situaciones por las que pasa un socio',
+    descripcion: 'Situaciones por las que pasa un miembro',
     icono: '📊',
     ruta: '/parametrizacion/estados-miembro'
   },
   {
     categoria: 'miembros',
     nombre: 'Motivos de Baja',
-    descripcion: 'Razones para dar de baja a un socio',
+    descripcion: 'Razones para dar de baja a un miembro',
     icono: '📝',
     ruta: '/parametrizacion/motivos-baja'
   },
@@ -196,7 +196,7 @@ const catalogos = [
   {
     categoria: 'grupos',
     nombre: 'Roles de Grupo',
-    descripcion: 'Coordinador, Socio, Invitado, etc.',
+    descripcion: 'Coordinador, miembro, Invitado, etc.',
     icono: '🎖️',
     ruta: '/parametrizacion/roles-grupo'
   },

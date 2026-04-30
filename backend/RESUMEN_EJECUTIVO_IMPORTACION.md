@@ -70,7 +70,7 @@ Solo se rellenan si es_voluntario=true:
 
 ### 3. Agrupación del miembro
 ```
-Inferir de última cuota en CUOTAANIOSOCIO:
+Inferir de última cuota en CUOTAANIOmiembro:
 - agrupacion_id ← buscar por CODAGRUPACION del año más reciente
 ```
 
@@ -83,7 +83,7 @@ Inferir del código postal:
 
 ### 5. Importes de cuota
 ```
-importe ← IMPORTECUOTAANIOSOCIO (debe pagar)
+importe ← IMPORTECUOTAANIOmiembro (debe pagar)
 importe_pagado ← IMPORTECUOTAANIOPAGADA (pagado real)
 gastos_gestion ← IMPORTEGASTOSABONOCUOTA
 ```
@@ -95,7 +95,7 @@ PENDIENTE-COBRO → PENDIENTE
 ABONADA-PARTE → PENDIENTE (con importe_pagado < importe)
 NOABONADA-DEVUELTA → VENCIDA
 NOABONADA-ERROR-CUENTA → PENDIENTE
-BAJA-SOCIO → EXENTA
+BAJA-miembro → EXENTA
 OTROS → PENDIENTE
 ```
 
@@ -120,14 +120,14 @@ Usar `EncriptacionService` antes de guardar:
 
 ### Miembros
 - `MIEMBRO` → `miembros` (principal)
-- `SOCIO` → (verificar si es duplicado de MIEMBRO)
+- `miembro` → (verificar si es duplicado de MIEMBRO)
 - `SIMPATIZANTE` → (verificar si es duplicado de MIEMBRO)
 - `MIEMBROELIMINADO5ANIOS` → `miembros` (con fecha_baja)
-- `SOCIOSFALLECIDOS` → `miembros` (motivo_baja="Fallecido")
+- `miembroSFALLECIDOS` → `miembros` (motivo_baja="Fallecido")
 
 ### Cuotas
 - `IMPORTEDESCUOTAANIO` → `importes_cuota_anio` (con tipo_miembro_id)
-- `CUOTAANIOSOCIO` → `cuotas_anuales`
+- `CUOTAANIOmiembro` → `cuotas_anuales`
 
 ### Finanzas
 - `DONACION` → `donaciones`
@@ -142,7 +142,7 @@ Usar `EncriptacionService` antes de guardar:
 ### Ignorar (temporales/obsoletas)
 - `CONTROLES`, `ERRORES` → logs
 - `EXCELANDALUCIA`, `EXCELESTATAL`, `EXCELTODOS` → exports temp
-- `CONFIRMAREMAILALTAGESTOR`, `SOCIOSCONFIRMAR` → procesos obsoletos
+- `CONFIRMAREMAILALTAGESTOR`, `miembroSCONFIRMAR` → procesos obsoletos
 - `CODIGOSBIC` → catálogo bancario obsoleto
 - `PAGOGASTOS_borrar`, `Donacion_Medalla_PayPal...` → tablas temp
 
@@ -178,7 +178,7 @@ Usar `EncriptacionService` antes de guardar:
 1. Catálogos base (NO tienen FK externas)
    ├── PAIS → paises
    ├── PROVINCIA → provincias
-   ├── Crear tipos_miembro (socio, voluntario, simpatizante)
+   ├── Crear tipos_miembro (miembro, voluntario, simpatizante)
    └── Crear estados (cuota, campaña, tarea, etc.)
 
 2. Agrupaciones (FK: pais, provincia)
@@ -191,7 +191,7 @@ Usar `EncriptacionService` antes de guardar:
    └── MIEMBRO → miembros
 
 5. Cuotas anuales (FK: miembro, agrupacion, estado, importe_cuota_anio)
-   └── CUOTAANIOSOCIO → cuotas_anuales
+   └── CUOTAANIOmiembro → cuotas_anuales
 
 6. Finanzas (FK: miembro, agrupacion, cuota)
    ├── DONACIONCONCEPTOS → donacion_conceptos
@@ -208,7 +208,7 @@ Usar `EncriptacionService` antes de guardar:
 ### Fase 1: Preparación
 ```bash
 1. crear_catalogos_base.py
-   - Crear tipos_miembro: socio, voluntario, simpatizante
+   - Crear tipos_miembro: miembro, voluntario, simpatizante
    - Crear estados_cuota: PENDIENTE, PAGADA, VENCIDA, EXENTA
    - Crear estados de otros dominios
 ```
@@ -245,7 +245,7 @@ Usar `EncriptacionService` antes de guardar:
    - Leer MIEMBRO, consolidar con otras tablas
    - Encriptar numero_documento
    - Mapear TIPOMIEMBRO → tipo_miembro_id
-   - Inferir agrupacion_id de CUOTAANIOSOCIO
+   - Inferir agrupacion_id de CUOTAANIOmiembro
    - Inferir fecha_alta, fecha_baja
    - Marcar es_voluntario si COLABORA tiene datos
    - Priorizar teléfonos: móvil > casa > trabajo
@@ -255,7 +255,7 @@ Usar `EncriptacionService` antes de guardar:
 ### Fase 6: Cuotas Anuales
 ```bash
 6. importar_cuotas_anuales.py
-   - Leer CUOTAANIOSOCIO
+   - Leer CUOTAANIOmiembro
    - Relacionar con miembro, agrupacion, estado
    - Mapear ESTADOCUOTA → estado_id
    - Convertir MODOINGRESO → modo_ingreso (enum)
@@ -304,7 +304,7 @@ Basado en dump de 16.8 MB:
 
 ## ⚠️ Riesgos y Mitigaciones
 
-### Riesgo 1: Datos duplicados MIEMBRO/SOCIO/SIMPATIZANTE
+### Riesgo 1: Datos duplicados MIEMBRO/miembro/SIMPATIZANTE
 **Mitigación**: Verificar con query si CODUSER se repite, usar MIEMBRO como fuente única
 
 ### Riesgo 2: Fechas inválidas '0000-00-00'

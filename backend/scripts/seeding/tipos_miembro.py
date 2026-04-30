@@ -8,7 +8,7 @@ from app.models import TipoMiembro
 
 
 TIPOS_MIEMBRO = [
-    {"codigo": "SOCIO", "nombre": "Socio", "requiere_cuota": True},
+    {"codigo": "miembro", "nombre": "miembro", "requiere_cuota": True},
     {"codigo": "SIMPATIZANTE", "nombre": "Simpatizante", "requiere_cuota": False},
 ]
 

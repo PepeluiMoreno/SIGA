@@ -238,7 +238,7 @@ const loadGrupos = async () => {
     {
       id: 4,
       nombre: 'Grupo de Trabajo Madrid',
-      descripcion: 'Coordinación de actividades y socios en la Comunidad de Madrid.',
+      descripcion: 'Coordinación de actividades y miembros en la Comunidad de Madrid.',
       tipo: 'PERMANENTE',
       activo: true,
       coordinador: 'Carmen Vega',

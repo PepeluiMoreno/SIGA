@@ -359,7 +359,7 @@ const agrupacionesJerarquicas = computed(() => {
   return buildTree(null, 0)
 })
 
-// Computed: título descriptivo para resultados (ej: "socios activos", "socios, simpatizantes de baja")
+// Computed: título descriptivo para resultados (ej: "miembros activos", "miembros, simpatizantes de baja")
 const tituloDescriptivo = computed(() => {
   // Obtener nombres de tipos seleccionados
   let nombresTipos = []
@@ -417,7 +417,7 @@ const tituloDescriptivo = computed(() => {
 const pluralizar = (nombre) => {
   const lower = nombre.toLowerCase()
   // Reglas básicas de pluralización en español
-  if (lower === 'socio') return total.value === 1 ? 'socio' : 'socios'
+  if (lower === 'miembro') return total.value === 1 ? 'miembro' : 'miembros'
   if (lower === 'simpatizante') return total.value === 1 ? 'simpatizante' : 'simpatizantes'
   if (lower === 'colaborador') return total.value === 1 ? 'colaborador' : 'colaboradores'
   if (lower === 'voluntario') return total.value === 1 ? 'voluntario' : 'voluntarios'

@@ -28,8 +28,8 @@ async def crear_tipos_miembro(session: AsyncSession) -> dict[str, uuid.UUID]:
 
     tipos_data = [
         {
-            "codigo": "SOCIO",
-            "nombre": "Socio",
+            "codigo": "miembro",
+            "nombre": "miembro",
             "descripcion": "Miembro de pleno derecho con derecho a voto",
             "requiere_cuota": True,
             "puede_votar": True,

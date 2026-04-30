@@ -3,15 +3,15 @@ Script para importar miembros desde MySQL directamente.
 
 Importa las tablas:
 - MIEMBRO → miembros
-- socio → información adicional (IBAN, agrupación)
+- miembro → información adicional (IBAN, agrupación)
 - MIEMBROELIMINADO5ANIOS → miembros (con fecha_baja)
-- SOCIOSFALLECIDOS → miembros (con motivo_baja='Fallecido')
+- miembroSFALLECIDOS → miembros (con motivo_baja='Fallecido')
 
 IMPORTANTE:
 - Encripta DNI/NIE e IBANs antes de almacenarlos
 - Prioridad de teléfonos: móvil > fijo_casa > fijo_trabajo
 - Profesión/estudios solo si es_voluntario=True
-- Agrupación obtenida de tabla socio
+- Agrupación obtenida de tabla miembro
 - Provincia inferida por código postal
 
 Este script debe ejecutarse DESPUÉS de importar agrupaciones.
@@ -39,7 +39,7 @@ class MapeadorMiembrosMySQL:
     def __init__(self):
         self.mapeo_miembros: dict[int, uuid.UUID] = {}  # CODUSER → UUID
         self.servicio_encriptacion = get_encriptacion_service()
-        self.tipo_miembro_socio_id: Optional[uuid.UUID] = None
+        self.tipo_miembro_miembro_id: Optional[uuid.UUID] = None
         self.tipo_miembro_simpatizante_id: Optional[uuid.UUID] = None
         self.tipo_miembro_voluntario_id: Optional[uuid.UUID] = None
         self.estado_activo_id: Optional[uuid.UUID] = None
@@ -68,11 +68,11 @@ class MapeadorMiembrosMySQL:
         print("\nCargando tipos de miembro...", flush=True)
 
         result = await session.execute(
-            select(TipoMiembro).where(TipoMiembro.codigo == 'SOCIO')
+            select(TipoMiembro).where(TipoMiembro.codigo == 'miembro')
         )
-        tipo_socio = result.scalar_one_or_none()
-        if tipo_socio:
-            self.tipo_miembro_socio_id = tipo_socio.id
+        tipo_miembro = result.scalar_one_or_none()
+        if tipo_miembro:
+            self.tipo_miembro_miembro_id = tipo_miembro.id
 
         result = await session.execute(
             select(TipoMiembro).where(TipoMiembro.codigo == 'SIMPATIZANTE')
@@ -89,7 +89,7 @@ class MapeadorMiembrosMySQL:
             self.tipo_miembro_voluntario_id = tipo_voluntario.id
 
         print(f"  Tipos de miembro cargados:")
-        print(f"    SOCIO: {self.tipo_miembro_socio_id}")
+        print(f"    miembro: {self.tipo_miembro_miembro_id}")
         print(f"    SIMPATIZANTE: {self.tipo_miembro_simpatizante_id}")
         print(f"    VOLUNTARIO: {self.tipo_miembro_voluntario_id}")
 
@@ -137,18 +137,18 @@ class MapeadorMiembrosMySQL:
     def mapear_tipo_miembro(self, tipomiembro: Optional[str]) -> uuid.UUID:
         """Mapea TIPOMIEMBRO de MySQL a tipo_miembro_id de PostgreSQL."""
         if not tipomiembro:
-            return self.tipo_miembro_socio_id
+            return self.tipo_miembro_miembro_id
 
         tipo_lower = str(tipomiembro).lower().strip()
 
-        if 'socio' in tipo_lower or 'administrador' in tipo_lower:
-            return self.tipo_miembro_socio_id
+        if 'miembro' in tipo_lower or 'administrador' in tipo_lower:
+            return self.tipo_miembro_miembro_id
         elif 'simpatizante' in tipo_lower:
             return self.tipo_miembro_simpatizante_id
         elif 'voluntario' in tipo_lower:
             return self.tipo_miembro_voluntario_id
         else:
-            return self.tipo_miembro_socio_id
+            return self.tipo_miembro_miembro_id
 
     def procesar_telefonos(self, movil, fijo_casa, fijo_trabajo) -> Tuple[Optional[str], Optional[str]]:
         """
@@ -283,7 +283,7 @@ class MapeadorMiembrosMySQL:
 
         async with get_mysql_connection() as mysql_conn:
             async with mysql_conn.cursor() as cursor:
-                # Query que hace JOIN entre MIEMBRO y socio para obtener toda la información
+                # Query que hace JOIN entre MIEMBRO y miembro para obtener toda la información
                 query = """
                     SELECT
                         m.CODUSER,
@@ -309,13 +309,13 @@ class MapeadorMiembrosMySQL:
                         m.CP,
                         m.LOCALIDAD,
                         m.CODPROV,
-                        m.COMENTARIOSOCIO,
+                        m.COMENTARIOmiembro,
                         m.OBSERVACIONES,
                         s.CUENTAIBAN,
                         s.CODAGRUPACION,
                         s.FECHABAJA
                     FROM MIEMBRO m
-                    LEFT JOIN socio s ON m.CODUSER = s.CODUSER
+                    LEFT JOIN miembro s ON m.CODUSER = s.CODUSER
                     ORDER BY m.CODUSER
                 """
 
@@ -351,7 +351,7 @@ class MapeadorMiembrosMySQL:
                             cp = row[20]
                             localidad = row[21]
                             codprov = row[22]
-                            comentariosocio = row[23]
+                            comentariomiembro = row[23]
                             observaciones = row[24]
                             cuentaiban = row[25]
                             codagrupacion = row[26]
@@ -405,8 +405,8 @@ class MapeadorMiembrosMySQL:
 
                             # Procesar observaciones
                             obs_completas = []
-                            if comentariosocio:
-                                obs_completas.append(str(comentariosocio).strip())
+                            if comentariomiembro:
+                                obs_completas.append(str(comentariomiembro).strip())
                             if observaciones:
                                 obs_completas.append(str(observaciones).strip())
                             observaciones_texto = ' | '.join(obs_completas) if obs_completas else None

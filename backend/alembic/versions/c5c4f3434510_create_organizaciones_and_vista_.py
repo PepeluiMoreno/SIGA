@@ -93,7 +93,7 @@ def upgrade() -> None:
         # Informacion adicional
         sa.Column('descripcion', sa.Text(), nullable=True),
         sa.Column('actividades_principales', sa.Text(), nullable=True),
-        sa.Column('numero_socios', sa.Integer(), nullable=True),
+        sa.Column('numero_miembros', sa.Integer(), nullable=True),
 
         # Estado
         sa.Column('activo', sa.Boolean(), nullable=False, server_default='true'),

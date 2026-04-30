@@ -89,7 +89,7 @@ class Asociacion(BaseModel):
     # Información adicional
     descripcion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     actividades_principales: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    numero_socios: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    numero_miembros: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     # Estado
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)

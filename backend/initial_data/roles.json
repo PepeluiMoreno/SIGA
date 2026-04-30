@@ -151,9 +151,9 @@
       "activo": true
     },
     {
-      "codigo": "SOCIO",
-      "nombre": "Socio",
-      "descripcion": "Socio de la asociación con acceso básico.",
+      "codigo": "miembro",
+      "nombre": "miembro",
+      "descripcion": "miembro de la asociación con acceso básico.",
       "tipo": "ORGANIZACION",
       "nivel": 10,
       "es_territorial": false,
@@ -163,7 +163,7 @@
     {
       "codigo": "VOLUNTARIO",
       "nombre": "Voluntario",
-      "descripcion": "Voluntario de la asociación sin ser socio.",
+      "descripcion": "Voluntario de la asociación sin ser miembro.",
       "tipo": "ORGANIZACION",
       "nivel": 5,
       "es_territorial": false,

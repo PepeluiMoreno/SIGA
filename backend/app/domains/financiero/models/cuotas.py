@@ -24,7 +24,7 @@ class ModoIngreso(PyEnum):
 class ImporteCuotaAnio(BaseModel):
     """Importe de cuota por tipo de miembro y año (ejercicio).
 
-    Permite definir cuotas diferentes según el tipo de miembro (socio, simpatizante, etc.)
+    Permite definir cuotas diferentes según el tipo de miembro (miembro, simpatizante, etc.)
     y mantener un histórico de cuotas por ejercicio.
     """
     __tablename__ = "importes_cuota_anio"
@@ -45,7 +45,7 @@ class ImporteCuotaAnio(BaseModel):
 
 
 class CuotaAnual(BaseModel):
-    """Cuota anual de un miembro (socio).
+    """Cuota anual de un miembro (miembro).
 
     Representa la cuota asignada a un miembro para un ejercicio específico.
     Mantiene histórico de todas las cuotas (pagadas y pendientes).

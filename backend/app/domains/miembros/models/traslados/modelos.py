@@ -19,8 +19,8 @@ class SolicitudTraslado(Base):
     
     id = Column(Integer, primary_key=True)
     
-    # Socio que solicita el traslado
-    socio_id = Column(Integer, ForeignKey('socios.id'), nullable=False)
+    # miembro que solicita el traslado
+    miembro_id = Column(Integer, ForeignKey('miembros.id'), nullable=False)
     
     # Agrupaciones
     agrupacion_origen_id = Column(Integer, ForeignKey('agrupaciones_territoriales.id'), nullable=False)
@@ -55,8 +55,8 @@ class SolicitudTraslado(Base):
     usuario_ejecutor_id = Column(Integer, ForeignKey('usuarios.id'))
     
     # Datos del traslado ejecutado
-    numero_socio_anterior = Column(String(50))
-    numero_socio_nuevo = Column(String(50))
+    numero_miembro_anterior = Column(String(50))
+    numero_miembro_nuevo = Column(String(50))
     equipos_dados_baja = Column(Text)  # JSON con lista de equipos
     
     # Observaciones generales
@@ -66,7 +66,7 @@ class SolicitudTraslado(Base):
     activo = Column(Boolean, default=True)
     
     # Relaciones
-    socio = relationship("Socio", back_populates="solicitudes_traslado")
+    miembro = relationship("miembro", back_populates="solicitudes_traslado")
     agrupacion_origen = relationship("AgrupacionTerritorial", foreign_keys=[agrupacion_origen_id])
     agrupacion_destino = relationship("AgrupacionTerritorial", foreign_keys=[agrupacion_destino_id])
     coordinador_origen = relationship("Usuario", foreign_keys=[coordinador_origen_id])
@@ -74,10 +74,10 @@ class SolicitudTraslado(Base):
     usuario_ejecutor = relationship("Usuario", foreign_keys=[usuario_ejecutor_id])
 
 
-# Actualizar modelo Socio para añadir relación
-# En backend/app/modulos/administracion_socios/modelos.py
-class Socio(Base):
+# Actualizar modelo miembro para añadir relación
+# En backend/app/modulos/administracion_miembros/modelos.py
+class miembro(Base):
     # ... campos existentes ...
     
     # Añadir:
-    solicitudes_traslado = relationship("SolicitudTraslado", back_populates="socio")
+    solicitudes_traslado = relationship("SolicitudTraslado", back_populates="miembro")

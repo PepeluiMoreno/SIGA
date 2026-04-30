@@ -121,7 +121,7 @@ python -m app.scripts.importacion.8_validar_importacion
 **Propósito**: Inicializa los catálogos necesarios para las importaciones posteriores.
 
 **Crea**:
-- `tipos_miembro`: SOCIO, SIMPATIZANTE, VOLUNTARIO, COLABORADOR
+- `tipos_miembro`: miembro, SIMPATIZANTE, VOLUNTARIO, COLABORADOR
 - `estados_cuota`: PENDIENTE, PAGADA, PARCIAL, VENCIDA, EXENTA, CANCELADA
 - `estados_campania`: BORRADOR, PLANIFICADA, ACTIVA, SUSPENDIDA, FINALIZADA, CANCELADA
 - `estados_actividad`: PROPUESTA, APROBADA, PROGRAMADA, EN_CURSO, COMPLETADA, CANCELADA
@@ -165,7 +165,7 @@ python -m app.scripts.importacion.8_validar_importacion
 **Tablas MySQL → PostgreSQL**:
 - `MIEMBRO` → `miembros`
 - `MIEMBROELIMINADO5ANIOS` → `miembros` (con fecha_baja)
-- `SOCIOSFALLECIDOS` → `miembros` (con motivo_baja='Fallecido')
+- `miembroSFALLECIDOS` → `miembros` (con motivo_baja='Fallecido')
 
 **Decisiones de Mapeo Implementadas**:
 
@@ -179,7 +179,7 @@ python -m app.scripts.importacion.8_validar_importacion
    - Van en sección de voluntariado
 
 3. **Agrupación** (Decisión 3):
-   - Se infiere de la última cuota en `CUOTAANIOSOCIO`
+   - Se infiere de la última cuota en `CUOTAANIOmiembro`
 
 4. **Provincia** (Decisión 4):
    - Se infiere por código postal (2 primeros dígitos)
@@ -187,7 +187,7 @@ python -m app.scripts.importacion.8_validar_importacion
 
 5. **Tipo de Miembro**:
    - Mapea `TIPOMIEMBRO` → `tipo_miembro_id`
-   - Soporta: socio, simpatizante, voluntario
+   - Soporta: miembro, simpatizante, voluntario
 
 **Características**:
 - **Encripta DNI/NIE e IBANs**
@@ -212,7 +212,7 @@ python -m app.scripts.importacion.8_validar_importacion
 **Propósito**: Importa cuotas anuales de miembros.
 
 **Tablas MySQL → PostgreSQL**:
-- `CUOTAANIOSOCIO` → `cuotas_anuales`
+- `CUOTAANIOmiembro` → `cuotas_anuales`
 
 **Características**:
 - Relaciona miembros con cuotas por ejercicio

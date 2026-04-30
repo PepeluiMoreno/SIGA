@@ -6,7 +6,7 @@
 |------------|------------|------------------|-----------------|----------------|-------------------|
 | `CODUSER` | `int(10)` | NO MAPEAR DIRECTAMENTE | - | Generar nuevo UUID | ⚠️ **ID antiguo**: Guardar en tabla temporal para FKs |
 | `CODPAISDOC` | `char(2)` | `pais_documento_id` | `uuid` | Buscar país por código ISO | ✅ OK |
-| `TIPOMIEMBRO` | `varchar(50)` | `tipo_miembro_id` | `uuid` | Buscar tipo por código  | ⚠️ **Valores encontrados**: "socio", "simpatizante", "administrador" |
+| `TIPOMIEMBRO` | `varchar(50)` | `tipo_miembro_id` | `uuid` | Buscar tipo por código  | ⚠️ **Valores encontrados**: "miembro", "simpatizante", "administrador" |
 | `NUMDOCUMENTOMIEMBRO` | `varchar(255)` | `numero_documento` | `varchar(50)` | **ENCRIPTAR** antes de guardar | 🔒 **CRÍTICO**: Usar EncriptacionService |
 | `TIPODOCUMENTOMIEMBRO` | `varchar(30)` | `tipo_documento` | `varchar(20)` | Mapear directo | ⚠️ **Valores**: "NIF", "NIE", "Otros", "Pasaporte" |
 | `APE1` | `varchar(255)` | `apellido1` | `varchar(100)` | Truncar si >100 chars | ✅ OK |
@@ -32,11 +32,11 @@
 | `NOMPROVINCIA` | `varchar(255)` | **NO MAPEAR** | - | Redundante (viene de FK provincia) | ✅ OK |
 | `ARCHIVOFIRMAPD` | `varchar(255)` | **NO MAPEAR** | - | Archivo físico, guardar path en observaciones | ⚠️ **Pregunta**: ¿Migrar archivos a nuevo storage? |
 | `PATH_ARCHIVO_FIRMAS` | `varchar(4096)` | **NO MAPEAR** | - | Path antiguo, obsoleto | ✅ OK |
-| `COMENTARIOSOCIO` | `varchar(500)` | **NO MAPEAR** | - | Merge con OBSERVACIONES | ✅ OK |
-| `OBSERVACIONES` | `varchar(2000)` | `observaciones_voluntariado` | `varchar(1000)` | Concatenar con COMENTARIOSOCIO | ⚠️ **Ambigüedad**: Mezcla observaciones gestor + voluntariado |
+| `COMENTARIOmiembro` | `varchar(500)` | **NO MAPEAR** | - | Merge con OBSERVACIONES | ✅ OK |
+| `OBSERVACIONES` | `varchar(2000)` | `observaciones_voluntariado` | `varchar(1000)` | Concatenar con COMENTARIOmiembro | ⚠️ **Ambigüedad**: Mezcla observaciones gestor + voluntariado |
 | **IBAN** (de otras tablas) | - | `iban` | `varchar(500)` | **ENCRIPTAR** antes de guardar | 🔒 **CRÍTICO**: Buscar en tablas de órdenes de cobro |
-| - | - | `agrupacion_id` | `uuid` | Buscar en CUOTAANIOSOCIO.CODAGRUPACION | ⚠️ **Lógica**: Tomar agrupación del año más reciente |
-| - | - | `fecha_alta` | `date` | Tomar año mínimo de CUOTAANIOSOCIO | ⚠️ **Inferir**: No hay campo explícito de fecha alta |
+| - | - | `agrupacion_id` | `uuid` | Buscar en CUOTAANIOmiembro.CODAGRUPACION | ⚠️ **Lógica**: Tomar agrupación del año más reciente |
+| - | - | `fecha_alta` | `date` | Tomar año mínimo de CUOTAANIOmiembro | ⚠️ **Inferir**: No hay campo explícito de fecha alta |
 | - | - | `fecha_baja` | `date` | NULL para activos | ⚠️ **Lógica**: Si EMAILERROR='BAJA' → buscar última cuota |
 | - | - | `motivo_baja` | `varchar(500)` | NULL o texto de OBSERVACIONES | ⚠️ **Inferir**: No hay campo explícito |
 | - | - | `activo` | `boolean` | Calcular: fecha_baja IS NULL | ✅ Calculado |
@@ -84,13 +84,13 @@
 
 6. **Agrupación del miembro**:
    - Origen: No hay FK directo en MIEMBRO
-   - Se debe inferir de CUOTAANIOSOCIO.CODAGRUPACION
+   - Se debe inferir de CUOTAANIOmiembro.CODAGRUPACION
    - **Propuesta**: Tomar agrupación de la cuota del año más reciente
    - **¿Estás de acuerdo?**
 
 7. **Fecha de alta**:
    - Origen: No existe campo explícito
-   - **Propuesta**: Inferir del año mínimo en CUOTAANIOSOCIO → 01/01/YYYY
+   - **Propuesta**: Inferir del año mínimo en CUOTAANIOmiembro → 01/01/YYYY
    - **¿Estás de acuerdo?**
 
 8. **Fecha y motivo de baja**:
@@ -164,17 +164,17 @@
 
 ---
 
-## TABLA: CUOTAANIOSOCIO → cuotas_anuales
+## TABLA: CUOTAANIOmiembro → cuotas_anuales
 
 | Campo MySQL | Tipo MySQL | Campo PostgreSQL | Tipo PostgreSQL | Transformación | Notas/Ambigüedades |
 |------------|------------|------------------|-----------------|----------------|-------------------|
 | `ANIOCUOTA` | `varchar(4)` | `ejercicio` | `integer` | Convertir a int | ✅ OK |
-| `CODSOCIO` | `int(10)` | `miembro_id` | `uuid` | Buscar miembro por CODUSER→UUID | ⚠️ **CRÍTICO**: Usar tabla mapeo temporal |
+| `CODmiembro` | `int(10)` | `miembro_id` | `uuid` | Buscar miembro por CODUSER→UUID | ⚠️ **CRÍTICO**: Usar tabla mapeo temporal |
 | `CODCUOTA` | `varchar(100)` | **NO MAPEAR** | - | Ignorar (tipo de cuota antiguo) | ⚠️ **Pregunta**: ¿Necesitamos tipos de cuota? |
 | `CODAGRUPACION` | `varchar(8)` | `agrupacion_id` | `uuid` | Buscar agrupación por código | ⚠️ **CRÍTICO**: Usar tabla mapeo |
 | `IMPORTECUOTAANIOEL` | `decimal(10,2)` | `importe_cuota` | `decimal(10,2)` | Mapear directo | ✅ OK |
 | `NOMBRECUOTA` | `varchar(255)` | **NO MAPEAR** | - | Redundante | ✅ OK |
-| `IMPORTECUOTAANIOSOCIO` | `decimal(10,2)` | `importe_pagado` | `decimal(10,2)` | Usar como importe esperado | ⚠️ **Ambigüedad**: ¿Es lo esperado o lo pagado? |
+| `IMPORTECUOTAANIOmiembro` | `decimal(10,2)` | `importe_pagado` | `decimal(10,2)` | Usar como importe esperado | ⚠️ **Ambigüedad**: ¿Es lo esperado o lo pagado? |
 | `IMPORTECUOTAANIOPAGADA` | `decimal(10,2)` | `importe_pagado` | `decimal(10,2)` | Mapear directo | ✅ Este es el pagado real |
 | `IMPORTEGASTOSABONOCUOTA` | `decimal(10,2)` | `gastos_gestion` | `decimal(10,2)` | Mapear directo | ✅ OK |
 | `FECHAPAGO` | `datetime` | `fecha_pago` | `datetime` | Mapear, NULL si '0000-00-00' | ⚠️ **Validar**: Fechas inválidas |
@@ -195,8 +195,8 @@
    - **Alternativa**: Guardar en observaciones
 
 2. **Importe de cuota - AMBIGÜEDAD CRÍTICA**:
-   - `IMPORTECUOTAANIOEL`: "Cuota del socio para ese año"
-   - `IMPORTECUOTAANIOSOCIO`: "Cuota que abonará" (≥ IMPORTECUOTAANIOEL)
+   - `IMPORTECUOTAANIOEL`: "Cuota del miembro para ese año"
+   - `IMPORTECUOTAANIOmiembro`: "Cuota que abonará" (≥ IMPORTECUOTAANIOEL)
    - `IMPORTECUOTAANIOPAGADA`: "Lo que ha pagado hasta la fecha"
    - **Propuesta mapeo**:
      - `importe_cuota` ← IMPORTECUOTAANIOEL (lo que DEBE)
@@ -212,7 +212,7 @@
      - ABONADA-PARTE → PENDIENTE (parcial)
      - NOABONADA-DEVUELTA → VENCIDA
      - NOABONADA-ERROR-CUENTA → PENDIENTE
-     - BAJA-SOCIO → EXENTA
+     - BAJA-miembro → EXENTA
    - **¿Estás de acuerdo con este mapeo?**
 
 4. **Relación con remesas**:

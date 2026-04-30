@@ -819,7 +819,7 @@ def upgrade() -> None:
     sa.Column('persona_contacto_telefono', sa.String(length=20), nullable=True),
     sa.Column('descripcion', sa.Text(), nullable=True),
     sa.Column('actividades_principales', sa.Text(), nullable=True),
-    sa.Column('numero_socios', sa.Integer(), nullable=True),
+    sa.Column('numero_miembros', sa.Integer(), nullable=True),
     sa.Column('activo', sa.Boolean(), nullable=False),
     sa.Column('fecha_alta', sa.Date(), server_default=sa.text('now()'), nullable=False),
     sa.Column('fecha_baja', sa.Date(), nullable=True),

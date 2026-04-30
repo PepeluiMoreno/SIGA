@@ -1,112 +1,112 @@
-TRANSACCIONES_SOCIOS = {
+TRANSACCIONES_miembroS = {
     # Solicitudes de admisión
     'solicitudes.listar': {
         'codigo': 'SOL_LIST',
         'nombre': 'Listar solicitudes de admisión',
         'descripcion': 'Ver listado de solicitudes pendientes',
-        'modulo': 'administracion_socios',
+        'modulo': 'administracion_miembros',
         'tipo': 'consulta'
     },
     'solicitudes.ver_detalle': {
         'codigo': 'SOL_VIEW',
         'nombre': 'Ver detalle de solicitud',
         'descripcion': 'Ver información completa de una solicitud',
-        'modulo': 'administracion_socios',
+        'modulo': 'administracion_miembros',
         'tipo': 'consulta'
     },
     'solicitudes.crear': {
         'codigo': 'SOL_CREATE',
         'nombre': 'Crear solicitud de admisión',
-        'descripcion': 'Registrar nueva solicitud (público/socio)',
-        'modulo': 'administracion_socios',
+        'descripcion': 'Registrar nueva solicitud (público/miembro)',
+        'modulo': 'administracion_miembros',
         'tipo': 'escritura'
     },
     'solicitudes.aprobar': {
         'codigo': 'SOL_APPROVE',
         'nombre': 'Aprobar solicitud',
-        'descripcion': 'Aprobar solicitud y generar socio',
-        'modulo': 'administracion_socios',
+        'descripcion': 'Aprobar solicitud y generar miembro',
+        'modulo': 'administracion_miembros',
         'tipo': 'aprobacion'
     },
     'solicitudes.rechazar': {
         'codigo': 'SOL_REJECT',
         'nombre': 'Rechazar solicitud',
         'descripcion': 'Rechazar solicitud de admisión',
-        'modulo': 'administracion_socios',
+        'modulo': 'administracion_miembros',
         'tipo': 'aprobacion'
     },
     
-    # Gestión de socios
-    'socios.listar': {
+    # Gestión de miembros
+    'miembros.listar': {
         'codigo': 'SOC_LIST',
-        'nombre': 'Listar socios',
-        'descripcion': 'Ver listado de socios',
-        'modulo': 'administracion_socios',
+        'nombre': 'Listar miembros',
+        'descripcion': 'Ver listado de miembros',
+        'modulo': 'administracion_miembros',
         'tipo': 'consulta'
     },
-    'socios.ver_detalle': {
+    'miembros.ver_detalle': {
         'codigo': 'SOC_VIEW',
-        'nombre': 'Ver detalle de socio',
-        'descripcion': 'Ver información completa de un socio',
-        'modulo': 'administracion_socios',
+        'nombre': 'Ver detalle de miembro',
+        'descripcion': 'Ver información completa de un miembro',
+        'modulo': 'administracion_miembros',
         'tipo': 'consulta'
     },
-    'socios.crear': {
+    'miembros.crear': {
         'codigo': 'SOC_CREATE',
-        'nombre': 'Crear socio manualmente',
+        'nombre': 'Crear miembro manualmente',
         'descripcion': 'Alta directa sin solicitud',
-        'modulo': 'administracion_socios',
+        'modulo': 'administracion_miembros',
         'tipo': 'escritura'
     },
-    'socios.editar': {
+    'miembros.editar': {
         'codigo': 'SOC_EDIT',
-        'nombre': 'Editar datos de socio',
-        'descripcion': 'Modificar información del socio',
-        'modulo': 'administracion_socios',
+        'nombre': 'Editar datos de miembro',
+        'descripcion': 'Modificar información del miembro',
+        'modulo': 'administracion_miembros',
         'tipo': 'escritura'
     },
-    'socios.dar_baja': {
+    'miembros.dar_baja': {
         'codigo': 'SOC_DEACTIVATE',
-        'nombre': 'Dar de baja socio',
+        'nombre': 'Dar de baja miembro',
         'descripcion': 'Baja temporal o definitiva',
-        'modulo': 'administracion_socios',
+        'modulo': 'administracion_miembros',
         'tipo': 'critica'
     },
-    'socios.reactivar': {
+    'miembros.reactivar': {
         'codigo': 'SOC_REACTIVATE',
-        'nombre': 'Reactivar socio',
-        'descripcion': 'Reactivar socio dado de baja',
-        'modulo': 'administracion_socios',
+        'nombre': 'Reactivar miembro',
+        'descripcion': 'Reactivar miembro dado de baja',
+        'modulo': 'administracion_miembros',
         'tipo': 'escritura'
     },
-    'socios.cambiar_tipo': {
+    'miembros.cambiar_tipo': {
         'codigo': 'SOC_CHANGE_TYPE',
-        'nombre': 'Cambiar tipo de socio',
-        'descripcion': 'Modificar tipo de socio',
-        'modulo': 'administracion_socios',
+        'nombre': 'Cambiar tipo de miembro',
+        'descripcion': 'Modificar tipo de miembro',
+        'modulo': 'administracion_miembros',
         'tipo': 'escritura'
     },
-    'socios.bloquear': {
+    'miembros.bloquear': {
         'codigo': 'SOC_BLOCK',
-        'nombre': 'Bloquear/Suspender socio',
-        'descripcion': 'Suspender temporalmente un socio',
-        'modulo': 'administracion_socios',
+        'nombre': 'Bloquear/Suspender miembro',
+        'descripcion': 'Suspender temporalmente un miembro',
+        'modulo': 'administracion_miembros',
         'tipo': 'critica'
     },
-    'socios.exportar': {
+    'miembros.exportar': {
         'codigo': 'SOC_EXPORT',
-        'nombre': 'Exportar datos de socios',
+        'nombre': 'Exportar datos de miembros',
         'descripcion': 'Exportar listados a Excel/CSV',
-        'modulo': 'administracion_socios',
+        'modulo': 'administracion_miembros',
         'tipo': 'consulta'
     },
     
-    # Tipos de socio
-    'tipos_socio.gestionar': {
+    # Tipos de miembro
+    'tipos_miembro.gestionar': {
         'codigo': 'TIPOSOC_MANAGE',
-        'nombre': 'Gestionar tipos de socio',
-        'descripcion': 'Crear/editar/eliminar tipos de socio',
-        'modulo': 'administracion_socios',
+        'nombre': 'Gestionar tipos de miembro',
+        'descripcion': 'Crear/editar/eliminar tipos de miembro',
+        'modulo': 'administracion_miembros',
         'tipo': 'configuracion'
     },
 }
@@ -163,7 +163,7 @@ TRANSACCIONES_TESORERIA = {
     'cuotas.generar': {
         'codigo': 'CUOT_GENERATE',
         'nombre': 'Generar cuotas anuales',
-        'descripcion': 'Crear cuotas para todos los socios',
+        'descripcion': 'Crear cuotas para todos los miembros',
         'modulo': 'tesoreria',
         'tipo': 'escritura'
     },
@@ -284,7 +284,7 @@ TRANSACCIONES_COMUNICACIONES = {
     },
     'mensajes.enviar_general': {
         'codigo': 'MSG_SEND_ALL',
-        'nombre': 'Enviar a todos los socios',
+        'nombre': 'Enviar a todos los miembros',
         'descripcion': 'Envío masivo a nivel nacional',
         'modulo': 'comunicaciones',
         'tipo': 'critica'
@@ -292,7 +292,7 @@ TRANSACCIONES_COMUNICACIONES = {
     'mensajes.enviar_territorial': {
         'codigo': 'MSG_SEND_TERR',
         'nombre': 'Enviar a agrupación territorial',
-        'descripcion': 'Envío a socios de su ámbito',
+        'descripcion': 'Envío a miembros de su ámbito',
         'modulo': 'comunicaciones',
         'tipo': 'escritura'
     },
@@ -779,10 +779,10 @@ TRANSACCIONES_ADMINISTRACION = {
 
 # MÓDULO: INFORMES
 TRANSACCIONES_INFORMES = {
-    'informes.socios': {
+    'informes.miembros': {
         'codigo': 'RPT_MEMBERS',
-        'nombre': 'Informes de socios',
-        'descripcion': 'Estadísticas de socios',
+        'nombre': 'Informes de miembros',
+        'descripcion': 'Estadísticas de miembros',
         'modulo': 'informes',
         'tipo': 'consulta'
     },

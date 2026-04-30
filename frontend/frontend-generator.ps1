@@ -539,7 +539,7 @@ Set-Content -Path (Join-Path $Path "src/views/Login.vue") -Value $login -Encodin
 
 # ListaMiembros.vue
 $listaMiembros = '<template>
-  <AppLayout title="Miembros" subtitle="Gestion de socios y voluntarios">
+  <AppLayout title="Miembros" subtitle="Gestion de miembros y voluntarios">
     <div class="mb-6 bg-white p-4 rounded-lg shadow">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex-1">
@@ -602,7 +602,7 @@ $listaMiembros = '<template>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                SOCIO
+                miembro
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">

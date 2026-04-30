@@ -2,7 +2,7 @@
 Script para importar cuotas anuales desde MySQL usando CSV + batch inserts.
 
 Importa la tabla:
-- CUOTAANIOSOCIO → cuotas_anuales
+- CUOTAANIOmiembro → cuotas_anuales
 
 IMPORTANTE:
 - Relaciona miembros con sus cuotas por ejercicio
@@ -204,13 +204,13 @@ class ImportadorCuotasAnualesCSV:
             async with mysql_conn.cursor() as cursor:
                 query = """
                     SELECT
-                        ANIOCUOTA, CODSOCIO, CODCUOTA, CODAGRUPACION,
-                        IMPORTECUOTAANIOEL, NOMBRECUOTA, IMPORTECUOTAANIOSOCIO,
+                        ANIOCUOTA, CODmiembro, CODCUOTA, CODAGRUPACION,
+                        IMPORTECUOTAANIOEL, NOMBRECUOTA, IMPORTECUOTAANIOmiembro,
                         IMPORTECUOTAANIOPAGADA, IMPORTEGASTOSABONOCUOTA,
                         FECHAPAGO, FECHAANOTACION, MODOINGRESO, CUENTAPAGO,
                         ESTADOCUOTA, ORDENARCOBROBANCO, OBSERVACIONES, NOMARCHIVOSEPAXML
-                    FROM CUOTAANIOSOCIO
-                    ORDER BY ANIOCUOTA, CODSOCIO
+                    FROM CUOTAANIOmiembro
+                    ORDER BY ANIOCUOTA, CODmiembro
                 """
                 await cursor.execute(query)
 
@@ -265,7 +265,7 @@ class ImportadorCuotasAnualesCSV:
                                 importe_cuota_anio_id = self.cache_importes_cuota.get((ejercicio, tipo_miembro_id))
 
                                 # Importes
-                                importe = Decimal(str(row[6])) if row[6] else Decimal('0.00')  # IMPORTECUOTAANIOSOCIO
+                                importe = Decimal(str(row[6])) if row[6] else Decimal('0.00')  # IMPORTECUOTAANIOmiembro
                                 importe_pagado = Decimal(str(row[7])) if row[7] else Decimal('0.00')  # IMPORTECUOTAANIOPAGADA
                                 gastos_gestion = Decimal(str(row[8])) if row[8] else Decimal('0.00')  # IMPORTEGASTOSABONOCUOTA
 

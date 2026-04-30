@@ -35,7 +35,7 @@ class ImportadorMiembrosCSV:
     def __init__(self):
         self.mapeo_miembros: dict[int, str] = {}  # CODUSER → UUID (como string)
         self.servicio_encriptacion = get_encriptacion_service()
-        self.tipo_miembro_socio_id: Optional[str] = None
+        self.tipo_miembro_miembro_id: Optional[str] = None
         self.tipo_miembro_simpatizante_id: Optional[str] = None
         self.tipo_miembro_voluntario_id: Optional[str] = None
         self.estado_activo_id: Optional[str] = None
@@ -59,10 +59,10 @@ class ImportadorMiembrosCSV:
         print("\nCargando caches...", flush=True)
 
         # Cargar tipos de miembro
-        result = await session.execute(select(TipoMiembro).where(TipoMiembro.codigo == 'SOCIO'))
+        result = await session.execute(select(TipoMiembro).where(TipoMiembro.codigo == 'miembro'))
         tipo = result.scalar_one_or_none()
         if tipo:
-            self.tipo_miembro_socio_id = str(tipo.id)
+            self.tipo_miembro_miembro_id = str(tipo.id)
 
         result = await session.execute(select(TipoMiembro).where(TipoMiembro.codigo == 'SIMPATIZANTE'))
         tipo = result.scalar_one_or_none()
@@ -114,16 +114,16 @@ class ImportadorMiembrosCSV:
     def mapear_tipo_miembro(self, tipomiembro: Optional[str]) -> str:
         """Mapea TIPOMIEMBRO de MySQL a tipo_miembro_id."""
         if not tipomiembro:
-            return self.tipo_miembro_socio_id
+            return self.tipo_miembro_miembro_id
 
         tipo_lower = str(tipomiembro).lower().strip()
-        if 'socio' in tipo_lower or 'administrador' in tipo_lower:
-            return self.tipo_miembro_socio_id
+        if 'miembro' in tipo_lower or 'administrador' in tipo_lower:
+            return self.tipo_miembro_miembro_id
         elif 'simpatizante' in tipo_lower:
             return self.tipo_miembro_simpatizante_id
         elif 'voluntario' in tipo_lower:
             return self.tipo_miembro_voluntario_id
-        return self.tipo_miembro_socio_id
+        return self.tipo_miembro_miembro_id
 
     def parse_fecha(self, fecha_str) -> Optional[str]:
         """Parsea fecha a formato ISO string."""
@@ -160,10 +160,10 @@ class ImportadorMiembrosCSV:
                         m.TIPODOCUMENTOMIEMBRO, m.APE1, m.APE2, m.NOM, m.FECHANAC,
                         m.TELFIJOCASA, m.TELFIJOTRABAJO, m.TELMOVIL, m.PROFESION,
                         m.ESTUDIOS, m.EMAIL, m.EMAILERROR, m.COLABORA, m.CODPAISDOM,
-                        m.DIRECCION, m.CP, m.LOCALIDAD, m.CODPROV, m.COMENTARIOSOCIO,
+                        m.DIRECCION, m.CP, m.LOCALIDAD, m.CODPROV, m.COMENTARIOmiembro,
                         m.OBSERVACIONES, s.CUENTAIBAN, s.CODAGRUPACION, s.FECHABAJA
                     FROM MIEMBRO m
-                    LEFT JOIN socio s ON m.CODUSER = s.CODUSER
+                    LEFT JOIN miembro s ON m.CODUSER = s.CODUSER
                     ORDER BY m.CODUSER
                 """
                 await cursor.execute(query)

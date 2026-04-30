@@ -23,7 +23,7 @@ async def check():
                 mysql_code = code.zfill(8)
 
                 await cursor.execute(
-                    "SELECT COUNT(*) FROM CUOTAANIOSOCIO WHERE CODAGRUPACION = %s",
+                    "SELECT COUNT(*) FROM CUOTAANIOmiembro WHERE CODAGRUPACION = %s",
                     (mysql_code,)
                 )
                 count = (await cursor.fetchone())[0]
@@ -36,7 +36,7 @@ async def check():
 
             # Also count the '0' code (Europa Laica Estatal)
             await cursor.execute(
-                "SELECT COUNT(*) FROM CUOTAANIOSOCIO WHERE CODAGRUPACION = '00000000'"
+                "SELECT COUNT(*) FROM CUOTAANIOmiembro WHERE CODAGRUPACION = '00000000'"
             )
             count_zero = (await cursor.fetchone())[0]
             print(f"Cuotas with code '0' (Europa Laica Estatal - exists but not imported): {count_zero}")

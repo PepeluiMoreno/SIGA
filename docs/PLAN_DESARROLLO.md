@@ -51,13 +51,13 @@ Bloques previos al módulo 1 que sostienen todo lo demás.
 
 ## Módulo 2 — Militancia
 
-**Modelo**: Socio (identidad + estado), TipoSocio, Skill y nivel por socio, Disponibilidad (calendario), Participación (histórico), Preferencias, Consentimiento RGPD.
+**Modelo**: miembro (identidad + estado), Tipomiembro, Skill y nivel por miembro, Disponibilidad (calendario), Participación (histórico), Preferencias, Consentimiento RGPD.
 
-**API**: CRUD de socios, gestión de skills, gestión de disponibilidad, histórico de participación, consultas de matching socio ↔ tarea.
+**API**: CRUD de miembros, gestión de skills, gestión de disponibilidad, histórico de participación, consultas de matching miembro ↔ tarea.
 
-**UI Vue 3**: ficha de socio, listados, calendario de disponibilidad, gestión de skills, vista de histórico.
+**UI Vue 3**: ficha de miembro, listados, calendario de disponibilidad, gestión de skills, vista de histórico.
 
-**Integración**: vinculación Socio ↔ Usuario (módulo 1) cuando proceda; flujo de traslados territoriales.
+**Integración**: vinculación miembro ↔ Usuario (módulo 1) cuando proceda; flujo de traslados territoriales.
 
 ## Módulo 3 — Campañas
 
