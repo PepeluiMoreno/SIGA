@@ -1,61 +1,63 @@
-﻿import { defineStore } from 'pinia'
+import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { gql } from 'graphql-request'
+
+import { graphqlClient, setAuthToken } from '@/graphql/client.js'
+
+const LOGIN_MUTATION = gql`
+  mutation Login($email: String!, $password: String!) {
+    login(email: $email, password: $password) {
+      token
+      user {
+        id
+        email
+        activo
+      }
+    }
+  }
+`
 
 export const useAuthStore = defineStore('auth', () => {
   const router = useRouter()
-  
-  const token = ref(localStorage.getItem('aiel_token'))
-  const user = ref(JSON.parse(localStorage.getItem('aiel_user') || 'null'))
-  
+
+  const token = ref(localStorage.getItem('siga_token'))
+  const user = ref(JSON.parse(localStorage.getItem('siga_user') || 'null'))
+
   const isAuthenticated = computed(() => !!token.value)
-  const userName = computed(() => user.value?.nombre || 'Usuario')
+  const userName = computed(() => user.value?.email?.split('@')[0] || 'Usuario')
   const userInitials = computed(() => {
-    const name = user.value?.nombre || 'U'
-    const lastName = user.value?.apellido1 || 'S'
-    return `${name.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
+    const email = user.value?.email || 'US'
+    return email.slice(0, 2).toUpperCase()
   })
-  
+
   function setAuth(authData) {
     token.value = authData.token
     user.value = authData.user
-    localStorage.setItem('aiel_token', authData.token)
-    localStorage.setItem('aiel_user', JSON.stringify(authData.user))
+    localStorage.setItem('siga_token', authData.token)
+    localStorage.setItem('siga_user', JSON.stringify(authData.user))
+    setAuthToken(authData.token)
   }
-  
+
   function clearAuth() {
     token.value = null
     user.value = null
-    localStorage.removeItem('aiel_token')
-    localStorage.removeItem('aiel_user')
+    localStorage.removeItem('siga_token')
+    localStorage.removeItem('siga_user')
+    setAuthToken(null)
   }
-  
+
   async function login(email, password) {
-    // En desarrollo: aceptar cualquier email/password
-    const mockUser = {
-      id: 1,
-      nombre: 'Admin',
-      apellido1: 'Europa Laica',
-      apellido2: '',
-      email: email,
-      cargo: 'Administrador',
-      roles: ['Admin']
-    }
-
-    const authData = {
-      token: 'aiel-jwt-token-' + Date.now(),
-      user: mockUser
-    }
-
-    setAuth(authData)
-    return mockUser
+    const data = await graphqlClient.request(LOGIN_MUTATION, { email, password })
+    setAuth({ token: data.login.token, user: data.login.user })
+    return data.login.user
   }
-  
+
   async function logout() {
     clearAuth()
     router.push('/login')
   }
-  
+
   return {
     token,
     user,
@@ -65,6 +67,6 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     setAuth,
-    clearAuth
+    clearAuth,
   }
 })

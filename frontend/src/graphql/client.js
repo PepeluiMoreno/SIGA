@@ -1,39 +1,32 @@
 import { GraphQLClient } from 'graphql-request'
 
-// URL de tu backend GraphQL - usa el valor del .env o el default
-const GRAPHQL_ENDPOINT = import.meta.env.VITE_GRAPHQL_URL || 'http://localhost:8000/graphql'
+// Por defecto el SPA y la API se sirven en el mismo host detrás de Traefik:
+// el frontend hace requests a /api/graphql (Traefik strippa /api → backend /graphql).
+// VITE_GRAPHQL_URL solo se usa para desarrollo cuando el backend corre en otro puerto.
+const GRAPHQL_ENDPOINT = import.meta.env.VITE_GRAPHQL_URL || '/api/graphql'
 
-console.log('GraphQL Endpoint:', GRAPHQL_ENDPOINT)
-
-// Crea el cliente GraphQL
 export const graphqlClient = new GraphQLClient(GRAPHQL_ENDPOINT, {
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
-// Función para ejecutar queries
-export async function executeQuery(query, variables = {}) {
-  try {
-    console.log('Ejecutando query:', { query, variables })
-    const data = await graphqlClient.request(query, variables)
-    console.log('Query response:', data)
-    return data
-  } catch (error) {
-    console.error('GraphQL Error:', error)
-    throw error
+export function setAuthToken(token) {
+  if (token) {
+    graphqlClient.setHeader('Authorization', `Bearer ${token}`)
+  } else {
+    graphqlClient.setHeader('Authorization', '')
   }
 }
 
-// Función para ejecutar mutations
+// Inicializa el header desde localStorage en la carga del módulo.
+const _stored = localStorage.getItem('siga_token')
+if (_stored) setAuthToken(_stored)
+
+export async function executeQuery(query, variables = {}) {
+  return graphqlClient.request(query, variables)
+}
+
 export async function executeMutation(mutation, variables = {}) {
-  try {
-    console.log('Ejecutando mutation:', { mutation, variables })
-    const data = await graphqlClient.request(mutation, variables)
-    console.log('Mutation response:', data)
-    return data
-  } catch (error) {
-    console.error('GraphQL Mutation Error:', error)
-    throw error
-  }
+  return graphqlClient.request(mutation, variables)
 }

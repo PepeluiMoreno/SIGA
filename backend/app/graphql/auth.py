@@ -7,7 +7,9 @@ from typing import Optional
 import strawberry
 from sqlalchemy import select
 
+from ..core.audit import log_action
 from ..core.security import create_access_token, verify_password
+from ..domains.administracion.models.auditoria import TipoAccion
 from ..domains.usuarios.models.usuario import Usuario
 
 
@@ -52,6 +54,7 @@ class AuthMutation:
     ) -> LoginPayload:
         """Autentica al usuario y devuelve un JWT."""
         session = info.context.session
+        request = info.context.request
 
         stmt = select(Usuario).where(
             Usuario.email == email,
@@ -61,10 +64,26 @@ class AuthMutation:
         usuario = result.scalar_one_or_none()
 
         if usuario is None or not verify_password(password, usuario.password_hash):
+            await log_action(
+                session,
+                accion=TipoAccion.LOGIN,
+                usuario=usuario,
+                exitoso=False,
+                mensaje_error="Credenciales inválidas",
+                descripcion=f"Intento de login para {email}",
+                request=request,
+            )
             raise ValueError("Credenciales inválidas")
 
         usuario.ultimo_acceso = datetime.utcnow()
-        await session.flush()
+        await log_action(
+            session,
+            accion=TipoAccion.LOGIN,
+            usuario=usuario,
+            exitoso=True,
+            descripcion=f"Login exitoso de {usuario.email}",
+            request=request,
+        )
 
         token = create_access_token(usuario.id)
         return LoginPayload(token=token, user=_to_payload(usuario))
