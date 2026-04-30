@@ -11,12 +11,13 @@ Strawchemy genera automáticamente:
 import strawberry
 
 from . import strawchemy
+from .auth import AuthMutation
 from .types_auto import *
 from .inputs_auto import *
 
 
 @strawberry.type
-class Mutation:
+class Mutation(AuthMutation):
     """Mutations GraphQL del sistema SIGA con generación automática."""
 
     # === CORE - Estados ===

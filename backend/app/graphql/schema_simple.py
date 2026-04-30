@@ -10,12 +10,13 @@ Strawchemy genera automáticamente:
 import strawberry
 
 from . import strawchemy
+from .auth import AuthQuery
 from .types_auto import *  # Importar todos los tipos generados
 from .inputs_auto import *  # Importar inputs y filtros
 
 
 @strawberry.type
-class Query:
+class Query(AuthQuery):
     """Queries GraphQL del sistema SIGA con generación automática.
 
     IMPORTANTE: Todos los nombres usan camelCase para consistencia con GraphQL.
