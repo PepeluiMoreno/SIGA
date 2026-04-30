@@ -229,7 +229,7 @@
         <FieldTextarea v-model="miembro.observaciones" label="Observaciones" :edit-mode="editMode" rows="8" />
       </div>
 
-      <!-- Tab: Skills -->
+      <!-- Tab: Habilidades -->
       <div v-show="activeTab === 'skills'" class="space-y-4">
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-medium text-gray-900">Habilidades y competencias</h3>
@@ -268,7 +268,7 @@
           </div>
         </div>
 
-        <!-- Lista de skills del miembro -->
+        <!-- Lista de habilidades del miembro -->
         <div v-if="loadingSkills" class="text-center py-6 text-gray-500 text-sm">Cargando habilidades...</div>
         <div v-else-if="miembroSkills.length === 0" class="text-center py-8 text-gray-400 text-sm">No hay habilidades registradas para este miembro.</div>
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -377,7 +377,7 @@ const tabs = [
   { id: 'personal', name: 'Datos personales' },
   { id: 'membresia', name: 'Militancia' },
   { id: 'voluntariado', name: 'Disponibilidad y perfil' },
-  { id: 'skills', name: 'Skills' },
+  { id: 'skills', name: 'Habilidades' },
   { id: 'franjas', name: 'Horarios' },
   { id: 'observaciones', name: 'Observaciones' },
 ]
