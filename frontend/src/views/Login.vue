@@ -121,10 +121,20 @@ const handleLogin = async () => {
   error.value = ""
 
   try {
-    await authStore.login(form.value.email, form.value.password)
-    router.push("/")
+    await authStore.login(form.value.email.trim(), form.value.password)
   } catch (err) {
+    console.error("Login failed", err)
     error.value = "Credenciales incorrectas. Por favor, verifica tu email y contraseña."
+    loading.value = false
+    return
+  }
+
+  try {
+    await router.push("/")
+  } catch (err) {
+    console.error("Post-login navigation failed", err)
+    window.location.assign("/")
+    return
   } finally {
     loading.value = false
   }
