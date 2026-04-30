@@ -116,6 +116,20 @@ const form = ref({
 const loading = ref(false)
 const error = ref("")
 
+function extractErrorMessage(err) {
+  if (!err) return "Error desconocido durante el inicio de sesión."
+  if (typeof err === "string") return err
+  if (err.response?.errors?.length) {
+    return err.response.errors.map((item) => item.message).join(" | ")
+  }
+  if (err.message) return err.message
+  try {
+    return JSON.stringify(err)
+  } catch {
+    return "Error desconocido durante el inicio de sesión."
+  }
+}
+
 const handleLogin = async () => {
   loading.value = true
   error.value = ""
@@ -124,7 +138,7 @@ const handleLogin = async () => {
     await authStore.login(form.value.email.trim(), form.value.password)
   } catch (err) {
     console.error("Login failed", err)
-    error.value = "Credenciales incorrectas. Por favor, verifica tu email y contraseña."
+    error.value = `Login failed: ${extractErrorMessage(err)}`
     loading.value = false
     return
   }
@@ -133,8 +147,8 @@ const handleLogin = async () => {
     await router.push("/")
   } catch (err) {
     console.error("Post-login navigation failed", err)
+    error.value = `Navigation failed: ${extractErrorMessage(err)}`
     window.location.assign("/")
-    return
   } finally {
     loading.value = false
   }
