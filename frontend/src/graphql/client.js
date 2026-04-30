@@ -3,7 +3,18 @@ import { GraphQLClient } from 'graphql-request'
 // Por defecto el SPA y la API se sirven en el mismo host detrás de Traefik:
 // el frontend hace requests a /api/graphql (Traefik strippa /api → backend /graphql).
 // VITE_GRAPHQL_URL solo se usa para desarrollo cuando el backend corre en otro puerto.
-const GRAPHQL_ENDPOINT = import.meta.env.VITE_GRAPHQL_URL || '/api/graphql'
+function resolveGraphqlEndpoint() {
+  const configured = import.meta.env.VITE_GRAPHQL_URL
+  if (configured) return configured
+
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return new URL('/api/graphql', window.location.origin).toString()
+  }
+
+  return '/api/graphql'
+}
+
+const GRAPHQL_ENDPOINT = resolveGraphqlEndpoint()
 
 export const graphqlClient = new GraphQLClient(GRAPHQL_ENDPOINT, {
   headers: {
