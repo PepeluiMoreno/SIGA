@@ -1,5 +1,5 @@
 <template>
-  <AppLayout>
+  <AppLayout title="Militancia" subtitle="Ficha detallada de miembro">
     <MiembroDetail />
   </AppLayout>
 </template>

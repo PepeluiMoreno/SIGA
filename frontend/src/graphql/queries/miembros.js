@@ -49,6 +49,14 @@ export const GET_MIEMBRO_BY_ID = `
   query Miembro($id: UUID!) {
     miembros(filter: {id: {eq: $id}}) {
       id
+      tipoMiembroId
+      estadoId
+      motivoBajaId
+      agrupacionId
+      cargoId
+      paisDocumentoId
+      paisDomicilioId
+      provinciaId
       nombre
       apellido1
       apellido2
@@ -93,6 +101,14 @@ export const GET_MIEMBRO_BY_ID = `
         id
         nombre
       }
+      paisDocumento {
+        id
+        nombre
+      }
+      cargo {
+        id
+        nombre
+      }
       iban
       esVoluntario
       disponibilidad
@@ -109,6 +125,17 @@ export const GET_MIEMBRO_BY_ID = `
       activo
       fechaCreacion
       fechaModificacion
+    }
+  }
+`
+
+export const UPDATE_MIEMBRO = `
+  mutation ActualizarMiembro($data: MiembroUpdateInput!) {
+    actualizarMiembro(data: $data) {
+      id
+      nombre
+      apellido1
+      apellido2
     }
   }
 `
@@ -150,6 +177,17 @@ export const GET_MOTIVOS_BAJA = `
       nombre
       descripcion
       requiereDocumentacion
+      activo
+    }
+  }
+`
+
+export const GET_TIPOS_CARGO = `
+  query TiposCargo {
+    tiposCargo {
+      id
+      codigo
+      nombre
       activo
     }
   }

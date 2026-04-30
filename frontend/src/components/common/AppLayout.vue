@@ -53,7 +53,7 @@
                   :class="$route.path === '/miembros' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
                 >
                   <span class="mr-3">👥</span>
-                  <span>Miembros</span>
+                  <span>Militancia</span>
                 </router-link>
               </li>
               <li>

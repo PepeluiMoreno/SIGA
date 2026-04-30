@@ -18,7 +18,7 @@ from scripts.seeding.actividades import seed_all_actividades
 
 async def main():
     print("=" * 50)
-    print("SEEDING AIEL DATABASE")
+    print("SEEDING SIGA DATABASE")
     print("=" * 50)
 
     print("\n[1/8] Roles...")

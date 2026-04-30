@@ -27,7 +27,7 @@ async def inicializar_sistema_completo(session: AsyncSession) -> None:
         session: Sesión de base de datos activa
     """
     print("\n" + "="*80)
-    print(" "*20 + "INICIALIZACIÓN DEL SISTEMA AIEL")
+    print(" "*20 + "INICIALIZACIÓN DEL SISTEMA SIGA")
     print("="*80 + "\n")
 
     try:

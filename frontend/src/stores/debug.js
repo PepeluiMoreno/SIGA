@@ -53,7 +53,7 @@ function serializeError(error) {
 
 export const useDebugStore = defineStore('debug', () => {
   const enabled = ref(isDebugEnabled())
-  const expanded = ref(true)
+  const expanded = ref(false)
   const events = ref([])
   const snapshot = ref({
     route: '',

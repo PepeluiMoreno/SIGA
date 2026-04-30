@@ -1,0 +1,20 @@
+{
+  "version": "1.0.0",
+  "usuario": {
+    "username": "admin",
+    "email": "admin@siga.local",
+    "password": "Admin@2024!",
+    "nombre": "Administrador",
+    "apellido1": "Sistema",
+    "apellido2": "",
+    "activo": true,
+    "email_verificado": true,
+    "roles": ["SUPERADMIN"]
+  },
+  "notas": [
+    "Este usuario se crea SOLO para configuración inicial",
+    "CAMBIAR LA CONTRASEÑA inmediatamente después del primer acceso",
+    "Se recomienda crear usuarios reales y desactivar este usuario",
+    "La contraseña por defecto es: Admin@2024!"
+  ]
+}

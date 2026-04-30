@@ -1,4 +1,4 @@
-# Resumen Ejecutivo - Importación de Datos AIEL
+# Resumen Ejecutivo - Importación de Datos SIGA
 
 ## ✅ Estado Actual
 

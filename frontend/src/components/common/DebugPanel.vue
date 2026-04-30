@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="debug.enabled"
-    class="fixed inset-x-0 top-0 z-[1000] border-b border-amber-300 bg-amber-100/95 text-amber-950 shadow-lg backdrop-blur"
+    class="relative z-30 border-b border-amber-300 bg-amber-100 text-amber-950 shadow-sm"
   >
     <div class="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
       <div class="flex flex-wrap items-center justify-between gap-3">

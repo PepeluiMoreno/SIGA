@@ -244,17 +244,17 @@ query {
 
 ### Operadores de Filtro
 
-| Operador | Descripción |
-|----------|-------------|
-| `_eq` | Igual |
-| `_neq` | No igual |
-| `_gt`, `_gte` | Mayor que, Mayor o igual |
-| `_lt`, `_lte` | Menor que, Menor o igual |
-| `_in`, `_nin` | En lista, No en lista |
-| `_contains` | Contiene substring |
-| `_like`, `_ilike` | Pattern matching |
-| `_is_null` | Es nulo |
-| `_and`, `_or`, `_not` | Operadores lógicos |
+| Operador              | Descripción              |
+|-----------------------|--------------------------|
+| `_eq`                 | Igual                    |
+| `_neq`                | No igual                 |
+| `_gt`, `_gte`         | Mayor que, Mayor o igual |
+| `_lt`, `_lte`         | Menor que, Menor o igual |
+| `_in`, `_nin`         | En lista, No en lista    |
+| `_contains`           | Contiene substring       |
+| `_like`, `_ilike`     | Pattern matching         |
+| `_is_null`            | Es nulo                  |
+| `_and`, `_or`, `_not` | Operadores lógicos       |
 
 ## Paginación y Ordenamiento
 

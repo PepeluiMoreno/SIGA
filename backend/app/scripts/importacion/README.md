@@ -28,7 +28,7 @@ Este directorio contiene todos los scripts necesarios para importar los datos hi
 - Dump MySQL: `data/europalaica_com_2026_01_01 apertura de año.sql`
 - Variables de entorno configuradas en `.env`:
   ```bash
-  DATABASE_URL=postgresql+asyncpg://user:password@localhost/aiel
+  DATABASE_URL=postgresql+asyncpg://user:password@localhost/SIGA
   ENCRYPTION_KEY=<tu_clave_fernet>
   ```
 
@@ -36,7 +36,7 @@ Este directorio contiene todos los scripts necesarios para importar los datos hi
 
 1. **Crear base de datos PostgreSQL limpia**:
    ```bash
-   createdb aiel
+   createdb SIGA
    ```
 
 2. **Ejecutar migraciones de Alembic**:

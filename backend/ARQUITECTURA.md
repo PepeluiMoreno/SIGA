@@ -1,4 +1,4 @@
-# Arquitectura del Sistema AIEL
+# Arquitectura del Sistema SIGA
 
 ## 📋 Tabla de Contenidos
 
@@ -12,7 +12,7 @@
 
 ## Introducción
 
-AIEL utiliza una arquitectura basada en **Domain-Driven Design (DDD)** con SQLAlchemy 2.0+ async, UUID como identificadores primarios, y auditoría completa en todos los modelos.
+SIGA utiliza una arquitectura basada en **Domain-Driven Design (DDD)** con SQLAlchemy 2.0+ async, UUID como identificadores primarios, y auditoría completa en todos los modelos.
 
 ### Tecnologías Principales
 

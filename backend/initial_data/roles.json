@@ -1,0 +1,174 @@
+{
+  "version": "1.0.0",
+  "fecha_actualizacion": "2024-01-15",
+  "roles": [
+    {
+      "codigo": "SUPERADMIN",
+      "nombre": "Super Administrador",
+      "descripcion": "Acceso total al sistema. Gestión completa de usuarios, roles y configuración.",
+      "tipo": "SISTEMA",
+      "nivel": 100,
+      "es_territorial": false,
+      "sistema": true,
+      "activo": true
+    },
+    {
+      "codigo": "PRESIDENTE",
+      "nombre": "Presidente",
+      "descripcion": "Presidente de la asociación. Acceso completo a nivel nacional.",
+      "tipo": "ORGANIZACION",
+      "nivel": 95,
+      "es_territorial": false,
+      "nivel_territorial": "NACIONAL",
+      "sistema": true,
+      "activo": true
+    },
+    {
+      "codigo": "VICEPRESIDENTE",
+      "nombre": "Vicepresidente",
+      "descripcion": "Vicepresidente de la asociación. Acceso similar al presidente.",
+      "tipo": "ORGANIZACION",
+      "nivel": 90,
+      "es_territorial": false,
+      "nivel_territorial": "NACIONAL",
+      "sistema": true,
+      "activo": true
+    },
+    {
+      "codigo": "SECRETARIO",
+      "nombre": "Secretario General",
+      "descripcion": "Secretario general de la asociación.",
+      "tipo": "ORGANIZACION",
+      "nivel": 85,
+      "es_territorial": false,
+      "nivel_territorial": "NACIONAL",
+      "sistema": true,
+      "activo": true
+    },
+    {
+      "codigo": "TESORERO",
+      "nombre": "Tesorero General",
+      "descripcion": "Tesorero de la asociación. Gestión financiera completa.",
+      "tipo": "FUNCIONAL",
+      "nivel": 85,
+      "es_territorial": false,
+      "nivel_territorial": "NACIONAL",
+      "sistema": true,
+      "activo": true
+    },
+    {
+      "codigo": "VOCAL",
+      "nombre": "Vocal",
+      "descripcion": "Vocal de la junta directiva.",
+      "tipo": "ORGANIZACION",
+      "nivel": 70,
+      "es_territorial": false,
+      "nivel_territorial": "NACIONAL",
+      "sistema": true,
+      "activo": true
+    },
+    {
+      "codigo": "COORD_AUTONOMICO",
+      "nombre": "Coordinador Autonómico",
+      "descripcion": "Coordinador de una comunidad autónoma. Gestión de su territorio.",
+      "tipo": "TERRITORIAL",
+      "nivel": 80,
+      "es_territorial": true,
+      "nivel_territorial": "AUTONOMICO",
+      "sistema": true,
+      "activo": true
+    },
+    {
+      "codigo": "COORD_PROVINCIAL",
+      "nombre": "Coordinador Provincial",
+      "descripcion": "Coordinador de una provincia. Gestión de su ámbito provincial.",
+      "tipo": "TERRITORIAL",
+      "nivel": 75,
+      "es_territorial": true,
+      "nivel_territorial": "PROVINCIAL",
+      "sistema": true,
+      "activo": true
+    },
+    {
+      "codigo": "COORD_LOCAL",
+      "nombre": "Coordinador Local",
+      "descripcion": "Coordinador de una agrupación local. Gestión de su delegación.",
+      "tipo": "TERRITORIAL",
+      "nivel": 70,
+      "es_territorial": true,
+      "nivel_territorial": "LOCAL",
+      "sistema": true,
+      "activo": true
+    },
+    {
+      "codigo": "SECRETARIO_TERRITORIAL",
+      "nombre": "Secretario Territorial",
+      "descripcion": "Secretario de una agrupación territorial.",
+      "tipo": "TERRITORIAL",
+      "nivel": 65,
+      "es_territorial": true,
+      "sistema": true,
+      "activo": true
+    },
+    {
+      "codigo": "TESORERO_TERRITORIAL",
+      "nombre": "Tesorero Territorial",
+      "descripcion": "Tesorero de una agrupación territorial.",
+      "tipo": "TERRITORIAL",
+      "nivel": 65,
+      "es_territorial": true,
+      "sistema": true,
+      "activo": true
+    },
+    {
+      "codigo": "COORD_CAMPANA",
+      "nombre": "Coordinador de Campaña",
+      "descripcion": "Coordinador de una campaña específica.",
+      "tipo": "FUNCIONAL",
+      "nivel": 60,
+      "es_territorial": false,
+      "sistema": true,
+      "activo": true
+    },
+    {
+      "codigo": "RESPONSABLE_COMUNICACION",
+      "nombre": "Responsable de Comunicación",
+      "descripcion": "Gestión de comunicaciones y mensajería.",
+      "tipo": "FUNCIONAL",
+      "nivel": 60,
+      "es_territorial": false,
+      "sistema": true,
+      "activo": true
+    },
+    {
+      "codigo": "RESPONSABLE_VOLUNTARIADO",
+      "nombre": "Responsable de Voluntariado",
+      "descripcion": "Gestión de voluntarios y oportunidades.",
+      "tipo": "FUNCIONAL",
+      "nivel": 60,
+      "es_territorial": false,
+      "sistema": true,
+      "activo": true
+    },
+    {
+      "codigo": "SOCIO",
+      "nombre": "Socio",
+      "descripcion": "Socio de la asociación con acceso básico.",
+      "tipo": "ORGANIZACION",
+      "nivel": 10,
+      "es_territorial": false,
+      "sistema": true,
+      "activo": true
+    },
+    {
+      "codigo": "VOLUNTARIO",
+      "nombre": "Voluntario",
+      "descripcion": "Voluntario de la asociación sin ser socio.",
+      "tipo": "ORGANIZACION",
+      "nivel": 5,
+      "es_territorial": false,
+      "sistema": true,
+      "activo": true
+    }
+  ]
+}

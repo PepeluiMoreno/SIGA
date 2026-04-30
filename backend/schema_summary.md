@@ -1,4 +1,4 @@
-# Schema GraphQL AIEL - Resumen
+# Schema GraphQL SIGA - Resumen
 
 ## Estadísticas
 - **Tamaño**: 86,107 caracteres
