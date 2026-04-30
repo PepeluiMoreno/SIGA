@@ -206,7 +206,7 @@ async def inicializar_geografico(session: AsyncSession) -> None:
 # Función main para ejecutar el script directamente
 async def main():
     """Función principal para ejecutar el script."""
-    from ..infrastructure.database import get_session
+    from ..core.database import get_session
 
     async with get_session() as session:
         await inicializar_geografico(session)
