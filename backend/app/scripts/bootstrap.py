@@ -20,7 +20,7 @@ from typing import Optional
 from sqlalchemy import select
 
 from app.core.database import async_session
-from app.core.security import hash_password
+from app.core.security import hash_password, verify_password
 from app.domains.administracion.models.rol import Rol, TipoRol
 from app.domains.administracion.models.rol_transaccion import RolTransaccion
 from app.domains.administracion.models.transaccion import Transaccion
@@ -142,6 +142,43 @@ async def ensure_admin_user(session, superadmin: Rol) -> Optional[Usuario]:
         await session.execute(select(Usuario).where(Usuario.email == email))
     ).scalar_one_or_none()
     if existing:
+        updated = False
+
+        if not existing.activo:
+            existing.activo = True
+            updated = True
+
+        if not existing.password_hash or not existing.password_hash.startswith("$2"):
+            existing.password_hash = hash_password(password)
+            updated = True
+
+        has_superadmin = (
+            await session.execute(
+                select(UsuarioRol).where(
+                    UsuarioRol.usuario_id == existing.id,
+                    UsuarioRol.rol_id == superadmin.id,
+                )
+            )
+        ).scalar_one_or_none()
+        if has_superadmin is None:
+            session.add(
+                UsuarioRol(
+                    usuario_id=existing.id,
+                    rol_id=superadmin.id,
+                    fecha_creacion=datetime.utcnow(),
+                    eliminado=False,
+                )
+            )
+            updated = True
+
+        # Si el secret cambia, el siguiente arranque sincroniza la contraseña.
+        if password and not verify_password(password, existing.password_hash):
+            existing.password_hash = hash_password(password)
+            updated = True
+
+        if updated:
+            await session.flush()
+            print(f"[bootstrap] Usuario admin sincronizado: {email}")
         return existing
 
     usuario = Usuario(
