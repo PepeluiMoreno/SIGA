@@ -118,11 +118,11 @@
           </router-link>
         </div>
         <div class="space-y-4">
+          <div v-if="ultimasCampanias.length === 0" class="text-sm text-gray-500 py-4 text-center">Sin campañas registradas</div>
           <div v-for="campania in ultimasCampanias" :key="campania.id" class="border-l-4 border-purple-500 pl-4 py-2">
             <h4 class="font-medium text-gray-900">{{ campania.nombre }}</h4>
             <p class="text-sm text-gray-600">{{ campania.descripcion }}</p>
             <div class="flex items-center text-sm text-gray-500 mt-1">
-              <span class="mr-3">📅 {{ campania.fecha }}</span>
               <span :class="campania.estadoClass">{{ campania.estado }}</span>
             </div>
           </div>
@@ -195,112 +195,63 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
+import { executeQuery } from '@/graphql/client'
+import { GET_CAMPANIAS } from '@/graphql/queries/campanias.js'
+import { GET_GRUPOS } from '@/graphql/queries/grupos.js'
+import { GET_MIEMBROS } from '@/graphql/queries/miembros.js'
 
-// Estadísticas
-const stats = ref({
-  totalmiembros: 1247,
-  nuevosmiembrosMes: 23,
-  campaniasActivas: 5,
-  campaniasPlanificadas: 3,
-  gruposActivos: 18,
-  gruposPermanentes: 12,
-  cuotasMes: 8450,
-  porcentajeCobro: 87
-})
+const campanias = ref([])
+const miembros = ref([])
+const grupos = ref([])
 
-// Presupuesto anual
-const presupuesto = ref({
-  total: 52000,
-  ejecutado: 15280,
-  porcentaje: 29
-})
+const ultimasCampanias = computed(() => campanias.value.slice(0, 3).map(c => ({
+  id: c.id,
+  nombre: c.nombre,
+  descripcion: c.descripcionCorta || c.lema || '',
+  estado: c.estado?.nombre || '—',
+  estadoClass: estadoClass(c.estado?.nombre),
+})))
 
-// Datos de ejemplo - campañas de Europa Laica
-const ultimasCampanias = ref([
-  {
-    id: 1,
-    nombre: 'Día Internacional del Laicismo 2025',
-    descripcion: 'Celebración del 9 de diciembre con actos en toda España',
-    fecha: '9 Dic 2025',
-    estado: 'PLANIFICADA',
-    estadoClass: 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800'
-  },
-  {
-    id: 2,
-    nombre: 'Campaña "Religión fuera de la Escuela"',
-    descripcion: 'Denuncia de la presencia de religión confesional en centros educativos públicos',
-    fecha: 'Ene - Jun 2025',
-    estado: 'ACTIVA',
-    estadoClass: 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800'
-  },
-  {
-    id: 3,
-    nombre: 'Jornadas Laicistas 2025',
-    descripcion: 'XII Jornadas de debate y reflexión sobre laicismo',
-    fecha: '15-16 Mar 2025',
-    estado: 'ACTIVA',
-    estadoClass: 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800'
-  }
-])
+const stats = computed(() => ({
+  totalmiembros: miembros.value.length,
+  nuevosmiembrosMes: 0,
+  campaniasActivas: campanias.value.filter(c => c.estado?.nombre?.toLowerCase().includes('activ')).length,
+  campaniasPlanificadas: campanias.value.filter(c => c.estado?.nombre?.toLowerCase().includes('planif')).length,
+  gruposActivos: grupos.value.filter(g => g.activo).length,
+  gruposPermanentes: grupos.value.filter(g => g.activo).length,
+  cuotasMes: 0,
+  porcentajeCobro: 0,
+}))
 
-const actividadReciente = ref([
-  {
-    id: 1,
-    usuario: 'María García',
-    iniciales: 'MG',
-    accion: 'registró 5 nuevos miembros de Madrid',
-    fecha: 'Hace 2 horas'
-  },
-  {
-    id: 2,
-    usuario: 'Juan Martínez',
-    iniciales: 'JM',
-    accion: 'creó la campaña "Apostasía Colectiva 2025"',
-    fecha: 'Hace 4 horas'
-  },
-  {
-    id: 3,
-    usuario: 'Ana López',
-    iniciales: 'AL',
-    accion: 'generó remesa SEPA de cuotas enero',
-    fecha: 'Hace 6 horas'
-  },
-  {
-    id: 4,
-    usuario: 'Carlos Ruiz',
-    iniciales: 'CR',
-    accion: 'publicó nota de prensa sobre laicidad',
-    fecha: 'Hace 1 día'
-  }
-])
+const presupuesto = ref({ total: 0, ejecutado: 0, porcentaje: 0 })
+const actividadReciente = ref([])
+const proximasActividades = ref([])
 
-const proximasActividades = ref([
-  {
-    id: 1,
-    nombre: 'Reunión Comisión de Educación',
-    lugar: 'Sede Central Madrid',
-    hora: '18:00 - 20:00',
-    campania: 'Religión fuera de la Escuela'
-  },
-  {
-    id: 2,
-    nombre: 'Conferencia "Laicismo y Democracia"',
-    lugar: 'Ateneo de Madrid',
-    hora: '19:00 - 21:00',
-    campania: 'Jornadas Laicistas'
-  },
-  {
-    id: 3,
-    nombre: 'Asamblea General Ordinaria',
-    lugar: 'Online (Zoom)',
-    hora: '11:00 - 14:00',
-    campania: 'Institucional'
-  }
-])
+function estadoClass(nombre) {
+  if (!nombre) return 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800'
+  const n = nombre.toLowerCase()
+  if (n.includes('activ')) return 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800'
+  if (n.includes('planif')) return 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800'
+  if (n.includes('finaliz') || n.includes('cerrad')) return 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800'
+  return 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800'
+}
 
-const formatCurrency = (amount) => {
+async function cargar() {
+  const [dataCampanias, dataMiembros, dataGrupos] = await Promise.all([
+    executeQuery(GET_CAMPANIAS).catch(() => ({ campanias: [] })),
+    executeQuery(GET_MIEMBROS).catch(() => ({ miembros: [] })),
+    executeQuery(GET_GRUPOS).catch(() => ({ gruposTrabajo: [] })),
+  ])
+  campanias.value = dataCampanias.campanias || []
+  miembros.value = dataMiembros.miembros || []
+  grupos.value = dataGrupos.gruposTrabajo || []
+}
+
+function formatCurrency(amount) {
   return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount)
 }
+
+onMounted(cargar)
 </script>

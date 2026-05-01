@@ -27,126 +27,129 @@
       </router-link>
     </div>
 
-    <!-- Panel de Filtros Compacto -->
-    <div class="mb-4 bg-white border border-gray-200 rounded-lg p-3">
-      <div class="flex flex-wrap items-start gap-4">
+    <!-- Panel de Filtros -->
+    <div class="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+      <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+        <div class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+          </svg>
+          Filtros
+        </div>
+        <button
+          v-if="filtersApplied"
+          @click="limpiarFiltros"
+          class="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          Limpiar todos
+        </button>
+      </div>
+
+      <div class="p-4 grid grid-cols-1 md:grid-cols-[1fr_1fr_auto_auto] gap-6 items-start">
 
         <!-- Estado -->
-        <div class="flex-shrink-0">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-xs font-medium text-gray-700">Estado:</span>
-            <label class="flex items-center gap-1 cursor-pointer text-xs text-purple-600 hover:text-purple-800">
-              <input
-                type="checkbox"
-                :checked="todosEstadosSeleccionados"
-                :indeterminate="algunEstadoSeleccionado && !todosEstadosSeleccionados"
-                @change="toggleTodosEstados"
-                class="w-3 h-3 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-              />
-              <span>Todos</span>
-            </label>
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</span>
+            <button
+              @click="toggleTodosEstados"
+              class="text-xs text-purple-600 hover:text-purple-800 transition-colors"
+            >
+              {{ todosEstadosSeleccionados ? 'Ninguno' : 'Todos' }}
+            </button>
           </div>
-          <div class="flex flex-wrap gap-x-3 gap-y-0.5">
+          <div class="space-y-1.5">
             <label
               v-for="estado in estadosCampaniaOrdenados"
               :key="estado.id"
-              class="flex items-center gap-1 cursor-pointer hover:bg-gray-50 px-1 rounded"
+              class="flex items-center gap-2 cursor-pointer group"
             >
               <input
                 type="checkbox"
                 :value="estado.id"
                 v-model="filters.estados"
-                class="w-3 h-3 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 focus:ring-offset-0"
               />
-              <span class="text-xs text-gray-700">{{ estado.nombre }}</span>
+              <span class="text-sm text-gray-700 group-hover:text-gray-900 select-none">{{ estado.nombre }}</span>
             </label>
+            <p v-if="estadosCampaniaOrdenados.length === 0" class="text-xs text-gray-400 italic">Cargando...</p>
           </div>
         </div>
 
-        <div class="w-px h-12 bg-gray-200 hidden md:block"></div>
-
-        <!-- Tipo de Campaña (matriz 2 columnas) -->
-        <div class="flex-shrink-0">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-xs font-medium text-gray-700">Tipo:</span>
-            <label class="flex items-center gap-1 cursor-pointer text-xs text-purple-600 hover:text-purple-800">
-              <input
-                type="checkbox"
-                :checked="todosTiposSeleccionados"
-                :indeterminate="algunTipoSeleccionado && !todosTiposSeleccionados"
-                @change="toggleTodosTipos"
-                class="w-3 h-3 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-              />
-              <span>Todos</span>
-            </label>
+        <!-- Tipo de Campaña -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Tipo de campaña</span>
+            <button
+              @click="toggleTodosTipos"
+              class="text-xs text-purple-600 hover:text-purple-800 transition-colors"
+            >
+              {{ todosTiposSeleccionados ? 'Ninguno' : 'Todos' }}
+            </button>
           </div>
-          <div class="grid grid-cols-2 gap-x-3 gap-y-0.5">
+          <div class="space-y-1.5 max-h-44 overflow-y-auto pr-1 scrollbar-thin">
             <label
               v-for="tipo in tiposCampaniaOrdenados"
               :key="tipo.id"
-              class="flex items-center gap-1 cursor-pointer hover:bg-gray-50 px-1 rounded"
+              class="flex items-center gap-2 cursor-pointer group"
             >
               <input
                 type="checkbox"
                 :value="tipo.id"
                 v-model="filters.tipos"
-                class="w-3 h-3 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 focus:ring-offset-0"
               />
-              <span class="text-xs text-gray-700">{{ tipo.nombre }}</span>
+              <span class="text-sm text-gray-700 group-hover:text-gray-900 select-none">{{ tipo.nombre }}</span>
             </label>
+            <p v-if="tiposCampaniaOrdenados.length === 0" class="text-xs text-gray-400 italic">Cargando...</p>
           </div>
         </div>
 
-        <div class="w-px h-12 bg-gray-200 hidden md:block"></div>
-
-        <!-- Años (checkboxes en fila) -->
-        <div class="flex-shrink-0">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-xs font-medium text-gray-700">Año:</span>
-            <label class="flex items-center gap-1 cursor-pointer text-xs text-purple-600 hover:text-purple-800">
-              <input
-                type="checkbox"
-                :checked="todosAniosSeleccionados"
-                :indeterminate="algunAnioSeleccionado && !todosAniosSeleccionados"
-                @change="toggleTodosAnios"
-                class="w-3 h-3 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-              />
-              <span>Todos</span>
-            </label>
+        <!-- Año -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Año</span>
+            <button
+              @click="toggleTodosAnios"
+              class="text-xs text-purple-600 hover:text-purple-800 transition-colors"
+            >
+              {{ todosAniosSeleccionados ? 'Ninguno' : 'Todos' }}
+            </button>
           </div>
-          <div class="flex flex-wrap gap-x-2 gap-y-0.5">
+          <div class="space-y-1.5">
             <label
               v-for="anio in aniosDisponibles"
               :key="anio"
-              class="flex items-center gap-1 cursor-pointer hover:bg-gray-50 px-1 rounded"
+              class="flex items-center gap-2 cursor-pointer group"
             >
               <input
                 type="checkbox"
                 :value="anio"
                 v-model="filters.anios"
-                class="w-3 h-3 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 focus:ring-offset-0"
               />
-              <span class="text-xs text-gray-700">{{ anio }}</span>
+              <span class="text-sm text-gray-700 group-hover:text-gray-900 select-none">{{ anio }}</span>
             </label>
           </div>
         </div>
 
-        <!-- Botones de acción -->
-        <div class="flex items-center gap-2 ml-auto">
+        <!-- Botones -->
+        <div class="flex flex-col gap-2 pt-5">
           <button
             @click="aplicarFiltros"
             :disabled="loading"
-            class="px-4 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 disabled:opacity-50"
+            class="px-5 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors whitespace-nowrap"
           >
             {{ loading ? 'Buscando...' : 'Buscar' }}
           </button>
           <button
             @click="limpiarFiltros"
-            class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800"
+            class="px-5 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap"
           >
             Limpiar
           </button>
         </div>
+
       </div>
     </div>
 
@@ -461,14 +464,11 @@ const toggleTodosAnios = () => {
 // Cargar catálogos al montar
 const loadCatalogos = async () => {
   try {
-    console.log('Cargando tipos de campaña...')
-    const tiposData = await executeQuery(GET_TIPOS_CAMPANIA)
-    console.log('Tipos recibidos:', tiposData)
+    const [tiposData, estadosData] = await Promise.all([
+      executeQuery(GET_TIPOS_CAMPANIA),
+      executeQuery(GET_ESTADOS_CAMPANIA),
+    ])
     tiposCampania.value = tiposData?.tiposCampania || []
-
-    console.log('Cargando estados de campaña...')
-    const estadosData = await executeQuery(GET_ESTADOS_CAMPANIA)
-    console.log('Estados recibidos:', estadosData)
     estadosCampania.value = estadosData?.estadosCampania || []
   } catch (err) {
     console.error('Error al cargar catálogos:', err)

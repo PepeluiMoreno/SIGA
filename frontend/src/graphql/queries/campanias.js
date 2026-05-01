@@ -99,9 +99,26 @@ export const GET_ESTADOS_CAMPANIA = `
     estadosCampania {
       id
       nombre
-      esEstadoFinal
       orden
       activo
+    }
+  }
+`
+
+export const CREAR_CAMPANIA = `
+  mutation CrearCampania($data: CampaniaCreateInput!) {
+    crearCampania(data: $data) {
+      id
+      nombre
+    }
+  }
+`
+
+export const ACTUALIZAR_CAMPANIA = `
+  mutation ActualizarCampania($data: CampaniaUpdateInput!) {
+    actualizarCampania(data: $data) {
+      id
+      nombre
     }
   }
 `

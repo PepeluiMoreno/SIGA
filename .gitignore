@@ -55,3 +55,8 @@ instance/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# ETL / Migración de datos legados (privado, no va al repo público)
+etl/
+migration_scripts/
+docs/etl_migracion_legacy.md

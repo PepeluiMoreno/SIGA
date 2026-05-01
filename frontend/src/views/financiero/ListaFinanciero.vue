@@ -393,13 +393,13 @@
           </thead>
           <tbody class="divide-y divide-gray-200">
             <tr v-for="remesa in remesasSEPA" :key="remesa.id" class="hover:bg-gray-50">
-              <td class="px-4 py-3 text-sm">{{ formatDate(remesa.fecha) }}</td>
+              <td class="px-4 py-3 text-sm">{{ formatDate(remesa.fechaCreacion) }}</td>
               <td class="px-4 py-3 text-sm font-mono">{{ remesa.referencia }}</td>
-              <td class="px-4 py-3 text-sm">{{ remesa.numRecibos }} recibos</td>
-              <td class="px-4 py-3 text-sm text-right font-medium">{{ formatCurrency(remesa.importe) }}</td>
+              <td class="px-4 py-3 text-sm">{{ remesa.numOrdenes }} recibos</td>
+              <td class="px-4 py-3 text-sm text-right font-medium">{{ formatCurrency(remesa.importeTotal) }}</td>
               <td class="px-4 py-3">
-                <span :class="getRemesaEstadoClass(remesa.estado)" class="text-xs px-2 py-1 rounded-full">
-                  {{ remesa.estado }}
+                <span :class="getRemesaEstadoClass(remesa.estado?.nombre)" class="text-xs px-2 py-1 rounded-full">
+                  {{ remesa.estado?.nombre }}
                 </span>
               </td>
               <td class="px-4 py-3 text-sm">
@@ -415,29 +415,59 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
+import { executeQuery } from '@/graphql/client'
+import { GET_CUOTAS_ANUALES, GET_DONACIONES, GET_REMESAS } from '@/graphql/queries/financiero.js'
 
 const loading = ref(false)
-const activeTab = ref('presupuesto')
-const transacciones = ref([])
+const activeTab = ref('cobros')
+const cuotas = ref([])
+const donaciones = ref([])
+const remesasSEPA = ref([])
 const searchQuery = ref('')
 const showFilters = ref(false)
 
 const tabs = [
-  { id: 'presupuesto', name: 'Control Presupuestario', icon: '📊' },
   { id: 'cobros', name: 'Gestión de Cobros', icon: '💳' },
+  { id: 'tesoreria', name: 'Remesas SEPA', icon: '💰' },
+  { id: 'presupuesto', name: 'Control Presupuestario', icon: '📊' },
   { id: 'plataformas', name: 'Plataformas de Cobro', icon: '🏦' },
-  { id: 'tesoreria', name: 'Tesorería', icon: '💰' }
 ]
 
-const resumen = ref({
-  ingresosMes: 4850,
-  cuotasCobradas: 142,
-  cuotasPendientes: 12,
-  donaciones: 850,
-  presupuestoEjecutado: 34
+const transacciones = computed(() => {
+  const rows = []
+  for (const c of cuotas.value) {
+    rows.push({
+      id: `c-${c.id}`,
+      fecha: c.fechaPago || c.fechaCreacion,
+      concepto: `Cuota ${c.ejercicio}`,
+      miembro: c.miembro ? `${c.miembro.nombre} ${c.miembro.apellido1}` : '—',
+      tipo: 'CUOTA',
+      estado: c.estado?.nombre?.toUpperCase() || '—',
+      importe: c.importe,
+    })
+  }
+  for (const d of donaciones.value) {
+    rows.push({
+      id: `d-${d.id}`,
+      fecha: d.fecha,
+      concepto: d.concepto?.nombre || 'Donación',
+      miembro: d.anonima ? 'Anónimo' : (d.donanteNombre || '—'),
+      tipo: 'DONACION',
+      estado: d.estado?.nombre?.toUpperCase() || '—',
+      importe: d.importe,
+    })
+  }
+  return rows.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''))
 })
+
+const resumen = computed(() => ({
+  ingresosMes: 0,
+  cuotasCobradas: cuotas.value.filter(c => c.estado?.nombre?.toLowerCase().includes('cobrad')).length,
+  cuotasPendientes: cuotas.value.filter(c => c.estado?.nombre?.toLowerCase().includes('pendiente')).length,
+  presupuestoEjecutado: 0,
+}))
 
 const filters = ref({
   tipo: '',
@@ -446,212 +476,35 @@ const filters = ref({
   fechaHasta: ''
 })
 
-// Partidas presupuestarias
-const partidasPresupuesto = ref([
-  { id: 1, nombre: 'Personal y colaboraciones', icono: '👥', presupuestado: 15000, ejecutado: 4200, porcentaje: 28 },
-  { id: 2, nombre: 'Alquileres y sedes', icono: '🏢', presupuestado: 8000, ejecutado: 2800, porcentaje: 35 },
-  { id: 3, nombre: 'Comunicación y web', icono: '📢', presupuestado: 5000, ejecutado: 1850, porcentaje: 37 },
-  { id: 4, nombre: 'Eventos y campañas', icono: '🎪', presupuestado: 12000, ejecutado: 3600, porcentaje: 30 },
-  { id: 5, nombre: 'Material divulgativo', icono: '📚', presupuestado: 3000, ejecutado: 1200, porcentaje: 40 },
-  { id: 6, nombre: 'Viajes y desplazamientos', icono: '🚗', presupuestado: 4000, ejecutado: 950, porcentaje: 24 },
-  { id: 7, nombre: 'Gastos administrativos', icono: '📋', presupuestado: 2000, ejecutado: 680, porcentaje: 34 },
-  { id: 8, nombre: 'Reserva de contingencia', icono: '🛡️', presupuestado: 3000, ejecutado: 0, porcentaje: 0 }
-])
+// Presupuesto y tesorería — pendiente de modelo en backend
+const partidasPresupuesto = ref([])
+const totalPresupuestado = computed(() => 0)
+const totalEjecutado = computed(() => 0)
+const plataformasCobro = ref([])
+const cuentasTesoreria = ref([])
+const totalTesoreria = computed(() => 0)
+const flujoCaja = ref([])
+const maxFlujo = computed(() => 1)
 
-const totalPresupuestado = computed(() => partidasPresupuesto.value.reduce((sum, p) => sum + p.presupuestado, 0))
-const totalEjecutado = computed(() => partidasPresupuesto.value.reduce((sum, p) => sum + p.ejecutado, 0))
-
-// Plataformas de cobro
-const plataformasCobro = ref([
-  {
-    id: 1,
-    nombre: 'Cuenta Principal',
-    tipo: 'Cuenta Bancaria',
-    icono: '🏦',
-    identificador: 'ES91 2100 0418 4502 0005 1332',
-    saldo: 12450.75,
-    activa: true,
-    ultimaActividad: 'Hoy'
-  },
-  {
-    id: 2,
-    nombre: 'PayPal Europa Laica',
-    tipo: 'PayPal',
-    icono: '💳',
-    identificador: 'pagos@europalaica.org',
-    saldo: 1245.50,
-    activa: true,
-    ultimaActividad: 'Hace 2 días'
-  },
-  {
-    id: 3,
-    nombre: 'Patreon',
-    tipo: 'Patreon',
-    icono: '🅿️',
-    identificador: 'europalaica',
-    saldo: 385.00,
-    activa: true,
-    ultimaActividad: 'Este mes'
-  },
-  {
-    id: 4,
-    nombre: 'Bizum',
-    tipo: 'Bizum',
-    icono: '📱',
-    identificador: '600 XXX XXX',
-    saldo: null,
-    activa: true,
-    ultimaActividad: 'Ayer'
-  },
-  {
-    id: 5,
-    nombre: 'Stripe (Web)',
-    tipo: 'Stripe',
-    icono: '💻',
-    identificador: 'Conectado',
-    saldo: 892.30,
-    activa: true,
-    ultimaActividad: 'Hace 3 días'
-  },
-  {
-    id: 6,
-    nombre: 'Cuenta Reserva',
-    tipo: 'Cuenta Bancaria',
-    icono: '🏦',
-    identificador: 'ES85 0049 1234 5612 3456 7890',
-    saldo: 5000.00,
-    activa: false,
-    ultimaActividad: 'Hace 2 meses'
-  }
-])
-
-// Cuentas de tesorería
-const cuentasTesoreria = ref([
-  { id: 1, nombre: 'Cuenta Operativa', entidad: 'La Caixa', icono: '🏦', saldo: 12450.75, ultimaActualizacion: 'Hoy' },
-  { id: 2, nombre: 'PayPal', entidad: 'PayPal', icono: '💳', saldo: 1245.50, ultimaActualizacion: 'Hace 2 días' },
-  { id: 3, nombre: 'Patreon', entidad: 'Patreon', icono: '🅿️', saldo: 385.00, ultimaActualizacion: 'Este mes' },
-  { id: 4, nombre: 'Stripe', entidad: 'Stripe', icono: '💻', saldo: 892.30, ultimaActualizacion: 'Hace 3 días' },
-  { id: 5, nombre: 'Cuenta Reserva', entidad: 'BBVA', icono: '🏦', saldo: 5000.00, ultimaActualizacion: 'Hace 2 meses' }
-])
-
-const totalTesoreria = computed(() => cuentasTesoreria.value.reduce((sum, c) => sum + c.saldo, 0))
-
-// Flujo de caja
-const flujoCaja = ref([
-  { mes: 'Ago 2024', ingresos: 4200, gastos: 3800 },
-  { mes: 'Sep 2024', ingresos: 3800, gastos: 4100 },
-  { mes: 'Oct 2024', ingresos: 4500, gastos: 3600 },
-  { mes: 'Nov 2024', ingresos: 5200, gastos: 4200 },
-  { mes: 'Dic 2024', ingresos: 6100, gastos: 5800 },
-  { mes: 'Ene 2025', ingresos: 4850, gastos: 3200 }
-])
-
-const maxFlujo = computed(() => Math.max(...flujoCaja.value.flatMap(m => [m.ingresos, m.gastos])))
-
-// Remesas SEPA
-const remesasSEPA = ref([
-  { id: 1, fecha: '2025-01-15', referencia: 'SEPA-2025-003', numRecibos: 45, importe: 2700, estado: 'Enviada' },
-  { id: 2, fecha: '2025-01-01', referencia: 'SEPA-2025-002', numRecibos: 52, importe: 3120, estado: 'Cobrada' },
-  { id: 3, fecha: '2024-12-15', referencia: 'SEPA-2024-024', numRecibos: 48, importe: 2880, estado: 'Cobrada' },
-  { id: 4, fecha: '2024-12-01', referencia: 'SEPA-2024-023', numRecibos: 50, importe: 3000, estado: 'Parcial' }
-])
-
-onMounted(() => {
-  loadTransacciones()
-})
-
-const loadTransacciones = async () => {
+async function cargar() {
   loading.value = true
-  setTimeout(() => {
-    transacciones.value = [
-      {
-        id: 1,
-        fecha: '2025-01-15',
-        concepto: 'Cuota anual miembro 2025',
-        miembro: 'María García López',
-        tipo: 'CUOTA',
-        estado: 'COBRADA',
-        importe: 60,
-        referencia: 'CUO-2025-00142'
-      },
-      {
-        id: 2,
-        fecha: '2025-01-14',
-        concepto: 'Donación para Campaña Laicismo',
-        miembro: 'Juan Martínez Ruiz',
-        tipo: 'DONACION',
-        estado: 'COBRADA',
-        importe: 150,
-        referencia: 'DON-2025-00023'
-      },
-      {
-        id: 3,
-        fecha: '2025-01-13',
-        concepto: 'Cuota anual miembro 2025',
-        miembro: 'Ana López Fernández',
-        tipo: 'CUOTA',
-        estado: 'PENDIENTE',
-        importe: 60,
-        referencia: 'CUO-2025-00141'
-      },
-      {
-        id: 4,
-        fecha: '2025-01-12',
-        concepto: 'Alquiler sala Jornadas Laicismo',
-        miembro: 'Europa Laica',
-        tipo: 'GASTO',
-        estado: 'COBRADA',
-        importe: 350,
-        referencia: 'GAS-2025-00015'
-      },
-      {
-        id: 5,
-        fecha: '2025-01-10',
-        concepto: 'Cuota anual miembro 2025',
-        miembro: 'Carlos Sánchez Vega',
-        tipo: 'CUOTA',
-        estado: 'DEVUELTA',
-        importe: 60,
-        referencia: 'CUO-2025-00140'
-      },
-      {
-        id: 6,
-        fecha: '2025-01-08',
-        concepto: 'Impresión material divulgativo',
-        miembro: 'Europa Laica',
-        tipo: 'GASTO',
-        estado: 'COBRADA',
-        importe: 180,
-        referencia: 'GAS-2025-00014'
-      },
-      {
-        id: 7,
-        fecha: '2025-01-05',
-        concepto: 'Donación anónima web',
-        miembro: 'Anónimo',
-        tipo: 'DONACION',
-        estado: 'COBRADA',
-        importe: 100,
-        referencia: 'DON-2025-00022'
-      },
-      {
-        id: 8,
-        fecha: '2025-01-03',
-        concepto: 'Cuota reducida estudiante 2025',
-        miembro: 'Laura Díaz Moreno',
-        tipo: 'CUOTA',
-        estado: 'COBRADA',
-        importe: 30,
-        referencia: 'CUO-2025-00139'
-      }
-    ]
+  try {
+    const [dataCuotas, dataDonaciones, dataRemesas] = await Promise.all([
+      executeQuery(GET_CUOTAS_ANUALES),
+      executeQuery(GET_DONACIONES),
+      executeQuery(GET_REMESAS),
+    ])
+    cuotas.value = dataCuotas.cuotasAnuales || []
+    donaciones.value = dataDonaciones.donaciones || []
+    remesasSEPA.value = dataRemesas.remesas || []
+  } catch (e) {
+    console.error('Error cargando financiero:', e?.response?.errors?.[0]?.message || e)
+  } finally {
     loading.value = false
-  }, 500)
+  }
 }
 
-const onSearch = () => {
-  console.log('Buscando:', searchQuery.value)
-}
+onMounted(cargar)
 
 const formatDate = (dateString) => {
   if (!dateString) return ''
@@ -698,28 +551,9 @@ const getRemesaEstadoClass = (estado) => {
   return classes[estado] || 'bg-gray-100 text-gray-800'
 }
 
-const generarRemesa = () => {
-  console.log('Generando remesa SEPA...')
-  alert('Funcionalidad de generación de remesa SEPA en desarrollo')
-}
-
-const verDetalle = (transaccion) => {
-  console.log('Ver detalle:', transaccion)
-}
-
-const marcarCobrada = (transaccion) => {
-  console.log('Marcar como cobrada:', transaccion)
-}
-
-const configurarPlataforma = (plataforma) => {
-  console.log('Configurar plataforma:', plataforma)
-}
-
-const verMovimientos = (plataforma) => {
-  console.log('Ver movimientos:', plataforma)
-}
-
-watch(filters, () => {
-  loadTransacciones()
-}, { deep: true })
+function generarRemesa() {}
+function verDetalle() {}
+function marcarCobrada() {}
+function configurarPlataforma() {}
+function verMovimientos() {}
 </script>

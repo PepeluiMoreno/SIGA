@@ -33,6 +33,7 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nivel</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Permisos</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+            <th class="px-6 py-3"></th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -51,6 +52,17 @@
               <span :class="r.activo ? 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800' : 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800'">
                 {{ r.activo ? 'Activo' : 'Inactivo' }}
               </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+              <router-link
+                :to="`/roles/${r.id}/permisos`"
+                class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+                Permisos
+              </router-link>
             </td>
           </tr>
         </tbody>

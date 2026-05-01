@@ -109,6 +109,12 @@ const routes = [
   },
   // Rutas de Administración
   {
+    path: '/roles/:id/permisos',
+    component: () => import('@/views/administracion/PermisosRol.vue'),
+    name: 'PermisosRol',
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/roles',
     component: () => import('@/views/administracion/ListaRoles.vue'),
     name: 'Roles',

@@ -20,6 +20,9 @@ export const GET_GRUPOS = `
         nombre
         apellido1
       }
+      miembros {
+        id
+      }
     }
   }
 `
