@@ -129,6 +129,13 @@ class Query(AuthQuery):
     reunionesGrupo: list[ReunionGrupoType] = strawchemy.field()
     asistentesReunion: list[AsistenteReunionType] = strawchemy.field()
 
+    # === EVENTOS ===
+    tiposEvento: list[TipoEventoType] = strawchemy.field()
+    estadosEvento: list[EstadoEventoType] = strawchemy.field()
+    eventos: list[EventoType] = strawchemy.field()
+    participantesEvento: list[ParticipanteEventoType] = strawchemy.field()
+    materialesEvento: list[MaterialEventoType] = strawchemy.field()
+
     # === VOLUNTARIADO ===
     categoriasCompetencia: list[CategoriaCompetenciaType] = strawchemy.field()
     competencias: list[CompetenciaType] = strawchemy.field()

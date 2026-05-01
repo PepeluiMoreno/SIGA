@@ -45,6 +45,19 @@ const routes = [
     name: 'Campañas',
     meta: { requiresAuth: true }
   },
+  // Rutas de Eventos
+  {
+    path: '/eventos',
+    component: () => import('@/views/eventos/ListaEventos.vue'),
+    name: 'Eventos',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/eventos/:id',
+    component: () => import('@/views/eventos/DetalleEvento.vue'),
+    name: 'DetalleEvento',
+    meta: { requiresAuth: true }
+  },
   {
     path: '/grupos',
     component: ListaGrupos,

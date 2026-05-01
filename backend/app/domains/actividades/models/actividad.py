@@ -183,6 +183,7 @@ class Actividad(BaseModel):
 
     # Relaciones
     campania = relationship('Campania', back_populates='actividades', lazy='selectin')
+    evento = relationship('Evento', back_populates='actividades', foreign_keys=[evento_id], lazy='selectin')
     tipo_actividad = relationship('TipoActividad', back_populates='actividades', lazy='selectin')
     estado = relationship('EstadoActividad', back_populates='actividades', lazy='selectin')
     propuesta = relationship('PropuestaActividad', lazy='selectin')

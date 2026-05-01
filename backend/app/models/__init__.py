@@ -35,6 +35,12 @@ from ..domains.financiero.models import (
 # Dominio Administración
 from ..domains.administracion.models import Transaccion, Rol, RolTransaccion, LogAuditoria
 
+# Dominio Eventos
+from ..domains.eventos.models import (
+    TipoEvento, EstadoEvento, Evento, ParticipanteEvento, MaterialEvento,
+    GrupoEvento, TareaEvento, GastoEvento,
+)
+
 # Dominio Miembros
 from ..domains.miembros.models import (
     TipoMiembro, EstadoMiembro, MotivoBaja, TipoCargo, Miembro,

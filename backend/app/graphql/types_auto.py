@@ -491,3 +491,29 @@ class TipoFormacionType:
 @strawchemy.type(FormacionMiembro, include="all", override=True)
 class FormacionMiembroType:
     pass
+
+
+# === EVENTOS ===
+from ..domains.eventos.models import (
+    TipoEvento, EstadoEvento, Evento, ParticipanteEvento, MaterialEvento
+)
+
+@strawchemy.type(TipoEvento, include="all", override=True)
+class TipoEventoType:
+    pass
+
+@strawchemy.type(EstadoEvento, include="all", override=True)
+class EstadoEventoType:
+    pass
+
+@strawchemy.type(Evento, include="all", override=True)
+class EventoType:
+    pass
+
+@strawchemy.type(ParticipanteEvento, include="all", override=True)
+class ParticipanteEventoType:
+    pass
+
+@strawchemy.type(MaterialEvento, include="all", override=True)
+class MaterialEventoType:
+    pass

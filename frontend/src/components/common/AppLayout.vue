@@ -94,6 +94,16 @@
               </li>
               <li>
                 <router-link
+                  to="/eventos"
+                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                  :class="$route.path.startsWith('/eventos') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
+                >
+                  <CalendarDaysIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
+                  <span>Eventos</span>
+                </router-link>
+              </li>
+              <li>
+                <router-link
                   to="/grupos"
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
                   :class="$route.path.startsWith('/grupos') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
@@ -281,6 +291,7 @@ import {
   AdjustmentsHorizontalIcon,
   GlobeAltIcon,
   BookOpenIcon,
+  CalendarDaysIcon,
 } from '@heroicons/vue/24/outline'
 
 defineProps({
