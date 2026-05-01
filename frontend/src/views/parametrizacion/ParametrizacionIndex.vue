@@ -67,10 +67,10 @@
 import { ref, computed } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 
-const categoriaActiva = ref('miembros')
+const categoriaActiva = ref('Miembros')
 
 const categorias = [
-  { id: 'miembros', nombre: 'miembros' },
+  { id: 'Miembros', nombre: 'Miembros' },
   { id: 'financiero', nombre: 'Financiero' },
   { id: 'campanias', nombre: 'Campañas' },
   { id: 'actividades', nombre: 'Actividades' },
@@ -79,23 +79,23 @@ const categorias = [
 ]
 
 const catalogos = [
-  // miembros
+  // Miembros
   {
-    categoria: 'miembros',
+    categoria: 'Miembros',
     nombre: 'Tipos de miembro',
     descripcion: 'miembro, Simpatizante, Voluntario, etc.',
     icono: '👤',
     ruta: '/parametrizacion/tipos-miembro'
   },
   {
-    categoria: 'miembros',
+    categoria: 'Miembros',
     nombre: 'Situaciones',
     descripcion: 'Situaciones por las que pasa un miembro',
     icono: '📊',
     ruta: '/parametrizacion/estados-miembro'
   },
   {
-    categoria: 'miembros',
+    categoria: 'Miembros',
     nombre: 'Motivos de Baja',
     descripcion: 'Razones para dar de baja a un miembro',
     icono: '📝',
