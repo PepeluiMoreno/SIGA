@@ -6,3 +6,4 @@ La aplicacion debe prever que se contrate un servicio externo para cualquier eve
 
 No hace falta recordar que hay que registrar en el historico de colaboraciones de los militantes, su participacion en cualquier grupo de trabajo (validada por el coordinador del evento o campaña)
 
+Los eventos y las campañas movilizan recursos, los recursos pueden ser materiales y humanos (grupos de trabajo). Las horas/hombre son tratadas con pensamiento contable, igual que los euros de los presupuestos.
