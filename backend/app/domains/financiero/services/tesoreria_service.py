@@ -1,4 +1,4 @@
-"""Servicio de tesorería para gestión de cuentas bancarias y movimientos."""
+"""Servicio de tesorería."""
 
 from datetime import date
 from decimal import Decimal
@@ -8,16 +8,12 @@ from uuid import UUID
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models.tesoreria import (
-    CuentaBancaria,
-    MovimientoTesoreria,
-    ConciliacionBancaria,
-    TipoMovimientoTesoreria,
-)
+from ..models.tesoreria.cuenta_bancaria import CuentaBancaria
+from ..models.tesoreria.apunte import ApunteCaja, TipoApunte, OrigenApunte
+from ..models.tesoreria.conciliacion import ExtractoBancario, Conciliacion, MetodoConciliacion
 
 
 class TesoreriaService:
-    """Servicio para gestionar tesorería: cuentas bancarias y movimientos."""
 
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -26,232 +22,171 @@ class TesoreriaService:
         self,
         nombre: str,
         iban: str,
-        banco_nombre: str,
-        bic_swift: Optional[str] = None,
-        agrupacion_id: Optional[UUID] = None,
-        observaciones: Optional[str] = None,
+        banco: Optional[str] = None,
+        titular: Optional[str] = None,
+        descripcion: Optional[str] = None,
     ) -> CuentaBancaria:
-        """Crea una nueva cuenta bancaria."""
         cuenta = CuentaBancaria(
             nombre=nombre,
             iban=iban,
-            bic_swift=bic_swift,
-            banco_nombre=banco_nombre,
-            agrupacion_id=agrupacion_id,
-            observaciones=observaciones,
+            banco=banco,
+            titular=titular,
+            descripcion=descripcion,
         )
         self.session.add(cuenta)
         await self.session.commit()
         await self.session.refresh(cuenta)
         return cuenta
 
-    async def obtener_cuenta_bancaria(self, cuenta_id: UUID) -> Optional[CuentaBancaria]:
-        """Obtiene una cuenta bancaria por ID."""
+    async def obtener_cuenta(self, cuenta_id: UUID) -> Optional[CuentaBancaria]:
         result = await self.session.execute(
             select(CuentaBancaria).where(CuentaBancaria.id == cuenta_id)
         )
         return result.scalars().first()
 
-    async def listar_cuentas_bancarias(
-        self, activas_solo: bool = True
-    ) -> List[CuentaBancaria]:
-        """Lista todas las cuentas bancarias."""
+    async def listar_cuentas(self, activas_solo: bool = True) -> List[CuentaBancaria]:
         query = select(CuentaBancaria)
         if activas_solo:
-            query = query.where(CuentaBancaria.activa == True)
+            query = query.where(CuentaBancaria.activo == True)
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
-    async def registrar_movimiento(
+    async def registrar_apunte(
         self,
         cuenta_id: UUID,
-        fecha: date,
+        tipo: TipoApunte,
         importe: Decimal,
-        tipo: TipoMovimientoTesoreria,
+        fecha: date,
         concepto: str,
-        referencia_externa: Optional[str] = None,
-        entidad_origen_tipo: Optional[str] = None,
-        entidad_origen_id: Optional[UUID] = None,
+        estado_id: UUID,
+        origen: Optional[OrigenApunte] = None,
+        origen_id: Optional[UUID] = None,
+        asiento_id: Optional[UUID] = None,
         observaciones: Optional[str] = None,
-    ) -> MovimientoTesoreria:
-        """Registra un movimiento de tesorería."""
-        # Obtener la cuenta
-        cuenta = await self.obtener_cuenta_bancaria(cuenta_id)
+    ) -> ApunteCaja:
+        cuenta = await self.obtener_cuenta(cuenta_id)
         if not cuenta:
             raise ValueError(f"Cuenta bancaria {cuenta_id} no encontrada")
 
-        # Crear el movimiento
-        movimiento = MovimientoTesoreria(
-            cuenta_id=cuenta_id,
-            fecha=fecha,
-            importe=importe,
+        apunte = ApunteCaja(
+            cuenta_bancaria_id=cuenta_id,
             tipo=tipo,
+            importe=importe,
+            fecha=fecha,
             concepto=concepto,
-            referencia_externa=referencia_externa,
-            entidad_origen_tipo=entidad_origen_tipo,
-            entidad_origen_id=entidad_origen_id,
+            estado_id=estado_id,
+            origen=origen,
+            origen_id=origen_id,
+            asiento_id=asiento_id,
             observaciones=observaciones,
         )
 
-        # Actualizar saldo de la cuenta
-        if tipo == TipoMovimientoTesoreria.INGRESO:
+        # Actualizar saldo
+        if tipo == TipoApunte.INGRESO:
             cuenta.saldo_actual += importe
-        elif tipo == TipoMovimientoTesoreria.GASTO:
+        elif tipo == TipoApunte.GASTO:
             cuenta.saldo_actual -= importe
-        elif tipo == TipoMovimientoTesoreria.TRASPASO:
-            # Los traspasos se registran en dos movimientos (uno negativo, uno positivo)
-            pass
+        # TRANSFERENCIA: se gestiona en dos apuntes separados (origen/destino)
 
-        self.session.add(movimiento)
+        self.session.add(apunte)
         self.session.add(cuenta)
         await self.session.commit()
-        await self.session.refresh(movimiento)
-        return movimiento
+        await self.session.refresh(apunte)
+        return apunte
 
-    async def obtener_movimientos_por_cuenta(
+    async def listar_apuntes(
         self,
         cuenta_id: UUID,
         fecha_inicio: Optional[date] = None,
         fecha_fin: Optional[date] = None,
-    ) -> List[MovimientoTesoreria]:
-        """Obtiene los movimientos de una cuenta en un período."""
-        query = select(MovimientoTesoreria).where(
-            MovimientoTesoreria.cuenta_id == cuenta_id
-        )
-
+        limit: int = 50,
+        offset: int = 0,
+    ) -> List[ApunteCaja]:
+        query = select(ApunteCaja).where(ApunteCaja.cuenta_bancaria_id == cuenta_id)
         if fecha_inicio:
-            query = query.where(MovimientoTesoreria.fecha >= fecha_inicio)
+            query = query.where(ApunteCaja.fecha >= fecha_inicio)
         if fecha_fin:
-            query = query.where(MovimientoTesoreria.fecha <= fecha_fin)
-
-        query = query.order_by(MovimientoTesoreria.fecha)
+            query = query.where(ApunteCaja.fecha <= fecha_fin)
+        query = query.order_by(ApunteCaja.fecha.desc()).limit(limit).offset(offset)
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
-    async def obtener_movimientos_no_conciliados(
-        self, cuenta_id: UUID
-    ) -> List[MovimientoTesoreria]:
-        """Obtiene los movimientos no conciliados de una cuenta."""
+    async def apuntes_no_conciliados(self, cuenta_id: UUID) -> List[ApunteCaja]:
+        """Apuntes pendientes de conciliación en una cuenta."""
+        # Obtener IDs ya conciliados
+        conciliados = await self.session.execute(
+            select(Conciliacion.apunte_id)
+        )
+        ids_conciliados = {r for r in conciliados.scalars().all()}
+
         result = await self.session.execute(
-            select(MovimientoTesoreria).where(
+            select(ApunteCaja).where(
                 and_(
-                    MovimientoTesoreria.cuenta_id == cuenta_id,
-                    MovimientoTesoreria.conciliado == False,
+                    ApunteCaja.cuenta_bancaria_id == cuenta_id,
+                    ApunteCaja.id.not_in(ids_conciliados),
                 )
             )
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
-    async def marcar_movimiento_conciliado(
-        self, movimiento_id: UUID, fecha_conciliacion: Optional[date] = None
-    ) -> MovimientoTesoreria:
-        """Marca un movimiento como conciliado."""
-        movimiento = await self.session.execute(
-            select(MovimientoTesoreria).where(MovimientoTesoreria.id == movimiento_id)
-        )
-        movimiento = movimiento.scalars().first()
-
-        if not movimiento:
-            raise ValueError(f"Movimiento {movimiento_id} no encontrado")
-
-        movimiento.conciliado = True
-        movimiento.fecha_conciliacion = fecha_conciliacion or date.today()
-
-        self.session.add(movimiento)
-        await self.session.commit()
-        await self.session.refresh(movimiento)
-        return movimiento
-
-    async def crear_conciliacion_bancaria(
+    async def importar_extracto(
         self,
         cuenta_id: UUID,
-        fecha_inicio: date,
-        fecha_fin: date,
-        saldo_inicial_extracto: Decimal,
-        saldo_final_extracto: Decimal,
-    ) -> ConciliacionBancaria:
-        """Crea un registro de conciliación bancaria."""
-        # Obtener la cuenta
-        cuenta = await self.obtener_cuenta_bancaria(cuenta_id)
+        lineas: List[dict],
+    ) -> List[ExtractoBancario]:
+        """Importa líneas de extracto bancario (CSV/MT940).
+
+        Cada elemento de lineas: {fecha, importe, concepto, referencia}
+        """
+        cuenta = await self.obtener_cuenta(cuenta_id)
         if not cuenta:
             raise ValueError(f"Cuenta bancaria {cuenta_id} no encontrada")
 
-        # Obtener movimientos del período
-        movimientos = await self.obtener_movimientos_por_cuenta(
-            cuenta_id, fecha_inicio, fecha_fin
-        )
-
-        # Calcular saldos del sistema
-        saldo_inicial_sistema = cuenta.saldo_actual
-        for mov in movimientos:
-            if mov.tipo == TipoMovimientoTesoreria.INGRESO:
-                saldo_inicial_sistema -= mov.importe
-            elif mov.tipo == TipoMovimientoTesoreria.GASTO:
-                saldo_inicial_sistema += mov.importe
-
-        saldo_final_sistema = cuenta.saldo_actual
-
-        # Calcular diferencia
-        diferencia = saldo_final_extracto - saldo_final_sistema
-
-        # Crear conciliación
-        conciliacion = ConciliacionBancaria(
-            cuenta_id=cuenta_id,
-            fecha_inicio=fecha_inicio,
-            fecha_fin=fecha_fin,
-            saldo_inicial_extracto=saldo_inicial_extracto,
-            saldo_final_extracto=saldo_final_extracto,
-            saldo_inicial_sistema=saldo_inicial_sistema,
-            saldo_final_sistema=saldo_final_sistema,
-            diferencia=diferencia,
-        )
-
-        self.session.add(conciliacion)
-        await self.session.commit()
-        await self.session.refresh(conciliacion)
-        return conciliacion
-
-    async def confirmar_conciliacion(
-        self, conciliacion_id: UUID
-    ) -> ConciliacionBancaria:
-        """Confirma una conciliación bancaria."""
-        result = await self.session.execute(
-            select(ConciliacionBancaria).where(ConciliacionBancaria.id == conciliacion_id)
-        )
-        conciliacion = result.scalars().first()
-
-        if not conciliacion:
-            raise ValueError(f"Conciliación {conciliacion_id} no encontrada")
-
-        if not conciliacion.esta_equilibrada:
-            raise ValueError(
-                f"La conciliación no está equilibrada. Diferencia: {conciliacion.diferencia}"
+        extractos = []
+        for linea in lineas:
+            extracto = ExtractoBancario(
+                cuenta_bancaria_id=cuenta_id,
+                fecha=linea["fecha"],
+                importe=linea["importe"],
+                concepto=linea.get("concepto"),
+                referencia=linea.get("referencia"),
             )
+            self.session.add(extracto)
+            extractos.append(extracto)
 
-        conciliacion.conciliado = True
-        conciliacion.fecha_conciliacion = date.today()
+        await self.session.commit()
+        return extractos
 
-        # Marcar todos los movimientos del período como conciliados
-        movimientos = await self.obtener_movimientos_por_cuenta(
-            conciliacion.cuenta_id,
-            conciliacion.fecha_inicio,
-            conciliacion.fecha_fin,
+    async def conciliar(
+        self,
+        apunte_id: UUID,
+        extracto_id: UUID,
+        metodo_id: UUID,
+        usuario_id: Optional[UUID] = None,
+    ) -> Conciliacion:
+        conciliacion = Conciliacion(
+            apunte_id=apunte_id,
+            extracto_id=extracto_id,
+            metodo=MetodoConciliacion.MANUAL if usuario_id else MetodoConciliacion.AUTOMATICO,
+            usuario_id=usuario_id,
         )
 
-        for mov in movimientos:
-            if not mov.conciliado:
-                mov.conciliado = True
-                mov.fecha_conciliacion = date.today()
-                self.session.add(mov)
+        # Marcar extracto como conciliado
+        result = await self.session.execute(
+            select(ExtractoBancario).where(ExtractoBancario.id == extracto_id)
+        )
+        extracto = result.scalars().first()
+        if extracto:
+            extracto.conciliado = True
+            self.session.add(extracto)
 
         self.session.add(conciliacion)
         await self.session.commit()
         await self.session.refresh(conciliacion)
         return conciliacion
 
-    async def obtener_saldo_cuenta(self, cuenta_id: UUID) -> Decimal:
-        """Obtiene el saldo actual de una cuenta."""
-        cuenta = await self.obtener_cuenta_bancaria(cuenta_id)
+    async def obtener_saldo(self, cuenta_id: UUID) -> Decimal:
+        cuenta = await self.obtener_cuenta(cuenta_id)
         if not cuenta:
             raise ValueError(f"Cuenta bancaria {cuenta_id} no encontrada")
         return cuenta.saldo_actual
