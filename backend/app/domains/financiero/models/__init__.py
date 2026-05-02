@@ -1,18 +1,11 @@
-"""Modelos del dominio financiero.
+"""Modelos del dominio financiero."""
 
-Importar desde los subdominios directamente.
-Este __init__ mantiene compatibilidad con imports existentes durante la transición.
-"""
-
-# Cuotas
-from .cuotas import ImporteCuotaAnio, CuotaAnual
-
-# Donaciones
+from .cuotas import ImporteCuotaAnio, CuotaAnual, ModoIngreso
 from .donaciones import DonacionConcepto, Donacion
-
-# Remesas
 from .remesas import Remesa, OrdenCobro
 from .presupuesto import EstadoPlanificacion, CategoriaPartida, PartidaPresupuestaria, PlanificacionAnual
+from .tesoreria import CuentaBancaria, MovimientoTesoreria, ConciliacionBancaria, TipoMovimientoTesoreria
+from .contabilidad import CuentaContable, AsientoContable, ApunteContable, BalanceContable, TipoCuentaContable, TipoAsientoContable, EstadoAsientoContable
 from ...core.models.estados import EstadoCuota
 
 __all__ = [
@@ -28,4 +21,15 @@ __all__ = [
     'PartidaPresupuestaria',
     'PlanificacionAnual',
     'EstadoCuota',
+    'CuentaBancaria',
+    'MovimientoTesoreria',
+    'ConciliacionBancaria',
+    'TipoMovimientoTesoreria',
+    'CuentaContable',
+    'AsientoContable',
+    'ApunteContable',
+    'BalanceContable',
+    'TipoCuentaContable',
+    'TipoAsientoContable',
+    'EstadoAsientoContable',
 ]
