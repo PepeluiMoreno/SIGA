@@ -1,14 +1,20 @@
 """Extractos bancarios y conciliación."""
 
 import uuid
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
 from typing import Optional
+from enum import Enum as PyEnum
 
-from sqlalchemy import String, ForeignKey, Date, Numeric, Text, Uuid, Boolean
+from sqlalchemy import String, ForeignKey, Date, Numeric, Text, Uuid, Boolean, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .....infrastructure.base_model import BaseModel
+
+
+class MetodoConciliacion(PyEnum):
+    AUTOMATICO = "AUTOMATICO"
+    MANUAL = "MANUAL"
 
 
 class ExtractoBancario(BaseModel):
@@ -45,17 +51,13 @@ class Conciliacion(BaseModel):
         Uuid, ForeignKey("extractos_bancarios.id"), nullable=False, index=True
     )
 
-    # metodo_conciliacion: FK a metodos_conciliacion (catálogo: AUTOMATICO, MANUAL)
-    metodo_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("metodos_conciliacion.id"), nullable=False, index=True
-    )
+    metodo: Mapped[MetodoConciliacion] = mapped_column(Enum(MetodoConciliacion), nullable=False)
     usuario_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid, ForeignKey("usuarios.id"), nullable=True, index=True
     )
 
     apunte = relationship('ApunteCaja', lazy='selectin')
     extracto = relationship('ExtractoBancario', back_populates='conciliaciones', lazy='selectin')
-    metodo = relationship('MetodoConciliacion', lazy='selectin')
 
     def __repr__(self) -> str:
-        return f"<Conciliacion(apunte_id='{self.apunte_id}', extracto_id='{self.extracto_id}')>"
+        return f"<Conciliacion(apunte_id='{self.apunte_id}', metodo={self.metodo})>"

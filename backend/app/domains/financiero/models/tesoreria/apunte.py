@@ -4,11 +4,26 @@ import uuid
 from datetime import date
 from decimal import Decimal
 from typing import Optional
+from enum import Enum as PyEnum
 
-from sqlalchemy import String, ForeignKey, Date, Numeric, Text, Uuid
+from sqlalchemy import String, ForeignKey, Date, Numeric, Text, Uuid, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .....infrastructure.base_model import BaseModel
+
+
+class TipoApunte(PyEnum):
+    INGRESO = "INGRESO"
+    GASTO = "GASTO"
+    TRANSFERENCIA = "TRANSFERENCIA"
+
+
+class OrigenApunte(PyEnum):
+    CUOTA = "CUOTA"
+    DONACION = "DONACION"
+    REMESA = "REMESA"
+    PAGO = "PAGO"
+    MANUAL = "MANUAL"
 
 
 class ApunteCaja(BaseModel):
@@ -27,12 +42,10 @@ class ApunteCaja(BaseModel):
         Uuid, ForeignKey("cuentas_bancarias.id"), nullable=False, index=True
     )
 
-    # tipo: FK a tipos_apunte (catálogo: INGRESO, GASTO, TRANSFERENCIA)
-    tipo_apunte_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("tipos_apunte.id"), nullable=False, index=True
-    )
+    tipo: Mapped[TipoApunte] = mapped_column(Enum(TipoApunte), nullable=False, index=True)
+    origen: Mapped[Optional[OrigenApunte]] = mapped_column(Enum(OrigenApunte), nullable=True, index=True)
+    origen_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, nullable=True, index=True)
 
-    # estado: FK a estados_apunte (catálogo: PENDIENTE, CONFIRMADO, CONCILIADO, ANULADO)
     estado_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("estados_apunte.id"), nullable=False, index=True
     )
@@ -41,22 +54,13 @@ class ApunteCaja(BaseModel):
     fecha: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     concepto: Mapped[str] = mapped_column(String(500), nullable=False)
 
-    # Referencia polimórfica al evento de negocio origen
-    # origen_tipo: FK a tipos_origen_apunte (catálogo: CUOTA, DONACION, REMESA, PAGO, MANUAL)
-    origen_tipo_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey("tipos_origen_apunte.id"), nullable=True, index=True
-    )
-    origen_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, nullable=True, index=True)
-
-    # Solo versión COMPLETA: referencia al asiento contable generado
+    # Solo versión COMPLETA
     asiento_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, nullable=True, index=True)
 
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     cuenta_bancaria = relationship('CuentaBancaria', back_populates='apuntes', lazy='selectin')
-    tipo_apunte = relationship('TipoApunte', foreign_keys=[tipo_apunte_id], lazy='selectin')
     estado = relationship('EstadoApunte', foreign_keys=[estado_id], lazy='selectin')
-    origen_tipo = relationship('TipoOrigenApunte', foreign_keys=[origen_tipo_id], lazy='selectin')
 
     def __repr__(self) -> str:
-        return f"<ApunteCaja(importe={self.importe}, fecha={self.fecha}, concepto='{self.concepto}')>"
+        return f"<ApunteCaja(tipo={self.tipo}, importe={self.importe}, fecha={self.fecha})>"
