@@ -1,22 +1,41 @@
-"""Modelos del dominio financiero."""
+"""Modelos del dominio financiero.
 
-from .cuotas import ImporteCuotaAnio, CuotaAnual, ModoIngreso
+Importar desde los subdominios directamente.
+Este __init__ mantiene compatibilidad con imports existentes durante la transición.
+"""
+
+# Cuotas
+from .cuotas import ImporteCuotaAnio, CuotaAnual
+
+# Donaciones
 from .donaciones import DonacionConcepto, Donacion
+
+# Remesas
 from .remesas import Remesa, OrdenCobro
-from .presupuesto import EstadoPlanificacion, CategoriaPartida, PartidaPresupuestaria, PlanificacionAnual
-from ...core.models.estados import EstadoCuota
+
+# Cobro
+from .cobro import ProveedorPago, TipoPago, Pago, EventoPago, Suscripcion
+
+# Tesoreria
+from .tesoreria import CuentaBancaria, ApunteCaja, ExtractoBancario, Conciliacion
+
+# Reclamaciones
+from .reclamaciones import Reclamacion, AccionReclamacion
+
+# Contabilidad (solo versión COMPLETA — importar condicionalmente en runtime)
+# from .contabilidad import CuentaContable, Asiento, LineaAsiento
 
 __all__ = [
-    'ImporteCuotaAnio',
-    'CuotaAnual',
-    'ModoIngreso',
-    'DonacionConcepto',
-    'Donacion',
-    'Remesa',
-    'OrdenCobro',
-    'EstadoPlanificacion',
-    'CategoriaPartida',
-    'PartidaPresupuestaria',
-    'PlanificacionAnual',
-    'EstadoCuota',
+    # cuotas
+    'ImporteCuotaAnio', 'CuotaAnual',
+    # donaciones
+    'DonacionConcepto', 'Donacion',
+    # remesas
+    'Remesa', 'OrdenCobro',
+    # cobro
+    'ProveedorPago', 'TipoPago', 'Pago', 'EventoPago', 'Suscripcion',
+    # tesoreria
+    'CuentaBancaria', 'ApunteCaja', 'ExtractoBancario', 'Conciliacion',
+    # reclamaciones
+    'Reclamacion', 'AccionReclamacion',
 ]
