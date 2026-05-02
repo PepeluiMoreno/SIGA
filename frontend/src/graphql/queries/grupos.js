@@ -1,93 +1,103 @@
 // Queries GraphQL para el módulo de grupos de trabajo
-// IMPORTANTE: Strawberry usa camelCase automáticamente
-// NO usar campos 'codigo' - solo se identifican por UUID
+// Strawberry/strawchemy usa camelCase automáticamente desde snake_case del modelo
 
-// Query para obtener grupos de trabajo
 export const GET_GRUPOS = `
   query GruposTrabajo {
     gruposTrabajo {
       id
       nombre
       descripcion
-      tipo {
+      tipoGrupo {
         id
         nombre
       }
-      activo
-      fechaCreacion
       coordinador {
         id
         nombre
         apellido1
       }
-      miembros {
+      agrupacion {
         id
+        nombre
       }
+      activo
+      fechaCreacion
     }
   }
 `
 
-// Query para obtener un grupo por ID
 export const GET_GRUPO_BY_ID = `
   query GrupoTrabajo($id: UUID!) {
     gruposTrabajo(filter: {id: {eq: $id}}) {
       id
       nombre
       descripcion
-      tipo {
+      tipoGrupo {
         id
         nombre
+        descripcion
+        esPermanente
       }
-      activo
-      fechaCreacion
       coordinador {
         id
         nombre
         apellido1
         email
       }
+      agrupacion {
+        id
+        nombre
+      }
+      fechaInicio
+      fechaFin
+      objetivo
+      presupuestoAsignado
+      presupuestoEjecutado
+      activo
+      fechaCreacion
       miembros {
         id
-        miembro {
+        miembroId
+        rolGrupo {
           id
           nombre
-          apellido1
-          email
+          esCoordinador
         }
-        rol {
-          id
-          nombre
-        }
+        activo
+        fechaIncorporacion
       }
       reuniones {
         id
         fecha
         lugar
         acta
+        realizada
       }
     }
   }
 `
 
-// Query para tipos de grupo
 export const GET_TIPOS_GRUPO = `
   query TiposGrupo {
     tiposGrupo {
       id
       nombre
       descripcion
+      esPermanente
       activo
     }
   }
 `
 
-// Query para roles de grupo
 export const GET_ROLES_GRUPO = `
   query RolesGrupo {
     rolesGrupo {
       id
       nombre
       descripcion
+      esCoordinador
+      puedeEditar
+      puedeAprobarGastos
       activo
     }
   }
