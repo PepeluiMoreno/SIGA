@@ -128,7 +128,7 @@
           <!-- Contable -->
           <div class="mb-5">
             <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 px-3">
-              Contable
+              Gestión Económico-Financiera
             </h2>
             <ul class="space-y-1">
               <li>
