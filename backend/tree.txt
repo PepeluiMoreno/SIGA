@@ -1,0 +1,843 @@
+.
+├── add_missing_agrupacion.py
+├── alembic
+│   ├── env.py
+│   ├── __pycache__
+│   │   └── env.cpython-313.pyc
+│   ├── script.py.mako
+│   └── versions
+│       ├── 019f010cd755_migracion_inicial_ddd.py
+│       ├── 04ede766081e_add_all_domain_models_ddd_architecture_.py
+│       ├── 0b338d94c1f5_add_admin_domain_rbac_and_audit_log.py
+│       ├── 0e023bd10912_add_firmante_firmacampania_and_campaign_.py
+│       ├── 1706f7b803ae_add_observaciones_field_to_miembros.py
+│       ├── 32a0dc295063_update_models_add_profesion_nivel_.py
+│       ├── 34e1d423d0c9_add_vista_miembros_segmentacion_.py
+│       ├── 564207c255eb_add_campania_fk_to_actividades.py
+│       ├── 5c2912c2f427_remove_acciones_campania_table.py
+│       ├── 70f5a36b7a69_add_sexo_field_to_miembros.py
+│       ├── 8c6072307fac_add_server_defaults_to_base_model_fields.py
+│       ├── a1b2c3d4e5f6_update_historial_estado_to_use_uuids.py
+│       ├── a2b3c4d5e6f7_add_militancia_tables.py
+│       ├── b2c3d4e5f6g7_add_estado_notificacion_table.py
+│       ├── b3c4d5e6f7a8_add_eventos_domain.py
+│       ├── c50daa249237_add_fk_responsable_id_to_miembros.py
+│       ├── c5c4f3434510_create_organizaciones_and_vista_.py
+│       ├── ce6205f5e089_add_estado_id_to_miembros.py
+│       ├── cf92a2404011_increase_numero_documento_length_for_.py
+│       ├── d3e4f5g6h7i8_add_tipos_cargo_and_cargo_id.py
+│       ├── e45d75d6204a_add_motivos_baja_and_rgpd_fields_to_.py
+│       ├── e4f5g6h7i8j9_add_orden_to_tipos_miembro.py
+│       ├── f5g6h7i8j9k0_remove_codigo_from_catalogs.py
+│       └── __pycache__
+│           ├── 019f010cd755_migracion_inicial_ddd.cpython-313.pyc
+│           ├── 04ede766081e_add_all_domain_models_ddd_architecture_.cpython-313.pyc
+│           ├── 0b338d94c1f5_add_admin_domain_rbac_and_audit_log.cpython-313.pyc
+│           ├── 0e023bd10912_add_firmante_firmacampania_and_campaign_.cpython-313.pyc
+│           ├── 1706f7b803ae_add_observaciones_field_to_miembros.cpython-313.pyc
+│           ├── 32a0dc295063_update_models_add_profesion_nivel_.cpython-313.pyc
+│           ├── 34e1d423d0c9_add_vista_miembros_segmentacion_.cpython-313.pyc
+│           ├── 564207c255eb_add_campania_fk_to_actividades.cpython-313.pyc
+│           ├── 5c2912c2f427_remove_acciones_campania_table.cpython-313.pyc
+│           ├── 70f5a36b7a69_add_sexo_field_to_miembros.cpython-313.pyc
+│           ├── 8c6072307fac_add_server_defaults_to_base_model_fields.cpython-313.pyc
+│           ├── a1b2c3d4e5f6_update_historial_estado_to_use_uuids.cpython-313.pyc
+│           ├── b2c3d4e5f6g7_add_estado_notificacion_table.cpython-313.pyc
+│           ├── c50daa249237_add_fk_responsable_id_to_miembros.cpython-313.pyc
+│           ├── c5c4f3434510_create_organizaciones_and_vista_.cpython-313.pyc
+│           ├── ce6205f5e089_add_estado_id_to_miembros.cpython-313.pyc
+│           ├── cf92a2404011_increase_numero_documento_length_for_.cpython-313.pyc
+│           ├── d3e4f5g6h7i8_add_tipos_cargo_and_cargo_id.cpython-313.pyc
+│           ├── e45d75d6204a_add_motivos_baja_and_rgpd_fields_to_.cpython-313.pyc
+│           ├── e4f5g6h7i8j9_add_orden_to_tipos_miembro.cpython-313.pyc
+│           └── f5g6h7i8j9k0_remove_codigo_from_catalogs.cpython-313.pyc
+├── alembic.ini
+├── ANALISIS_IMPORTACION.md
+├── app
+│   ├── core
+│   │   ├── audit.py
+│   │   ├── config.py
+│   │   ├── context.py
+│   │   ├── database.py
+│   │   ├── __init__.py
+│   │   ├── permissions.py
+│   │   ├── __pycache__
+│   │   │   ├── audit.cpython-313.pyc
+│   │   │   ├── config.cpython-313.pyc
+│   │   │   ├── database.cpython-313.pyc
+│   │   │   ├── __init__.cpython-313.pyc
+│   │   │   └── security.cpython-313.pyc
+│   │   └── security.py
+│   ├── domains
+│   │   ├── actividades
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   └── __pycache__
+│   │   ├── administracion
+│   │   │   ├── diccionario_transacciones.py
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   ├── models.py
+│   │   │   └── __pycache__
+│   │   ├── campanas
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   └── __pycache__
+│   │   ├── cobro
+│   │   │   ├── __init__,py
+│   │   │   └── models.py
+│   │   ├── colaboraciones
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   └── __pycache__
+│   │   ├── core
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   └── __pycache__
+│   │   ├── eventos
+│   │   │   ├── __init__.py
+│   │   │   └── models
+│   │   ├── financiero
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   └── __pycache__
+│   │   ├── geografico
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   └── __pycache__
+│   │   ├── grupos
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   └── __pycache__
+│   │   ├── __init__.py
+│   │   ├── miembros
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   └── __pycache__
+│   │   ├── notificaciones
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   └── __pycache__
+│   │   ├── organizaciones
+│   │   │   ├── __init__.py
+│   │   │   └── models
+│   │   ├── __pycache__
+│   │   │   └── __init__.cpython-313.pyc
+│   │   ├── usuarios
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   └── __pycache__
+│   │   └── voluntariado
+│   │       ├── __init__.py
+│   │       ├── models
+│   │       └── __pycache__
+│   ├── graphql
+│   │   ├── auth.py
+│   │   ├── context.py
+│   │   ├── __init__.py
+│   │   ├── inputs_auto.py
+│   │   ├── mutations.py
+│   │   ├── permissions.py
+│   │   ├── __pycache__
+│   │   │   ├── auth.cpython-313.pyc
+│   │   │   ├── context.cpython-313.pyc
+│   │   │   ├── __init__.cpython-313.pyc
+│   │   │   ├── inputs_auto.cpython-313.pyc
+│   │   │   ├── mutations.cpython-313.pyc
+│   │   │   ├── permissions.cpython-313.pyc
+│   │   │   ├── schema_simple.cpython-313.pyc
+│   │   │   └── types_auto.cpython-313.pyc
+│   │   ├── schema_simple.py
+│   │   └── types_auto.py
+│   ├── infrastructure
+│   │   ├── base_model.py
+│   │   ├── __init__.py
+│   │   ├── mixins
+│   │   │   ├── contacto_mixin.py
+│   │   │   ├── __init__.py
+│   │   │   └── sistema_mixin.py
+│   │   ├── __pycache__
+│   │   │   ├── base_model.cpython-313.pyc
+│   │   │   └── __init__.cpython-313.pyc
+│   │   └── services
+│   │       ├── auditoria_service.py
+│   │       ├── cache_service.py
+│   │       ├── configuracion_service.py
+│   │       ├── encriptacion_service.py
+│   │       ├── estado_service.py
+│   │       ├── __init__.py
+│   │       ├── notificacion_service.py
+│   │       └── seguridad_service.py
+│   ├── __init__.py
+│   ├── models
+│   │   ├── __init__.py
+│   │   └── __pycache__
+│   │       └── __init__.cpython-313.pyc
+│   ├── __pycache__
+│   │   └── __init__.cpython-313.pyc
+│   ├── schemas
+│   │   ├── actividad.py
+│   │   ├── campania.py
+│   │   ├── financiero.py
+│   │   ├── grupo_trabajo.py
+│   │   ├── __init__.py
+│   │   ├── miembro.py
+│   │   ├── presupuesto.py
+│   │   ├── services
+│   │   │   ├── __init__.py
+│   │   │   └── sepa.py
+│   │   ├── tipos_base.py
+│   │   ├── usuario.py
+│   │   └── voluntariado.py
+│   └── scripts
+│       ├── bootstrap.py
+│       ├── dump
+│       │   ├── 1_crear_catalogos_base.py
+│       │   ├── 2_importar_geografico.py
+│       │   ├── 3b_establecer_jerarquia.py
+│       │   ├── 3_importar_agrupaciones.py
+│       │   ├── 4_importar_miembros.py
+│       │   ├── 5_importar_importes_cuota.py
+│       │   ├── 6_importar_cuotas_anuales.py
+│       │   ├── 7_importar_financiero.py
+│       │   ├── 8_validar_importacion.py
+│       │   ├── ejecutar_volcado_completo.py
+│       │   ├── __init__.py
+│       │   ├── mysql_helper.py
+│       │   └── README.md
+│       ├── importacion
+│       │   ├── 0_preparar_base.py
+│       │   ├── 10_generar_csv_miembros_con_fks.py
+│       │   ├── 11_cargar_miembros_desde_csv.py
+│       │   ├── 1_crear_catalogos_base.py
+│       │   ├── 2_importar_geografico.py
+│       │   ├── 3b_establecer_jerarquia_agrupaciones.py
+│       │   ├── 3_importar_agrupaciones.py
+│       │   ├── 4_importar_miembros_mysql.py
+│       │   ├── 4_importar_miembros.py
+│       │   ├── 5_importar_importes_cuota.py
+│       │   ├── 6_importar_cuotas_anuales.py
+│       │   ├── 7_importar_financiero_complementario.py
+│       │   ├── 8_actualizar_bajas_legacy.py
+│       │   ├── 8_validar_importacion.py
+│       │   ├── 9_importar_bajas_fallecidos.py
+│       │   ├── ejecutar_importacion_completa.py
+│       │   ├── ejecutar_importacion_interactiva.py
+│       │   ├── __init__.py
+│       │   ├── mysql_helper.py
+│       │   └── README.md
+│       ├── inicializar_configuraciones.py
+│       ├── inicializar_estados.py
+│       ├── inicializar_geografico.py
+│       ├── inicializar_sistema.py
+│       ├── inicializar_tipos_notificacion.py
+│       ├── __init__.py
+│       ├── jobs
+│       │   └── anonimizar_datos_rgpd.py
+│       ├── __pycache__
+│       │   ├── bootstrap.cpython-313.pyc
+│       │   ├── inicializar_configuraciones.cpython-313.pyc
+│       │   ├── inicializar_estados.cpython-313.pyc
+│       │   ├── inicializar_geografico.cpython-313.pyc
+│       │   ├── inicializar_sistema.cpython-313.pyc
+│       │   ├── inicializar_tipos_notificacion.cpython-313.pyc
+│       │   ├── __init__.cpython-313.pyc
+│       │   └── wait_for_db.cpython-313.pyc
+│       ├── reset_alembic.py
+│       ├── seeding
+│       │   ├── seed_campanias.py
+│       │   ├── seed_cobros.py
+│       │   └── seed_eventos_catalogos.py
+│       └── wait_for_db.py
+├── ARQUITECTURA.md
+├── check_estados_donacion.py
+├── check_mysql_agrupaciones.py
+├── check_mysql_tables.py
+├── check_pg_tables.py
+├── count_cuotas_by_agrup.py
+├── DECISIONES_MAPEO_CONFIRMADAS.md
+├── Dockerfile
+├── drop_alembic_table.py
+├── export_schema.py
+├── find_zero_agrup.py
+├── initial_data
+│   ├── roles.json
+│   ├── transacciones.json
+│   └── usuario_admin.json
+├── __init__.py
+├── main.py
+├── MAPEO_CAMPOS_DETALLADO.md
+├── pyproject.toml
+├── reset_db.py
+├── RESUMEN_EJECUTIVO_IMPORTACION.md
+├── schema_debug.txt
+├── schema.graphql
+├── schema_summary.md
+├── scripts
+│   ├── seeding
+│   │   ├── actividades.py
+│   │   ├── agrupaciones.py
+│   │   ├── estados_miembro.py
+│   │   ├── graphql_client.py
+│   │   ├── __init__.py
+│   │   ├── miembros.py
+│   │   ├── presupuesto.py
+│   │   ├── roles.py
+│   │   ├── roles_transacciones.json
+│   │   ├── run_all.py
+│   │   ├── seed_initial_data.py
+│   │   ├── tipos_miembro.py
+│   │   ├── transacciones.py
+│   │   └── validate_seeding.py
+│   └── update_campanias_tipo.py
+├── show_agrup_columns.py
+├── test_agrupacion_ids.py
+├── test_agrup_cache.py
+├── test_all_agrup.py
+├── test_codigo_zero.py
+├── test_connection.py
+├── test_import_simple.py
+├── tree.txt
+├── truncate_cuotas.py
+└── uv.lock
+
+71 directories, 231 files
+.
+├── add_missing_agrupacion.py
+├── alembic
+│   ├── env.py
+│   ├── __pycache__
+│   │   └── env.cpython-313.pyc
+│   ├── script.py.mako
+│   └── versions
+│       ├── 019f010cd755_migracion_inicial_ddd.py
+│       ├── 04ede766081e_add_all_domain_models_ddd_architecture_.py
+│       ├── 0b338d94c1f5_add_admin_domain_rbac_and_audit_log.py
+│       ├── 0e023bd10912_add_firmante_firmacampania_and_campaign_.py
+│       ├── 1706f7b803ae_add_observaciones_field_to_miembros.py
+│       ├── 32a0dc295063_update_models_add_profesion_nivel_.py
+│       ├── 34e1d423d0c9_add_vista_miembros_segmentacion_.py
+│       ├── 564207c255eb_add_campania_fk_to_actividades.py
+│       ├── 5c2912c2f427_remove_acciones_campania_table.py
+│       ├── 70f5a36b7a69_add_sexo_field_to_miembros.py
+│       ├── 8c6072307fac_add_server_defaults_to_base_model_fields.py
+│       ├── a1b2c3d4e5f6_update_historial_estado_to_use_uuids.py
+│       ├── a2b3c4d5e6f7_add_militancia_tables.py
+│       ├── b2c3d4e5f6g7_add_estado_notificacion_table.py
+│       ├── b3c4d5e6f7a8_add_eventos_domain.py
+│       ├── c50daa249237_add_fk_responsable_id_to_miembros.py
+│       ├── c5c4f3434510_create_organizaciones_and_vista_.py
+│       ├── ce6205f5e089_add_estado_id_to_miembros.py
+│       ├── cf92a2404011_increase_numero_documento_length_for_.py
+│       ├── d3e4f5g6h7i8_add_tipos_cargo_and_cargo_id.py
+│       ├── e45d75d6204a_add_motivos_baja_and_rgpd_fields_to_.py
+│       ├── e4f5g6h7i8j9_add_orden_to_tipos_miembro.py
+│       ├── f5g6h7i8j9k0_remove_codigo_from_catalogs.py
+│       └── __pycache__
+├── alembic.ini
+├── ANALISIS_IMPORTACION.md
+├── app
+│   ├── core
+│   │   ├── audit.py
+│   │   ├── config.py
+│   │   ├── context.py
+│   │   ├── database.py
+│   │   ├── __init__.py
+│   │   ├── permissions.py
+│   │   ├── __pycache__
+│   │   └── security.py
+│   ├── domains
+│   │   ├── actividades
+│   │   ├── administracion
+│   │   ├── campanas
+│   │   ├── cobro
+│   │   ├── colaboraciones
+│   │   ├── core
+│   │   ├── eventos
+│   │   ├── financiero
+│   │   ├── geografico
+│   │   ├── grupos
+│   │   ├── __init__.py
+│   │   ├── miembros
+│   │   ├── notificaciones
+│   │   ├── organizaciones
+│   │   ├── __pycache__
+│   │   ├── usuarios
+│   │   └── voluntariado
+│   ├── graphql
+│   │   ├── auth.py
+│   │   ├── context.py
+│   │   ├── __init__.py
+│   │   ├── inputs_auto.py
+│   │   ├── mutations.py
+│   │   ├── permissions.py
+│   │   ├── __pycache__
+│   │   ├── schema_simple.py
+│   │   └── types_auto.py
+│   ├── infrastructure
+│   │   ├── base_model.py
+│   │   ├── __init__.py
+│   │   ├── mixins
+│   │   ├── __pycache__
+│   │   └── services
+│   ├── __init__.py
+│   ├── models
+│   │   ├── __init__.py
+│   │   └── __pycache__
+│   ├── __pycache__
+│   │   └── __init__.cpython-313.pyc
+│   ├── schemas
+│   │   ├── actividad.py
+│   │   ├── campania.py
+│   │   ├── financiero.py
+│   │   ├── grupo_trabajo.py
+│   │   ├── __init__.py
+│   │   ├── miembro.py
+│   │   ├── presupuesto.py
+│   │   ├── services
+│   │   ├── tipos_base.py
+│   │   ├── usuario.py
+│   │   └── voluntariado.py
+│   └── scripts
+│       ├── bootstrap.py
+│       ├── dump
+│       ├── importacion
+│       ├── inicializar_configuraciones.py
+│       ├── inicializar_estados.py
+│       ├── inicializar_geografico.py
+│       ├── inicializar_sistema.py
+│       ├── inicializar_tipos_notificacion.py
+│       ├── __init__.py
+│       ├── jobs
+│       ├── __pycache__
+│       ├── reset_alembic.py
+│       ├── seeding
+│       └── wait_for_db.py
+├── ARQUITECTURA.md
+├── check_estados_donacion.py
+├── check_mysql_agrupaciones.py
+├── check_mysql_tables.py
+├── check_pg_tables.py
+├── count_cuotas_by_agrup.py
+├── DECISIONES_MAPEO_CONFIRMADAS.md
+├── Dockerfile
+├── drop_alembic_table.py
+├── export_schema.py
+├── find_zero_agrup.py
+├── initial_data
+│   ├── roles.json
+│   ├── transacciones.json
+│   └── usuario_admin.json
+├── __init__.py
+├── main.py
+├── MAPEO_CAMPOS_DETALLADO.md
+├── pyproject.toml
+├── reset_db.py
+├── RESUMEN_EJECUTIVO_IMPORTACION.md
+├── schema_debug.txt
+├── schema.graphql
+├── schema_summary.md
+├── scripts
+│   ├── seeding
+│   │   ├── actividades.py
+│   │   ├── agrupaciones.py
+│   │   ├── estados_miembro.py
+│   │   ├── graphql_client.py
+│   │   ├── __init__.py
+│   │   ├── miembros.py
+│   │   ├── presupuesto.py
+│   │   ├── roles.py
+│   │   ├── roles_transacciones.json
+│   │   ├── run_all.py
+│   │   ├── seed_initial_data.py
+│   │   ├── tipos_miembro.py
+│   │   ├── transacciones.py
+│   │   └── validate_seeding.py
+│   └── update_campanias_tipo.py
+├── show_agrup_columns.py
+├── test_agrupacion_ids.py
+├── test_agrup_cache.py
+├── test_all_agrup.py
+├── test_codigo_zero.py
+├── test_connection.py
+├── test_import_simple.py
+├── tree.txt
+├── truncate_cuotas.py
+└── uv.lock
+
+45 directories, 117 files
+.
+├── add_missing_agrupacion.py
+├── alembic
+│   ├── env.py
+│   ├── __pycache__
+│   │   └── env.cpython-313.pyc
+│   ├── script.py.mako
+│   └── versions
+│       ├── 019f010cd755_migracion_inicial_ddd.py
+│       ├── 04ede766081e_add_all_domain_models_ddd_architecture_.py
+│       ├── 0b338d94c1f5_add_admin_domain_rbac_and_audit_log.py
+│       ├── 0e023bd10912_add_firmante_firmacampania_and_campaign_.py
+│       ├── 1706f7b803ae_add_observaciones_field_to_miembros.py
+│       ├── 32a0dc295063_update_models_add_profesion_nivel_.py
+│       ├── 34e1d423d0c9_add_vista_miembros_segmentacion_.py
+│       ├── 564207c255eb_add_campania_fk_to_actividades.py
+│       ├── 5c2912c2f427_remove_acciones_campania_table.py
+│       ├── 70f5a36b7a69_add_sexo_field_to_miembros.py
+│       ├── 8c6072307fac_add_server_defaults_to_base_model_fields.py
+│       ├── a1b2c3d4e5f6_update_historial_estado_to_use_uuids.py
+│       ├── a2b3c4d5e6f7_add_militancia_tables.py
+│       ├── b2c3d4e5f6g7_add_estado_notificacion_table.py
+│       ├── b3c4d5e6f7a8_add_eventos_domain.py
+│       ├── c50daa249237_add_fk_responsable_id_to_miembros.py
+│       ├── c5c4f3434510_create_organizaciones_and_vista_.py
+│       ├── ce6205f5e089_add_estado_id_to_miembros.py
+│       ├── cf92a2404011_increase_numero_documento_length_for_.py
+│       ├── d3e4f5g6h7i8_add_tipos_cargo_and_cargo_id.py
+│       ├── e45d75d6204a_add_motivos_baja_and_rgpd_fields_to_.py
+│       ├── e4f5g6h7i8j9_add_orden_to_tipos_miembro.py
+│       ├── f5g6h7i8j9k0_remove_codigo_from_catalogs.py
+│       └── __pycache__
+│           ├── 019f010cd755_migracion_inicial_ddd.cpython-313.pyc
+│           ├── 04ede766081e_add_all_domain_models_ddd_architecture_.cpython-313.pyc
+│           ├── 0b338d94c1f5_add_admin_domain_rbac_and_audit_log.cpython-313.pyc
+│           ├── 0e023bd10912_add_firmante_firmacampania_and_campaign_.cpython-313.pyc
+│           ├── 1706f7b803ae_add_observaciones_field_to_miembros.cpython-313.pyc
+│           ├── 32a0dc295063_update_models_add_profesion_nivel_.cpython-313.pyc
+│           ├── 34e1d423d0c9_add_vista_miembros_segmentacion_.cpython-313.pyc
+│           ├── 564207c255eb_add_campania_fk_to_actividades.cpython-313.pyc
+│           ├── 5c2912c2f427_remove_acciones_campania_table.cpython-313.pyc
+│           ├── 70f5a36b7a69_add_sexo_field_to_miembros.cpython-313.pyc
+│           ├── 8c6072307fac_add_server_defaults_to_base_model_fields.cpython-313.pyc
+│           ├── a1b2c3d4e5f6_update_historial_estado_to_use_uuids.cpython-313.pyc
+│           ├── b2c3d4e5f6g7_add_estado_notificacion_table.cpython-313.pyc
+│           ├── c50daa249237_add_fk_responsable_id_to_miembros.cpython-313.pyc
+│           ├── c5c4f3434510_create_organizaciones_and_vista_.cpython-313.pyc
+│           ├── ce6205f5e089_add_estado_id_to_miembros.cpython-313.pyc
+│           ├── cf92a2404011_increase_numero_documento_length_for_.cpython-313.pyc
+│           ├── d3e4f5g6h7i8_add_tipos_cargo_and_cargo_id.cpython-313.pyc
+│           ├── e45d75d6204a_add_motivos_baja_and_rgpd_fields_to_.cpython-313.pyc
+│           ├── e4f5g6h7i8j9_add_orden_to_tipos_miembro.cpython-313.pyc
+│           └── f5g6h7i8j9k0_remove_codigo_from_catalogs.cpython-313.pyc
+├── alembic.ini
+├── ANALISIS_IMPORTACION.md
+├── app
+│   ├── core
+│   │   ├── audit.py
+│   │   ├── config.py
+│   │   ├── context.py
+│   │   ├── database.py
+│   │   ├── __init__.py
+│   │   ├── permissions.py
+│   │   ├── __pycache__
+│   │   │   ├── audit.cpython-313.pyc
+│   │   │   ├── config.cpython-313.pyc
+│   │   │   ├── database.cpython-313.pyc
+│   │   │   ├── __init__.cpython-313.pyc
+│   │   │   └── security.cpython-313.pyc
+│   │   └── security.py
+│   ├── domains
+│   │   ├── actividades
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   │   ├── actividad.py
+│   │   │   │   ├── catalogos.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── __pycache__
+│   │   │   └── __pycache__
+│   │   │       └── __init__.cpython-313.pyc
+│   │   ├── administracion
+│   │   │   ├── diccionario_transacciones.py
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   │   ├── auditoria.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── __pycache__
+│   │   │   │   ├── rol.py
+│   │   │   │   ├── rol_transaccion.py
+│   │   │   │   └── transaccion.py
+│   │   │   ├── models.py
+│   │   │   └── __pycache__
+│   │   │       └── __init__.cpython-313.pyc
+│   │   ├── campanas
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   │   ├── campania.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── __pycache__
+│   │   │   └── __pycache__
+│   │   │       └── __init__.cpython-313.pyc
+│   │   ├── cobro
+│   │   │   ├── __init__,py
+│   │   │   └── models.py
+│   │   ├── colaboraciones
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   │   ├── asociacion.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── __pycache__
+│   │   │   └── __pycache__
+│   │   │       └── __init__.cpython-313.pyc
+│   │   ├── core
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   │   ├── configuracion.py
+│   │   │   │   ├── estados.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── __pycache__
+│   │   │   │   └── seguridad.py
+│   │   │   └── __pycache__
+│   │   │       └── __init__.cpython-313.pyc
+│   │   ├── eventos
+│   │   │   ├── __init__.py
+│   │   │   └── models
+│   │   │       ├── evento.py
+│   │   │       └── __init__.py
+│   │   ├── financiero
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   │   ├── cuotas.py
+│   │   │   │   ├── donaciones.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── presupuesto.py
+│   │   │   │   ├── __pycache__
+│   │   │   │   └── remesas.py
+│   │   │   └── __pycache__
+│   │   │       └── __init__.cpython-313.pyc
+│   │   ├── geografico
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   │   ├── agrupacion_territorial_query.py
+│   │   │   │   ├── agrupacion_territorial_view.py
+│   │   │   │   ├── direccion.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── __pycache__
+│   │   │   └── __pycache__
+│   │   │       └── __init__.cpython-313.pyc
+│   │   ├── grupos
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   │   ├── grupo_trabajo.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── __pycache__
+│   │   │   └── __pycache__
+│   │   │       └── __init__.cpython-313.pyc
+│   │   ├── __init__.py
+│   │   ├── miembros
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   │   ├── disponibilidad.py
+│   │   │   │   ├── estado_miembro.py
+│   │   │   │   ├── historial_agrupacion.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── miembro.py
+│   │   │   │   ├── miembro_segmentacion_view.py
+│   │   │   │   ├── motivo_baja.py
+│   │   │   │   ├── __pycache__
+│   │   │   │   ├── skill.py
+│   │   │   │   ├── tipo_cargo.py
+│   │   │   │   └── traslados
+│   │   │   └── __pycache__
+│   │   │       └── __init__.cpython-313.pyc
+│   │   ├── notificaciones
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── notificacion.py
+│   │   │   │   └── __pycache__
+│   │   │   └── __pycache__
+│   │   │       └── __init__.cpython-313.pyc
+│   │   ├── organizaciones
+│   │   │   ├── __init__.py
+│   │   │   └── models
+│   │   │       ├── __init__.py
+│   │   │       └── organizacion.py
+│   │   ├── __pycache__
+│   │   │   └── __init__.cpython-313.pyc
+│   │   ├── usuarios
+│   │   │   ├── __init__.py
+│   │   │   ├── models
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── __pycache__
+│   │   │   │   └── usuario.py
+│   │   │   └── __pycache__
+│   │   │       └── __init__.cpython-313.pyc
+│   │   └── voluntariado
+│   │       ├── __init__.py
+│   │       ├── models
+│   │       │   ├── __init__.py
+│   │       │   ├── __pycache__
+│   │       │   └── voluntariado.py
+│   │       └── __pycache__
+│   │           └── __init__.cpython-313.pyc
+│   ├── graphql
+│   │   ├── auth.py
+│   │   ├── context.py
+│   │   ├── __init__.py
+│   │   ├── inputs_auto.py
+│   │   ├── mutations.py
+│   │   ├── permissions.py
+│   │   ├── __pycache__
+│   │   │   ├── auth.cpython-313.pyc
+│   │   │   ├── context.cpython-313.pyc
+│   │   │   ├── __init__.cpython-313.pyc
+│   │   │   ├── inputs_auto.cpython-313.pyc
+│   │   │   ├── mutations.cpython-313.pyc
+│   │   │   ├── permissions.cpython-313.pyc
+│   │   │   ├── schema_simple.cpython-313.pyc
+│   │   │   └── types_auto.cpython-313.pyc
+│   │   ├── schema_simple.py
+│   │   └── types_auto.py
+│   ├── infrastructure
+│   │   ├── base_model.py
+│   │   ├── __init__.py
+│   │   ├── mixins
+│   │   │   ├── contacto_mixin.py
+│   │   │   ├── __init__.py
+│   │   │   └── sistema_mixin.py
+│   │   ├── __pycache__
+│   │   │   ├── base_model.cpython-313.pyc
+│   │   │   └── __init__.cpython-313.pyc
+│   │   └── services
+│   │       ├── auditoria_service.py
+│   │       ├── cache_service.py
+│   │       ├── configuracion_service.py
+│   │       ├── encriptacion_service.py
+│   │       ├── estado_service.py
+│   │       ├── __init__.py
+│   │       ├── notificacion_service.py
+│   │       └── seguridad_service.py
+│   ├── __init__.py
+│   ├── models
+│   │   ├── __init__.py
+│   │   └── __pycache__
+│   │       └── __init__.cpython-313.pyc
+│   ├── __pycache__
+│   │   └── __init__.cpython-313.pyc
+│   ├── schemas
+│   │   ├── actividad.py
+│   │   ├── campania.py
+│   │   ├── financiero.py
+│   │   ├── grupo_trabajo.py
+│   │   ├── __init__.py
+│   │   ├── miembro.py
+│   │   ├── presupuesto.py
+│   │   ├── services
+│   │   │   ├── __init__.py
+│   │   │   └── sepa.py
+│   │   ├── tipos_base.py
+│   │   ├── usuario.py
+│   │   └── voluntariado.py
+│   └── scripts
+│       ├── bootstrap.py
+│       ├── dump
+│       │   ├── 1_crear_catalogos_base.py
+│       │   ├── 2_importar_geografico.py
+│       │   ├── 3b_establecer_jerarquia.py
+│       │   ├── 3_importar_agrupaciones.py
+│       │   ├── 4_importar_miembros.py
+│       │   ├── 5_importar_importes_cuota.py
+│       │   ├── 6_importar_cuotas_anuales.py
+│       │   ├── 7_importar_financiero.py
+│       │   ├── 8_validar_importacion.py
+│       │   ├── ejecutar_volcado_completo.py
+│       │   ├── __init__.py
+│       │   ├── mysql_helper.py
+│       │   └── README.md
+│       ├── importacion
+│       │   ├── 0_preparar_base.py
+│       │   ├── 10_generar_csv_miembros_con_fks.py
+│       │   ├── 11_cargar_miembros_desde_csv.py
+│       │   ├── 1_crear_catalogos_base.py
+│       │   ├── 2_importar_geografico.py
+│       │   ├── 3b_establecer_jerarquia_agrupaciones.py
+│       │   ├── 3_importar_agrupaciones.py
+│       │   ├── 4_importar_miembros_mysql.py
+│       │   ├── 4_importar_miembros.py
+│       │   ├── 5_importar_importes_cuota.py
+│       │   ├── 6_importar_cuotas_anuales.py
+│       │   ├── 7_importar_financiero_complementario.py
+│       │   ├── 8_actualizar_bajas_legacy.py
+│       │   ├── 8_validar_importacion.py
+│       │   ├── 9_importar_bajas_fallecidos.py
+│       │   ├── ejecutar_importacion_completa.py
+│       │   ├── ejecutar_importacion_interactiva.py
+│       │   ├── __init__.py
+│       │   ├── mysql_helper.py
+│       │   └── README.md
+│       ├── inicializar_configuraciones.py
+│       ├── inicializar_estados.py
+│       ├── inicializar_geografico.py
+│       ├── inicializar_sistema.py
+│       ├── inicializar_tipos_notificacion.py
+│       ├── __init__.py
+│       ├── jobs
+│       │   └── anonimizar_datos_rgpd.py
+│       ├── __pycache__
+│       │   ├── bootstrap.cpython-313.pyc
+│       │   ├── inicializar_configuraciones.cpython-313.pyc
+│       │   ├── inicializar_estados.cpython-313.pyc
+│       │   ├── inicializar_geografico.cpython-313.pyc
+│       │   ├── inicializar_sistema.cpython-313.pyc
+│       │   ├── inicializar_tipos_notificacion.cpython-313.pyc
+│       │   ├── __init__.cpython-313.pyc
+│       │   └── wait_for_db.cpython-313.pyc
+│       ├── reset_alembic.py
+│       ├── seeding
+│       │   ├── seed_campanias.py
+│       │   ├── seed_cobros.py
+│       │   └── seed_eventos_catalogos.py
+│       └── wait_for_db.py
+├── ARQUITECTURA.md
+├── check_estados_donacion.py
+├── check_mysql_agrupaciones.py
+├── check_mysql_tables.py
+├── check_pg_tables.py
+├── count_cuotas_by_agrup.py
+├── DECISIONES_MAPEO_CONFIRMADAS.md
+├── Dockerfile
+├── drop_alembic_table.py
+├── export_schema.py
+├── find_zero_agrup.py
+├── initial_data
+│   ├── roles.json
+│   ├── transacciones.json
+│   └── usuario_admin.json
+├── __init__.py
+├── main.py
+├── MAPEO_CAMPOS_DETALLADO.md
+├── pyproject.toml
+├── reset_db.py
+├── RESUMEN_EJECUTIVO_IMPORTACION.md
+├── schema_debug.txt
+├── schema.graphql
+├── schema_summary.md
+├── scripts
+│   ├── seeding
+│   │   ├── actividades.py
+│   │   ├── agrupaciones.py
+│   │   ├── estados_miembro.py
+│   │   ├── graphql_client.py
+│   │   ├── __init__.py
+│   │   ├── miembros.py
+│   │   ├── presupuesto.py
+│   │   ├── roles.py
+│   │   ├── roles_transacciones.json
+│   │   ├── run_all.py
+│   │   ├── seed_initial_data.py
+│   │   ├── tipos_miembro.py
+│   │   ├── transacciones.py
+│   │   └── validate_seeding.py
+│   └── update_campanias_tipo.py
+├── show_agrup_columns.py
+├── test_agrupacion_ids.py
+├── test_agrup_cache.py
+├── test_all_agrup.py
+├── test_codigo_zero.py
+├── test_connection.py
+├── test_import_simple.py
+├── tree.txt
+├── truncate_cuotas.py
+└── uv.lock
+
+84 directories, 289 files
