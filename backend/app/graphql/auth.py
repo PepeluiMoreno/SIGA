@@ -9,8 +9,8 @@ from sqlalchemy import select
 
 from ..core.audit import log_action
 from ..core.security import create_access_token, verify_password
-from ..modules.administracion.models.auditoria import TipoAccion
-from ..modules.usuarios.models.usuario import Usuario
+from ..modules.acceso.models.auditoria import TipoAccion
+from ..modules.acceso.models.usuario import Usuario
 
 
 @strawberry.type

@@ -24,7 +24,11 @@ from sqlalchemy import select
 
 from app.core.database import get_database_url
 from app.modules.economico.models.cuotas import ImporteCuotaAnio
+<<<<<<< HEAD
 from app.modules.miembros.models.miembro import TipoMiembro
+=======
+from app.modules.membresia.models.miembro import TipoMiembro
+>>>>>>> daab14f (redistribucion modules backend y completar modulo accesos, primera fase)
 from .mysql_helper import get_mysql_connection
 
 

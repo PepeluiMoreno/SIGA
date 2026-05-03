@@ -15,7 +15,7 @@ from sqlalchemy import select, text
 
 from app.core.database import get_database_url
 from app.modules.organizacion.models.agrupacion_territorial import AgrupacionTerritorial
-from app.modules.geografico.models.direccion import Pais, Provincia
+from app.modules.core.geografico.direccion import Pais, Provincia
 from .mysql_helper import get_mysql_connection
 
 

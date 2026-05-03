@@ -1,11 +1,24 @@
-"""Modelos del dominio core (funcionalidad base)."""
+"""
+Shim de compatibilidad: re-exporta modelos desde sus nuevos módulos.
 
-from .configuracion import Configuracion, ReglaValidacionConfig, HistorialConfiguracion
-from .estados import (
+Los modelos de core fueron redistribuidos:
+- Configuracion, estados → modules/configuracion/
+- Seguridad (Sesion, etc.) → modules/acceso/
+- Geográfico → modules/core/geografico/
+- Comunicación → modules/core/comunicacion/
+"""
+
+from ..geografico import Pais, Provincia, Municipio, Direccion, AgrupacionTerritorial
+from ..comunicacion import TipoNotificacion, Notificacion, PreferenciaNotificacion
+from ...configuracion.models import (
+    Configuracion,
+    ReglaValidacionConfig,
+    HistorialConfiguracion,
     EstadoBase,
     EstadoCuota,
     EstadoCampania,
     EstadoTarea,
+    EstadoActividad,
     EstadoParticipante,
     EstadoOrdenCobro,
     EstadoRemesa,
@@ -13,27 +26,14 @@ from .estados import (
     EstadoNotificacion,
     HistorialEstado,
 )
-from .seguridad import Sesion, HistorialSeguridad, IPBloqueada, IntentoAcceso
+from ...acceso.models import Sesion, HistorialSeguridad, IPBloqueada, IntentoAcceso
 
 __all__ = [
-    # Configuración
-    'Configuracion',
-    'ReglaValidacionConfig',
-    'HistorialConfiguracion',
-    # Estados
-    'EstadoBase',
-    'EstadoCuota',
-    'EstadoCampania',
-    'EstadoTarea',
-    'EstadoParticipante',
-    'EstadoOrdenCobro',
-    'EstadoRemesa',
-    'EstadoDonacion',
-    'EstadoNotificacion',
-    'HistorialEstado',
-    # Seguridad
-    'Sesion',
-    'HistorialSeguridad',
-    'IPBloqueada',
-    'IntentoAcceso',
+    'Pais', 'Provincia', 'Municipio', 'Direccion', 'AgrupacionTerritorial',
+    'TipoNotificacion', 'Notificacion', 'PreferenciaNotificacion',
+    'Configuracion', 'ReglaValidacionConfig', 'HistorialConfiguracion',
+    'EstadoBase', 'EstadoCuota', 'EstadoCampania', 'EstadoTarea',
+    'EstadoActividad', 'EstadoParticipante', 'EstadoOrdenCobro',
+    'EstadoRemesa', 'EstadoDonacion', 'EstadoNotificacion', 'HistorialEstado',
+    'Sesion', 'HistorialSeguridad', 'IPBloqueada', 'IntentoAcceso',
 ]

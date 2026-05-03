@@ -15,7 +15,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
 
 from app.core.database import get_database_url
-from app.modules.eventos.models import TipoEvento, EstadoEvento
+from app.modules.actividades.models import TipoEvento, EstadoEvento
 
 
 TIPOS_EVENTO = [

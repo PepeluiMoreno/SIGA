@@ -6,8 +6,8 @@ from typing import Optional
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..modules.administracion.models.auditoria import LogAuditoria, TipoAccion
-from ..modules.usuarios.models.usuario import Usuario
+from ..modules.acceso.models.auditoria import LogAuditoria, TipoAccion
+from ..modules.acceso.models.usuario import Usuario
 
 
 async def log_action(

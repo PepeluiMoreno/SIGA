@@ -223,7 +223,7 @@ class EstadoNotificacionFilter:
 # GEOGRÁFICO
 # ============================================================================
 
-from ..modules.geografico.models import Pais, Provincia, Municipio, AgrupacionTerritorial
+from ..modules.core.geografico import Pais, Provincia, Municipio, AgrupacionTerritorial
 
 
 @strawchemy.input(Pais, mode="create_input", include="all", exclude=get_exclude_fields(Pais))
@@ -290,7 +290,7 @@ class AgrupacionTerritorialFilter:
 # MIEMBROS
 # ============================================================================
 
-from ..modules.miembros.models import (
+from ..modules.membresia.models import (
     TipoMiembro, EstadoMiembro, MotivoBaja, Miembro,
     Skill, MiembroSkill, FranjaDisponibilidad, HistorialAgrupacion, SolicitudTraslado,
 )
@@ -439,7 +439,7 @@ class SolicitudTrasladoFilter:
 # CAMPAÑAS
 # ============================================================================
 
-from ..modules.campanas.models import TipoCampania, Campania, RolParticipante, ParticipanteCampania
+from ..modules.actividades.models import TipoCampania, Campania, RolParticipante, ParticipanteCampania
 
 
 @strawchemy.input(TipoCampania, mode="create_input", include="all", exclude=get_exclude_fields(TipoCampania))
@@ -636,7 +636,7 @@ class TareaActividadFilter:
 # GRUPOS
 # ============================================================================
 
-from ..modules.grupos.models import TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo, TareaGrupo
+from ..modules.actividades.models import TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo, TareaGrupo
 
 
 @strawchemy.input(TipoGrupo, mode="create_input", include="all", exclude=get_exclude_fields(TipoGrupo))
@@ -817,7 +817,7 @@ class OrdenCobroFilter:
 # VOLUNTARIADO
 # ============================================================================
 
-from ..modules.voluntariado.models import (
+from ..modules.membresia.models import (
     CategoriaCompetencia, Competencia, NivelCompetencia, MiembroCompetencia,
     TipoDocumentoVoluntario, DocumentoMiembro, TipoFormacion, FormacionMiembro
 )
@@ -947,7 +947,7 @@ class FormacionMiembroFilter:
 # NOTIFICACIONES
 # ============================================================================
 
-from ..modules.notificaciones.models import TipoNotificacion, Notificacion, PreferenciaNotificacion
+from ..modules.core.comunicacion import TipoNotificacion, Notificacion, PreferenciaNotificacion
 
 
 @strawchemy.input(TipoNotificacion, mode="create_input", include="all", exclude=get_exclude_fields(TipoNotificacion))
@@ -1003,7 +1003,7 @@ class PreferenciaNotificacionFilter:
 # COLABORACIONES
 # ============================================================================
 
-from ..modules.colaboraciones.models import TipoAsociacion, Asociacion, EstadoConvenio, Convenio
+from ..modules.configuracion.models import TipoAsociacion, Asociacion, EstadoConvenio, Convenio
 
 
 @strawchemy.input(TipoAsociacion, mode="create_input", include="all", exclude=get_exclude_fields(TipoAsociacion))

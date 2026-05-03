@@ -18,7 +18,7 @@ from sqlalchemy import select, text
 
 from app.core.database import get_database_url
 from app.infrastructure.services.encriptacion_service import get_encriptacion_service
-from app.modules.geografico.models.direccion import AgrupacionTerritorial, Provincia
+from app.modules.core.geografico.direccion import AgrupacionTerritorial, Provincia
 from app.scripts.importacion.sql_dump_parser import SQLDumpParser
 
 
@@ -81,7 +81,7 @@ class MapeadorAgrupaciones:
         if self.pais_espana_id:
             return self.pais_espana_id
 
-        from app.modules.geografico.models.direccion import Pais
+        from app.modules.core.geografico.direccion import Pais
         result = await session.execute(
             select(Pais).where(Pais.codigo == 'ES')
         )

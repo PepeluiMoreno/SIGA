@@ -21,10 +21,10 @@ from sqlalchemy import select
 
 from app.core.database import async_session
 from app.core.security import hash_password, verify_password
-from app.modules.administracion.models.rol import Rol, TipoRol
-from app.modules.administracion.models.rol_transaccion import RolTransaccion
-from app.modules.administracion.models.transaccion import Transaccion
-from app.modules.usuarios.models.usuario import Usuario, UsuarioRol
+from app.modules.acceso.models.rol import Rol, TipoRol
+from app.modules.acceso.models.rol_transaccion import RolTransaccion
+from app.modules.acceso.models.transaccion import Transaccion
+from app.modules.acceso.models.usuario import Usuario, UsuarioRol
 
 
 INITIAL_DATA_DIR = Path(__file__).resolve().parents[2] / "initial_data"

@@ -5,7 +5,7 @@ import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from ..modules.notificaciones.models import TipoNotificacion
+from ..modules.core.comunicacion import TipoNotificacion
 
 
 # Tipos de notificación por defecto

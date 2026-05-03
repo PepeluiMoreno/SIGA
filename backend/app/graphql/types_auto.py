@@ -12,12 +12,16 @@ from typing import Optional
 import strawberry
 from . import strawchemy
 
-# === ADMINISTRACION ===
-from ..modules.administracion.models import (
+# === ACCESO: roles, transacciones, funcionalidades ===
+from ..modules.acceso.models import (
     Transaccion,
     Rol,
     RolTransaccion,
     LogAuditoria,
+    Funcionalidad,
+    RolFuncionalidad,
+    FuncionalidadTransaccion,
+    FlujoAprobacion,
 )
 
 @strawchemy.type(Transaccion, include="all", override=True)
@@ -36,9 +40,25 @@ class RolTransaccionType:
 class LogAuditoriaType:
     pass
 
+@strawchemy.type(Funcionalidad, include="all", override=True)
+class FuncionalidadType:
+    pass
+
+@strawchemy.type(RolFuncionalidad, include="all", override=True)
+class RolFuncionalidadType:
+    pass
+
+@strawchemy.type(FuncionalidadTransaccion, include="all", override=True)
+class FuncionalidadTransaccionType:
+    pass
+
+@strawchemy.type(FlujoAprobacion, include="all", override=True)
+class FlujoAprobacionType:
+    pass
+
 
 # === USUARIOS ===
-from ..modules.usuarios.models import Usuario, UsuarioRol
+from ..modules.acceso.models import Usuario, UsuarioRol
 
 @strawchemy.type(Usuario, exclude=["password_hash"], override=True)
 class UsuarioType:
@@ -135,7 +155,7 @@ class IntentoAccesoType:
 
 
 # === GEOGRÁFICO ===
-from ..modules.geografico.models import Pais, Provincia, Municipio, Direccion, AgrupacionTerritorial
+from ..modules.core.geografico import Pais, Provincia, Municipio, Direccion, AgrupacionTerritorial
 
 @strawchemy.type(Pais, include="all", override=True)
 class PaisType:
@@ -159,7 +179,7 @@ class AgrupacionTerritorialType:
 
 
 # === NOTIFICACIONES ===
-from ..modules.notificaciones.models import TipoNotificacion, Notificacion, PreferenciaNotificacion
+from ..modules.core.comunicacion import TipoNotificacion, Notificacion, PreferenciaNotificacion
 
 @strawchemy.type(TipoNotificacion, include="all", override=True)
 class TipoNotificacionType:
@@ -231,7 +251,7 @@ class PlanificacionAnualType:
 
 
 # === COLABORACIONES ===
-from ..modules.colaboraciones.models import Asociacion, TipoAsociacion, Convenio, EstadoConvenio
+from ..modules.configuracion.models import Asociacion, TipoAsociacion, Convenio, EstadoConvenio
 
 @strawchemy.type(TipoAsociacion, include="all", override=True)
 class TipoAsociacionType:
@@ -251,7 +271,7 @@ class ConvenioType:
 
 
 # === MIEMBROS ===
-from ..modules.miembros.models import (
+from ..modules.membresia.models import (
     TipoMiembro, Miembro, EstadoMiembro, MotivoBaja, TipoCargo, MiembroSegmentacion,
     Skill, MiembroSkill, FranjaDisponibilidad, HistorialAgrupacion, SolicitudTraslado,
 )
@@ -312,7 +332,7 @@ class SolicitudTrasladoType:
 
 
 # === CAMPAÑAS ===
-from ..modules.campanas.models import (
+from ..modules.actividades.models import (
     TipoCampania, Campania, RolParticipante, ParticipanteCampania, Firmante, FirmaCampania
 )
 
@@ -421,7 +441,7 @@ class MedicionKPIType:
 
 
 # === GRUPOS ===
-from ..modules.grupos.models import (
+from ..modules.actividades.models import (
     TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo, TareaGrupo, ReunionGrupo, AsistenteReunion
 )
 
@@ -455,7 +475,7 @@ class AsistenteReunionType:
 
 
 # === VOLUNTARIADO ===
-from ..modules.voluntariado.models import (
+from ..modules.membresia.models import (
     CategoriaCompetencia, Competencia, NivelCompetencia, MiembroCompetencia,
     TipoDocumentoVoluntario, DocumentoMiembro, TipoFormacion, FormacionMiembro
 )
@@ -494,7 +514,7 @@ class FormacionMiembroType:
 
 
 # === EVENTOS ===
-from ..modules.eventos.models import (
+from ..modules.actividades.models import (
     TipoEvento, EstadoEvento, Evento, ParticipanteEvento, MaterialEvento
 )
 

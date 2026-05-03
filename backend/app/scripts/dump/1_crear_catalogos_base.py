@@ -11,8 +11,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
 
 from app.core.database import get_database_url
-from app.modules.miembros.models.miembro import TipoMiembro
-from app.modules.miembros.models.estado_miembro import EstadoMiembro
+from app.modules.membresia.models.miembro import TipoMiembro
+from app.modules.membresia.models.estado_miembro import EstadoMiembro
 from app.modules.core.models.estados import EstadoCuota
 from app.modules.core.models.estados import EstadoCampania
 from app.modules.core.models.estados import EstadoActividad

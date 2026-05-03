@@ -1,62 +1,41 @@
-"""Dominios de la aplicación siguiendo DDD (Domain-Driven Design)."""
+"""Módulos funcionales de la aplicación SIGA."""
 
-# Administracion domain (debe importarse antes de usuarios para que Rol exista
-# cuando UsuarioRol declare la FK a roles.id).
-from .administracion.models import (
+# Acceso: autenticación, RBAC, funcionalidades, auditoría
+from .acceso.models import (
     Transaccion,
     Rol,
     TipoRol,
     RolTransaccion,
+    Funcionalidad,
+    RolFuncionalidad,
+    FuncionalidadTransaccion,
+    FlujoAprobacion,
+    AmbitoTransaccion,
     LogAuditoria,
     TipoAccion,
-)
-
-# Usuarios domain
-from .usuarios.models import (
     Usuario,
     UsuarioRol,
-)
-
-# Core domain
-from .core.models import (
-    # Configuración
-    Configuracion,
-    ReglaValidacionConfig,
-    HistorialConfiguracion,
-    # Estados
-    EstadoBase,
-    EstadoCuota,
-    EstadoCampania,
-    EstadoTarea,
-    EstadoParticipante,
-    EstadoOrdenCobro,
-    EstadoRemesa,
-    EstadoDonacion,
-    EstadoNotificacion,
-    HistorialEstado,
-    # Seguridad
     Sesion,
     HistorialSeguridad,
     IPBloqueada,
     IntentoAcceso,
 )
 
-# Geographic domain
-from .geografico.models import (
+# Core: geográfico y comunicación (transversales)
+from .core.geografico import (
     Pais,
     Provincia,
     Municipio,
     Direccion,
     AgrupacionTerritorial,
 )
-
-# Notifications domain
-from .notificaciones.models import (
+from .core.comunicacion import (
     TipoNotificacion,
     Notificacion,
     PreferenciaNotificacion,
 )
 
+<<<<<<< HEAD
 # Financiero domain
 from .economico.models import (
     ImporteCuotaAnio,
@@ -74,65 +53,45 @@ from .economico.models import (
 # Colaboraciones domain
 from .colaboraciones.models import (
     Asociacion,
+=======
+# Configuración: parámetros, estados, catálogos, organizaciones
+from .configuracion.models import (
+    Configuracion,
+    ReglaValidacionConfig,
+    HistorialConfiguracion,
+    EstadoBase,
+    EstadoCuota,
+    EstadoCampania,
+    EstadoTarea,
+    EstadoActividad,
+    EstadoParticipante,
+    EstadoOrdenCobro,
+    EstadoRemesa,
+    EstadoDonacion,
+    EstadoNotificacion,
+    HistorialEstado,
+>>>>>>> daab14f (redistribucion modules backend y completar modulo accesos, primera fase)
     TipoAsociacion,
-    Convenio,
+    Asociacion,
     EstadoConvenio,
+    Convenio,
+    TipoOrganizacion,
+    Organizacion,
 )
 
-# Miembros domain
-from .miembros.models import (
+# Membresía: miembros, voluntariado, traslados
+from .membresia.models import (
     TipoMiembro,
     EstadoMiembro,
     MotivoBaja,
     Miembro,
-)
-
-# Campañas domain
-from .campanas.models import (
-    TipoCampania,
-    Campania,
-    RolParticipante,
-    ParticipanteCampania,
-)
-
-# Actividades domain
-from .actividades.models import (
-    # Catálogos
-    TipoActividad,
-    EstadoActividad,
-    EstadoPropuesta,
-    TipoRecurso,
-    TipoKPI,
-    # Propuestas
-    PropuestaActividad,
-    TareaPropuesta,
-    RecursoPropuesta,
-    GrupoPropuesta,
-    # Actividades
-    Actividad,
-    TareaActividad,
-    RecursoActividad,
-    GrupoActividad,
-    ParticipanteActividad,
-    # KPIs
-    KPI,
-    KPIActividad,
-    MedicionKPI,
-)
-
-# Grupos domain
-from .grupos.models import (
-    TipoGrupo,
-    RolGrupo,
-    GrupoTrabajo,
-    MiembroGrupo,
-    TareaGrupo,
-    ReunionGrupo,
-    AsistenteReunion,
-)
-
-# Voluntariado domain
-from .voluntariado.models import (
+    TipoCargo,
+    Skill,
+    MiembroSkill,
+    FranjaDisponibilidad,
+    HistorialAgrupacion,
+    SolicitudTraslado,
+    EstadoTraslado,
     CategoriaCompetencia,
     Competencia,
     NivelCompetencia,
@@ -143,106 +102,124 @@ from .voluntariado.models import (
     FormacionMiembro,
 )
 
+# Actividades: campañas, eventos, grupos de trabajo, KPIs
+from .actividades.models import (
+    TipoActividad,
+    EstadoPropuesta,
+    TipoRecurso,
+    TipoKPI,
+    PropuestaActividad,
+    TareaPropuesta,
+    RecursoPropuesta,
+    GrupoPropuesta,
+    Actividad,
+    TareaActividad,
+    RecursoActividad,
+    GrupoActividad,
+    ParticipanteActividad,
+    KPI,
+    KPIActividad,
+    MedicionKPI,
+    TipoCampania,
+    Campania,
+    RolParticipante,
+    ParticipanteCampania,
+    Firmante,
+    FirmaCampania,
+    TipoGrupo,
+    RolGrupo,
+    GrupoTrabajo,
+    MiembroGrupo,
+    TareaGrupo,
+    ReunionGrupo,
+    AsistenteReunion,
+    TipoEvento,
+    EstadoEvento,
+    Evento,
+    ParticipanteEvento,
+    MaterialEvento,
+    GrupoEvento,
+    TareaEvento,
+    GastoEvento,
+)
+
+# Económico: tesorería, contabilidad, cuotas, donaciones, remesas, cobro
+from .economico.models import (
+    TipoMovimientoTesoreria,
+    CuentaBancaria,
+    MovimientoTesoreria,
+    ConciliacionBancaria,
+    TipoCuentaContable,
+    TipoAsientoContable,
+    EstadoAsientoContable,
+    CuentaContable,
+    AsientoContable,
+    ApunteContable,
+    BalanceContable,
+    ModoIngreso,
+    ImporteCuotaAnio,
+    CuotaAnual,
+    DonacionConcepto,
+    Donacion,
+    Remesa,
+    OrdenCobro,
+    EstadoPlanificacion,
+    CategoriaPartida,
+    PartidaPresupuestaria,
+    PlanificacionAnual,
+    ProveedorPago,
+    TipoPago,
+    Pago,
+    EventoPago,
+    Suscripcion,
+    Reclamacion,
+    AccionReclamacion,
+)
+
 __all__ = [
-    # Administracion
-    'Transaccion',
-    'Rol',
-    'TipoRol',
-    'RolTransaccion',
-    'LogAuditoria',
-    'TipoAccion',
-    # Usuarios
-    'Usuario',
-    'UsuarioRol',
-    # Core - Configuración
-    'Configuracion',
-    'ReglaValidacionConfig',
-    'HistorialConfiguracion',
-    # Core - Estados
-    'EstadoBase',
-    'EstadoCuota',
-    'EstadoCampania',
-    'EstadoTarea',
-    'EstadoParticipante',
-    'EstadoOrdenCobro',
-    'EstadoRemesa',
-    'EstadoDonacion',
-    'EstadoNotificacion',
-    'HistorialEstado',
-    # Core - Seguridad
-    'Sesion',
-    'HistorialSeguridad',
-    'IPBloqueada',
-    'IntentoAcceso',
-    # Geográfico
-    'Pais',
-    'Provincia',
-    'Municipio',
-    'Direccion',
-    'AgrupacionTerritorial',
-    # Notificaciones
-    'TipoNotificacion',
-    'Notificacion',
-    'PreferenciaNotificacion',
-    # Financiero
-    'ImporteCuotaAnio',
-    'CuotaAnual',
-    'DonacionConcepto',
-    'Donacion',
-    'Remesa',
-    'OrdenCobro',
-    'EstadoPlanificacion',
-    'CategoriaPartida',
-    'PartidaPresupuestaria',
-    'PlanificacionAnual',
-    # Colaboraciones
-    'Asociacion',
-    'TipoAsociacion',
-    'Convenio',
-    'EstadoConvenio',
-    # Miembros
-    'TipoMiembro',
-    'EstadoMiembro',
-    'MotivoBaja',
-    'Miembro',
-    # Campañas
-    'TipoCampania',
-    'Campania',
-    'RolParticipante',
-    'ParticipanteCampania',
+    # Acceso
+    'Transaccion', 'Rol', 'TipoRol', 'RolTransaccion',
+    'Funcionalidad', 'RolFuncionalidad', 'FuncionalidadTransaccion',
+    'FlujoAprobacion', 'AmbitoTransaccion',
+    'LogAuditoria', 'TipoAccion',
+    'Usuario', 'UsuarioRol',
+    'Sesion', 'HistorialSeguridad', 'IPBloqueada', 'IntentoAcceso',
+    # Core - Geográfico
+    'Pais', 'Provincia', 'Municipio', 'Direccion', 'AgrupacionTerritorial',
+    # Core - Comunicación
+    'TipoNotificacion', 'Notificacion', 'PreferenciaNotificacion',
+    # Configuración
+    'Configuracion', 'ReglaValidacionConfig', 'HistorialConfiguracion',
+    'EstadoBase', 'EstadoCuota', 'EstadoCampania', 'EstadoTarea',
+    'EstadoActividad', 'EstadoParticipante', 'EstadoOrdenCobro',
+    'EstadoRemesa', 'EstadoDonacion', 'EstadoNotificacion', 'HistorialEstado',
+    'TipoAsociacion', 'Asociacion', 'EstadoConvenio', 'Convenio',
+    'TipoOrganizacion', 'Organizacion',
+    # Membresía
+    'TipoMiembro', 'EstadoMiembro', 'MotivoBaja', 'Miembro',
+    'TipoCargo', 'Skill', 'MiembroSkill', 'FranjaDisponibilidad',
+    'HistorialAgrupacion', 'SolicitudTraslado', 'EstadoTraslado',
+    'CategoriaCompetencia', 'Competencia', 'NivelCompetencia', 'MiembroCompetencia',
+    'TipoDocumentoVoluntario', 'DocumentoMiembro', 'TipoFormacion', 'FormacionMiembro',
     # Actividades
-    'TipoActividad',
-    'EstadoActividad',
-    'EstadoPropuesta',
-    'TipoRecurso',
-    'TipoKPI',
-    'PropuestaActividad',
-    'TareaPropuesta',
-    'RecursoPropuesta',
-    'GrupoPropuesta',
-    'Actividad',
-    'TareaActividad',
-    'RecursoActividad',
-    'GrupoActividad',
-    'ParticipanteActividad',
-    'KPI',
-    'KPIActividad',
-    'MedicionKPI',
-    # Grupos
-    'TipoGrupo',
-    'RolGrupo',
-    'GrupoTrabajo',
-    'MiembroGrupo',
-    'TareaGrupo',
-    'ReunionGrupo',
-    'AsistenteReunion',
-    # Voluntariado
-    'CategoriaCompetencia',
-    'Competencia',
-    'NivelCompetencia',
-    'MiembroCompetencia',
-    'TipoDocumentoVoluntario',
-    'DocumentoMiembro',
-    'TipoFormacion',
-    'FormacionMiembro',
+    'TipoActividad', 'EstadoPropuesta', 'TipoRecurso', 'TipoKPI',
+    'PropuestaActividad', 'TareaPropuesta', 'RecursoPropuesta', 'GrupoPropuesta',
+    'Actividad', 'TareaActividad', 'RecursoActividad', 'GrupoActividad',
+    'ParticipanteActividad', 'KPI', 'KPIActividad', 'MedicionKPI',
+    'TipoCampania', 'Campania', 'RolParticipante', 'ParticipanteCampania',
+    'Firmante', 'FirmaCampania',
+    'TipoGrupo', 'RolGrupo', 'GrupoTrabajo', 'MiembroGrupo',
+    'TareaGrupo', 'ReunionGrupo', 'AsistenteReunion',
+    'TipoEvento', 'EstadoEvento', 'Evento',
+    'ParticipanteEvento', 'MaterialEvento', 'GrupoEvento', 'TareaEvento', 'GastoEvento',
+    # Económico
+    'TipoMovimientoTesoreria', 'CuentaBancaria', 'MovimientoTesoreria', 'ConciliacionBancaria',
+    'TipoCuentaContable', 'TipoAsientoContable', 'EstadoAsientoContable',
+    'CuentaContable', 'AsientoContable', 'ApunteContable', 'BalanceContable',
+    'ModoIngreso', 'ImporteCuotaAnio', 'CuotaAnual',
+    'DonacionConcepto', 'Donacion',
+    'Remesa', 'OrdenCobro',
+    'EstadoPlanificacion', 'CategoriaPartida', 'PartidaPresupuestaria', 'PlanificacionAnual',
+    'ProveedorPago', 'TipoPago', 'Pago', 'EventoPago', 'Suscripcion',
+    'Reclamacion', 'AccionReclamacion',
 ]

@@ -1,71 +1,72 @@
 """
 Imports de modelos para Alembic.
-NOTA: Este archivo está siendo migrado a la arquitectura DDD.
-Los imports legacy se mantienen temporalmente para compatibilidad.
+Centraliza todos los modelos para que Alembic los detecte en autogenerate.
 """
 
-# Infraestructura
 from ..infrastructure.base_model import Base
 
-# Usuario
-from ..modules.usuarios.models import Usuario, UsuarioRol
-
-# Dominio Core
-from ..modules.core.models import (
-    Configuracion, ReglaValidacionConfig, HistorialConfiguracion,
-    EstadoCuota, EstadoCampania, EstadoTarea, EstadoParticipante,
-    EstadoOrdenCobro, EstadoRemesa, EstadoDonacion, HistorialEstado,
-    Sesion, HistorialSeguridad, IPBloqueada, IntentoAcceso
+# Acceso
+from ..modules.acceso.models import (
+    Transaccion, Rol, TipoRol, RolTransaccion,
+    LogAuditoria, TipoAccion,
+    Usuario, UsuarioRol,
+    Sesion, HistorialSeguridad, IPBloqueada, IntentoAcceso,
 )
 
-# Dominio Geográfico
-from ..modules.geografico.models import Pais, Provincia, Municipio, Direccion
+# Core - Geográfico
+from ..modules.core.geografico import Pais, Provincia, Municipio, Direccion, AgrupacionTerritorial
 
-# Dominio Notificaciones
-from ..modules.notificaciones.models import TipoNotificacion, Notificacion, PreferenciaNotificacion
+# Core - Comunicación
+from ..modules.core.comunicacion import TipoNotificacion, Notificacion, PreferenciaNotificacion
 
+<<<<<<< HEAD
 # Dominio Financiero (nuevos modelos)
 from ..modules.economico.models import (
     ImporteCuotaAnio, CuotaAnual, ModoIngreso,
+=======
+# Configuración
+from ..modules.configuracion.models import (
+    Configuracion, ReglaValidacionConfig, HistorialConfiguracion,
+    EstadoBase, EstadoCuota, EstadoCampania, EstadoTarea,
+    EstadoActividad, EstadoParticipante, EstadoOrdenCobro,
+    EstadoRemesa, EstadoDonacion, EstadoNotificacion, HistorialEstado,
+    TipoAsociacion, Asociacion, EstadoConvenio, Convenio,
+    TipoOrganizacion, Organizacion,
+)
+
+# Membresía
+from ..modules.membresia.models import (
+    TipoMiembro, EstadoMiembro, MotivoBaja, Miembro,
+    TipoCargo, Skill, MiembroSkill, FranjaDisponibilidad,
+    HistorialAgrupacion, SolicitudTraslado, EstadoTraslado,
+    CategoriaCompetencia, Competencia, NivelCompetencia, MiembroCompetencia,
+    TipoDocumentoVoluntario, DocumentoMiembro, TipoFormacion, FormacionMiembro,
+)
+
+# Actividades
+from ..modules.actividades.models import (
+    TipoActividad, EstadoPropuesta, TipoRecurso, TipoKPI,
+    PropuestaActividad, TareaPropuesta, RecursoPropuesta, GrupoPropuesta,
+    Actividad, TareaActividad, RecursoActividad, GrupoActividad,
+    ParticipanteActividad, KPI, KPIActividad, MedicionKPI,
+    TipoCampania, Campania, RolParticipante, ParticipanteCampania,
+    Firmante, FirmaCampania,
+    TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo,
+    TareaGrupo, ReunionGrupo, AsistenteReunion,
+    TipoEvento, EstadoEvento, Evento,
+    ParticipanteEvento, MaterialEvento, GrupoEvento, TareaEvento, GastoEvento,
+)
+
+# Económico
+from ..modules.economico.models import (
+    TipoMovimientoTesoreria, CuentaBancaria, MovimientoTesoreria, ConciliacionBancaria,
+    TipoCuentaContable, TipoAsientoContable, EstadoAsientoContable,
+    CuentaContable, AsientoContable, ApunteContable, BalanceContable,
+    ModoIngreso, ImporteCuotaAnio, CuotaAnual,
+>>>>>>> daab14f (redistribucion modules backend y completar modulo accesos, primera fase)
     DonacionConcepto, Donacion,
     Remesa, OrdenCobro,
-    EstadoPlanificacion, CategoriaPartida, PartidaPresupuestaria, PlanificacionAnual
+    EstadoPlanificacion, CategoriaPartida, PartidaPresupuestaria, PlanificacionAnual,
+    ProveedorPago, TipoPago, Pago, EventoPago, Suscripcion,
+    Reclamacion, AccionReclamacion,
 )
-
-# Dominio Administración
-from ..modules.administracion.models import Transaccion, Rol, RolTransaccion, LogAuditoria
-
-# Dominio Eventos
-from ..modules.eventos.models import (
-    TipoEvento, EstadoEvento, Evento, ParticipanteEvento, MaterialEvento,
-    GrupoEvento, TareaEvento, GastoEvento,
-)
-
-# Dominio Miembros
-from ..modules.miembros.models import (
-    TipoMiembro, EstadoMiembro, MotivoBaja, TipoCargo, Miembro,
-    Skill, MiembroSkill, FranjaDisponibilidad, HistorialAgrupacion, SolicitudTraslado,
-)
-
-__all__ = [
-    'Base',
-    'Usuario',
-    'UsuarioRol',
-    'Configuracion',
-    'EstadoCuota',
-    'Pais',
-    'Provincia',
-    'Municipio',
-    'Direccion',
-    'TipoNotificacion',
-    'Notificacion',
-    'ImporteCuotaAnio',
-    'CuotaAnual',
-    'Donacion',
-    'Remesa',
-    'OrdenCobro',
-    'EstadoPlanificacion',
-    'CategoriaPartida',
-    'PartidaPresupuestaria',
-    'PlanificacionAnual',
-]

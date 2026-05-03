@@ -15,7 +15,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
 
 from app.core.database import get_database_url
-from app.modules.geografico.models.direccion import Pais, Provincia
+from app.modules.core.geografico.direccion import Pais, Provincia
 from app.scripts.importacion.sql_dump_parser import SQLDumpParser
 from sqlalchemy import text
 
