@@ -9,6 +9,8 @@ import ListaAgrupaciones from '@/views/miembros/ListaAgrupaciones.vue'
 import ListaCampanias from '@/views/campanias/ListaCampanias.vue'
 import ListaGrupos from '@/views/grupos/ListaGrupos.vue'
 import ListaFinanciero from '@/views/financiero/ListaFinanciero.vue'
+import Tesoreria from '@/views/financiero/Tesoreria.vue'
+import Contabilidad from '@/views/financiero/Contabilidad.vue'
 import ListaVoluntarios from '@/views/voluntariado/ListaVoluntarios.vue'
 import ListaUsuarios from '@/views/usuarios/ListaUsuarios.vue'
 import ParametrizacionIndex from '@/views/parametrizacion/ParametrizacionIndex.vue'
@@ -68,6 +70,18 @@ const routes = [
     path: '/financiero',
     component: ListaFinanciero,
     name: 'Financiero',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/tesoreria',
+    component: Tesoreria,
+    name: 'Tesoreria',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/contabilidad',
+    component: Contabilidad,
+    name: 'Contabilidad',
     meta: { requiresAuth: true }
   },
   {
