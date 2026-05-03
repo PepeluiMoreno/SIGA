@@ -15,3 +15,13 @@ Gestión de miembros, agrupaciones territoriales, traslados, skills y disponibil
 ## Transacciones
 
 Prefijos: `SOC_*`, `SOL_*`, `TRAS_*`, `AGR_*`, `MBR_*`, `SKILL_*`, `AVAIL_*`, `RGPD_*`
+
+
+TODO: 
+
+Esto va a cambiar mucho: consultar:
+
+ /opt/docker/apps/SIGA/docs/funcionalidad_modulo_militancia.md 
+ /opt/docker/apps/SIGA/docs/modulos/administracion_usuarios_roles.md
+ /opt/docker/apps/SIGA/docs/funcionalidad_eventos_permission_matrix.md
+ /opt/docker/apps/SIGA/docs/modelo_ER_militancia.md

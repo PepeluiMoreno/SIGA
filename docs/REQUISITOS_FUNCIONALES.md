@@ -82,7 +82,7 @@ reglas de negocio
 3. MÓDULO DE CAMPAÑAS (DISEÑO, PLANIFICACIÓN Y SEGUIMIENTO)
 3.1 Objetivo
 
-Gestionar proyectos operativos de la organización con planificación, ejecución y evaluación.
+Gestionar proyectos operativos de la organización (campañas) con planificación, ejecución y evaluación.
 
 3.2 Jerarquía
 Campaign
