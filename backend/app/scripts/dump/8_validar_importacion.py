@@ -17,10 +17,10 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select, func, text
 
 from app.core.database import get_database_url
-from app.domains.geografico.models.direccion import Pais, Provincia, AgrupacionTerritorial
-from app.domains.miembros.models.miembro import Miembro, TipoMiembro
-from app.domains.financiero.models.cuotas import CuotaAnual, ImporteCuotaAnio
-from app.domains.core.models.estados import EstadoCuota
+from app.modules.geografico.models.direccion import Pais, Provincia, AgrupacionTerritorial
+from app.modules.miembros.models.miembro import Miembro, TipoMiembro
+from app.modules.financiero.models.cuotas import CuotaAnual, ImporteCuotaAnio
+from app.modules.core.models.estados import EstadoCuota
 
 
 # Configuración de conexión MySQL (ajustar según necesidad)

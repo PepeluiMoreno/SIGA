@@ -24,8 +24,8 @@ from sqlalchemy import select, text
 
 from app.core.database import get_database_url
 from app.infrastructure.services.encriptacion_service import get_encriptacion_service
-from app.domains.miembros.models.miembro import Miembro, TipoMiembro
-from app.domains.miembros.models.estado_miembro import EstadoMiembro
+from app.modules.miembros.models.miembro import Miembro, TipoMiembro
+from app.modules.miembros.models.estado_miembro import EstadoMiembro
 from app.scripts.importacion.mysql_helper import get_mysql_connection
 
 

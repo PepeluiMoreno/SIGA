@@ -11,12 +11,12 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
 
 from app.core.database import get_database_url
-from app.domains.miembros.models.miembro import TipoMiembro
-from app.domains.miembros.models.estado_miembro import EstadoMiembro
-from app.domains.core.models.estados import EstadoCuota
-from app.domains.core.models.estados import EstadoCampania
-from app.domains.core.models.estados import EstadoActividad
-from app.domains.core.models.estados import EstadoParticipante
+from app.modules.miembros.models.miembro import TipoMiembro
+from app.modules.miembros.models.estado_miembro import EstadoMiembro
+from app.modules.core.models.estados import EstadoCuota
+from app.modules.core.models.estados import EstadoCampania
+from app.modules.core.models.estados import EstadoActividad
+from app.modules.core.models.estados import EstadoParticipante
 
 
 async def crear_tipos_miembro(session: AsyncSession) -> dict[str, uuid.UUID]:

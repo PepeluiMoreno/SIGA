@@ -3,7 +3,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domains.financiero.models.contabilidad import (
+from app.modules.financiero.models.contabilidad import (
     CuentaContable,
     TipoCuentaContable,
 )

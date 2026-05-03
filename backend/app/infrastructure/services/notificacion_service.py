@@ -8,7 +8,7 @@ from typing import Optional, List, Dict, Any
 from sqlalchemy import select, and_, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...domains.notificaciones.models import TipoNotificacion, Notificacion, PreferenciaNotificacion
+from ...modules.notificaciones.models import TipoNotificacion, Notificacion, PreferenciaNotificacion
 from .cache_service import CacheService, get_cache_service, generar_cache_key
 
 logger = logging.getLogger(__name__)

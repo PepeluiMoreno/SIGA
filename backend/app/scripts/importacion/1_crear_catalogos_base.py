@@ -11,16 +11,16 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
 
 from app.core.database import get_database_url
-from app.domains.miembros.models.miembro import TipoMiembro
-from app.domains.miembros.models.estado_miembro import EstadoMiembro
-from app.domains.core.models.estados import EstadoCuota
-from app.domains.core.models.estados import EstadoCampania
-from app.domains.core.models.estados import EstadoActividad
-from app.domains.core.models.estados import EstadoParticipante
-from app.domains.core.models.estados import EstadoOrdenCobro
-from app.domains.core.models.estados import EstadoRemesa
-from app.domains.core.models.estados import EstadoDonacion
-from app.domains.miembros.models.motivo_baja import MotivoBaja
+from app.modules.miembros.models.miembro import TipoMiembro
+from app.modules.miembros.models.estado_miembro import EstadoMiembro
+from app.modules.core.models.estados import EstadoCuota
+from app.modules.core.models.estados import EstadoCampania
+from app.modules.core.models.estados import EstadoActividad
+from app.modules.core.models.estados import EstadoParticipante
+from app.modules.core.models.estados import EstadoOrdenCobro
+from app.modules.core.models.estados import EstadoRemesa
+from app.modules.core.models.estados import EstadoDonacion
+from app.modules.miembros.models.motivo_baja import MotivoBaja
 
 
 async def crear_tipos_miembro(session: AsyncSession) -> dict[str, uuid.UUID]:
@@ -621,7 +621,7 @@ async def crear_estados_donacion(session: AsyncSession) -> dict[str, uuid.UUID]:
 
 async def crear_estados_notificacion(session: AsyncSession) -> dict[str, uuid.UUID]:
     """Crea los estados de notificación y retorna mapeo código → UUID."""
-    from app.domains.core.models.estados import EstadoNotificacion
+    from app.modules.core.models.estados import EstadoNotificacion
 
     estados_data = [
         {

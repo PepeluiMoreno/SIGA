@@ -9,7 +9,7 @@ import jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..domains.usuarios.models.usuario import Usuario
+from ..modules.usuarios.models.usuario import Usuario
 from .config import get_settings
 
 

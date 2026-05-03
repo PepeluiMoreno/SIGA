@@ -6,7 +6,7 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from ..domains.geografico.models import Pais, Provincia, Municipio
+from ..modules.geografico.models import Pais, Provincia, Municipio
 
 
 # Datos de país España

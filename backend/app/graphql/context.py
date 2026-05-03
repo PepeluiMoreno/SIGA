@@ -9,7 +9,7 @@ from strawberry.fastapi import BaseContext
 
 from ..core.database import async_session
 from ..core.security import extract_bearer_token, load_user_from_token
-from ..domains.usuarios.models.usuario import Usuario
+from ..modules.usuarios.models.usuario import Usuario
 
 
 @dataclass

@@ -87,7 +87,7 @@ def create_input_classes(model_class: Type, class_name_prefix: str):
 # CORE - Estados
 # ============================================================================
 
-from ..domains.core.models import (
+from ..modules.core.models import (
     EstadoCuota,
     EstadoCampania,
     EstadoTarea,
@@ -223,7 +223,7 @@ class EstadoNotificacionFilter:
 # GEOGRÁFICO
 # ============================================================================
 
-from ..domains.geografico.models import Pais, Provincia, Municipio, AgrupacionTerritorial
+from ..modules.geografico.models import Pais, Provincia, Municipio, AgrupacionTerritorial
 
 
 @strawchemy.input(Pais, mode="create_input", include="all", exclude=get_exclude_fields(Pais))
@@ -290,7 +290,7 @@ class AgrupacionTerritorialFilter:
 # MIEMBROS
 # ============================================================================
 
-from ..domains.miembros.models import (
+from ..modules.miembros.models import (
     TipoMiembro, EstadoMiembro, MotivoBaja, Miembro,
     Skill, MiembroSkill, FranjaDisponibilidad, HistorialAgrupacion, SolicitudTraslado,
 )
@@ -439,7 +439,7 @@ class SolicitudTrasladoFilter:
 # CAMPAÑAS
 # ============================================================================
 
-from ..domains.campanas.models import TipoCampania, Campania, RolParticipante, ParticipanteCampania
+from ..modules.campanas.models import TipoCampania, Campania, RolParticipante, ParticipanteCampania
 
 
 @strawchemy.input(TipoCampania, mode="create_input", include="all", exclude=get_exclude_fields(TipoCampania))
@@ -506,7 +506,7 @@ class ParticipanteCampaniaFilter:
 # ACTIVIDADES
 # ============================================================================
 
-from ..domains.actividades.models import (
+from ..modules.actividades.models import (
     TipoActividad, EstadoActividad, EstadoPropuesta, TipoRecurso, TipoKPI,
     PropuestaActividad, Actividad, TareaActividad
 )
@@ -636,7 +636,7 @@ class TareaActividadFilter:
 # GRUPOS
 # ============================================================================
 
-from ..domains.grupos.models import TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo, TareaGrupo
+from ..modules.grupos.models import TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo, TareaGrupo
 
 
 @strawchemy.input(TipoGrupo, mode="create_input", include="all", exclude=get_exclude_fields(TipoGrupo))
@@ -718,7 +718,7 @@ class TareaGrupoFilter:
 # FINANCIERO
 # ============================================================================
 
-from ..domains.financiero.models import (
+from ..modules.financiero.models import (
     ImporteCuotaAnio, CuotaAnual, DonacionConcepto, Donacion, Remesa, OrdenCobro
 )
 
@@ -817,7 +817,7 @@ class OrdenCobroFilter:
 # VOLUNTARIADO
 # ============================================================================
 
-from ..domains.voluntariado.models import (
+from ..modules.voluntariado.models import (
     CategoriaCompetencia, Competencia, NivelCompetencia, MiembroCompetencia,
     TipoDocumentoVoluntario, DocumentoMiembro, TipoFormacion, FormacionMiembro
 )
@@ -947,7 +947,7 @@ class FormacionMiembroFilter:
 # NOTIFICACIONES
 # ============================================================================
 
-from ..domains.notificaciones.models import TipoNotificacion, Notificacion, PreferenciaNotificacion
+from ..modules.notificaciones.models import TipoNotificacion, Notificacion, PreferenciaNotificacion
 
 
 @strawchemy.input(TipoNotificacion, mode="create_input", include="all", exclude=get_exclude_fields(TipoNotificacion))
@@ -1003,7 +1003,7 @@ class PreferenciaNotificacionFilter:
 # COLABORACIONES
 # ============================================================================
 
-from ..domains.colaboraciones.models import TipoAsociacion, Asociacion, EstadoConvenio, Convenio
+from ..modules.colaboraciones.models import TipoAsociacion, Asociacion, EstadoConvenio, Convenio
 
 
 @strawchemy.input(TipoAsociacion, mode="create_input", include="all", exclude=get_exclude_fields(TipoAsociacion))

@@ -8,7 +8,7 @@ sino que usa un modelo que mapea a una subquery.
 from sqlalchemy import select
 from sqlalchemy.orm import aliased
 
-from app.domains.organizaciones.models import Organizacion, TipoOrganizacion
+from app.modules.organizaciones.models import Organizacion, TipoOrganizacion
 
 
 class AgrupacionTerritorialQuery:
@@ -84,7 +84,7 @@ class AgrupacionTerritorialQuery:
 
 # Uso en código:
 #
-# from app.domains.geografico.models.agrupacion_territorial_query import AgrupacionTerritorialQuery
+# from app.modules.geografico.models.agrupacion_territorial_query import AgrupacionTerritorialQuery
 #
 # # Obtener todas las agrupaciones activas
 # result = await session.execute(AgrupacionTerritorialQuery.get_activas())

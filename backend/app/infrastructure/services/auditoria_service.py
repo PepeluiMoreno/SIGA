@@ -86,7 +86,7 @@ class AuditoriaService:
                                      estado_nuevo_codigo: str, usuario_id: Optional[str] = None,
                                      motivo: Optional[str] = None):
         """Registra cambios de estado en el historial."""
-        from ...domains.core.models.estados import HistorialEstado
+        from ...modules.core.models.estados import HistorialEstado
         import uuid
 
         historial = HistorialEstado(

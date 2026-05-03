@@ -8,10 +8,10 @@ Los imports legacy se mantienen temporalmente para compatibilidad.
 from ..infrastructure.base_model import Base
 
 # Usuario
-from ..domains.usuarios.models import Usuario, UsuarioRol
+from ..modules.usuarios.models import Usuario, UsuarioRol
 
 # Dominio Core
-from ..domains.core.models import (
+from ..modules.core.models import (
     Configuracion, ReglaValidacionConfig, HistorialConfiguracion,
     EstadoCuota, EstadoCampania, EstadoTarea, EstadoParticipante,
     EstadoOrdenCobro, EstadoRemesa, EstadoDonacion, HistorialEstado,
@@ -19,13 +19,13 @@ from ..domains.core.models import (
 )
 
 # Dominio Geográfico
-from ..domains.geografico.models import Pais, Provincia, Municipio, Direccion
+from ..modules.geografico.models import Pais, Provincia, Municipio, Direccion
 
 # Dominio Notificaciones
-from ..domains.notificaciones.models import TipoNotificacion, Notificacion, PreferenciaNotificacion
+from ..modules.notificaciones.models import TipoNotificacion, Notificacion, PreferenciaNotificacion
 
 # Dominio Financiero (nuevos modelos)
-from ..domains.financiero.models import (
+from ..modules.financiero.models import (
     ImporteCuotaAnio, CuotaAnual, ModoIngreso,
     DonacionConcepto, Donacion,
     Remesa, OrdenCobro,
@@ -33,16 +33,16 @@ from ..domains.financiero.models import (
 )
 
 # Dominio Administración
-from ..domains.administracion.models import Transaccion, Rol, RolTransaccion, LogAuditoria
+from ..modules.administracion.models import Transaccion, Rol, RolTransaccion, LogAuditoria
 
 # Dominio Eventos
-from ..domains.eventos.models import (
+from ..modules.eventos.models import (
     TipoEvento, EstadoEvento, Evento, ParticipanteEvento, MaterialEvento,
     GrupoEvento, TareaEvento, GastoEvento,
 )
 
 # Dominio Miembros
-from ..domains.miembros.models import (
+from ..modules.miembros.models import (
     TipoMiembro, EstadoMiembro, MotivoBaja, TipoCargo, Miembro,
     Skill, MiembroSkill, FranjaDisponibilidad, HistorialAgrupacion, SolicitudTraslado,
 )

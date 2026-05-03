@@ -13,7 +13,7 @@ import strawberry
 from . import strawchemy
 
 # === ADMINISTRACION ===
-from ..domains.administracion.models import (
+from ..modules.administracion.models import (
     Transaccion,
     Rol,
     RolTransaccion,
@@ -38,7 +38,7 @@ class LogAuditoriaType:
 
 
 # === USUARIOS ===
-from ..domains.usuarios.models import Usuario, UsuarioRol
+from ..modules.usuarios.models import Usuario, UsuarioRol
 
 @strawchemy.type(Usuario, exclude=["password_hash"], override=True)
 class UsuarioType:
@@ -50,7 +50,7 @@ class UsuarioRolType:
 
 
 # === CORE ===
-from ..domains.core.models import (
+from ..modules.core.models import (
     Configuracion,
     ReglaValidacionConfig,
     HistorialConfiguracion,
@@ -135,7 +135,7 @@ class IntentoAccesoType:
 
 
 # === GEOGRÁFICO ===
-from ..domains.geografico.models import Pais, Provincia, Municipio, Direccion, AgrupacionTerritorial
+from ..modules.geografico.models import Pais, Provincia, Municipio, Direccion, AgrupacionTerritorial
 
 @strawchemy.type(Pais, include="all", override=True)
 class PaisType:
@@ -159,7 +159,7 @@ class AgrupacionTerritorialType:
 
 
 # === NOTIFICACIONES ===
-from ..domains.notificaciones.models import TipoNotificacion, Notificacion, PreferenciaNotificacion
+from ..modules.notificaciones.models import TipoNotificacion, Notificacion, PreferenciaNotificacion
 
 @strawchemy.type(TipoNotificacion, include="all", override=True)
 class TipoNotificacionType:
@@ -176,7 +176,7 @@ class PreferenciaNotificacionType:
 
 
 # === FINANCIERO ===
-from ..domains.financiero.models import (
+from ..modules.financiero.models import (
     ImporteCuotaAnio,
     CuotaAnual,
     DonacionConcepto,
@@ -231,7 +231,7 @@ class PlanificacionAnualType:
 
 
 # === COLABORACIONES ===
-from ..domains.colaboraciones.models import Asociacion, TipoAsociacion, Convenio, EstadoConvenio
+from ..modules.colaboraciones.models import Asociacion, TipoAsociacion, Convenio, EstadoConvenio
 
 @strawchemy.type(TipoAsociacion, include="all", override=True)
 class TipoAsociacionType:
@@ -251,7 +251,7 @@ class ConvenioType:
 
 
 # === MIEMBROS ===
-from ..domains.miembros.models import (
+from ..modules.miembros.models import (
     TipoMiembro, Miembro, EstadoMiembro, MotivoBaja, TipoCargo, MiembroSegmentacion,
     Skill, MiembroSkill, FranjaDisponibilidad, HistorialAgrupacion, SolicitudTraslado,
 )
@@ -312,7 +312,7 @@ class SolicitudTrasladoType:
 
 
 # === CAMPAÑAS ===
-from ..domains.campanas.models import (
+from ..modules.campanas.models import (
     TipoCampania, Campania, RolParticipante, ParticipanteCampania, Firmante, FirmaCampania
 )
 
@@ -344,7 +344,7 @@ class FirmaCampaniaType:
 
 
 # === ACTIVIDADES ===
-from ..domains.actividades.models import (
+from ..modules.actividades.models import (
     TipoActividad, EstadoActividad, EstadoPropuesta, TipoRecurso, TipoKPI,
     PropuestaActividad, TareaPropuesta, RecursoPropuesta, GrupoPropuesta,
     Actividad, TareaActividad, RecursoActividad, GrupoActividad, ParticipanteActividad,
@@ -421,7 +421,7 @@ class MedicionKPIType:
 
 
 # === GRUPOS ===
-from ..domains.grupos.models import (
+from ..modules.grupos.models import (
     TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo, TareaGrupo, ReunionGrupo, AsistenteReunion
 )
 
@@ -455,7 +455,7 @@ class AsistenteReunionType:
 
 
 # === VOLUNTARIADO ===
-from ..domains.voluntariado.models import (
+from ..modules.voluntariado.models import (
     CategoriaCompetencia, Competencia, NivelCompetencia, MiembroCompetencia,
     TipoDocumentoVoluntario, DocumentoMiembro, TipoFormacion, FormacionMiembro
 )
@@ -494,7 +494,7 @@ class FormacionMiembroType:
 
 
 # === EVENTOS ===
-from ..domains.eventos.models import (
+from ..modules.eventos.models import (
     TipoEvento, EstadoEvento, Evento, ParticipanteEvento, MaterialEvento
 )
 

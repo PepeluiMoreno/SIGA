@@ -27,7 +27,7 @@ class ConfiguracionService:
             return self._cache[clave]
 
         try:
-            from ...domains.core.models.configuracion import Configuracion
+            from ...modules.core.models.configuracion import Configuracion
 
             result = await self.session.execute(
                 select(Configuracion).where(
@@ -55,7 +55,7 @@ class ConfiguracionService:
             if validar:
                 valor = await self._validar_valor(clave, valor)
 
-            from ...domains.core.models.configuracion import Configuracion
+            from ...modules.core.models.configuracion import Configuracion
 
             result = await self.session.execute(
                 select(Configuracion).where(
@@ -217,7 +217,7 @@ class ConfiguracionService:
 
     async def get_grupo(self, grupo: str) -> Dict[str, Any]:
         """Obtiene todas las configuraciones de un grupo."""
-        from ...domains.core.models.configuracion import Configuracion
+        from ...modules.core.models.configuracion import Configuracion
 
         result = await self.session.execute(
             select(Configuracion).where(
@@ -234,7 +234,7 @@ class ConfiguracionService:
                                    modificable: bool = True, usuario_id: Optional[str] = None) -> bool:
         """Crea una nueva configuración."""
         try:
-            from ...domains.core.models.configuracion import Configuracion
+            from ...modules.core.models.configuracion import Configuracion
 
             # Verificar si ya existe
             result = await self.session.execute(
@@ -278,7 +278,7 @@ class ConfiguracionService:
     async def eliminar_configuracion(self, clave: str, usuario_id: Optional[str] = None) -> bool:
         """Elimina lógicamente una configuración."""
         try:
-            from ...domains.core.models.configuracion import Configuracion
+            from ...modules.core.models.configuracion import Configuracion
 
             result = await self.session.execute(
                 select(Configuracion).where(
@@ -342,7 +342,7 @@ class ConfiguracionService:
 
     async def _obtener_reglas_validacion(self, clave: str):
         """Obtiene las reglas de validación para una clave desde BD."""
-        from ...domains.core.models.configuracion import ReglaValidacionConfig
+        from ...modules.core.models.configuracion import ReglaValidacionConfig
 
         result = await self.session.execute(
             select(ReglaValidacionConfig).where(

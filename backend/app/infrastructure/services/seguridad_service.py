@@ -42,7 +42,7 @@ class SeguridadService:
 
                 # Actualizar último acceso del usuario
                 if usuario_id:
-                    from ...domains.usuarios.models.usuario import Usuario
+                    from ...modules.usuarios.models.usuario import Usuario
 
                     result = await self.session.execute(
                         select(Usuario).where(Usuario.id == usuario_id)
@@ -81,7 +81,7 @@ class SeguridadService:
 
                     # Si hay usuario, bloquearlo en la BD
                     if usuario_id:
-                        from ...domains.usuarios.models.usuario import Usuario
+                        from ...modules.usuarios.models.usuario import Usuario
 
                         result = await self.session.execute(
                             select(Usuario).where(Usuario.id == usuario_id)

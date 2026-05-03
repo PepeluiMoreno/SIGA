@@ -20,7 +20,7 @@ class EstadoService:
     async def cambiar_estado(self, entidad, nuevo_estado_codigo: str,
                             usuario_id: Optional[str] = None, motivo: Optional[str] = None):
         """Cambia el estado de cualquier entidad que tenga un campo de estado."""
-        from ...domains.core.models.estados import HistorialEstado
+        from ...modules.core.models.estados import HistorialEstado
         import uuid
 
         # Obtener el tipo de entidad
@@ -77,7 +77,7 @@ class EstadoService:
 
     def _get_estado_class(self, entidad_tipo: str):
         """Obtiene la clase de estado correspondiente al tipo de entidad."""
-        from ...domains.core.models import estados
+        from ...modules.core.models import estados
 
         estado_mapping = {
             'cuotaanual': estados.EstadoCuota,

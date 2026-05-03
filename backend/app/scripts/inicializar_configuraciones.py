@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.database import async_session
-from ..domains.core.models.configuracion import Configuracion, ReglaValidacionConfig
+from ..modules.core.models.configuracion import Configuracion, ReglaValidacionConfig
 
 logger = logging.getLogger(__name__)
 

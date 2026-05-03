@@ -5,7 +5,7 @@ import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from ..domains.core.models import estados
+from ..modules.core.models import estados
 
 
 # Definición de estados por defecto para cada tipo

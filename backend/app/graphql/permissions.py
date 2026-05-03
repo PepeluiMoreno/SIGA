@@ -5,10 +5,10 @@ from typing import Type
 from sqlalchemy import select
 from strawberry.permission import BasePermission
 
-from ..domains.administracion.models.rol import Rol
-from ..domains.administracion.models.rol_transaccion import RolTransaccion
-from ..domains.administracion.models.transaccion import Transaccion
-from ..domains.usuarios.models.usuario import UsuarioRol
+from ..modules.administracion.models.rol import Rol
+from ..modules.administracion.models.rol_transaccion import RolTransaccion
+from ..modules.administracion.models.transaccion import Transaccion
+from ..modules.usuarios.models.usuario import UsuarioRol
 
 
 async def user_has_transaction(session, user, codigo: str) -> bool:

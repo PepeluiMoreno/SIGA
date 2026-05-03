@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select, text
 
 from app.core.database import get_database_url
-from app.domains.geografico.models.direccion import AgrupacionTerritorial
+from app.modules.geografico.models.direccion import AgrupacionTerritorial
 
 
 async def main():
