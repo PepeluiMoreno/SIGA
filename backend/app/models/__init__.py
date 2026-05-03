@@ -25,7 +25,7 @@ from ..modules.geografico.models import Pais, Provincia, Municipio, Direccion
 from ..modules.notificaciones.models import TipoNotificacion, Notificacion, PreferenciaNotificacion
 
 # Dominio Financiero (nuevos modelos)
-from ..modules.financiero.models import (
+from ..modules.economico.models import (
     ImporteCuotaAnio, CuotaAnual, ModoIngreso,
     DonacionConcepto, Donacion,
     Remesa, OrdenCobro,

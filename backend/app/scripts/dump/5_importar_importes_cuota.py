@@ -23,7 +23,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
 
 from app.core.database import get_database_url
-from app.modules.financiero.models.cuotas import ImporteCuotaAnio
+from app.modules.economico.models.cuotas import ImporteCuotaAnio
 from app.modules.miembros.models.miembro import TipoMiembro
 from .mysql_helper import get_mysql_connection
 

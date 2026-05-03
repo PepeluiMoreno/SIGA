@@ -1,7 +1,7 @@
 
 import strawberry
 from decimal import Decimal
-from app.modules.financiero.services.tesoreria_service import TesoreriaService
+from app.modules.economico.services.tesoreria_service import TesoreriaService
 
 @strawberry.type
 class FinancieroMutation:

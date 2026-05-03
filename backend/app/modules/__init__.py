@@ -58,7 +58,7 @@ from .notificaciones.models import (
 )
 
 # Financiero domain
-from .financiero.models import (
+from .economico.models import (
     ImporteCuotaAnio,
     CuotaAnual,
     DonacionConcepto,

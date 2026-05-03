@@ -19,7 +19,7 @@ from sqlalchemy import select, func, text
 from app.core.database import get_database_url
 from app.modules.geografico.models.direccion import Pais, Provincia, AgrupacionTerritorial
 from app.modules.miembros.models.miembro import Miembro, TipoMiembro
-from app.modules.financiero.models.cuotas import CuotaAnual, ImporteCuotaAnio
+from app.modules.economico.models.cuotas import CuotaAnual, ImporteCuotaAnio
 from app.modules.core.models.estados import EstadoCuota
 
 

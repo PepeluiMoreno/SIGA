@@ -25,7 +25,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select, text
 
 from app.core.database import get_database_url
-from app.modules.financiero.models.cuotas import CuotaAnual, ImporteCuotaAnio, ModoIngreso
+from app.modules.economico.models.cuotas import CuotaAnual, ImporteCuotaAnio, ModoIngreso
 from app.modules.core.models.estados import EstadoCuota
 from app.modules.miembros.models.miembro import Miembro
 from .mysql_helper import get_mysql_connection

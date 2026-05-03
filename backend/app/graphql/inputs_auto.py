@@ -718,7 +718,7 @@ class TareaGrupoFilter:
 # FINANCIERO
 # ============================================================================
 
-from ..modules.financiero.models import (
+from ..modules.economico.models import (
     ImporteCuotaAnio, CuotaAnual, DonacionConcepto, Donacion, Remesa, OrdenCobro
 )
 
