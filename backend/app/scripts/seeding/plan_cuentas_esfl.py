@@ -3,16 +3,11 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domains.financiero.models.contabilidad.plan_cuentas import (
+from app.domains.financiero.models.contabilidad import (
     CuentaContable,
     TipoCuentaContable,
 )
 
-# ---------------------------------------------------------------------------
-# Datos del plan de cuentas PCESFL 2013 (simplificado)
-# padre_codigo: código del padre, se resuelve dinámicamente al insertar
-# permite_asiento: True solo en cuentas imputables (nivel 3+)
-# ---------------------------------------------------------------------------
 CUENTAS_PCESFL = [
     # GRUPO 1: ACTIVO
     {"codigo": "1",   "nombre": "ACTIVO",                               "tipo": TipoCuentaContable.ACTIVO,      "nivel": 1, "padre_codigo": None,  "permite_asiento": False},
@@ -62,35 +57,22 @@ CUENTAS_PCESFL = [
 
 
 async def cargar_plan_cuentas_esfl(session: AsyncSession) -> int:
-    """Carga el plan de cuentas PCESFL 2013.
-
-    Resuelve la jerarquía padre/hijo dinámicamente por código.
-    Idempotente: omite cuentas que ya existen.
-
-    Returns:
-        Número de cuentas creadas.
-    """
-    # Cargar todas las cuentas existentes en memoria para lookup rápido
+    """Carga el plan de cuentas PCESFL 2013. Idempotente."""
     result = await session.execute(select(CuentaContable))
     existentes: dict[str, CuentaContable] = {
         c.codigo: c for c in result.scalars().all()
     }
 
     creadas = 0
-
     for data in CUENTAS_PCESFL:
         codigo = data["codigo"]
         if codigo in existentes:
             continue
-
-        # Resolver padre_id desde el código del padre
         padre_id = None
-        padre_codigo = data.get("padre_codigo")
-        if padre_codigo:
-            padre = existentes.get(padre_codigo)
+        if data.get("padre_codigo"):
+            padre = existentes.get(data["padre_codigo"])
             if padre:
                 padre_id = padre.id
-
         cuenta = CuentaContable(
             codigo=codigo,
             nombre=data["nombre"],
@@ -101,7 +83,7 @@ async def cargar_plan_cuentas_esfl(session: AsyncSession) -> int:
             es_dotacion=data.get("es_dotacion", False),
         )
         session.add(cuenta)
-        existentes[codigo] = cuenta  # disponible para hijos en la misma pasada
+        existentes[codigo] = cuenta
         creadas += 1
 
     await session.commit()
