@@ -61,6 +61,48 @@ Variables canónicas:
 - Contenedores: `${APP_PREFIX}_backend`, `${APP_PREFIX}_frontend`, `${APP_PREFIX}_db`.
 - Routers Traefik: `${APP_PREFIX}-api` (con `PathPrefix(/api)` y `stripprefix`), `${APP_PREFIX}-web` (host raíz).
 
+## Entorno de desarrollo local — Optiplex-790
+
+El desarrollo activo se realiza sobre un ordenador físico llamado `optiplex-790` en la misma red local, aunque se accede igual que a un servidor remoto: por SSH (VSCode Remote SSH o terminal). **El código fuente vive directamente en el Optiplex**, en `/opt/docker/apps/SIGA`. No hay paso de sincronización de archivos; se edita in-situ.
+
+### Topología del entorno de desarrollo
+
+- Sin Traefik. Los puertos se exponen directamente al host.
+- **Frontend**: Vite dev server (HMR) en `http://optiplex-790:3000`.
+- **Backend**: `uvicorn --reload` en `http://optiplex-790:8000`.
+- **DB**: Postgres en red interna Docker; volumen `pgdata_dev` separado del staging.
+- El proxy de Vite (`/graphql → http://backend:8000`) resuelve el backend por nombre de contenedor dentro de la red Docker interna.
+
+### Arranque
+
+```bash
+# Primera vez o cuando cambien dependencias Python/npm:
+docker compose -f docker-compose.dev.yml up --build
+
+# Resto de veces:
+docker compose -f docker-compose.dev.yml up
+```
+
+### Cómo funciona el hot-reload
+
+| Capa | Mecanismo | Tiempo de recarga |
+|---|---|---|
+| Frontend `.vue`, `.js`, `.css` | Vite HMR vía WebSocket en `:3000` | < 1 s |
+| Backend `.py` (app/) | uvicorn `--reload` con watchfiles | 1-3 s |
+| Migraciones Alembic | Manual: `docker exec siga_dev_backend alembic upgrade head` | — |
+
+Los bind mounts activos:
+- `./backend/app` → `/app/app`
+- `./backend/main.py` → `/app/main.py`
+- `./backend/alembic` → `/app/alembic`
+- `./frontend` → `/app` (completo; `node_modules` en volumen anónimo separado)
+
+### Relación con staging
+
+El push a `master` sigue disparando el pipeline de GitHub Actions que despliega en `vps2.europalaica.org`. El Optiplex y staging son entornos completamente independientes con volúmenes de DB distintos. El flujo normal es: **desarrollar en Optiplex → probar → push a master → staging se actualiza automáticamente**.
+
+---
+
 ## Política de borrado: soft-delete por defecto + papelera + hard-delete restringido
 
 Regla general: **ningún borrado destruye datos por defecto**. Todo modelo que herede `BaseModel` ya incluye `eliminado`/`fecha_eliminacion`/`fecha_modificacion` y se elimina marcando `eliminado=True` (soft-delete).
