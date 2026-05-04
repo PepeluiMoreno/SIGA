@@ -76,8 +76,8 @@ class Query(AuthQuery):
     planificacionesAnuales: list[PlanificacionAnualType] = strawchemy.field()
 
     # === COLABORACIONES ===
-    tiposAsociacion: list[TipoAsociacionType] = strawchemy.field()
-    asociaciones: list[AsociacionType] = strawchemy.field()
+    tiposOrganizacion: list[TipoOrganizacionType] = strawchemy.field()
+    organizaciones: list[OrganizacionType] = strawchemy.field()
     estadosConvenio: list[EstadoConvenioType] = strawchemy.field()
     convenios: list[ConvenioType] = strawchemy.field()
 

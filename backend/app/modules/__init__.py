@@ -74,7 +74,7 @@ from .economico.models import (
 # Colaboraciones domain
 from .organizaciones.models import (
     Asociacion,
-    TipoAsociacion,
+    TipoOrganizacion,
     Convenio,
     EstadoConvenio,
 )
@@ -197,7 +197,7 @@ __all__ = [
     'PlanificacionAnual',
     # Colaboraciones
     'Asociacion',
-    'TipoAsociacion',
+    'TipoOrganizacion',
     'Convenio',
     'EstadoConvenio',
     # Miembros
