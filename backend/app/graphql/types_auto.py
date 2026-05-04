@@ -251,14 +251,14 @@ class PlanificacionAnualType:
 
 
 # === COLABORACIONES ===
-from ..modules.configuracion.models import Asociacion, TipoAsociacion, Convenio, EstadoConvenio
+from ..modules.organizaciones.models import Organizacion, TipoOrganizacion, Convenio, EstadoConvenio
 
-@strawchemy.type(TipoAsociacion, include="all", override=True)
-class TipoAsociacionType:
+@strawchemy.type(TipoOrganizacion, include="all", override=True)
+class TipoOrganizacionType:
     pass
 
-@strawchemy.type(Asociacion, include="all", override=True)
-class AsociacionType:
+@strawchemy.type(Organizacion, include="all", override=True)
+class OrganizacionType:
     pass
 
 @strawchemy.type(EstadoConvenio, include="all", override=True)

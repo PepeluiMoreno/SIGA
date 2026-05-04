@@ -14,7 +14,6 @@ from .estados import (
     EstadoNotificacion,
     HistorialEstado,
 )
-from .colaboraciones import TipoAsociacion, Asociacion, EstadoConvenio, Convenio
 from .organizacion import TipoOrganizacion, Organizacion
 
 __all__ = [
@@ -34,12 +33,7 @@ __all__ = [
     'EstadoDonacion',
     'EstadoNotificacion',
     'HistorialEstado',
-    # Colaboraciones externas
-    'TipoAsociacion',
-    'Asociacion',
-    'EstadoConvenio',
-    'Convenio',
-    # Organizaciones
+    # Organizaciones (re-export from configuracion for compat)
     'TipoOrganizacion',
     'Organizacion',
 ]

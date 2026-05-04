@@ -13,6 +13,10 @@ import strawberry
 from strawberry.types import Info
 
 from .context import Context
+from ..modules.acceso.models.rol import Rol
+from ..modules.acceso.models.rol_transaccion import RolTransaccion
+from ..modules.acceso.models.transaccion import Transaccion
+from ..modules.acceso.models.usuario import UsuarioRol
 
 
 class RequireAuthenticated(strawberry.BasePermission):

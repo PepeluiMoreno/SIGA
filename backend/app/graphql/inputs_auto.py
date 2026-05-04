@@ -1135,36 +1135,36 @@ class PreferenciaNotificacionFilter:
 # COLABORACIONES
 # ============================================================================
 
-from ..modules.configuracion.models import TipoAsociacion, Asociacion, EstadoConvenio, Convenio
+from ..modules.organizaciones.models import TipoOrganizacion, Organizacion, EstadoConvenio, Convenio
 
 
-@strawchemy.input(TipoAsociacion, mode="create_input", include="all", exclude=get_exclude_fields(TipoAsociacion))
-class TipoAsociacionCreateInput:
+@strawchemy.input(TipoOrganizacion, mode="create_input", include="all", exclude=get_exclude_fields(TipoOrganizacion))
+class TipoOrganizacionCreateInput:
     pass
 
 
-@strawchemy.input(TipoAsociacion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TipoAsociacion))
-class TipoAsociacionUpdateInput:
+@strawchemy.input(TipoOrganizacion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TipoOrganizacion))
+class TipoOrganizacionUpdateInput:
     pass
 
 
-@strawchemy.filter(TipoAsociacion)
-class TipoAsociacionFilter:
+@strawchemy.filter(TipoOrganizacion)
+class TipoOrganizacionFilter:
     pass
 
 
-@strawchemy.input(Asociacion, mode="create_input", include="all", exclude=get_exclude_fields(Asociacion))
-class AsociacionCreateInput:
+@strawchemy.input(Organizacion, mode="create_input", include="all", exclude=get_exclude_fields(Organizacion))
+class OrganizacionCreateInput:
     pass
 
 
-@strawchemy.input(Asociacion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Asociacion))
-class AsociacionUpdateInput:
+@strawchemy.input(Organizacion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Organizacion))
+class OrganizacionUpdateInput:
     pass
 
 
-@strawchemy.filter(Asociacion)
-class AsociacionFilter:
+@strawchemy.filter(Organizacion)
+class OrganizacionFilter:
     pass
 
 

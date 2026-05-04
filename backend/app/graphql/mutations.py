@@ -273,13 +273,13 @@ class Mutation(AuthMutation):
     eliminar_preferencias_notificacion: list[PreferenciaNotificacionType] = strawchemy.delete(PreferenciaNotificacionFilter)
 
     # === COLABORACIONES ===
-    crear_tipo_asociacion: TipoAsociacionType = strawchemy.create(TipoAsociacionCreateInput)
-    actualizar_tipo_asociacion: TipoAsociacionType = strawchemy.update_by_ids(TipoAsociacionUpdateInput)
-    eliminar_tipos_asociacion: list[TipoAsociacionType] = strawchemy.delete(TipoAsociacionFilter)
+    crear_tipo_asociacion: TipoOrganizacionType = strawchemy.create(TipoOrganizacionCreateInput)
+    actualizar_tipo_asociacion: TipoOrganizacionType = strawchemy.update_by_ids(TipoOrganizacionUpdateInput)
+    eliminar_tipos_asociacion: list[TipoOrganizacionType] = strawchemy.delete(TipoOrganizacionFilter)
 
-    crear_asociacion: AsociacionType = strawchemy.create(AsociacionCreateInput)
-    actualizar_asociacion: AsociacionType = strawchemy.update_by_ids(AsociacionUpdateInput)
-    eliminar_asociaciones: list[AsociacionType] = strawchemy.delete(AsociacionFilter)
+    crear_organizacion: OrganizacionType = strawchemy.create(OrganizacionCreateInput)
+    actualizar_organizacion: OrganizacionType = strawchemy.update_by_ids(OrganizacionUpdateInput)
+    eliminar_organizaciones: list[OrganizacionType] = strawchemy.delete(OrganizacionFilter)
 
     crear_estado_convenio: EstadoConvenioType = strawchemy.create(EstadoConvenioCreateInput)
     actualizar_estado_convenio: EstadoConvenioType = strawchemy.update_by_ids(EstadoConvenioUpdateInput)

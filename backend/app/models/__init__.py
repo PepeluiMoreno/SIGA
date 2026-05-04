@@ -27,9 +27,11 @@ from ..modules.configuracion.models import (
     EstadoBase, EstadoCuota, EstadoCampania, EstadoTarea,
     EstadoActividad, EstadoParticipante, EstadoOrdenCobro,
     EstadoRemesa, EstadoDonacion, EstadoNotificacion, HistorialEstado,
-    TipoAsociacion, Asociacion, EstadoConvenio, Convenio,
     TipoOrganizacion, Organizacion,
 )
+
+# Organizaciones
+from ..modules.organizaciones.models import EstadoConvenio, Convenio
 
 # Membresía
 from ..modules.membresia.models import (

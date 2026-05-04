@@ -35,7 +35,7 @@ from .core.comunicacion import (
     PreferenciaNotificacion,
 )
 
-# Configuración: parámetros, estados, catálogos, organizaciones
+# Configuración: parámetros, estados, catálogos
 from .configuracion.models import (
     Configuracion,
     ReglaValidacionConfig,
@@ -51,12 +51,14 @@ from .configuracion.models import (
     EstadoDonacion,
     EstadoNotificacion,
     HistorialEstado,
-    TipoAsociacion,
-    Asociacion,
-    EstadoConvenio,
-    Convenio,
+)
+
+# Organizaciones: convenios, tipos
+from .organizaciones.models import (
     TipoOrganizacion,
     Organizacion,
+    EstadoConvenio,
+    Convenio,
 )
 
 # Membresía: miembros, voluntariado, traslados
@@ -173,8 +175,8 @@ __all__ = [
     'EstadoBase', 'EstadoCuota', 'EstadoCampania', 'EstadoTarea',
     'EstadoActividad', 'EstadoParticipante', 'EstadoOrdenCobro',
     'EstadoRemesa', 'EstadoDonacion', 'EstadoNotificacion', 'HistorialEstado',
-    'TipoAsociacion', 'Asociacion', 'EstadoConvenio', 'Convenio',
-    'TipoOrganizacion', 'Organizacion',
+    # Organizaciones
+    'TipoOrganizacion', 'Organizacion', 'EstadoConvenio', 'Convenio',
     # Membresía
     'TipoMiembro', 'EstadoMiembro', 'MotivoBaja', 'Miembro',
     'TipoCargo', 'Skill', 'MiembroSkill', 'FranjaDisponibilidad',
