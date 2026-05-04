@@ -1,0 +1,74 @@
+services:
+  backend:
+    build: ./backend
+    container_name: siga_dev_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/app/app       # hot-reload del código fuente
+      - ./backend/main.py:/app/main.py
+      - ./backend/alembic:/app/alembic
+    command: >
+      sh -c "python -m app.scripts.wait_for_db &&
+             alembic upgrade head &&
+             python -m app.scripts.bootstrap &&
+             exec uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+
+  frontend:
+    image: node:22-alpine
+    container_name: siga_dev_frontend
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - frontend_modules:/app/node_modules  # node_modules aislados del host
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      - VITE_BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - internal
+
+  db:
+    image: postgres:17-alpine
+    container_name: siga_dev_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      - internal
+
+networks:
+  internal:
+
+volumes:
+  pgdata_dev:
+  frontend_modules:
