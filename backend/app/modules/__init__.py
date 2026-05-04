@@ -73,7 +73,7 @@ from .economico.models import (
 
 # Colaboraciones domain
 from .organizaciones.models import (
-    Asociacion,
+    Organizacion,
     TipoOrganizacion,
     Convenio,
     EstadoConvenio,
