@@ -47,77 +47,32 @@
             </ul>
           </div>
 
-          <!-- Militancia -->
+          <!-- Membresía -->
           <div class="mb-5">
             <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 px-3">
-              Militancia
+              Membresía
             </h2>
             <ul class="space-y-1">
               <li>
-                <router-link
-                  to="/miembros"
+                <router-link to="/miembros"
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path.startsWith('/miembros') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
-                >
+                  :class="$route.path.startsWith('/miembros') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
                   <UserIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Miembros</span>
                 </router-link>
               </li>
               <li>
-                <router-link
-                  to="/agrupaciones"
+                <router-link to="/agrupaciones"
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path.startsWith('/agrupaciones') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
-                >
+                  :class="$route.path.startsWith('/agrupaciones') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
                   <MapPinIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Agrupaciones</span>
                 </router-link>
               </li>
-            </ul>
-          </div>
-
-          <!-- Actividad -->
-          <div class="mb-5">
-            <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 px-3">
-              Actividad
-            </h2>
-            <ul class="space-y-1">
               <li>
-                <router-link
-                  to="/campanias"
+                <router-link to="/voluntarios"
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path.startsWith('/campanias') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
-                >
-                  <FlagIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
-                  <span>Campañas</span>
-                </router-link>
-              </li>
-              <li>
-                <router-link
-                  to="/eventos"
-                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path.startsWith('/eventos') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
-                >
-                  <CalendarDaysIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
-                  <span>Eventos</span>
-                </router-link>
-              </li>
-              <li>
-                <router-link
-                  to="/grupos"
-                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path.startsWith('/grupos') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
-                >
-                  <UserGroupIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
-                  <span>Grupos de Trabajo</span>
-                </router-link>
-              </li>
-              <li>
-                <router-link
-                  to="/voluntarios"
-                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path.startsWith('/voluntarios') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
-                >
+                  :class="$route.path.startsWith('/voluntarios') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
                   <HeartIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Voluntarios</span>
                 </router-link>
@@ -125,18 +80,58 @@
             </ul>
           </div>
 
-          <!-- Contable -->
+          <!-- Actividades -->
           <div class="mb-5">
             <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 px-3">
-              Gestión Económico-Financiera
+              Actividades
             </h2>
             <ul class="space-y-1">
               <li>
-                <router-link
-                  to="/financiero"
+                <router-link to="/grupos"
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path.startsWith('/financiero') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
-                >
+                  :class="$route.path.startsWith('/grupos') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
+                  <UserGroupIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
+                  <span>Grupos de Trabajo</span>
+                </router-link>
+              </li>
+              <li>
+                <router-link to="/eventos"
+                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                  :class="$route.path.startsWith('/eventos') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
+                  <CalendarDaysIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
+                  <span>Eventos</span>
+                </router-link>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Comunicaciones -->
+          <div class="mb-5">
+            <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 px-3">
+              Comunicaciones
+            </h2>
+            <ul class="space-y-1">
+              <li>
+                <router-link to="/campanias"
+                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                  :class="$route.path.startsWith('/campanias') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
+                  <FlagIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
+                  <span>Campañas</span>
+                </router-link>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Económico -->
+          <div class="mb-5">
+            <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 px-3">
+              Económico
+            </h2>
+            <ul class="space-y-1">
+              <li>
+                <router-link to="/financiero"
+                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                  :class="$route.path.startsWith('/financiero') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
                   <BanknotesIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Gestión Financiera</span>
                 </router-link>
@@ -144,58 +139,57 @@
             </ul>
           </div>
 
-          <!-- Administración -->
-          <div class="mb-6">
-            <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3 px-3">
-              Administración
+          <!-- Acceso -->
+          <div class="mb-5">
+            <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 px-3">
+              Acceso
             </h2>
             <ul class="space-y-1">
               <li>
-                <router-link
-                  to="/usuarios"
+                <router-link to="/usuarios"
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path === '/usuarios' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
-                >
+                  :class="$route.path.startsWith('/usuarios') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
                   <UsersIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Usuarios</span>
                 </router-link>
               </li>
               <li>
-                <router-link
-                  to="/roles"
+                <router-link to="/roles"
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path === '/roles' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
-                >
+                  :class="$route.path.startsWith('/roles') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
                   <KeyIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Roles</span>
                 </router-link>
               </li>
               <li>
-                <router-link
-                  to="/transacciones"
+                <router-link to="/transacciones"
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path === '/transacciones' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
-                >
+                  :class="$route.path.startsWith('/transacciones') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
                   <ListBulletIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Transacciones</span>
                 </router-link>
               </li>
               <li>
-                <router-link
-                  to="/auditoria"
+                <router-link to="/auditoria"
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path === '/auditoria' ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
-                >
+                  :class="$route.path.startsWith('/auditoria') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
                   <ClipboardDocumentListIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Auditoría</span>
                 </router-link>
               </li>
+            </ul>
+          </div>
+
+          <!-- Configuración -->
+          <div class="mb-6">
+            <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 px-3">
+              Configuración
+            </h2>
+            <ul class="space-y-1">
               <li>
-                <router-link
-                  to="/parametrizacion"
+                <router-link to="/parametrizacion"
                   class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path.startsWith('/parametrizacion') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'"
-                >
+                  :class="$route.path.startsWith('/parametrizacion') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
                   <AdjustmentsHorizontalIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Parametrización</span>
                 </router-link>
