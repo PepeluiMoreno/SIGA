@@ -84,6 +84,138 @@ def create_input_classes(model_class: Type, class_name_prefix: str):
 
 
 # ============================================================================
+# ACCESO - Roles, transacciones, funcionalidades
+# ============================================================================
+
+from ..modules.acceso.models import (
+    Rol,
+    Transaccion,
+    RolTransaccion,
+    Funcionalidad,
+    RolFuncionalidad,
+    FuncionalidadTransaccion,
+    UsuarioRol,
+)
+
+
+@strawchemy.input(Rol, mode="create_input", include="all", exclude=get_exclude_fields(Rol))
+class RolCreateInput:
+    pass
+
+
+@strawchemy.input(Rol, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Rol))
+class RolUpdateInput:
+    pass
+
+
+@strawchemy.filter(Rol, include="all")
+class RolFilter:
+    pass
+
+
+@strawchemy.input(Transaccion, mode="create_input", include="all", exclude=get_exclude_fields(Transaccion))
+class TransaccionCreateInput:
+    pass
+
+
+@strawchemy.input(Transaccion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Transaccion))
+class TransaccionUpdateInput:
+    pass
+
+
+@strawchemy.filter(Transaccion, include="all")
+class TransaccionFilter:
+    pass
+
+
+@strawchemy.input(RolTransaccion, mode="create_input", include="all", exclude=get_exclude_fields(RolTransaccion))
+class RolTransaccionCreateInput:
+    pass
+
+
+@strawchemy.filter(RolTransaccion, include="all")
+class RolTransaccionFilter:
+    pass
+
+
+@strawchemy.input(Funcionalidad, mode="create_input", include="all", exclude=get_exclude_fields(Funcionalidad))
+class FuncionalidadCreateInput:
+    pass
+
+
+@strawchemy.input(Funcionalidad, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Funcionalidad))
+class FuncionalidadUpdateInput:
+    pass
+
+
+@strawchemy.filter(Funcionalidad, include="all")
+class FuncionalidadFilter:
+    pass
+
+
+@strawchemy.input(RolFuncionalidad, mode="create_input", include="all", exclude=get_exclude_fields(RolFuncionalidad))
+class RolFuncionalidadCreateInput:
+    pass
+
+
+@strawchemy.filter(RolFuncionalidad, include="all")
+class RolFuncionalidadFilter:
+    pass
+
+
+@strawchemy.input(FuncionalidadTransaccion, mode="create_input", include="all", exclude=get_exclude_fields(FuncionalidadTransaccion))
+class FuncionalidadTransaccionCreateInput:
+    pass
+
+
+@strawchemy.filter(FuncionalidadTransaccion, include="all")
+class FuncionalidadTransaccionFilter:
+    pass
+
+
+@strawchemy.input(UsuarioRol, mode="create_input", include="all", exclude=get_exclude_fields(UsuarioRol))
+class UsuarioRolCreateInput:
+    pass
+
+
+@strawchemy.filter(UsuarioRol, include="all")
+class UsuarioRolFilter:
+    pass
+
+
+# ============================================================================
+# MEMBRESIA - Junta directiva
+# ============================================================================
+
+from ..modules.membresia.models import JuntaDirectiva, CargoJunta, HistorialCargoJunta, TipoCargoRol
+
+
+@strawchemy.input(JuntaDirectiva, mode="create_input", include="all", exclude=get_exclude_fields(JuntaDirectiva))
+class JuntaDirectivaCreateInput:
+    pass
+
+
+@strawchemy.filter(JuntaDirectiva, include="all")
+class JuntaDirectivaFilter:
+    pass
+
+
+@strawchemy.input(CargoJunta, mode="create_input", include="all", exclude=get_exclude_fields(CargoJunta))
+class CargoJuntaCreateInput:
+    pass
+
+
+@strawchemy.filter(CargoJunta, include="all")
+class CargoJuntaFilter:
+    pass
+
+
+@strawchemy.filter(HistorialCargoJunta, include="all")
+class HistorialCargoJuntaFilter:
+    pass
+
+
+# ============================================================================
 # CORE - Estados
 # ============================================================================
 

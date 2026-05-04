@@ -58,6 +58,9 @@ class UsuarioRol(BaseModel):
         Uuid, ForeignKey("agrupaciones_territoriales.id"), nullable=True, index=True
     )
 
+    # Permite desactivar la asignación sin eliminarla (útil para suspensiones temporales)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
+
     usuario: Mapped["Usuario"] = relationship(
         back_populates="roles",
         foreign_keys=[usuario_id],

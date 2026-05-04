@@ -8,6 +8,8 @@ from ..infrastructure.base_model import Base
 # Acceso
 from ..modules.acceso.models import (
     Transaccion, Rol, TipoRol, RolTransaccion,
+    Funcionalidad, RolFuncionalidad, FuncionalidadTransaccion,
+    FlujoAprobacion, AmbitoTransaccion,
     LogAuditoria, TipoAccion,
     Usuario, UsuarioRol,
     Sesion, HistorialSeguridad, IPBloqueada, IntentoAcceso,
@@ -19,11 +21,6 @@ from ..modules.core.geografico import Pais, Provincia, Municipio, Direccion, Agr
 # Core - Comunicación
 from ..modules.core.comunicacion import TipoNotificacion, Notificacion, PreferenciaNotificacion
 
-<<<<<<< HEAD
-# Dominio Financiero (nuevos modelos)
-from ..modules.economico.models import (
-    ImporteCuotaAnio, CuotaAnual, ModoIngreso,
-=======
 # Configuración
 from ..modules.configuracion.models import (
     Configuracion, ReglaValidacionConfig, HistorialConfiguracion,
@@ -63,7 +60,6 @@ from ..modules.economico.models import (
     TipoCuentaContable, TipoAsientoContable, EstadoAsientoContable,
     CuentaContable, AsientoContable, ApunteContable, BalanceContable,
     ModoIngreso, ImporteCuotaAnio, CuotaAnual,
->>>>>>> daab14f (redistribucion modules backend y completar modulo accesos, primera fase)
     DonacionConcepto, Donacion,
     Remesa, OrdenCobro,
     EstadoPlanificacion, CategoriaPartida, PartidaPresupuestaria, PlanificacionAnual,

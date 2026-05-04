@@ -274,6 +274,7 @@ class ConvenioType:
 from ..modules.membresia.models import (
     TipoMiembro, Miembro, EstadoMiembro, MotivoBaja, TipoCargo, MiembroSegmentacion,
     Skill, MiembroSkill, FranjaDisponibilidad, HistorialAgrupacion, SolicitudTraslado,
+    JuntaDirectiva, CargoJunta, HistorialCargoJunta, TipoCargoRol,
 )
 
 @strawchemy.type(TipoMiembro, include="all", override=True)
@@ -291,6 +292,24 @@ class MotivoBajaType:
 @strawchemy.type(TipoCargo, include="all", override=True)
 class TipoCargoType:
     pass
+
+@strawchemy.type(TipoCargoRol, include="all", override=True)
+class TipoCargoRolType:
+    pass
+
+@strawchemy.type(JuntaDirectiva, include="all", override=True)
+class JuntaDirectivaType:
+    pass
+
+@strawchemy.type(CargoJunta, include="all", override=True)
+class CargoJuntaType:
+    tipo_cargo: Optional['TipoCargoType'] = None
+    miembro: Optional['MiembroType'] = None
+
+@strawchemy.type(HistorialCargoJunta, include="all", override=True)
+class HistorialCargoJuntaType:
+    tipo_cargo: Optional['TipoCargoType'] = None
+    miembro: Optional['MiembroType'] = None
 
 @strawchemy.type(Miembro, include="all", override=True)
 class MiembroType:

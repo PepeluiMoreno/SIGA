@@ -4,6 +4,7 @@ from .miembro import TipoMiembro, Miembro
 from .estado_miembro import EstadoMiembro
 from .motivo_baja import MotivoBaja
 from .tipo_cargo import TipoCargo
+from .junta import JuntaDirectiva, CargoJunta, HistorialCargoJunta, TipoCargoRol
 from .skill import Skill, MiembroSkill
 from .disponibilidad import FranjaDisponibilidad
 from .historial_agrupacion import HistorialAgrupacion
@@ -25,6 +26,10 @@ __all__ = [
     'EstadoMiembro',
     'MotivoBaja',
     'TipoCargo',
+    'JuntaDirectiva',
+    'CargoJunta',
+    'HistorialCargoJunta',
+    'TipoCargoRol',
     'Skill',
     'MiembroSkill',
     'FranjaDisponibilidad',

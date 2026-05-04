@@ -1,4 +1,4 @@
-""Servicio de contabilidad para gestión de asientos y plan de cuentas."""
+"""Servicio de contabilidad para gestión de asientos y plan de cuentas."""
 
 from datetime import date
 from decimal import Decimal

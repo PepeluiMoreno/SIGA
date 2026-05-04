@@ -35,25 +35,6 @@ from .core.comunicacion import (
     PreferenciaNotificacion,
 )
 
-<<<<<<< HEAD
-# Financiero domain
-from .economico.models import (
-    ImporteCuotaAnio,
-    CuotaAnual,
-    DonacionConcepto,
-    Donacion,
-    Remesa,
-    OrdenCobro,
-    EstadoPlanificacion,
-    CategoriaPartida,
-    PartidaPresupuestaria,
-    PlanificacionAnual,
-)
-
-# Colaboraciones domain
-from .colaboraciones.models import (
-    Asociacion,
-=======
 # Configuración: parámetros, estados, catálogos, organizaciones
 from .configuracion.models import (
     Configuracion,
@@ -70,7 +51,6 @@ from .configuracion.models import (
     EstadoDonacion,
     EstadoNotificacion,
     HistorialEstado,
->>>>>>> daab14f (redistribucion modules backend y completar modulo accesos, primera fase)
     TipoAsociacion,
     Asociacion,
     EstadoConvenio,

@@ -129,7 +129,7 @@ class ConciliacionBancaria(BaseModel):
     
     # Estado de conciliación
     conciliado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    fecha_conciliacion: Mapped[Optional[datetime] = mapped_column(DateTime, nullable=True)
+    fecha_conciliacion: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     
     # Diferencias
     diferencia: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal('0.00'), nullable=False)

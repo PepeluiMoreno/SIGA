@@ -190,6 +190,3 @@ class BalanceContable(BaseModel):
         return self.total_debe == self.total_haber
 
 
-en vivo
-
-Saltar a en vivo

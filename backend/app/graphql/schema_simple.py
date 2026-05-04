@@ -90,7 +90,13 @@ class Query(AuthQuery):
     estadosMiembro: list[EstadoMiembroType] = strawchemy.field()
     motivosBaja: list[MotivoBajaType] = strawchemy.field()
     tiposCargo: list[TipoCargoType] = strawchemy.field()
+    tiposCargoRoles: list[TipoCargoRolType] = strawchemy.field()
     miembros: list[MiembroType] = strawchemy.field(filter_input=MiembroFilter)
+
+    # === JUNTA DIRECTIVA ===
+    juntasDirectivas: list[JuntaDirectivaType] = strawchemy.field(filter_input=JuntaDirectivaFilter)
+    cargosJunta: list[CargoJuntaType] = strawchemy.field(filter_input=CargoJuntaFilter)
+    historialCargosJunta: list[HistorialCargoJuntaType] = strawchemy.field(filter_input=HistorialCargoJuntaFilter)
 
     # === MILITANCIA ===
     skills: list[SkillType] = strawchemy.field()

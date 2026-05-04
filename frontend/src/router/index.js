@@ -1,17 +1,28 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useDebugStore } from '@/stores/debug.js'
 
-// Importa las vistas
+// Vistas globales (no pertenecen a un módulo específico)
 import Dashboard from '@/views/Dashboard.vue'
 import Login from '@/views/Login.vue'
-import ListaMiembros from '@/views/miembros/ListaMiembros.vue'
-import ListaAgrupaciones from '@/views/miembros/ListaAgrupaciones.vue'
-import ListaCampanias from '@/views/campanias/ListaCampanias.vue'
-import ListaGrupos from '@/views/grupos/ListaGrupos.vue'
-import ListaFinanciero from '@/views/financiero/ListaFinanciero.vue'
-import ListaVoluntarios from '@/views/voluntariado/ListaVoluntarios.vue'
-import ListaUsuarios from '@/views/usuarios/ListaUsuarios.vue'
-import ParametrizacionIndex from '@/views/parametrizacion/ParametrizacionIndex.vue'
+
+// === Módulo: ACCESO ===
+import ListaUsuarios from '@/modules/acceso/views/ListaUsuarios.vue'
+
+// === Módulo: MEMBRESIA ===
+import ListaMiembros from '@/modules/membresia/views/ListaMiembros.vue'
+import ListaAgrupaciones from '@/modules/membresia/views/ListaAgrupaciones.vue'
+
+// === Módulo: ACTIVIDADES ===
+import ListaGrupos from '@/modules/actividades/views/ListaGrupos.vue'
+
+// === Módulo: ECONOMICO ===
+import ListaFinanciero from '@/modules/economico/views/ListaFinanciero.vue'
+
+// === Módulo: MEMBRESIA - Voluntariado ===
+import ListaVoluntarios from '@/modules/membresia/views/ListaVoluntarios.vue'
+
+// === Módulo: CONFIGURACION ===
+import ParametrizacionIndex from '@/modules/configuracion/views/ParametrizacionIndex.vue'
 
 // Configuración de rutas
 const routes = [
@@ -27,10 +38,62 @@ const routes = [
     name: 'Login',
     meta: { guest: true }
   },
+
+  // ─── ACCESO ───────────────────────────────────────────────────────────────
+  {
+    path: '/usuarios',
+    component: ListaUsuarios,
+    name: 'Usuarios',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/usuarios/crear',
+    component: () => import('@/modules/acceso/views/CrearUsuario.vue'),
+    name: 'CrearUsuario',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/roles',
+    component: () => import('@/modules/acceso/views/ListaRoles.vue'),
+    name: 'Roles',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/roles/:id/editor',
+    component: () => import('@/modules/acceso/views/EditorRol.vue'),
+    name: 'EditorRol',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/roles/:id/permisos',
+    component: () => import('@/modules/acceso/views/PermisosRol.vue'),
+    name: 'PermisosRol',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/transacciones',
+    component: () => import('@/modules/acceso/views/ListaTransacciones.vue'),
+    name: 'Transacciones',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/auditoria',
+    component: () => import('@/modules/acceso/views/LogAuditoria.vue'),
+    name: 'Auditoria',
+    meta: { requiresAuth: true }
+  },
+
+  // ─── MEMBRESIA ────────────────────────────────────────────────────────────
   {
     path: '/miembros',
     component: ListaMiembros,
     name: 'Miembros',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/miembros/:id',
+    component: () => import('@/modules/membresia/views/DetalleMiembro.vue'),
+    name: 'DetalleMiembro',
     meta: { requiresAuth: true }
   },
   {
@@ -40,34 +103,9 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/campanias',
-    component: ListaCampanias,
-    name: 'Campañas',
-    meta: { requiresAuth: true }
-  },
-  // Rutas de Eventos
-  {
-    path: '/eventos',
-    component: () => import('@/views/eventos/ListaEventos.vue'),
-    name: 'Eventos',
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/eventos/:id',
-    component: () => import('@/views/eventos/DetalleEvento.vue'),
-    name: 'DetalleEvento',
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/grupos',
-    component: ListaGrupos,
-    name: 'Grupos',
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/financiero',
-    component: ListaFinanciero,
-    name: 'Financiero',
+    path: '/agrupaciones/:id/junta',
+    component: () => import('@/modules/acceso/views/GestionJunta.vue'),
+    name: 'GestionJunta',
     meta: { requiresAuth: true }
   },
   {
@@ -76,76 +114,70 @@ const routes = [
     name: 'Voluntarios',
     meta: { requiresAuth: true }
   },
+
+  // ─── ACTIVIDADES / GRUPOS ─────────────────────────────────────────────────
   {
-    path: '/usuarios',
-    component: ListaUsuarios,
-    name: 'Usuarios',
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/miembros/:id',
-    component: () => import('@/views/miembros/DetalleMiembro.vue'),
-    name: 'DetalleMiembro',
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/campanias/:id',
-    component: () => import('@/views/campanias/DetalleCampania.vue'),
-    name: 'DetalleCampania',
+    path: '/grupos',
+    component: ListaGrupos,
+    name: 'Grupos',
     meta: { requiresAuth: true }
   },
   {
     path: '/grupos/:id',
-    component: () => import('@/views/grupos/DetalleGrupo.vue'),
+    component: () => import('@/modules/actividades/views/DetalleGrupo.vue'),
     name: 'DetalleGrupo',
     meta: { requiresAuth: true }
   },
-    {
+  {
+    path: '/eventos',
+    component: () => import('@/modules/actividades/views/ListaEventos.vue'),
+    name: 'Eventos',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/eventos/:id',
+    component: () => import('@/modules/actividades/views/DetalleEvento.vue'),
+    name: 'DetalleEvento',
+    meta: { requiresAuth: true }
+  },
+
+  // ─── COMUNICACIONES ───────────────────────────────────────────────────────
+  {
+    path: '/campanias',
+    component: () => import('@/modules/comunicaciones/views/ListaCampanias.vue'),
+    name: 'Campañas',
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/campanias/nueva',
-    component: () => import('@/views/campanias/CampaniaForm.vue'),
+    component: () => import('@/modules/comunicaciones/views/CampaniaForm.vue'),
     name: 'NuevaCampania',
     meta: { requiresAuth: true }
   },
   {
     path: '/campanias/:id',
-    component: () => import('@/views/campanias/DetalleCampania.vue'),
+    component: () => import('@/modules/comunicaciones/views/DetalleCampania.vue'),
     name: 'DetalleCampania',
     meta: { requiresAuth: true },
     props: true
   },
   {
     path: '/campanias/:id/editar',
-    component: () => import('@/views/campanias/CampaniaForm.vue'),
+    component: () => import('@/modules/comunicaciones/views/CampaniaForm.vue'),
     name: 'EditarCampania',
     meta: { requiresAuth: true },
     props: true
   },
-  // Rutas de Administración
+
+  // ─── ECONOMICO ────────────────────────────────────────────────────────────
   {
-    path: '/roles/:id/permisos',
-    component: () => import('@/views/administracion/PermisosRol.vue'),
-    name: 'PermisosRol',
+    path: '/financiero',
+    component: ListaFinanciero,
+    name: 'Financiero',
     meta: { requiresAuth: true }
   },
-  {
-    path: '/roles',
-    component: () => import('@/views/administracion/ListaRoles.vue'),
-    name: 'Roles',
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/transacciones',
-    component: () => import('@/views/administracion/ListaTransacciones.vue'),
-    name: 'Transacciones',
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/auditoria',
-    component: () => import('@/views/administracion/LogAuditoria.vue'),
-    name: 'Auditoria',
-    meta: { requiresAuth: true }
-  },
-  // Rutas de Parametrización
+
+  // ─── CONFIGURACION ────────────────────────────────────────────────────────
   {
     path: '/parametrizacion',
     component: ParametrizacionIndex,
@@ -154,25 +186,25 @@ const routes = [
   },
   {
     path: '/parametrizacion/tipos-miembro',
-    component: () => import('@/views/parametrizacion/catalogos/TiposMiembro.vue'),
+    component: () => import('@/modules/configuracion/views/catalogos/TiposMiembro.vue'),
     name: 'TiposMiembro',
     meta: { requiresAuth: true }
   },
   {
     path: '/parametrizacion/estados-miembro',
-    component: () => import('@/views/parametrizacion/catalogos/EstadosMiembro.vue'),
+    component: () => import('@/modules/configuracion/views/catalogos/EstadosMiembro.vue'),
     name: 'EstadosMiembro',
     meta: { requiresAuth: true }
   },
   {
     path: '/parametrizacion/motivos-baja',
-    component: () => import('@/views/parametrizacion/catalogos/MotivosBaja.vue'),
+    component: () => import('@/modules/configuracion/views/catalogos/MotivosBaja.vue'),
     name: 'MotivosBaja',
     meta: { requiresAuth: true }
   },
   {
     path: '/parametrizacion/estados-cuota',
-    component: () => import('@/views/parametrizacion/catalogos/EstadosCuota.vue'),
+    component: () => import('@/modules/configuracion/views/catalogos/EstadosCuota.vue'),
     name: 'EstadosCuota',
     meta: { requiresAuth: true }
   }

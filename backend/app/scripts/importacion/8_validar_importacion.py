@@ -17,13 +17,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select, func, text
 
 from app.core.database import get_database_url
-<<<<<<< HEAD
 from app.modules.geografico.models.direccion import Pais, Provincia, AgrupacionTerritorial
-from app.modules.miembros.models.miembro import Miembro, TipoMiembro
-=======
 from app.modules.core.geografico.direccion import Pais, Provincia, AgrupacionTerritorial
 from app.modules.membresia.models.miembro import Miembro, TipoMiembro
->>>>>>> daab14f (redistribucion modules backend y completar modulo accesos, primera fase)
 from app.modules.economico.models.cuotas import CuotaAnual, ImporteCuotaAnio
 from app.modules.core.models.estados import EstadoCuota
 

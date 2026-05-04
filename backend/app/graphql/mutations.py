@@ -20,6 +20,28 @@ from .inputs_auto import *
 class Mutation(AuthMutation):
     """Mutations GraphQL del sistema SIGA con generación automática."""
 
+    # === ACCESO: roles, transacciones, funcionalidades ===
+    crear_rol: RolType = strawchemy.create(RolCreateInput)
+    actualizar_rol: RolType = strawchemy.update_by_ids(RolUpdateInput)
+    eliminar_roles: list[RolType] = strawchemy.delete(RolFilter)
+
+    crear_transaccion: TransaccionType = strawchemy.create(TransaccionCreateInput)
+    actualizar_transaccion: TransaccionType = strawchemy.update_by_ids(TransaccionUpdateInput)
+    eliminar_transacciones: list[TransaccionType] = strawchemy.delete(TransaccionFilter)
+
+    crear_rol_transaccion: RolTransaccionType = strawchemy.create(RolTransaccionCreateInput)
+    eliminar_roles_transacciones: list[RolTransaccionType] = strawchemy.delete(RolTransaccionFilter)
+
+    crear_funcionalidad: FuncionalidadType = strawchemy.create(FuncionalidadCreateInput)
+    actualizar_funcionalidad: FuncionalidadType = strawchemy.update_by_ids(FuncionalidadUpdateInput)
+    eliminar_funcionalidades: list[FuncionalidadType] = strawchemy.delete(FuncionalidadFilter)
+
+    crear_rol_funcionalidad: RolFuncionalidadType = strawchemy.create(RolFuncionalidadCreateInput)
+    eliminar_roles_funcionalidades: list[RolFuncionalidadType] = strawchemy.delete(RolFuncionalidadFilter)
+
+    crear_usuario_rol: UsuarioRolType = strawchemy.create(UsuarioRolCreateInput)
+    eliminar_usuarios_roles: list[UsuarioRolType] = strawchemy.delete(UsuarioRolFilter)
+
     # === CORE - Estados ===
     crear_estado_cuota: EstadoCuotaType = strawchemy.create(EstadoCuotaCreateInput)
     actualizar_estado_cuota: EstadoCuotaType = strawchemy.update_by_ids(EstadoCuotaUpdateInput)

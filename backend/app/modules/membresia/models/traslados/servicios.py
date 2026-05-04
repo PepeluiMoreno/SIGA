@@ -212,6 +212,6 @@ class ServicioTraslados:
         miembro_id: int,
         agrupacion_origen_id: int
     ) -> List[Equipo]:
-        """
-        Dar de baja al miembro de todos los equipos de trabajo 
-        que pertenez
+        """Dar de baja al miembro de todos los equipos de trabajo de la agrupación origen."""
+        # TODO: implementar lógica de baja en equipos territoriales
+        return []
