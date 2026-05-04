@@ -196,7 +196,7 @@ __all__ = [
     'PartidaPresupuestaria',
     'PlanificacionAnual',
     # Colaboraciones
-    'Asociacion',
+    'Organizacion',
     'TipoOrganizacion',
     'Convenio',
     'EstadoConvenio',

@@ -1021,17 +1021,17 @@ class TipoOrganizacionFilter:
     pass
 
 
-@strawchemy.input(Asociacion, mode="create_input", include="all", exclude=get_exclude_fields(Asociacion))
+@strawchemy.input(Organizacion, mode="create_input", include="all", exclude=get_exclude_fields(Asociacion))
 class OrganizacionCreateInput:
     pass
 
 
-@strawchemy.input(Asociacion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Asociacion))
+@strawchemy.input(Organizacion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Asociacion))
 class OrganizacionUpdateInput:
     pass
 
 
-@strawchemy.filter(Asociacion)
+@strawchemy.filter(Organizacion)
 class OrganizacionFilter:
     pass
 
