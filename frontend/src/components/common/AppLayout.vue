@@ -47,6 +47,76 @@
             </ul>
           </div>
 
+          <!-- Configuración -->
+          <div class="mb-5">
+            <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 px-3">
+              Configuración
+            </h2>
+            <ul class="space-y-1">
+              <li>
+                <router-link to="/parametrizacion/sistema"
+                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                  :class="$route.path.startsWith('/parametrizacion/sistema') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
+                  <AdjustmentsHorizontalIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
+                  <span>Configuración del Sistema</span>
+                </router-link>
+              </li>
+              <li>
+                <router-link to="/parametrizacion/catalogos"
+                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                  :class="$route.path.startsWith('/parametrizacion/catalogos') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
+                  <ListBulletIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
+                  <span>Catálogos</span>
+                </router-link>
+              </li>
+              <li>
+                <router-link to="/parametrizacion/colaboraciones"
+                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                  :class="$route.path.startsWith('/parametrizacion/colaboraciones') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
+                  <LinkIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
+                  <span>Colaboraciones</span>
+                </router-link>
+              </li>
+
+              <!-- Sub-sección: Control de Acceso -->
+              <li class="pt-3 pb-1">
+                <span class="text-xs font-medium text-purple-500 uppercase tracking-wider px-3">Control de Acceso</span>
+              </li>
+              <li>
+                <router-link to="/usuarios"
+                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                  :class="$route.path.startsWith('/usuarios') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
+                  <UsersIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
+                  <span>Usuarios</span>
+                </router-link>
+              </li>
+              <li>
+                <router-link to="/roles"
+                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                  :class="$route.path.startsWith('/roles') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
+                  <KeyIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
+                  <span>Roles y Permisos</span>
+                </router-link>
+              </li>
+              <li>
+                <router-link to="/transacciones"
+                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                  :class="$route.path.startsWith('/transacciones') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
+                  <ListBulletIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
+                  <span>Catálogo RBAC</span>
+                </router-link>
+              </li>
+              <li>
+                <router-link to="/auditoria"
+                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
+                  :class="$route.path.startsWith('/auditoria') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
+                  <ClipboardDocumentListIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
+                  <span>Auditoría</span>
+                </router-link>
+              </li>
+            </ul>
+          </div>
+
           <!-- Membresía -->
           <div class="mb-5">
             <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 px-3">
@@ -122,7 +192,7 @@
           </div>
 
           <!-- Económico -->
-          <div class="mb-5">
+          <div class="mb-6">
             <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 px-3">
               Económico
             </h2>
@@ -173,76 +243,6 @@
                   :class="$route.path.startsWith('/economico/donaciones') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
                   <GiftIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
                   <span>Donaciones</span>
-                </router-link>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Configuración -->
-          <div class="mb-6">
-            <h2 class="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 px-3">
-              Configuración
-            </h2>
-            <ul class="space-y-1">
-              <li>
-                <router-link to="/parametrizacion/sistema"
-                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path.startsWith('/parametrizacion/sistema') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
-                  <AdjustmentsHorizontalIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
-                  <span>Configuración del Sistema</span>
-                </router-link>
-              </li>
-              <li>
-                <router-link to="/parametrizacion/catalogos"
-                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path.startsWith('/parametrizacion/catalogos') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
-                  <ListBulletIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
-                  <span>Catálogos</span>
-                </router-link>
-              </li>
-              <li>
-                <router-link to="/parametrizacion/colaboraciones"
-                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path.startsWith('/parametrizacion/colaboraciones') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
-                  <LinkIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
-                  <span>Colaboraciones</span>
-                </router-link>
-              </li>
-
-              <!-- Sub-sección: Control de Acceso -->
-              <li class="pt-3 pb-1">
-                <span class="text-xs font-medium text-purple-500 uppercase tracking-wider px-3">Control de Acceso</span>
-              </li>
-              <li>
-                <router-link to="/usuarios"
-                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path.startsWith('/usuarios') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
-                  <UsersIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
-                  <span>Usuarios</span>
-                </router-link>
-              </li>
-              <li>
-                <router-link to="/roles"
-                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path.startsWith('/roles') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
-                  <KeyIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
-                  <span>Roles y Permisos</span>
-                </router-link>
-              </li>
-              <li>
-                <router-link to="/transacciones"
-                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path.startsWith('/transacciones') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
-                  <ListBulletIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
-                  <span>Catálogo RBAC</span>
-                </router-link>
-              </li>
-              <li>
-                <router-link to="/auditoria"
-                  class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-                  :class="$route.path.startsWith('/auditoria') ? 'bg-purple-800 text-white' : 'text-purple-200 hover:bg-purple-800 hover:text-white'">
-                  <ClipboardDocumentListIcon class="w-5 h-5 mr-3 text-white flex-shrink-0" />
-                  <span>Auditoría</span>
                 </router-link>
               </li>
             </ul>

@@ -105,6 +105,17 @@ export const GET_ESTADOS_CAMPANIA = `
   }
 `
 
+export const GET_SKILLS = `
+  query Skills {
+    skills {
+      id
+      nombre
+      categoria
+      activo
+    }
+  }
+`
+
 export const CREAR_CAMPANIA = `
   mutation CrearCampania($data: CampaniaCreateInput!) {
     crearCampania(data: $data) {
