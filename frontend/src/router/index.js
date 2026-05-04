@@ -17,6 +17,12 @@ import ListaGrupos from '@/modules/actividades/views/ListaGrupos.vue'
 
 // === Módulo: ECONOMICO ===
 import ListaFinanciero from '@/modules/economico/views/ListaFinanciero.vue'
+import Tesoreria from '@/modules/economico/views/Tesoreria.vue'
+import Contabilidad from '@/modules/economico/views/Contabilidad.vue'
+import Cuotas from '@/modules/economico/views/Cuotas.vue'
+import Remesas from '@/modules/economico/views/Remesas.vue'
+import Presupuesto from '@/modules/economico/views/Presupuesto.vue'
+import Donaciones from '@/modules/economico/views/Donaciones.vue'
 
 // === Módulo: MEMBRESIA - Voluntariado ===
 import ListaVoluntarios from '@/modules/membresia/views/ListaVoluntarios.vue'
@@ -109,6 +115,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/juntas',
+    component: () => import('@/modules/membresia/views/JuntasDirectivas.vue'),
+    name: 'JuntasDirectivas',
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/voluntarios',
     component: ListaVoluntarios,
     name: 'Voluntarios',
@@ -170,18 +182,59 @@ const routes = [
   },
 
   // ─── ECONOMICO ────────────────────────────────────────────────────────────
+  { path: '/financiero', redirect: '/economico/cuotas' },
   {
-    path: '/financiero',
-    component: ListaFinanciero,
-    name: 'Financiero',
+    path: '/economico/tesoreria',
+    component: Tesoreria,
+    name: 'Tesoreria',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/economico/contabilidad',
+    component: Contabilidad,
+    name: 'Contabilidad',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/economico/cuotas',
+    component: Cuotas,
+    name: 'Cuotas',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/economico/remesas',
+    component: Remesas,
+    name: 'Remesas',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/economico/presupuesto',
+    component: Presupuesto,
+    name: 'Presupuesto',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/economico/donaciones',
+    component: Donaciones,
+    name: 'Donaciones',
     meta: { requiresAuth: true }
   },
 
   // ─── CONFIGURACION ────────────────────────────────────────────────────────
   {
     path: '/parametrizacion',
+    redirect: '/parametrizacion/sistema',
+  },
+  {
+    path: '/parametrizacion/sistema',
+    component: () => import('@/modules/configuracion/views/ConfiguracionSistema.vue'),
+    name: 'ConfiguracionSistema',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/parametrizacion/catalogos',
     component: ParametrizacionIndex,
-    name: 'Parametrizacion',
+    name: 'Catalogos',
     meta: { requiresAuth: true }
   },
   {
@@ -207,7 +260,13 @@ const routes = [
     component: () => import('@/modules/configuracion/views/catalogos/EstadosCuota.vue'),
     name: 'EstadosCuota',
     meta: { requiresAuth: true }
-  }
+  },
+  {
+    path: '/parametrizacion/colaboraciones',
+    component: () => import('@/modules/configuracion/views/Colaboraciones.vue'),
+    name: 'Colaboraciones',
+    meta: { requiresAuth: true }
+  },
 ]
 
 const router = createRouter({
