@@ -7,7 +7,7 @@ Añade los modelos de junta directiva:
   - historial_cargos_junta
   - tipos_cargo_roles
 
-Revision ID: a1b2c3d4e5f6
+Revision ID: fa3b91c72d08
 Revises: f5g6h7i8j9k0
 Create Date: 2026-05-04 10:00:00.000000
 """
@@ -17,7 +17,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
 
 
-revision: str = 'a1b2c3d4e5f6'
+revision: str = 'fa3b91c72d08'
 down_revision: Union[str, None] = 'f5g6h7i8j9k0'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -34,13 +34,12 @@ def upgrade() -> None:
     op.create_table(
         'juntas_directivas',
         sa.Column('id', UUID(as_uuid=True), primary_key=True, server_default=sa.text('gen_random_uuid()')),
-        sa.Column('agrupacion_id', UUID(as_uuid=True), sa.ForeignKey('agrupaciones_territoriales.id', ondelete='RESTRICT'), nullable=False, index=True),
+        sa.Column('agrupacion_id', UUID(as_uuid=True), sa.ForeignKey('agrupaciones_territoriales.id', ondelete='RESTRICT'), nullable=False),
         sa.Column('nombre', sa.String(255), nullable=False),
         sa.Column('fecha_constitucion', sa.Date(), nullable=False),
         sa.Column('fecha_disolucion', sa.Date(), nullable=True),
-        sa.Column('activa', sa.Boolean(), nullable=False, server_default='true', index=True),
+        sa.Column('activa', sa.Boolean(), nullable=False, server_default='true'),
         sa.Column('observaciones', sa.Text(), nullable=True),
-        # BaseModel audit fields
         sa.Column('fecha_creacion', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
         sa.Column('fecha_modificacion', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
         sa.Column('eliminado', sa.Boolean(), nullable=False, server_default='false'),
@@ -53,52 +52,58 @@ def upgrade() -> None:
     op.create_table(
         'cargos_junta',
         sa.Column('id', UUID(as_uuid=True), primary_key=True, server_default=sa.text('gen_random_uuid()')),
-        sa.Column('junta_id', UUID(as_uuid=True), sa.ForeignKey('juntas_directivas.id', ondelete='CASCADE'), nullable=False, index=True),
-        sa.Column('tipo_cargo_id', UUID(as_uuid=True), sa.ForeignKey('tipos_cargo.id', ondelete='RESTRICT'), nullable=False, index=True),
-        sa.Column('miembro_id', UUID(as_uuid=True), sa.ForeignKey('miembros.id', ondelete='RESTRICT'), nullable=False, index=True),
-        sa.Column('posicion', sa.Integer(), nullable=False, server_default='0', index=True),
+        sa.Column('junta_id', UUID(as_uuid=True), sa.ForeignKey('juntas_directivas.id', ondelete='CASCADE'), nullable=False),
+        sa.Column('tipo_cargo_id', UUID(as_uuid=True), sa.ForeignKey('tipos_cargo.id', ondelete='RESTRICT'), nullable=False),
+        sa.Column('miembro_id', UUID(as_uuid=True), sa.ForeignKey('miembros.id', ondelete='RESTRICT'), nullable=False),
+        sa.Column('posicion', sa.Integer(), nullable=False, server_default='0'),
         sa.Column('fecha_inicio', sa.Date(), nullable=False),
         sa.Column('fecha_fin', sa.Date(), nullable=True),
-        sa.Column('activo', sa.Boolean(), nullable=False, server_default='true', index=True),
-        # BaseModel audit fields
+        sa.Column('activo', sa.Boolean(), nullable=False, server_default='true'),
         sa.Column('fecha_creacion', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
         sa.Column('fecha_modificacion', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
         sa.Column('eliminado', sa.Boolean(), nullable=False, server_default='false'),
         sa.Column('fecha_eliminacion', sa.DateTime(), nullable=True),
         sa.UniqueConstraint('junta_id', 'tipo_cargo_id', 'posicion', name='uq_cargo_junta_posicion'),
     )
+    op.create_index('ix_cargos_junta_junta_id', 'cargos_junta', ['junta_id'])
+    op.create_index('ix_cargos_junta_tipo_cargo_id', 'cargos_junta', ['tipo_cargo_id'])
+    op.create_index('ix_cargos_junta_miembro_id', 'cargos_junta', ['miembro_id'])
+    op.create_index('ix_cargos_junta_activo', 'cargos_junta', ['activo'])
 
     # --- historial_cargos_junta ---
     op.create_table(
         'historial_cargos_junta',
         sa.Column('id', UUID(as_uuid=True), primary_key=True, server_default=sa.text('gen_random_uuid()')),
-        sa.Column('junta_id', UUID(as_uuid=True), sa.ForeignKey('juntas_directivas.id', ondelete='CASCADE'), nullable=False, index=True),
-        sa.Column('tipo_cargo_id', UUID(as_uuid=True), sa.ForeignKey('tipos_cargo.id', ondelete='RESTRICT'), nullable=False, index=True),
-        sa.Column('miembro_id', UUID(as_uuid=True), sa.ForeignKey('miembros.id', ondelete='RESTRICT'), nullable=False, index=True),
+        sa.Column('junta_id', UUID(as_uuid=True), sa.ForeignKey('juntas_directivas.id', ondelete='CASCADE'), nullable=False),
+        sa.Column('tipo_cargo_id', UUID(as_uuid=True), sa.ForeignKey('tipos_cargo.id', ondelete='RESTRICT'), nullable=False),
+        sa.Column('miembro_id', UUID(as_uuid=True), sa.ForeignKey('miembros.id', ondelete='RESTRICT'), nullable=False),
         sa.Column('posicion', sa.Integer(), nullable=False, server_default='0'),
         sa.Column('fecha_inicio', sa.Date(), nullable=False),
         sa.Column('fecha_fin', sa.Date(), nullable=True),
         sa.Column('motivo_cambio', sa.String(500), nullable=True),
-        # BaseModel audit fields
         sa.Column('fecha_creacion', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
         sa.Column('fecha_modificacion', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
         sa.Column('eliminado', sa.Boolean(), nullable=False, server_default='false'),
         sa.Column('fecha_eliminacion', sa.DateTime(), nullable=True),
     )
+    op.create_index('ix_historial_cargos_junta_junta_id', 'historial_cargos_junta', ['junta_id'])
+    op.create_index('ix_historial_cargos_junta_tipo_cargo_id', 'historial_cargos_junta', ['tipo_cargo_id'])
+    op.create_index('ix_historial_cargos_junta_miembro_id', 'historial_cargos_junta', ['miembro_id'])
 
     # --- tipos_cargo_roles ---
     op.create_table(
         'tipos_cargo_roles',
         sa.Column('id', UUID(as_uuid=True), primary_key=True, server_default=sa.text('gen_random_uuid()')),
-        sa.Column('tipo_cargo_id', UUID(as_uuid=True), sa.ForeignKey('tipos_cargo.id', ondelete='CASCADE'), nullable=False, index=True),
-        sa.Column('rol_id', UUID(as_uuid=True), sa.ForeignKey('roles.id', ondelete='CASCADE'), nullable=False, index=True),
-        # BaseModel audit fields
+        sa.Column('tipo_cargo_id', UUID(as_uuid=True), sa.ForeignKey('tipos_cargo.id', ondelete='CASCADE'), nullable=False),
+        sa.Column('rol_id', UUID(as_uuid=True), sa.ForeignKey('roles.id', ondelete='CASCADE'), nullable=False),
         sa.Column('fecha_creacion', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
         sa.Column('fecha_modificacion', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
         sa.Column('eliminado', sa.Boolean(), nullable=False, server_default='false'),
         sa.Column('fecha_eliminacion', sa.DateTime(), nullable=True),
         sa.UniqueConstraint('tipo_cargo_id', 'rol_id', name='uq_tipo_cargo_rol'),
     )
+    op.create_index('ix_tipos_cargo_roles_tipo_cargo_id', 'tipos_cargo_roles', ['tipo_cargo_id'])
+    op.create_index('ix_tipos_cargo_roles_rol_id', 'tipos_cargo_roles', ['rol_id'])
 
 
 def downgrade() -> None:
