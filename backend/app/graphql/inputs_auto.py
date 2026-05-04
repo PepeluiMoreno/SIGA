@@ -1003,7 +1003,7 @@ class PreferenciaNotificacionFilter:
 # COLABORACIONES
 # ============================================================================
 
-from ..modules.colaboraciones.models import TipoAsociacion, Asociacion, EstadoConvenio, Convenio
+from ..modules.organizaciones.models import TipoOrganizacion, Organizacion, EstadoConvenio, Convenio
 
 
 @strawchemy.input(TipoAsociacion, mode="create_input", include="all", exclude=get_exclude_fields(TipoAsociacion))

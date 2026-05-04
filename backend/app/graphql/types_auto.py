@@ -13,7 +13,7 @@ import strawberry
 from . import strawchemy
 
 # === ADMINISTRACION ===
-from ..modules.administracion.models import (
+from ..modules.acceso.models import (
     Transaccion,
     Rol,
     RolTransaccion,
@@ -38,7 +38,7 @@ class LogAuditoriaType:
 
 
 # === USUARIOS ===
-from ..modules.usuarios.models import Usuario, UsuarioRol
+from ..modules.acceso.models import Usuario, UsuarioRol
 
 @strawchemy.type(Usuario, exclude=["password_hash"], override=True)
 class UsuarioType:
@@ -231,14 +231,14 @@ class PlanificacionAnualType:
 
 
 # === COLABORACIONES ===
-from ..modules.colaboraciones.models import Asociacion, TipoAsociacion, Convenio, EstadoConvenio
+from ..modules.organizaciones.models import Organizacion, TipoOrganizacion, Convenio, EstadoConvenio
 
-@strawchemy.type(TipoAsociacion, include="all", override=True)
-class TipoAsociacionType:
+@strawchemy.type(TipoOrganizacion, include="all", override=True)
+class TipoOrganizacionType:
     pass
 
-@strawchemy.type(Asociacion, include="all", override=True)
-class AsociacionType:
+@strawchemy.type(Organizacion, include="all", override=True)
+class OrganizacionType:
     pass
 
 @strawchemy.type(EstadoConvenio, include="all", override=True)

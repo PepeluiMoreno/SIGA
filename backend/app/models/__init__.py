@@ -8,7 +8,7 @@ Los imports legacy se mantienen temporalmente para compatibilidad.
 from ..infrastructure.base_model import Base
 
 # Usuario
-from ..modules.usuarios.models import Usuario, UsuarioRol
+from ..modules.acceso.models import Usuario, UsuarioRol
 
 # Dominio Core
 from ..modules.core.models import (
@@ -33,7 +33,7 @@ from ..modules.economico.models import (
 )
 
 # Dominio Administración
-from ..modules.administracion.models import Transaccion, Rol, RolTransaccion, LogAuditoria
+from ..modules.acceso.models import Transaccion, Rol, RolTransaccion, LogAuditoria
 
 # Dominio Eventos
 from ..modules.eventos.models import (
