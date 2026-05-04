@@ -1,8 +1,8 @@
 """Dominios de la aplicación siguiendo DDD (Domain-Driven Design)."""
 
-# Administracion domain (debe importarse antes de usuarios para que Rol exista
+
 # cuando UsuarioRol declare la FK a roles.id).
-from .administracion.models import (
+from .acceso.models import (
     Transaccion,
     Rol,
     TipoRol,
@@ -12,7 +12,7 @@ from .administracion.models import (
 )
 
 # Usuarios domain
-from .usuarios.models import (
+from .acceso.models import (
     Usuario,
     UsuarioRol,
 )

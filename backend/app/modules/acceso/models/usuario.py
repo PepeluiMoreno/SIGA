@@ -70,5 +70,5 @@ class UsuarioRol(BaseModel):
 
 
 # Forward refs para type hints
-from ...administracion.models.rol import Rol  # noqa: E402,F401
+from .rol import Rol  # noqa: E402,F401
 from ...core.models.seguridad import Sesion  # noqa: E402,F401

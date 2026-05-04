@@ -4,12 +4,12 @@ from datetime import datetime, date
 import json
 
 from app.core.database import get_session
-from app.modulos.traslados.modelos import SolicitudTraslado, EstadoTraslado
-from app.modulos.administracion_miembros.modelos import miembro
-from app.modulos.equipos.modelos import MiembroEquipo, Equipo
-from app.modulos.agrupaciones_territoriales.modelos import AgrupacionTerritorial
-from app.modulos.comunicaciones.servicios import ServicioComunicaciones
-from app.modulos.administracion_miembros.servicios import ServicioGestionmiembros
+# from app.modulos.traslados.modelos import SolicitudTraslado, EstadoTraslado
+# from app.modulos.administracion_miembros.modelos import miembro
+# from app.modulos.equipos.modelos import MiembroEquipo, Equipo
+# from app.modulos.agrupaciones_territoriales.modelos import AgrupacionTerritorial
+# from app.modulos.comunicaciones.servicios import ServicioComunicaciones
+# from app.modulos.administracion_miembros.servicios import ServicioGestionmiembros
 
 
 class ServicioTraslados:
