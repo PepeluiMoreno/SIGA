@@ -37,7 +37,8 @@ from ..modules.organizaciones.models import (
 # Membresía
 from ..modules.membresia.models import (
     TipoMiembro, EstadoMiembro, MotivoBaja, Miembro,
-    TipoCargo, Skill, MiembroSkill, FranjaDisponibilidad,
+    JuntaDirectiva, HistorialNombramiento, CoordinacionTerritorial,
+    Skill, MiembroSkill, FranjaDisponibilidad,
     HistorialAgrupacion, SolicitudTraslado, EstadoTraslado,
     CategoriaCompetencia, Competencia, NivelCompetencia, MiembroCompetencia,
     TipoDocumentoVoluntario, DocumentoMiembro, TipoFormacion, FormacionMiembro,

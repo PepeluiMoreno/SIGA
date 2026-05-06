@@ -277,9 +277,9 @@ class ConvenioType:
 
 # === MIEMBROS ===
 from ..modules.membresia.models import (
-    TipoMiembro, Miembro, EstadoMiembro, MotivoBaja, TipoCargo, MiembroSegmentacion,
+    TipoMiembro, Miembro, EstadoMiembro, MotivoBaja, MiembroSegmentacion,
     Skill, MiembroSkill, FranjaDisponibilidad, HistorialAgrupacion, SolicitudTraslado,
-    JuntaDirectiva, CargoJunta, HistorialCargoJunta, TipoCargoRol,
+    JuntaDirectiva, HistorialNombramiento, CoordinacionTerritorial,
 )
 
 @strawchemy.type(TipoMiembro, include="all", override=True)
@@ -294,27 +294,20 @@ class EstadoMiembroType:
 class MotivoBajaType:
     pass
 
-@strawchemy.type(TipoCargo, include="all", override=True)
-class TipoCargoType:
-    pass
-
-@strawchemy.type(TipoCargoRol, include="all", override=True)
-class TipoCargoRolType:
-    pass
-
 @strawchemy.type(JuntaDirectiva, include="all", override=True)
 class JuntaDirectivaType:
     pass
 
-@strawchemy.type(CargoJunta, include="all", override=True)
-class CargoJuntaType:
-    tipo_cargo: Optional['TipoCargoType'] = None
+@strawchemy.type(HistorialNombramiento, include="all", override=True)
+class HistorialNombramientoType:
+    rol: Optional['RolType'] = None
     miembro: Optional['MiembroType'] = None
+    agrupacion: Optional['AgrupacionTerritorialType'] = None
 
-@strawchemy.type(HistorialCargoJunta, include="all", override=True)
-class HistorialCargoJuntaType:
-    tipo_cargo: Optional['TipoCargoType'] = None
+@strawchemy.type(CoordinacionTerritorial, include="all", override=True)
+class CoordinacionTerritorialType:
     miembro: Optional['MiembroType'] = None
+    agrupacion: Optional['AgrupacionTerritorialType'] = None
 
 @strawchemy.type(Miembro, include="all", override=True)
 class MiembroType:
@@ -325,7 +318,6 @@ class MiembroType:
     pais_domicilio: Optional['PaisType'] = None
     pais_nacimiento: Optional['PaisType'] = None
     motivo_baja_rel: Optional['MotivoBajaType'] = None
-    cargo: Optional['TipoCargoType'] = None
 
 @strawchemy.type(MiembroSegmentacion, include="all", override=True)
 class MiembroSegmentacionType:

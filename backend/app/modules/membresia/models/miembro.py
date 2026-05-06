@@ -120,7 +120,6 @@ class Miembro(BaseModel):
     estado = relationship('EstadoMiembro', lazy='selectin')
     motivo_baja_rel = relationship('MotivoBaja', back_populates='miembros', lazy='selectin')
     agrupacion = relationship('AgrupacionTerritorial', lazy='selectin')
-    cargo = relationship('TipoCargo', back_populates='miembros', lazy='selectin')
     pais_documento = relationship('Pais', foreign_keys=[pais_documento_id], lazy='selectin')
     pais_domicilio = relationship('Pais', foreign_keys=[pais_domicilio_id], lazy='selectin')
     pais_nacimiento = relationship('Pais', foreign_keys=[pais_nacimiento_id], lazy='selectin')

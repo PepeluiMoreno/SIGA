@@ -131,34 +131,33 @@ class AuthMutation:
         return junta.id
 
     @strawberry.mutation
-    async def asignar_cargo(
+    async def asignar_nombramiento(
         self,
         info: strawberry.Info,
-        junta_id: uuid.UUID,
-        miembro_id: uuid.UUID,
-        tipo_cargo_id: uuid.UUID,
+        usuario_id: uuid.UUID,
+        rol_id: uuid.UUID,
         fecha_inicio: date,
-        posicion: int = 0,
-        usuario_id: Optional[uuid.UUID] = None,
+        agrupacion_id: Optional[uuid.UUID] = None,
+        motivo: Optional[str] = None,
+        tipo_origen: Optional[str] = None,
     ) -> uuid.UUID:
-        """Asigna un cargo a un miembro en una junta directiva.
+        """Asigna un cargo (rol organizacional) a un usuario.
 
-        Si se indica usuario_id, los roles definidos en TipoCargoRol se asignan
-        automáticamente al usuario con ámbito en la agrupación de la junta.
-        Devuelve el ID del CargoJunta creado.
+        Crea UsuarioRol activo + registro en HistorialNombramiento.
+        Devuelve el ID del UsuarioRol creado.
         """
         session = info.context.session
         svc = AccesoService(session)
-        cargo = await svc.asignar_cargo(
-            junta_id=junta_id,
-            miembro_id=miembro_id,
-            tipo_cargo_id=tipo_cargo_id,
-            fecha_inicio=fecha_inicio,
-            posicion=posicion,
+        nombramiento = await svc.asignar_nombramiento(
             usuario_id=usuario_id,
+            rol_id=rol_id,
+            fecha_inicio=fecha_inicio,
+            agrupacion_id=agrupacion_id,
+            motivo=motivo,
+            tipo_origen=tipo_origen,
         )
         await session.commit()
-        return cargo.id
+        return nombramiento.id
 
     # ── Reset de contraseña ──────────────────────────────────────────────────
 
@@ -201,26 +200,28 @@ class AuthMutation:
         return True
 
     @strawberry.mutation
-    async def revocar_cargo(
+    async def revocar_nombramiento(
         self,
         info: strawberry.Info,
-        cargo_junta_id: uuid.UUID,
+        usuario_id: uuid.UUID,
+        rol_id: uuid.UUID,
         fecha_fin: date,
         motivo: Optional[str] = None,
-        usuario_id: Optional[uuid.UUID] = None,
+        agrupacion_id: Optional[uuid.UUID] = None,
     ) -> uuid.UUID:
-        """Revoca un cargo activo en una junta directiva.
+        """Revoca un nombramiento (cargo) activo.
 
-        Si se indica usuario_id, los roles automáticos del cargo se desactivan.
-        Devuelve el ID del CargoJunta cerrado.
+        Desactiva UsuarioRol + cierra HistorialNombramiento.
+        Devuelve el ID del UsuarioRol desactivado.
         """
         session = info.context.session
         svc = AccesoService(session)
-        cargo = await svc.revocar_cargo(
-            cargo_junta_id=cargo_junta_id,
+        nombramiento = await svc.revocar_nombramiento(
+            usuario_id=usuario_id,
+            rol_id=rol_id,
             fecha_fin=fecha_fin,
             motivo=motivo,
-            usuario_id=usuario_id,
+            agrupacion_id=agrupacion_id,
         )
         await session.commit()
-        return cargo.id
+        return nombramiento.id

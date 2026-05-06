@@ -164,14 +164,19 @@ class UsuarioRolFilter:
 
 
 # ============================================================================
-# MEMBRESIA - Junta directiva
+# MEMBRESIA - Junta directiva y nombramientos
 # ============================================================================
 
-from ..modules.membresia.models import JuntaDirectiva, CargoJunta, HistorialCargoJunta, TipoCargoRol
+from ..modules.membresia.models import JuntaDirectiva, HistorialNombramiento, CoordinacionTerritorial
 
 
 @strawchemy.input(JuntaDirectiva, mode="create_input", include="all", exclude=get_exclude_fields(JuntaDirectiva))
 class JuntaDirectivaCreateInput:
+    pass
+
+
+@strawchemy.input(JuntaDirectiva, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(JuntaDirectiva))
+class JuntaDirectivaUpdateInput:
     pass
 
 
@@ -180,18 +185,33 @@ class JuntaDirectivaFilter:
     pass
 
 
-@strawchemy.input(CargoJunta, mode="create_input", include="all", exclude=get_exclude_fields(CargoJunta))
-class CargoJuntaCreateInput:
+@strawchemy.input(HistorialNombramiento, mode="create_input", include="all", exclude=get_exclude_fields(HistorialNombramiento))
+class HistorialNombramientoCreateInput:
     pass
 
 
-@strawchemy.filter(CargoJunta, include="all")
-class CargoJuntaFilter:
+@strawchemy.input(HistorialNombramiento, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(HistorialNombramiento))
+class HistorialNombramientoUpdateInput:
     pass
 
 
-@strawchemy.filter(HistorialCargoJunta, include="all")
-class HistorialCargoJuntaFilter:
+@strawchemy.filter(HistorialNombramiento, include="all")
+class HistorialNombramientoFilter:
+    pass
+
+
+@strawchemy.input(CoordinacionTerritorial, mode="create_input", include="all", exclude=get_exclude_fields(CoordinacionTerritorial))
+class CoordinacionTerritorialCreateInput:
+    pass
+
+
+@strawchemy.input(CoordinacionTerritorial, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(CoordinacionTerritorial))
+class CoordinacionTerritorialUpdateInput:
+    pass
+
+
+@strawchemy.filter(CoordinacionTerritorial, include="all")
+class CoordinacionTerritorialFilter:
     pass
 
 
