@@ -29,6 +29,7 @@ class AuditoriaMixin:
     )
     eliminado: Mapped[bool] = mapped_column(
         Boolean,
+        default=False,
         server_default='false',
         nullable=False,
         index=True

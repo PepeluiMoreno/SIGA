@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 1440
 
+    # URL pública de la aplicación (usada en links de email)
+    app_url: str = "http://localhost:5173"
+
     @computed_field
     @property
     def database_url(self) -> str:
