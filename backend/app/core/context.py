@@ -19,11 +19,29 @@ class Context(BaseContext):
 
     @cached_property
     def user_id(self) -> Optional[str]:
+        # Estrategia 1: JWT propio (modo LOCAL)
         auth = self.request.headers.get("Authorization", "")
-        if not auth.startswith("Bearer "):
-            return None
-        payload = decode_token(auth[7:])
-        return payload.get("sub") if payload else None
+        if auth.startswith("Bearer "):
+            payload = decode_token(auth[7:])
+            if payload:
+                return payload.get("sub")
+
+        # Estrategia 2: Authelia forward-auth (cabecera Remote-User contiene el email)
+        # El backend busca al usuario por email cuando se usa este modo.
+        # El valor se expone como user_id para que los resolvers lo puedan usar.
+        remote_user = self.request.headers.get("Remote-User", "")
+        if remote_user:
+            return f"authelia:{remote_user}"  # prefijo para distinguir del UUID JWT
+
+        return None
+
+    @cached_property
+    def authelia_email(self) -> Optional[str]:
+        """Email del usuario autenticado por Authelia (None en modo LOCAL)."""
+        uid = self.user_id
+        if uid and uid.startswith("authelia:"):
+            return uid[9:]
+        return None
 
     @cached_property
     def territory_id(self) -> Optional[str]:
@@ -64,6 +82,10 @@ class Context(BaseContext):
     @property
     def is_authenticated(self) -> bool:
         return self.user_id is not None
+
+    @property
+    def is_authelia(self) -> bool:
+        return self.user_id is not None and self.user_id.startswith("authelia:")
 
 
 class PermissionDeniedError(Exception):

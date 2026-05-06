@@ -24,6 +24,11 @@ class Usuario(BaseModel):
     intentos_login: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     bloqueado_hasta: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
+    # Reset de contraseña (token de un solo uso, expira en 30 min)
+    reset_token: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, index=True)
+    reset_token_expira_en: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    reset_token_solicitado_en: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
     # Relaciones
     roles: Mapped[List["UsuarioRol"]] = relationship(
         back_populates="usuario",
