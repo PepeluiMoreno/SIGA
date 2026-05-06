@@ -75,9 +75,6 @@ class Miembro(BaseModel):
     # Pertenencia organizativa
     agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('agrupaciones_territoriales.id'), nullable=True, index=True)
 
-    # Cargo en la junta directiva (si aplica)
-    cargo_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('tipos_cargo.id'), nullable=True, index=True)
-
     # Datos bancarios (IBAN encriptado)
     iban: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)  # Encriptado
     forma_pago_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('formas_pago.id'), nullable=True, index=True)
@@ -217,6 +214,7 @@ class Miembro(BaseModel):
     def es_junta_directiva(self) -> bool:
         """Determina si el miembro pertenece a la junta directiva.
 
-        Un miembro pertenece a la junta directiva si tiene un cargo asignado.
+        Se consulta via UsuarioRol con roles ORGANIZACION o HistorialNombramiento.
+        Este property es solo informativo; la consulta real se hace por servicio.
         """
-        return self.cargo_id is not None
+        return False  # Se resuelve via historial_nombramientos

@@ -10,6 +10,7 @@ Se ejecuta via:
 import asyncio
 import re
 import uuid
+from datetime import date
 from pathlib import Path
 from typing import Optional
 
@@ -20,7 +21,7 @@ from app.modules.core.geografico.direccion import AgrupacionTerritorial, Pais, P
 from app.modules.membresia.models.estado_miembro import EstadoMiembro
 from app.modules.membresia.models.miembro import Miembro, TipoMiembro
 
-DUMP_FILE = "/opt/docker/apps/SIGA/01_europa_laica_com-2026_02_17.sql"
+DUMP_FILE = "/tmp/europa_laica_dump.sql"
 
 # ---------------------------------------------------------------------------
 # SQL dump parser
@@ -107,11 +108,16 @@ def _split_values(inner: str) -> list:
     return result
 
 
-def _parse_date(val: Optional[str]) -> Optional[str]:
-    """MySQL date → YYYY-MM-DD o None. Maneja '0000-00-00'."""
-    if not val or val == "0000-00-00" or val == "0000-00-00 00:00:00":
+def _parse_date(val: Optional[str]) -> Optional[date]:
+    """MySQL date → date object o None. Maneja '0000-00-00'."""
+    if not val or val.startswith("0000-00-00"):
         return None
-    return val[:10] if len(val) >= 10 else None
+    try:
+        return date.fromisoformat(val[:10])
+    except (ValueError, TypeError):
+        return None
+    except (ValueError, IndexError):
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -274,11 +280,11 @@ async def seed():
                     pais_domicilio_id = pais_obj.id
 
             # --- Limpiar fechas inválidas ---
-            if fechanac and fechanac.startswith("0000"):
+            if fechanac and str(fechanac).startswith("0000"):
                 fechanac = None
-            if fecha_alta and fecha_alta.startswith("0000"):
+            if fecha_alta and str(fecha_alta).startswith("0000"):
                 fecha_alta = None
-            if fecha_baja and fecha_baja.startswith("0000"):
+            if fecha_baja and str(fecha_baja).startswith("0000"):
                 fecha_baja = None
 
             # --- Estado ---
@@ -293,6 +299,7 @@ async def seed():
             obs_final = "\n".join(obs_parts) if obs_parts else None
 
             # --- Crear miembro ---
+            fecha_alta_def = fecha_alta or date(2001, 1, 1)
             miembro = Miembro(
                 nombre=nom or f"Miembro {coduser}",
                 apellido1=ape1 or "Sin nombre",
@@ -313,7 +320,7 @@ async def seed():
                 email=email,
                 agrupacion_id=agrupacion_id,
                 iban=iban,
-                fecha_alta=fecha_alta or "2001-01-01",
+                fecha_alta=fecha_alta_def,
                 fecha_baja=fecha_baja,
                 observaciones=obs_final,
                 es_voluntario=bool(colabora and colabora.lower() in ("si", "sí", "yes", "y")),
