@@ -1,22 +1,26 @@
 <template>
+  <div class="flex justify-end mb-2">
+    <button
+      @click="handleBack"
+      class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900"
+    >
+      ← Volver
+    </button>
+  </div>
   <div class="bg-white rounded-lg shadow">
-    <div class="px-6 py-4 border-b border-gray-200">
+    <div v-if="!isCreateMode" class="px-6 py-4 border-b border-gray-200">
       <div class="flex flex-wrap justify-between items-center gap-3">
-        <div>
-          <h2 class="text-xl font-semibold text-gray-900">{{ nombreCompleto || 'Cargando...' }}</h2>
-          <p v-if="miembro.tipoMiembro || miembro.estado" class="text-sm text-gray-600">
-            {{ miembro.tipoMiembro?.nombre }}{{ miembro.tipoMiembro && miembro.estado ? ' - ' : '' }}{{ miembro.estado?.nombre }}
-          </p>
+        <div class="flex-1 min-w-0">
+          <div v-if="!isCreateMode">
+            <h2 class="text-xl font-semibold text-gray-900">{{ nombreCompleto || 'Cargando...' }}</h2>
+            <p v-if="miembro.tipoMiembro || miembro.estado" class="text-sm text-gray-600">
+              {{ miembro.tipoMiembro?.nombre }}{{ miembro.tipoMiembro && miembro.estado ? ' - ' : '' }}{{ miembro.estado?.nombre }}
+            </p>
+          </div>
         </div>
         <div class="flex gap-3">
           <button
-            @click="$router.push('/miembros')"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-          >
-            Volver
-          </button>
-          <button
-            v-if="miembro.id"
+            v-if="!isCreateMode && miembro.id"
             @click="toggleEditMode"
             class="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"
           >
@@ -28,12 +32,12 @@
 
     <div v-if="loading" class="p-8 text-center">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-      <p class="mt-2 text-gray-600">Cargando ficha de militancia...</p>
+      <p class="mt-2 text-gray-600">{{ isCreateMode ? 'Preparando formulario...' : 'Cargando ficha de militancia...' }}</p>
     </div>
 
     <div v-else-if="error" class="p-8 text-center">
       <p class="text-red-600">{{ error }}</p>
-      <button @click="$router.push('/miembros')" class="mt-4 text-purple-600 hover:underline">
+      <button @click="handleBack" class="mt-4 text-purple-600 hover:underline">
         Volver a la lista
       </button>
     </div>
@@ -46,7 +50,7 @@
       <div class="border-b border-gray-200 mb-6">
         <nav class="-mb-px flex flex-wrap gap-x-8 gap-y-2">
           <button
-            v-for="tab in tabs"
+            v-for="tab in availableTabs"
             :key="tab.id"
             @click="activeTab = tab.id"
             :class="[
@@ -62,141 +66,170 @@
       </div>
 
       <div v-show="activeTab === 'personal'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <section class="space-y-4">
-          <h3 class="text-lg font-medium text-gray-900">Identificación</h3>
+        <section class="space-y-4 rounded-lg border border-purple-200 bg-purple-50/40 p-4">
+          <h3 class="text-lg font-semibold text-gray-900 border-b border-purple-200 pb-2">Identificación</h3>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <FieldText v-model="miembro.nombre" label="Nombre" :edit-mode="editMode" />
-            <FieldText v-model="miembro.apellido1" label="Primer apellido" :edit-mode="editMode" />
-            <FieldText v-model="miembro.apellido2" label="Segundo apellido" :edit-mode="editMode" />
+            <FieldText v-model="miembro.nombre" label="Nombre *" :edit-mode="editMode || isCreateMode" />
+            <FieldText v-model="miembro.apellido1" label="Primer apellido *" :edit-mode="editMode || isCreateMode" />
+            <FieldText v-model="miembro.apellido2" label="Segundo apellido" :edit-mode="editMode || isCreateMode" />
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <FieldSelect
               v-model="miembro.sexo"
               label="Sexo"
-              :edit-mode="editMode"
+              :edit-mode="editMode || isCreateMode"
               :options="sexoOptions"
             />
-            <FieldText v-model="miembro.fechaNacimiento" label="Fecha de nacimiento" type="date" :edit-mode="editMode" />
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldText v-model="miembro.tipoDocumento" label="Tipo de documento" :edit-mode="editMode" />
-            <FieldText v-model="miembro.numeroDocumento" label="Número de documento" :edit-mode="editMode" />
-          </div>
-          <FieldSelect
-            v-model="miembro.paisDocumentoId"
-            label="País del documento"
-            :edit-mode="editMode"
-            :options="catalogos.paises"
-            option-label="nombre"
-            option-value="id"
-            empty-label="Sin especificar"
-          />
-        </section>
-
-        <section class="space-y-4">
-          <h3 class="text-lg font-medium text-gray-900">Contacto</h3>
-          <FieldText v-model="miembro.email" label="Email" type="email" :edit-mode="editMode" />
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldText v-model="miembro.telefono" label="Teléfono" :edit-mode="editMode" />
-            <FieldText v-model="miembro.telefono2" label="Teléfono 2" :edit-mode="editMode" />
-          </div>
-          <FieldText v-model="miembro.direccion" label="Dirección" :edit-mode="editMode" />
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <FieldText v-model="miembro.codigoPostal" label="Código postal" :edit-mode="editMode" />
-            <FieldText v-model="miembro.localidad" label="Localidad" :edit-mode="editMode" />
+            <FieldText v-model="miembro.fechaNacimiento" label="Fecha de nacimiento" type="date" :edit-mode="editMode || isCreateMode" />
             <FieldSelect
-              v-model="miembro.provinciaId"
-              label="Provincia"
-              :edit-mode="editMode"
-              :options="catalogos.provincias"
+              v-model="miembro.paisNacimientoId"
+              label="País de nacimiento"
+              :edit-mode="editMode || isCreateMode"
+              :options="catalogos.paises"
               option-label="nombre"
               option-value="id"
               empty-label="Sin especificar"
             />
           </div>
-          <FieldSelect
-            v-model="miembro.paisDomicilioId"
-            label="País de domicilio"
-            :edit-mode="editMode"
-            :options="catalogos.paises"
-            option-label="nombre"
-            option-value="id"
-            empty-label="Sin especificar"
-          />
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+            <div class="col-span-3">
+              <FieldSelect
+                v-model="miembro.tipoDocumento"
+                label="Tipo de documento *"
+                :edit-mode="editMode || isCreateMode"
+                :options="tipoDocumentoOptions"
+              />
+            </div>
+            <div class="col-span-4">
+              <FieldText v-model="miembro.numeroDocumento" label="Número de documento *" :edit-mode="editMode || isCreateMode" />
+            </div>
+            <div class="col-span-5">
+              <FieldSelect
+                v-model="miembro.paisDocumentoId"
+                label="País de expedición"
+                :edit-mode="editMode || isCreateMode"
+                :options="catalogos.paises"
+                option-label="nombre"
+                option-value="id"
+                empty-label="Sin especificar"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section class="space-y-4 rounded-lg border border-purple-200 bg-purple-50/40 p-4">
+          <h3 class="text-lg font-semibold text-gray-900 border-b border-purple-200 pb-2">Contacto</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <FieldText v-model="miembro.email" label="Email" type="email" :edit-mode="editMode || isCreateMode" />
+            <FieldText v-model="miembro.telefono" label="Teléfono *" :edit-mode="editMode || isCreateMode" />
+            <FieldText v-model="miembro.telefono2" label="Teléfono alternativo" :edit-mode="editMode || isCreateMode" />
+          </div>
+          <FieldText v-model="miembro.direccion" label="Dirección" :edit-mode="editMode || isCreateMode" />
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+            <div class="col-span-2">
+              <FieldSelect
+                v-model="miembro.paisDomicilioId"
+                label="País"
+                :edit-mode="editMode || isCreateMode"
+                :options="catalogos.paises"
+                option-label="nombre"
+                option-value="id"
+                empty-label="Sin especificar"
+              />
+            </div>
+            <div class="col-span-3">
+              <FieldSelect
+                v-model="miembro.provinciaId"
+                label="Provincia"
+                :edit-mode="editMode || isCreateMode"
+                :options="catalogos.provincias"
+                option-label="nombre"
+                option-value="id"
+                empty-label="Sin especificar"
+              />
+            </div>
+            <div class="col-span-5">
+              <FieldText v-model="miembro.localidad" label="Localidad" :edit-mode="editMode || isCreateMode" />
+            </div>
+            <div class="col-span-2">
+              <FieldText v-model="miembro.codigoPostal" label="CP" :edit-mode="editMode || isCreateMode" />
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div v-show="activeTab === 'personal'" class="mt-6">
+        <section class="space-y-4 rounded-lg border border-purple-200 bg-purple-50/40 p-4">
+          <FieldTextarea v-model="miembro.observaciones" label="Observaciones" :edit-mode="editMode || isCreateMode" rows="6" />
         </section>
       </div>
 
       <div v-show="activeTab === 'membresia'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <section class="space-y-4">
-          <h3 class="text-lg font-medium text-gray-900">Estado de militancia</h3>
+        <section class="space-y-4 rounded-lg border border-purple-200 bg-purple-50/40 p-4">
+          <h3 class="text-lg font-semibold text-gray-900 border-b border-purple-200 pb-2">Estado de militancia</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FieldSelect
-              v-model="miembro.tipoMiembroId"
-              label="Tipo de miembro"
-              :edit-mode="editMode"
-              :options="catalogos.tiposMiembro"
-              option-label="nombre"
-              option-value="id"
-            />
-            <FieldSelect
               v-model="miembro.estadoId"
-              label="Estado"
-              :edit-mode="editMode"
+              label="Estado *"
+              :edit-mode="editMode || isCreateMode"
               :options="catalogos.estadosMiembro"
               option-label="nombre"
               option-value="id"
             />
+            <FieldText v-model="miembro.fechaAlta" label="Fecha de alta *" type="date" :edit-mode="editMode || isCreateMode" />
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldText v-model="miembro.fechaAlta" label="Fecha de alta" type="date" :edit-mode="editMode" />
-            <FieldText v-model="miembro.fechaBaja" label="Fecha de baja" type="date" :edit-mode="editMode" />
-          </div>
-          <FieldSelect
-            v-model="miembro.agrupacionId"
-            label="Agrupación territorial"
-            :edit-mode="editMode"
-            :options="catalogos.agrupaciones"
-            option-label="nombre"
-            option-value="id"
-            empty-label="Sin asignar"
-          />
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FieldText v-model="miembro.fechaBaja" label="Fecha de baja" type="date" :edit-mode="editMode || isCreateMode" />
             <FieldSelect
-              v-model="miembro.cargoId"
-              label="Cargo"
-              :edit-mode="editMode"
-              :options="catalogos.tiposCargo"
+              v-model="miembro.agrupacionId"
+              label="Agrupación territorial"
+              :edit-mode="editMode || isCreateMode"
+              :options="catalogos.agrupaciones"
               option-label="nombre"
               option-value="id"
-              empty-label="Sin cargo"
+              empty-label="Sin asignar"
             />
-            <FieldText v-model="miembro.iban" label="IBAN" :edit-mode="editMode" />
           </div>
           <FieldSelect
-            v-model="miembro.motivoBajaId"
-            label="Motivo de baja"
-            :edit-mode="editMode"
-            :options="catalogos.motivosBaja"
+            v-model="miembro.cargoId"
+            label="Cargo"
+            :edit-mode="editMode || isCreateMode"
+            :options="catalogos.tiposCargo"
             option-label="nombre"
             option-value="id"
-            empty-label="Sin motivo"
+            empty-label="Sin cargo"
           />
-          <FieldTextarea v-model="miembro.motivoBajaTexto" label="Detalle de baja" :edit-mode="editMode" rows="3" />
         </section>
 
-        <section class="space-y-4">
-          <h3 class="text-lg font-medium text-gray-900">Estado y RGPD</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldCheckbox v-model="miembro.activo" label="Miembro activo" :edit-mode="editMode" />
-            <FieldCheckbox v-model="miembro.esVoluntario" label="Miembro colaborador" :edit-mode="editMode" />
-            <FieldCheckbox v-model="miembro.solicitaSupresionDatos" label="Solicita supresión de datos" :edit-mode="editMode" />
-            <FieldCheckbox v-model="miembro.datosAnonimizados" label="Datos anonimizados" :edit-mode="editMode" />
+        <section class="space-y-4 rounded-lg border border-purple-200 bg-purple-50/40 p-4">
+          <h3 class="text-lg font-semibold text-gray-900 border-b border-purple-200 pb-2">Estado y RGPD</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <FieldCheckbox v-model="miembro.esVoluntario" label="Miembro colaborador" :edit-mode="editMode || isCreateMode" />
+            <FieldCheckbox v-model="miembro.esSocioHonor" label="Socio de honor" :edit-mode="editMode || isCreateMode" />
+            <FieldCheckbox v-model="miembro.solicitaSupresionDatos" label="Solicita supresión de datos" :edit-mode="editMode || isCreateMode" />
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <FieldText v-model="miembro.fechaSolicitudSupresion" label="Solicitud RGPD" type="date" :edit-mode="editMode" />
-            <FieldText v-model="miembro.fechaLimiteRetencion" label="Límite retención" type="date" :edit-mode="editMode" />
-            <FieldText v-model="miembro.fechaAnonimizacion" label="Anonimización" type="date" :edit-mode="editMode" />
+            <FieldCheckbox v-model="miembro.datosAnonimizados" label="Datos anonimizados" :edit-mode="editMode || isCreateMode" />
+            <FieldText v-model="miembro.fechaSolicitudSupresion" label="Solicitud RGPD" type="date" :edit-mode="editMode || isCreateMode" />
+            <FieldText v-model="miembro.fechaLimiteRetencion" label="Límite retención" type="date" :edit-mode="editMode || isCreateMode" />
           </div>
+          <FieldText v-model="miembro.fechaAnonimizacion" label="Anonimización" type="date" :edit-mode="editMode || isCreateMode" />
+        </section>
+      </div>
+
+      <div v-show="activeTab === 'pagoCuotas'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <section class="space-y-4 rounded-lg border border-purple-200 bg-purple-50/40 p-4">
+          <h3 class="text-lg font-semibold text-gray-900 border-b border-purple-200 pb-2">Datos de pago</h3>
+          <FieldSelect
+            v-model="miembro.formaPagoId"
+            label="Forma de pago"
+            :edit-mode="editMode || isCreateMode"
+            :options="catalogos.formasPago"
+            option-label="nombre"
+            option-value="id"
+            empty-label="Sin especificar"
+          />
+          <FieldText v-model="miembro.iban" label="IBAN" :edit-mode="editMode || isCreateMode" />
         </section>
       </div>
 
@@ -204,29 +237,24 @@
         <section class="space-y-4">
           <h3 class="text-lg font-medium text-gray-900">Disponibilidad</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldText v-model="miembro.disponibilidad" label="Disponibilidad" :edit-mode="editMode" />
-            <FieldText v-model="miembro.horasDisponiblesSemana" label="Horas/semana" type="number" :edit-mode="editMode" />
+            <FieldText v-model="miembro.disponibilidad" label="Disponibilidad" :edit-mode="editMode || isCreateMode" />
+            <FieldText v-model="miembro.horasDisponiblesSemana" label="Horas/semana" type="number" :edit-mode="editMode || isCreateMode" />
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <FieldCheckbox v-model="miembro.puedeConducir" label="Puede conducir" :edit-mode="editMode" />
-            <FieldCheckbox v-model="miembro.vehiculoPropio" label="Vehículo propio" :edit-mode="editMode" />
-            <FieldCheckbox v-model="miembro.disponibilidadViajar" label="Disponibilidad para viajar" :edit-mode="editMode" />
+            <FieldCheckbox v-model="miembro.puedeConducir" label="Puede conducir" :edit-mode="editMode || isCreateMode" />
+            <FieldCheckbox v-model="miembro.vehiculoPropio" label="Vehículo propio" :edit-mode="editMode || isCreateMode" />
+            <FieldCheckbox v-model="miembro.disponibilidadViajar" label="Disponibilidad para viajar" :edit-mode="editMode || isCreateMode" />
           </div>
         </section>
 
         <section class="space-y-4">
           <h3 class="text-lg font-medium text-gray-900">Perfil y experiencia</h3>
-          <FieldText v-model="miembro.profesion" label="Profesión" :edit-mode="editMode" />
-          <FieldText v-model="miembro.nivelEstudios" label="Nivel de estudios" :edit-mode="editMode" />
-          <FieldTextarea v-model="miembro.intereses" label="Intereses" :edit-mode="editMode" rows="3" />
-          <FieldTextarea v-model="miembro.experienciaVoluntariado" label="Experiencia en voluntariado" :edit-mode="editMode" rows="3" />
-          <FieldTextarea v-model="miembro.observacionesVoluntariado" label="Observaciones de voluntariado" :edit-mode="editMode" rows="3" />
+          <FieldText v-model="miembro.profesion" label="Profesión" :edit-mode="editMode || isCreateMode" />
+          <FieldText v-model="miembro.nivelEstudios" label="Nivel de estudios" :edit-mode="editMode || isCreateMode" />
+          <FieldTextarea v-model="miembro.intereses" label="Intereses" :edit-mode="editMode || isCreateMode" rows="3" />
+          <FieldTextarea v-model="miembro.experienciaVoluntariado" label="Experiencia en voluntariado" :edit-mode="editMode || isCreateMode" rows="3" />
+          <FieldTextarea v-model="miembro.observacionesVoluntariado" label="Observaciones de voluntariado" :edit-mode="editMode || isCreateMode" rows="3" />
         </section>
-      </div>
-
-      <div v-show="activeTab === 'observaciones'" class="space-y-4">
-        <h3 class="text-lg font-medium text-gray-900">Observaciones generales</h3>
-        <FieldTextarea v-model="miembro.observaciones" label="Observaciones" :edit-mode="editMode" rows="8" />
       </div>
 
       <!-- Tab: Habilidades -->
@@ -342,19 +370,19 @@
         </div>
       </div>
 
-      <div v-if="editMode" class="mt-8 pt-6 border-t border-gray-200 flex justify-end gap-3">
+      <div v-if="editMode || isCreateMode" class="mt-8 pt-6 border-t border-gray-200 flex justify-end gap-3">
         <button
-          @click="toggleEditMode"
+          @click="handleCancel"
           class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
         >
-          Cancelar
+          {{ isCreateMode ? 'Cancelar' : 'Cancelar cambios' }}
         </button>
         <button
           @click="handleSave"
-          :disabled="loading"
+          :disabled="loading || !formValido"
           class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50"
         >
-          Guardar cambios
+          {{ isCreateMode ? 'Crear miembro' : 'Guardar cambios' }}
         </button>
       </div>
     </div>
@@ -363,40 +391,81 @@
 
 <script setup>
 import { computed, defineComponent, h, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { gql } from 'graphql-request'
 import { graphqlClient } from '@/graphql/client.js'
 import { useMiembro } from '@/composables/useMiembro'
 
 const route = useRoute()
+const router = useRouter()
 const editMode = ref(false)
 const activeTab = ref('personal')
 const saveMessage = ref('')
-
-const tabs = [
-  { id: 'personal', name: 'Datos personales' },
-  { id: 'membresia', name: 'Militancia' },
-  { id: 'voluntariado', name: 'Disponibilidad y perfil' },
-  { id: 'skills', name: 'Habilidades' },
-  { id: 'franjas', name: 'Horarios' },
-  { id: 'observaciones', name: 'Observaciones' },
-]
 
 const {
   miembro,
   catalogos,
   loading,
   error,
+  isCreateMode,
   nombreCompleto,
   loadCatalogos,
   fetchMiembro,
   saveMiembro,
+  resetMiembro,
 } = useMiembro()
+
+const detectCreateMode = route.name === 'NuevoMiembro'
+
+if (detectCreateMode) {
+  resetMiembro()
+  isCreateMode.value = true
+  editMode.value = true
+}
+
+const tabs = [
+  { id: 'personal', name: 'Datos personales' },
+  { id: 'membresia', name: 'Militancia' },
+  { id: 'pagoCuotas', name: 'Pago de cuotas' },
+  { id: 'voluntariado', name: 'Disponibilidad y perfil' },
+  { id: 'skills', name: 'Habilidades' },
+  { id: 'franjas', name: 'Horarios' },
+]
+
+const availableTabs = computed(() => {
+  if (isCreateMode.value) {
+    return tabs.filter(t => !['skills', 'franjas'].includes(t.id))
+  }
+  return tabs
+})
+
+const formValido = computed(() => {
+  if (!isCreateMode.value) return true
+  const m = miembro.value
+  return !!(
+    m.nombre?.trim() &&
+    m.apellido1?.trim() &&
+    m.tipoDocumento &&
+    m.numeroDocumento?.trim() &&
+    m.telefono?.trim() &&
+    m.estadoId &&
+    m.fechaAlta
+  )
+})
 
 const sexoOptions = [
   { value: 'H', label: 'Hombre' },
   { value: 'M', label: 'Mujer' },
   { value: 'X', label: 'Otro / no especificado' },
+]
+
+const tipoDocumentoOptions = [
+  { value: 'DNI', label: 'DNI' },
+  { value: 'NIE', label: 'NIE' },
+  { value: 'NIF', label: 'NIF' },
+  { value: 'TIE', label: 'TIE (Tarjeta Identidad Extranjero)' },
+  { value: 'PASAPORTE', label: 'Pasaporte' },
+  { value: 'OTRO', label: 'Otro documento' },
 ]
 
 // ── Skills ────────────────────────────────────────────────────────────────
@@ -429,11 +498,11 @@ const MUTATION_DELETE_SKILL = gql`
 `
 
 async function cargarSkills() {
-  if (!route.params.id) return
+  if (!miembro.value.id) return
   loadingSkills.value = true
   try {
     const [r1, r2] = await Promise.all([
-      graphqlClient.request(QUERY_SKILLS_MIEMBRO, { miembroId: route.params.id }),
+      graphqlClient.request(QUERY_SKILLS_MIEMBRO, { miembroId: miembro.value.id }),
       graphqlClient.request(QUERY_SKILLS_CATALOGO),
     ])
     miembroSkills.value = r1.miembrosSkills || []
@@ -444,10 +513,10 @@ async function cargarSkills() {
 }
 
 async function guardarSkill() {
-  if (!nuevaSkill.value.skillId) return
+  if (!nuevaSkill.value.skillId || !miembro.value.id) return
   await graphqlClient.request(MUTATION_CREATE_SKILL, {
     data: {
-      miembroId: route.params.id,
+      miembroId: miembro.value.id,
       skillId: nuevaSkill.value.skillId,
       nivel: nuevaSkill.value.nivel || null,
       validado: false,
@@ -498,10 +567,10 @@ const MUTATION_DELETE_FRANJA = gql`
 `
 
 async function cargarFranjas() {
-  if (!route.params.id) return
+  if (!miembro.value.id) return
   loadingFranjas.value = true
   try {
-    const r = await graphqlClient.request(QUERY_FRANJAS, { miembroId: route.params.id })
+    const r = await graphqlClient.request(QUERY_FRANJAS, { miembroId: miembro.value.id })
     franjas.value = (r.franjasDisponibilidad || []).sort((a, b) => a.diaSemana - b.diaSemana || a.horaInicio.localeCompare(b.horaInicio))
   } finally {
     loadingFranjas.value = false
@@ -509,10 +578,10 @@ async function cargarFranjas() {
 }
 
 async function guardarFranja() {
-  if (!nuevaFranja.value.horaInicio || !nuevaFranja.value.horaFin) return
+  if (!nuevaFranja.value.horaInicio || !nuevaFranja.value.horaFin || !miembro.value.id) return
   await graphqlClient.request(MUTATION_CREATE_FRANJA, {
     data: {
-      miembroId: route.params.id,
+      miembroId: miembro.value.id,
       diaSemana: nuevaFranja.value.diaSemana,
       horaInicio: nuevaFranja.value.horaInicio,
       horaFin: nuevaFranja.value.horaFin,
@@ -529,21 +598,36 @@ async function eliminarFranja(id) {
   await cargarFranjas()
 }
 
-onMounted(async () => {
-  await loadCatalogos()
-  if (route.params.id) {
-    await Promise.all([fetchMiembro(route.params.id), cargarSkills(), cargarFranjas()])
+const handleBack = () => {
+  router.push('/miembros')
+}
+
+const handleCancel = () => {
+  if (isCreateMode.value) {
+    router.push('/miembros')
+    return
   }
-})
+  if (originalSnapshot.value) {
+    miembro.value = structuredClone(originalSnapshot.value)
+  }
+  editMode.value = false
+}
 
 const handleSave = async () => {
   try {
-    await saveMiembro()
-    saveMessage.value = 'Ficha de militancia actualizada correctamente.'
-    editMode.value = false
-    window.setTimeout(() => {
-      saveMessage.value = ''
-    }, 3000)
+    if (isCreateMode.value) {
+      const created = await saveMiembro()
+      if (created?.id) {
+        router.push(`/miembros/${created.id}`)
+      }
+    } else {
+      await saveMiembro()
+      saveMessage.value = 'Ficha de militancia actualizada correctamente.'
+      editMode.value = false
+      window.setTimeout(() => {
+        saveMessage.value = ''
+      }, 3000)
+    }
   } catch {
     saveMessage.value = ''
   }
@@ -564,6 +648,18 @@ const toggleEditMode = () => {
   }
   editMode.value = false
 }
+
+onMounted(async () => {
+  await loadCatalogos()
+  if (isCreateMode.value) {
+    const espana = catalogos.value.paises.find(p => p.codigo === 'ES')
+    if (espana) miembro.value.paisDomicilioId = espana.id
+    return
+  }
+  if (route.params.id) {
+    await Promise.all([fetchMiembro(route.params.id), cargarSkills(), cargarFranjas()])
+  }
+})
 
 const FieldText = defineComponent({
   props: {

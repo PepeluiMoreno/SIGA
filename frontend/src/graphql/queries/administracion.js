@@ -11,11 +11,15 @@ export const GET_ROLES = `
       nivel
       activo
       sistema
+      esTerritorial
+      nivelTerritorial
       transacciones {
         id
+        transaccion { id }
       }
       funcionalidades {
         id
+        funcionalidad { id }
       }
     }
   }
@@ -99,7 +103,7 @@ export const GET_TRANSACCIONES_TODAS = `
 
 export const GET_FUNCIONALIDADES_TODAS = `
   query FuncionalidadesTodas {
-    funcionalidades(filter: { activa: { eq: true } }) {
+    funcionalidades {
       id
       codigo
       nombre
@@ -281,5 +285,53 @@ export const REVOCAR_CARGO = `
       motivo: $motivo
       usuarioId: $usuarioId
     )
+  }
+`
+
+// ── Roles CRUD ────────────────────────────────────────────────────────────────
+// Las mutaciones crearRol / actualizarRol son custom (AccesoMutation):
+//   - crearRol: crea el rol y asigna funcionalidades en una sola transacción
+//   - actualizarRol: actualiza campos y sincroniza funcionalidades atómicamente
+//   - Devuelven UUID del rol (no el tipo completo)
+
+export const CREAR_ROL = `
+  mutation CrearRol($data: CrearRolInput!) {
+    crearRol(data: $data)
+  }
+`
+
+export const ACTUALIZAR_ROL = `
+  mutation ActualizarRol($data: ActualizarRolInput!) {
+    actualizarRol(data: $data)
+  }
+`
+
+export const ASIGNAR_ROL_USUARIO = `
+  mutation AsignarRolUsuario($usuarioId: UUID!, $rolId: UUID!, $agrupacionId: UUID) {
+    asignarRolUsuario(usuarioId: $usuarioId, rolId: $rolId, agrupacionId: $agrupacionId)
+  }
+`
+
+export const REVOCAR_ROL_USUARIO = `
+  mutation RevocarRolUsuario($usuarioId: UUID!, $rolId: UUID!) {
+    revocarRolUsuario(usuarioId: $usuarioId, rolId: $rolId)
+  }
+`
+
+export const ELIMINAR_ROL = `
+  mutation EliminarRol($filter: RolFilter!) {
+    eliminarRoles(filter: $filter) { id }
+  }
+`
+
+export const ASIGNAR_TRANSACCION_ROL = `
+  mutation AsignarTransaccionRol($rolId: UUID!, $transaccionId: UUID!) {
+    asignarTransaccionRol(rolId: $rolId, transaccionId: $transaccionId)
+  }
+`
+
+export const REVOCAR_TRANSACCION_ROL = `
+  mutation RevocarTransaccionRol($rolId: UUID!, $transaccionId: UUID!) {
+    revocarTransaccionRol(rolId: $rolId, transaccionId: $transaccionId)
   }
 `

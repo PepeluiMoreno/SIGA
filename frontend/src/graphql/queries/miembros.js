@@ -38,6 +38,7 @@ export const GET_MIEMBROS = `
       fechaAlta
       fechaBaja
       activo
+      esSocioHonor
       esVoluntario
       datosAnonimizados
     }
@@ -56,6 +57,7 @@ export const GET_MIEMBRO_BY_ID = `
       cargoId
       paisDocumentoId
       paisDomicilioId
+      paisNacimientoId
       provinciaId
       nombre
       apellido1
@@ -105,11 +107,18 @@ export const GET_MIEMBRO_BY_ID = `
         id
         nombre
       }
+      paisNacimiento {
+        id
+        nombre
+      }
       cargo {
         id
         nombre
       }
       iban
+      formaPagoId
+      formaPago { id codigo nombre }
+      esSocioHonor
       esVoluntario
       disponibilidad
       horasDisponiblesSemana
@@ -125,6 +134,24 @@ export const GET_MIEMBRO_BY_ID = `
       activo
       fechaCreacion
       fechaModificacion
+    }
+  }
+`
+
+export const CREATE_MIEMBRO = `
+  mutation CrearMiembro($data: MiembroCreateInput!) {
+    crearMiembro(data: $data) {
+      id
+      nombre
+      apellido1
+      apellido2
+      email
+      telefono
+      tipoMiembro { id nombre }
+      estado { id nombre }
+      agrupacion { id nombre }
+      fechaAlta
+      activo
     }
   }
 `
@@ -216,6 +243,19 @@ export const GET_MIEMBROS_COUNT = `
   query MiembrosCount {
     miembros {
       id
+    }
+  }
+`
+
+// Query para obtener formas de pago
+export const GET_FORMAS_PAGO = `
+  query FormasPago {
+    formasPago(filter: {activo: {eq: true}}) {
+      id
+      codigo
+      nombre
+      descripcion
+      activo
     }
   }
 `

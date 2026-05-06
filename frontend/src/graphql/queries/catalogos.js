@@ -57,6 +57,7 @@ export const GET_ESTADOS_MIEMBRO = `
       descripcion
       color
       orden
+      esInicial
       activo
     }
   }
@@ -138,6 +139,7 @@ export const GET_ESTADOS_CUOTA = `
       descripcion
       color
       orden
+      esInicial
       activo
     }
   }
@@ -177,6 +179,7 @@ export const GET_ESTADOS_DONACION = `
       descripcion
       color
       orden
+      esInicial
       activo
     }
   }
@@ -216,6 +219,7 @@ export const GET_ESTADOS_REMESA = `
       descripcion
       color
       orden
+      esInicial
       activo
     }
   }
@@ -333,7 +337,7 @@ export const GET_ESTADOS_CAMPANIA = `
       descripcion
       color
       orden
-      esEstadoFinal
+      esInicial
       activo
     }
   }
@@ -451,6 +455,7 @@ export const GET_ESTADOS_ACTIVIDAD = `
       descripcion
       color
       orden
+      esInicial
       activo
     }
   }
@@ -642,6 +647,7 @@ export const GET_PAISES = `
   query Paises {
     paises {
       id
+      codigo
       nombre
       activo
     }
@@ -714,6 +720,18 @@ export const DELETE_PROVINCIA = `
   }
 `
 
+export const GET_MUNICIPIOS = `
+  query Municipios($provinciaId: UUID) {
+    municipios(filter: {provinciaId: {eq: $provinciaId}}) {
+      id
+      nombre
+      codigoPostal
+      provinciaId
+      activo
+    }
+  }
+`
+
 export const GET_AGRUPACIONES_TERRITORIALES = `
   query AgrupacionesTerritoriales {
     agrupacionesTerritoriales {
@@ -752,6 +770,46 @@ export const UPDATE_AGRUPACION_TERRITORIAL = `
 export const DELETE_AGRUPACION_TERRITORIAL = `
   mutation EliminarAgrupacionTerritorial($filter: AgrupacionTerritorialFilter!) {
     eliminarAgrupacionesTerritoriales(filter: $filter) {
+      id
+    }
+  }
+`
+
+// ── Convenios de colaboración ─────────────────────────────────────────────────
+
+export const GET_ESTADOS_CONVENIO = `
+  query EstadosConvenio {
+    estadosConvenio {
+      id
+      nombre
+      descripcion
+      orden
+      activo
+    }
+  }
+`
+
+export const CREATE_ESTADO_CONVENIO = `
+  mutation CrearEstadoConvenio($data: EstadoConvenioCreateInput!) {
+    crearEstadoConvenio(data: $data) {
+      id
+      nombre
+    }
+  }
+`
+
+export const UPDATE_ESTADO_CONVENIO = `
+  mutation ActualizarEstadoConvenio($data: EstadoConvenioUpdateInput!) {
+    actualizarEstadoConvenio(data: $data) {
+      id
+      nombre
+    }
+  }
+`
+
+export const DELETE_ESTADO_CONVENIO = `
+  mutation EliminarEstadoConvenio($filter: EstadoConvenioFilter!) {
+    eliminarEstadosConvenio(filter: $filter) {
       id
     }
   }
