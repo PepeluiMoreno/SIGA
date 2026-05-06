@@ -1,6 +1,6 @@
 {
-  "version": "1.1.0",
-  "fecha_actualizacion": "2026-04-30",
+  "version": "1.2.0",
+  "fecha_actualizacion": "2026-05-05",
   "transacciones": [
     {
       "codigo": "SOL_LIST",
@@ -1115,6 +1115,24 @@
       "descripcion": "Vista general de indicadores clave",
       "modulo": "contable",
       "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CONF.ORG.VER",
+      "nombre": "Ver parámetros de la organización",
+      "descripcion": "Consultar los parámetros generales de la organización (nombre, NIF, contacto, logo...)",
+      "modulo": "administracion",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CONF.ORG.EDITAR",
+      "nombre": "Editar parámetros de la organización",
+      "descripcion": "Modificar los parámetros generales de la organización, incluyendo el logotipo",
+      "modulo": "administracion",
+      "tipo": "configuracion",
       "activa": true,
       "sistema": true
     }

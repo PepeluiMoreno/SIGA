@@ -27,11 +27,12 @@ from ..modules.configuracion.models import (
     EstadoBase, EstadoCuota, EstadoCampania, EstadoTarea,
     EstadoActividad, EstadoParticipante, EstadoOrdenCobro,
     EstadoRemesa, EstadoDonacion, EstadoNotificacion, HistorialEstado,
-    TipoOrganizacion, Organizacion,
 )
 
 # Organizaciones
-from ..modules.organizaciones.models import EstadoConvenio, Convenio
+from ..modules.organizaciones.models import (
+    TipoOrganizacion, Organizacion, EstadoConvenio, Convenio,
+)
 
 # Membresía
 from ..modules.membresia.models import (
@@ -65,6 +66,6 @@ from ..modules.economico.models import (
     DonacionConcepto, Donacion,
     Remesa, OrdenCobro,
     EstadoPlanificacion, CategoriaPartida, PartidaPresupuestaria, PlanificacionAnual,
-    ProveedorPago, TipoPago, Pago, EventoPago, Suscripcion,
-    Reclamacion, AccionReclamacion,
+    ProveedorPago, EstadoPago, TipoEventoPago, TipoPago, Pago, EventoPago, EstadoSuscripcion, Suscripcion,
+    EstadoReclamacion, Reclamacion, TipoAccionReclamacion, AccionReclamacion,
 )
