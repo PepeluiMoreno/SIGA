@@ -6,7 +6,7 @@ from decimal import Decimal
 from enum import Enum as PyEnum
 from typing import Optional
 
-from sqlalchemy import String, ForeignKey, Date, Numeric, Enum, Text, Uuid, Integer
+from sqlalchemy import String, ForeignKey, Date, Numeric, Enum, Text, Uuid, Integer, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ....infrastructure.base_model import BaseModel
@@ -34,7 +34,7 @@ class ImporteCuotaAnio(BaseModel):
     tipo_miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("tipos_miembro.id"), nullable=False, index=True)
     importe: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     nombre_cuota: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # Ej: "General", "Estudiante", "Parado"
-    activo: Mapped[bool] = mapped_column(Integer, default=True, nullable=False)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Relación

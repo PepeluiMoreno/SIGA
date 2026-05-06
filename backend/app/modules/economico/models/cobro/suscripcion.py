@@ -11,6 +11,20 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .....infrastructure.base_model import BaseModel
 
 
+class EstadoSuscripcion(BaseModel):
+    """Estados del ciclo de vida de una suscripción (ACTIVA, CANCELADA, EXPIRADA...)."""
+    __tablename__ = "estados_suscripcion"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    codigo: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    nombre: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    es_final: Mapped[bool] = mapped_column(__import__('sqlalchemy').Boolean, default=False, nullable=False)
+    activo: Mapped[bool] = mapped_column(__import__('sqlalchemy').Boolean, default=True, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<EstadoSuscripcion(codigo='{self.codigo}')>"
+
+
 class Suscripcion(BaseModel):
     __tablename__ = "suscripciones"
 

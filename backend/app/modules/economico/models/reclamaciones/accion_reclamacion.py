@@ -4,10 +4,23 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import ForeignKey, Uuid, Text, DateTime, func, String
+from sqlalchemy import Boolean, ForeignKey, Uuid, Text, DateTime, func, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .....infrastructure.base_model import BaseModel
+from app.infrastructure.base_model import BaseModel
+
+
+class TipoAccionReclamacion(BaseModel):
+    """Catálogo de tipos de acción en reclamaciones (NOTIFICACION, LLAMADA, CARTA, GESTORIA...)."""
+    __tablename__ = "tipos_accion_reclamacion"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    codigo: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    nombre: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<TipoAccionReclamacion(codigo='{self.codigo}')>"
 
 
 class AccionReclamacion(BaseModel):
@@ -21,8 +34,6 @@ class AccionReclamacion(BaseModel):
     reclamacion_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("reclamaciones.id"), nullable=False, index=True
     )
-
-    # tipo_accion: FK a tipos_accion_reclamacion (catálogo: NOTIFICACION, LLAMADA, CARTA, GESTORIA)
     tipo_accion_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("tipos_accion_reclamacion.id"), nullable=False, index=True
     )
@@ -31,7 +42,6 @@ class AccionReclamacion(BaseModel):
     resultado: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    # usuario que ejecutó la acción (null si fue automática)
     ejecutado_por_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid, ForeignKey("usuarios.id"), nullable=True, index=True
     )

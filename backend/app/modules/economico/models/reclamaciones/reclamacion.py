@@ -3,10 +3,24 @@
 import uuid
 from typing import Optional
 
-from sqlalchemy import Integer, ForeignKey, Uuid, Text
+from sqlalchemy import String, Boolean, Integer, ForeignKey, Uuid, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .....infrastructure.base_model import BaseModel
+from app.infrastructure.base_model import BaseModel
+
+
+class EstadoReclamacion(BaseModel):
+    """Estados del proceso de reclamación (ABIERTA, RESUELTA, CERRADA...)."""
+    __tablename__ = "estados_reclamacion"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    codigo: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    nombre: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    es_final: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<EstadoReclamacion(codigo='{self.codigo}')>"
 
 
 class Reclamacion(BaseModel):
@@ -18,15 +32,12 @@ class Reclamacion(BaseModel):
         Uuid, ForeignKey("cuotas_anuales.id"), nullable=False, index=True
     )
 
-    # nivel: 1=Primera, 2=Segunda, 3=Tercera
     nivel: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
-    # estado: FK a estados_reclamacion (catálogo)
     estado_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("estados_reclamacion.id"), nullable=False, index=True
     )
 
-    # gestor asignado (opcional)
     gestor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid, ForeignKey("usuarios.id"), nullable=True, index=True
     )

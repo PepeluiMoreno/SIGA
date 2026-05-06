@@ -11,6 +11,33 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .....infrastructure.base_model import BaseModel
 
 
+class EstadoPago(BaseModel):
+    """Estados del ciclo de vida de un pago (CREADO, COMPLETADO, FALLIDO...)."""
+    __tablename__ = "estados_pago"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    codigo: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    nombre: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    es_final: Mapped[bool] = mapped_column(__import__('sqlalchemy').Boolean, default=False, nullable=False)
+    activo: Mapped[bool] = mapped_column(__import__('sqlalchemy').Boolean, default=True, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<EstadoPago(codigo='{self.codigo}')>"
+
+
+class TipoEventoPago(BaseModel):
+    """Catálogo de tipos de evento de pasarela (WEBHOOK, SISTEMA, REINTENTO...)."""
+    __tablename__ = "tipos_evento_pago"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    codigo: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    nombre: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    activo: Mapped[bool] = mapped_column(__import__('sqlalchemy').Boolean, default=True, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<TipoEventoPago(codigo='{self.codigo}')>"
+
+
 class TipoPago(BaseModel):
     """Catálogo de tipos de pago (donación, cuota, suscripción...)."""
     __tablename__ = "tipos_pago"
