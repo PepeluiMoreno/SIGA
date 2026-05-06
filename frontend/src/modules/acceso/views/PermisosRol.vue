@@ -271,8 +271,8 @@ import { executeQuery, executeMutation } from '@/graphql/client.js'
 import {
   GET_ROL_CON_PERMISOS,
   GET_TRANSACCIONES_TODAS,
-  ASIGNAR_TRANSACCION,
-  REVOCAR_TRANSACCION,
+  ASIGNAR_TRANSACCION_ROL,
+  REVOCAR_TRANSACCION_ROL,
 } from '@/graphql/queries/administracion.js'
 
 const route = useRoute()
@@ -286,7 +286,6 @@ const savedMsg = ref('')
 const allTransacciones = ref([])
 const authorizedIds = ref([])
 const originalIds = ref([])
-const rolTransaccionMap = ref({})  // { transaccionId → rolTransaccionId }
 
 const selectedLeft = ref([])
 const selectedRight = ref([])
@@ -421,15 +420,15 @@ async function guardar() {
 
     await Promise.all([
       ...adds.map(id =>
-        executeMutation(ASIGNAR_TRANSACCION, {
-          data: { rolId: rol.value.id, transaccionId: id },
+        executeMutation(ASIGNAR_TRANSACCION_ROL, {
+          rolId: rol.value.id, transaccionId: id,
         })
       ),
-      ...removes.map(id => {
-        const rtId = rolTransaccionMap.value[id]
-        if (!rtId) return Promise.resolve()
-        return executeMutation(REVOCAR_TRANSACCION, { filter: { id: { eq: rtId } } })
-      }),
+      ...removes.map(id =>
+        executeMutation(REVOCAR_TRANSACCION_ROL, {
+          rolId: rol.value.id, transaccionId: id,
+        })
+      ),
     ])
 
     await cargar()
@@ -460,15 +459,9 @@ async function cargar() {
 
     allTransacciones.value = txData.transacciones || []
 
-    const map = {}
-    const ids = []
-    for (const rt of rolRaw.transacciones || []) {
-      if (rt.transaccion) {
-        map[rt.transaccion.id] = rt.id
-        ids.push(rt.transaccion.id)
-      }
-    }
-    rolTransaccionMap.value = map
+    const ids = (rolRaw.transacciones || [])
+      .filter(rt => rt.transaccion)
+      .map(rt => rt.transaccion.id)
     authorizedIds.value = ids
     originalIds.value = [...ids]
     selectedLeft.value = []
