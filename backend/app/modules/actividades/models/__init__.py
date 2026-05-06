@@ -6,6 +6,11 @@ from .catalogos import (
     TipoRecurso,
     TipoKPI,
 )
+from app.modules.configuracion.models.estados import (
+    EstadoActividad,
+    EstadoTarea,
+    EstadoParticipante,
+)
 from .actividad import (
     PropuestaActividad,
     TareaPropuesta,
@@ -49,6 +54,10 @@ from .evento import (
 )
 
 __all__ = [
+    # Estados (re-exportados desde configuracion)
+    'EstadoActividad',
+    'EstadoTarea',
+    'EstadoParticipante',
     # Catálogos
     'TipoActividad',
     'EstadoPropuesta',

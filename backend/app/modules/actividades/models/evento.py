@@ -111,7 +111,7 @@ class Evento(BaseModel):
     campania = relationship('Campania', foreign_keys=[campania_id], lazy='selectin')
     agrupacion = relationship('AgrupacionTerritorial', foreign_keys=[agrupacion_id], lazy='selectin')
     evento_plantilla = relationship('Evento', remote_side='Evento.id', foreign_keys=[evento_plantilla_id], lazy='selectin')
-    instancias = relationship('Evento', foreign_keys=[evento_plantilla_id], lazy='selectin')
+    instancias = relationship('Evento', foreign_keys=[evento_plantilla_id], lazy='selectin', overlaps="evento_plantilla")
     participantes = relationship('ParticipanteEvento', back_populates='evento', lazy='selectin')
     materiales = relationship('MaterialEvento', back_populates='evento', lazy='selectin')
     grupos = relationship('GrupoEvento', back_populates='evento', lazy='selectin')
