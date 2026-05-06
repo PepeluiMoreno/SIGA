@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useDebugStore } from '@/stores/debug.js'
+import { useOrgConfigStore } from '@/stores/orgConfig.js'
 
 // Vistas globales (no pertenecen a un módulo específico)
 import Dashboard from '@/views/Dashboard.vue'
@@ -28,7 +29,6 @@ import Donaciones from '@/modules/economico/views/Donaciones.vue'
 import ListaVoluntarios from '@/modules/membresia/views/ListaVoluntarios.vue'
 
 // === Módulo: CONFIGURACION ===
-import ParametrizacionIndex from '@/modules/configuracion/views/ParametrizacionIndex.vue'
 
 // Configuración de rutas
 const routes = [
@@ -43,6 +43,12 @@ const routes = [
     component: Login,
     name: 'Login',
     meta: { guest: true }
+  },
+  {
+    path: '/inicializacion',
+    component: () => import('@/views/Inicializacion.vue'),
+    name: 'Inicializacion',
+    meta: { public: true }
   },
 
   // ─── ACCESO ───────────────────────────────────────────────────────────────
@@ -65,9 +71,15 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/roles/:id/editor',
-    component: () => import('@/modules/acceso/views/EditorRol.vue'),
-    name: 'EditorRol',
+    path: '/roles/nuevo',
+    component: () => import('@/modules/acceso/views/FormularioRol.vue'),
+    name: 'NuevoRol',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/roles/:id/editar',
+    component: () => import('@/modules/acceso/views/FormularioRol.vue'),
+    name: 'EditarRol',
     meta: { requiresAuth: true }
   },
   {
@@ -94,6 +106,12 @@ const routes = [
     path: '/miembros',
     component: ListaMiembros,
     name: 'Miembros',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/miembros/nuevo',
+    component: () => import('@/modules/membresia/views/DetalleMiembro.vue'),
+    name: 'NuevoMiembro',
     meta: { requiresAuth: true }
   },
   {
@@ -222,18 +240,22 @@ const routes = [
 
   // ─── CONFIGURACION ────────────────────────────────────────────────────────
   {
-    path: '/parametrizacion',
-    redirect: '/parametrizacion/sistema',
+    path: '/configuracion',
+    redirect: '/configuracion/general',
   },
   {
-    path: '/parametrizacion/sistema',
-    component: () => import('@/modules/configuracion/views/ConfiguracionSistema.vue'),
-    name: 'ConfiguracionSistema',
+    path: '/configuracion/general',
+    component: () => import('@/modules/configuracion/views/ParametrosGenerales.vue'),
+    name: 'ParametrosGenerales',
     meta: { requiresAuth: true }
   },
   {
+    path: '/parametrizacion',
+    redirect: '/parametrizacion/catalogos',
+  },
+  {
     path: '/parametrizacion/catalogos',
-    component: ParametrizacionIndex,
+    component: () => import('@/modules/configuracion/views/GestorCatalogos.vue'),
     name: 'Catalogos',
     meta: { requiresAuth: true }
   },
@@ -261,12 +283,6 @@ const routes = [
     name: 'EstadosCuota',
     meta: { requiresAuth: true }
   },
-  {
-    path: '/parametrizacion/colaboraciones',
-    component: () => import('@/modules/configuracion/views/Colaboraciones.vue'),
-    name: 'Colaboraciones',
-    meta: { requiresAuth: true }
-  },
 ]
 
 const router = createRouter({
@@ -274,10 +290,11 @@ const router = createRouter({
   routes
 })
 
-// Guard de navegación para autenticación
-router.beforeEach((to, from, next) => {
-  const isAuthenticated = localStorage.getItem('siga_token')
+// Guard de navegación
+router.beforeEach(async (to, from, next) => {
+  const isAuthenticated = !!localStorage.getItem('siga_token')
   const debugStore = useDebugStore()
+  const orgConfigStore = useOrgConfigStore()
 
   if (debugStore.enabled) {
     debugStore.refreshSnapshot()
@@ -286,8 +303,26 @@ router.beforeEach((to, from, next) => {
       to: to.fullPath,
       requiresAuth: Boolean(to.meta.requiresAuth),
       guest: Boolean(to.meta.guest),
-      isAuthenticated: Boolean(isAuthenticated),
+      isAuthenticated,
     })
+  }
+
+  // Comprobación de inicialización (solo si el backend está disponible)
+  if (to.name !== 'Inicializacion') {
+    const initialized = await orgConfigStore.checkInitialized()
+    if (initialized === false) {
+      next('/inicializacion')
+      return
+    }
+  } else {
+    // Si ya está inicializado, no dejar entrar en /inicializacion
+    const initialized = await orgConfigStore.checkInitialized()
+    if (initialized) {
+      next('/login')
+      return
+    }
+    next()
+    return
   }
 
   if (to.meta.requiresAuth && !isAuthenticated) {

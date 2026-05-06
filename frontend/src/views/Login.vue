@@ -2,11 +2,11 @@
   <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-purple-100 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
       <div>
-        <div class="mx-auto flex justify-center">
-          <img src="@/assets/logo.png" alt="Europa Laica" class="h-20 w-auto" />
+        <div v-if="orgConfigStore.logo" class="mx-auto flex justify-center mb-2">
+          <img :src="orgConfigStore.logo" alt="Logo organización" class="h-20 w-auto object-contain" />
         </div>
-        <h2 class="mt-6 text-center text-xl font-extrabold text-purple-700">
-          SIGA (beta release)
+        <h2 class="mt-4 text-center text-xl font-extrabold text-purple-700">
+          {{ orgConfigStore.nombre || 'SIGA' }}
         </h2>
         <p class="mt-2 text-center text-sm text-gray-600">
           Inicia sesión para acceder al sistema
@@ -89,23 +89,24 @@
 
       <div class="text-center">
         <p class="text-xs text-gray-500">
-          © {{ new Date().getFullYear() }} Europa Laica - Todos los derechos reservados
+          © {{ new Date().getFullYear() }} {{ orgConfigStore.nombre || 'SIGA' }}
         </p>
-        <a href="https://laicismo.org" target="_blank" class="text-xs text-purple-600 hover:text-purple-500">
-          laicismo.org
-        </a>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue"
+import { ref, onMounted } from "vue"
 import { useRouter } from "vue-router"
 import { useAuthStore } from "@/stores/auth.js"
+import { useOrgConfigStore } from "@/stores/orgConfig.js"
 
 const router = useRouter()
 const authStore = useAuthStore()
+const orgConfigStore = useOrgConfigStore()
+
+onMounted(() => { orgConfigStore.fetchConfig() })
 
 const form = ref({
   email: "",

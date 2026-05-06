@@ -1,4 +1,4 @@
-﻿import { defineConfig } from 'vite'
+import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 
@@ -11,10 +11,15 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    allowedHosts: true,
+    hmr: process.env.VITE_HMR_CLIENT_PORT
+      ? { clientPort: parseInt(process.env.VITE_HMR_CLIENT_PORT) }
+      : {},
     proxy: {
-      '/graphql': {
+      '/api/graphql': {
         target: process.env.VITE_BACKEND_URL || 'http://localhost:8000',
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
       }
     }
   }
