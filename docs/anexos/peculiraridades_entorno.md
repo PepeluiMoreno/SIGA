@@ -67,27 +67,76 @@ El desarrollo activo se realiza sobre un ordenador físico llamado `optiplex-790
 
 ### Topología del entorno de desarrollo
 
-- Sin Traefik. Los puertos se exponen directamente al host.
-- **Frontend**: Vite dev server (HMR) en `http://optiplex-790:3000`.
-- **Backend**: `uvicorn --reload` en `http://optiplex-790:8000`.
+- **Traefik** (`traefik_public`, ya existente en el Optiplex). Entrypoints `web` (80) y `websecure` (443) con certificado mkcert local.
+- **Frontend**: Vite dev server (HMR) dentro de Docker; Traefik enruta `siga.optiplex-790` → puerto 3000 del contenedor, tanto en HTTP como HTTPS.
+- **Backend**: `uvicorn --reload` en red interna; Vite proxy reenvía `/graphql → http://backend:8000` (sin exposición directa de puertos).
 - **DB**: Postgres en red interna Docker; volumen `pgdata_dev` separado del staging.
 - El proxy de Vite (`/graphql → http://backend:8000`) resuelve el backend por nombre de contenedor dentro de la red Docker interna.
+
+### DNS para el dominio de desarrollo
+
+El Optiplex-790 ya corre **dnsmasq** con un wildcard `address=/optiplex-790/192.168.1.141` definido en `/etc/dnsmasq.d/optiplex-790.conf`. Eso significa que `siga.optiplex-790` (y cualquier otro subdominio) ya resuelve a la IP del Optiplex **sin tocar nada más**.
+
+Para que un equipo de la red local pueda acceder a `http://siga.optiplex-790`, solo hay que apuntarle el DNS primario a `192.168.1.141`:
+
+- **Linux**: en `/etc/resolv.conf` o via NetworkManager → `nameserver 192.168.1.141`
+- **Windows / macOS**: Configuración de red → DNS primario `192.168.1.141`
+- **Router**: si el router permite configurar el DNS que da a los clientes DHCP, ponerlo ahí y funciona para toda la red sin tocar cada equipo.
 
 ### Arranque
 
 ```bash
 # Primera vez o cuando cambien dependencias Python/npm:
-docker compose -f docker-compose.dev.yml up --build
+docker compose --env-file .env.dev -f docker-compose.dev.yml up --build
 
 # Resto de veces:
-docker compose -f docker-compose.dev.yml up
+docker compose --env-file .env.dev -f docker-compose.dev.yml up
 ```
+
+El fichero `.env.dev` (ignorado por git) contiene las variables locales de desarrollo. Copiar `.env.staging.example` como punto de partida y ajustar los valores.
+
+### Certificados TLS locales (mkcert)
+
+Para que `https://siga.optiplex-790` funcione sin avisos de seguridad se usa **mkcert**, que genera una CA local y certificados firmados por ella.
+
+#### Instalación inicial (una sola vez en el Optiplex)
+
+```bash
+# Descargar mkcert (no requiere sudo)
+curl -sL https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64 \
+     -o /usr/local/bin/mkcert && chmod +x /usr/local/bin/mkcert
+
+# Crear la CA local e instalarla en los stores de Chrome/Firefox del usuario actual
+mkcert -install
+
+# Generar el wildcard para *.optiplex-790
+mkdir -p /opt/docker/apps/traefik/certs
+mkcert \
+  -cert-file /opt/docker/apps/traefik/certs/local.crt \
+  -key-file  /opt/docker/apps/traefik/certs/local.key \
+  "*.optiplex-790" optiplex-790
+```
+
+Traefik monta `/opt/docker/apps/traefik/certs` como `/certs:ro` y usa el cert como default en el entrypoint `websecure` (configurado en `/opt/docker/apps/traefik/config/tls.yml`).
+
+El cert expira en **3 años**; cuando caduque, repetir solo el paso `mkcert -cert-file ...` y recrear el contenedor de Traefik.
+
+#### Confiar en la CA desde otros equipos de la red
+
+1. Copiar el fichero de CA del Optiplex:
+   ```
+   /home/jose/.local/share/mkcert/rootCA.pem
+   ```
+2. Importarlo como CA de confianza en el equipo cliente:
+   - **Chrome/Edge en Windows**: doble clic en el `.pem` (renombrar a `.crt`) → instalar en "Entidades de certificación raíz de confianza".
+   - **Firefox**: Preferencias → Privacidad → Ver certificados → Autoridades → Importar.
+   - **macOS**: Llavero → Importar → confiar siempre.
 
 ### Cómo funciona el hot-reload
 
 | Capa | Mecanismo | Tiempo de recarga |
 |---|---|---|
-| Frontend `.vue`, `.js`, `.css` | Vite HMR vía WebSocket en `:3000` | < 1 s |
+| Frontend `.vue`, `.js`, `.css` | Vite HMR vía WebSocket (clientPort 443 → Traefik → :3000) | < 1 s |
 | Backend `.py` (app/) | uvicorn `--reload` con watchfiles | 1-3 s |
 | Migraciones Alembic | Manual: `docker exec siga_dev_backend alembic upgrade head` | — |
 
@@ -96,6 +145,12 @@ Los bind mounts activos:
 - `./backend/main.py` → `/app/main.py`
 - `./backend/alembic` → `/app/alembic`
 - `./frontend` → `/app` (completo; `node_modules` en volumen anónimo separado)
+
+### Traefik en dev vs. nginx en staging
+
+En desarrollo no hay nginx. El frontend es el servidor de Vite (`node:22-alpine` con `npm run dev`). Las labels de Traefik están en ese contenedor apuntando al puerto 3000; no hay nada más que configurar para el routing.
+
+Nginx solo aparece en producción/staging, donde el bundle estático se sirve con `nginx:alpine`. El `docker-compose.staging.yml` ya tiene sus propias labels de Traefik (con TLS y certresolver).
 
 ### Relación con staging
 

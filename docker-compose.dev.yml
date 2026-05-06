@@ -3,8 +3,6 @@ services:
     build: ./backend
     container_name: siga_dev_backend
     restart: unless-stopped
-    ports:
-      - "8000:8000"
     volumes:
       - ./backend/app:/app/app       # hot-reload del código fuente
       - ./backend/main.py:/app/main.py
@@ -34,18 +32,30 @@ services:
     container_name: siga_dev_frontend
     restart: unless-stopped
     working_dir: /app
-    ports:
-      - "3000:3000"
     volumes:
       - ./frontend:/app
       - frontend_modules:/app/node_modules  # node_modules aislados del host
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     environment:
       - VITE_BACKEND_URL=http://backend:8000
+      - VITE_HMR_CLIENT_PORT=443
     depends_on:
       - backend
     networks:
       - internal
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_public"
+      # HTTP
+      - "traefik.http.routers.${APP_PREFIX:-siga}-dev.rule=Host(`${APP_DEV_DOMAIN:-siga.optiplex-790}`)"
+      - "traefik.http.routers.${APP_PREFIX:-siga}-dev.entrypoints=web"
+      - "traefik.http.services.${APP_PREFIX:-siga}-dev.loadbalancer.server.port=3000"
+      # HTTPS (cert auto-firmado de Traefik, sin Let's Encrypt)
+      - "traefik.http.routers.${APP_PREFIX:-siga}-dev-tls.rule=Host(`${APP_DEV_DOMAIN:-siga.optiplex-790}`)"
+      - "traefik.http.routers.${APP_PREFIX:-siga}-dev-tls.entrypoints=websecure"
+      - "traefik.http.routers.${APP_PREFIX:-siga}-dev-tls.tls=true"
+      - "traefik.http.routers.${APP_PREFIX:-siga}-dev-tls.service=${APP_PREFIX:-siga}-dev"
 
   db:
     image: postgres:17-alpine
@@ -68,6 +78,8 @@ services:
 
 networks:
   internal:
+  traefik_public:
+    external: true
 
 volumes:
   pgdata_dev:

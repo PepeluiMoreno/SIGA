@@ -18,6 +18,7 @@ dependencies = [
     "redis>=5.0.0",
     "validators>=0.22.0",
     "strawchemy>=0.3.0",
+    "aiosmtplib>=3.0.0",
 ]
 
 [project.optional-dependencies]
