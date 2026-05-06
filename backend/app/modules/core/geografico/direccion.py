@@ -3,7 +3,7 @@
 import uuid
 from typing import Optional, List
 
-from sqlalchemy import String, Integer, Uuid, ForeignKey, UniqueConstraint, Text
+from sqlalchemy import String, Integer, Boolean, Uuid, ForeignKey, UniqueConstraint, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ....infrastructure.base_model import BaseModel
@@ -20,7 +20,7 @@ class Pais(BaseModel):
     nombre_oficial: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     codigo_telefono: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)  # Ej: +34
     continente: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    activo: Mapped[bool] = mapped_column(Integer, default=True, nullable=False, index=True)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
     # Relaciones
     provincias = relationship('Provincia', back_populates='pais', lazy='selectin')
@@ -41,7 +41,7 @@ class Provincia(BaseModel):
     pais_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('paises.id'), nullable=False, index=True)
     codigo: Mapped[str] = mapped_column(String(10), nullable=False, index=True)  # Código provincial (ej: '28' para Madrid)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    activo: Mapped[bool] = mapped_column(Integer, default=True, nullable=False, index=True)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
     # Relaciones
     pais = relationship('Pais', back_populates='provincias', lazy='selectin')
@@ -64,7 +64,7 @@ class Municipio(BaseModel):
     codigo: Mapped[str] = mapped_column(String(10), nullable=False, index=True)  # Código INE
     nombre: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     codigo_postal: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)  # CP principal
-    activo: Mapped[bool] = mapped_column(Integer, default=True, nullable=False, index=True)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
     # Relaciones
     provincia = relationship('Provincia', back_populates='municipios', lazy='selectin')
@@ -222,7 +222,7 @@ class AgrupacionTerritorial(BaseModel):
 
     # Información adicional
     descripcion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    activo: Mapped[bool] = mapped_column(Integer, default=True, nullable=False, index=True)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
     # Relaciones
     pais = relationship('Pais', lazy='selectin')

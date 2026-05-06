@@ -11,7 +11,7 @@ al modelo unificado Organizacion.
 import uuid
 from typing import Optional, List
 
-from sqlalchemy import String, Integer, Uuid, Text, select
+from sqlalchemy import String, Integer, Boolean, Uuid, Text, select
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.ext.declarative import declared_attr
 
@@ -57,7 +57,7 @@ class AgrupacionTerritorial(Base):
 
     # Información adicional
     descripcion: Mapped[Optional[str]] = mapped_column(Text)
-    activo: Mapped[bool] = mapped_column(Integer, index=True)
+    activo: Mapped[bool] = mapped_column(Boolean, index=True)
 
     # Relaciones (se mapean igual que en un modelo normal)
     @declared_attr

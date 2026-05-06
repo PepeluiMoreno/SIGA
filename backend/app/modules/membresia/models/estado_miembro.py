@@ -23,8 +23,9 @@ class EstadoMiembro(BaseModel):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     descripcion: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    color: Mapped[str] = mapped_column(String(7), nullable=False, default='#6C757D')  # Color hex para UI
+    color: Mapped[str] = mapped_column(String(7), nullable=False, default='#6C757D')
     orden: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    es_inicial: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
     def __repr__(self) -> str:

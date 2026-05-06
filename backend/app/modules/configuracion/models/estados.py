@@ -18,8 +18,10 @@ class EstadoBase(BaseModel):
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     descripcion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     orden: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    es_inicial: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    es_final: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
-    color: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # Para UI: 'primary', 'success', 'warning', 'danger'
+    color: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}(nombre='{self.nombre}')>"

@@ -48,6 +48,7 @@ class Miembro(BaseModel):
     apellido2: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     sexo: Mapped[Optional[str]] = mapped_column(String(1), nullable=True)  # H=Hombre, M=Mujer
     fecha_nacimiento: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    pais_nacimiento_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('paises.id'), nullable=True)
 
     # Tipo de miembro
     tipo_miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('tipos_miembro.id'), nullable=False, index=True)
@@ -79,6 +80,7 @@ class Miembro(BaseModel):
 
     # Datos bancarios (IBAN encriptado)
     iban: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)  # Encriptado
+    forma_pago_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('formas_pago.id'), nullable=True, index=True)
 
     # Fechas de afiliación
     fecha_alta: Mapped[date] = mapped_column(Date, server_default=func.now(), nullable=False, index=True)
@@ -96,6 +98,7 @@ class Miembro(BaseModel):
 
     # Estado
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
+    es_socio_honor: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Voluntariado
     es_voluntario: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
@@ -120,7 +123,9 @@ class Miembro(BaseModel):
     cargo = relationship('TipoCargo', back_populates='miembros', lazy='selectin')
     pais_documento = relationship('Pais', foreign_keys=[pais_documento_id], lazy='selectin')
     pais_domicilio = relationship('Pais', foreign_keys=[pais_domicilio_id], lazy='selectin')
+    pais_nacimiento = relationship('Pais', foreign_keys=[pais_nacimiento_id], lazy='selectin')
     provincia = relationship('Provincia', lazy='selectin')
+    forma_pago = relationship('FormaPago', lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<Miembro(nombre='{self.nombre} {self.apellido1}', tipo='{self.tipo_miembro_id}')>"

@@ -14,8 +14,6 @@ from .estados import (
     EstadoNotificacion,
     HistorialEstado,
 )
-from .organizacion import TipoOrganizacion, Organizacion
-
 __all__ = [
     # Configuración del sistema
     'Configuracion',
@@ -33,7 +31,4 @@ __all__ = [
     'EstadoDonacion',
     'EstadoNotificacion',
     'HistorialEstado',
-    # Organizaciones (re-export from configuracion for compat)
-    'TipoOrganizacion',
-    'Organizacion',
 ]
