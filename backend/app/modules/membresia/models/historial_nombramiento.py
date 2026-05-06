@@ -1,8 +1,11 @@
-"""Histórico universal de nombramientos de cargos a miembros.
+"""Histórico universal de nombramientos de cargos (roles organizacionales) a miembros.
 
-Registra TODAS las asignaciones de cargos (junta directiva, coordinadores
-territoriales, etc.) con trazabilidad completa: quién, qué cargo, dónde
-(agrupación), desde cuándo, hasta cuándo y por qué motivo.
+Cada nombramiento apunta directamente a un Rol de tipo ORGANIZACION,
+eliminando la duplicidad con TipoCargo/CargoJunta.
+
+Modelo simplificado:
+  - UsuarioRol con rol organizacional = nombramiento activo
+  - HistorialNombramiento = traza de todos los cambios (altas, bajas, reasignaciones)
 """
 
 import uuid
@@ -16,20 +19,20 @@ from ....infrastructure.base_model import BaseModel
 
 
 class HistorialNombramiento(BaseModel):
-    """Registro histórico de un cargo asignado a un miembro.
+    """Registro histórico de un cargo (rol organizacional) asignado a un miembro.
 
-    Cubre todos los tipos de cargo:
+    Cubre todos los tipos de cargo a través de roles:
     - Junta directiva (presidente, secretario, tesorero, vocal…)
     - Coordinador territorial / autonómico
-    - Cualquier otro cargo definido en TipoCargo
+    - Cualquier otro rol de tipo ORGANIZACION
 
-    La relación con el modelo específico (JuntaDirectiva, CoordinacionTerritorial,
-    etc.) es opcional y se mantiene mediante tipo_origen + origen_id.
+    La vigencia se determina por fecha_fin IS NULL.
     """
     __tablename__ = 'historial_nombramientos'
     __table_args__ = (
         Index('ix_hist_nombr_miembro', 'miembro_id'),
         Index('ix_hist_nombr_agrupacion', 'agrupacion_id'),
+        Index('ix_hist_nombr_rol', 'rol_id'),
         Index('ix_hist_nombr_vigente', 'miembro_id', 'fecha_inicio', 'fecha_fin'),
     )
 
@@ -39,8 +42,8 @@ class HistorialNombramiento(BaseModel):
     miembro_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey('miembros.id', ondelete='RESTRICT'), nullable=False
     )
-    tipo_cargo_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('tipos_cargo.id', ondelete='RESTRICT'), nullable=False
+    rol_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('roles.id', ondelete='RESTRICT'), nullable=False
     )
 
     # Ámbito territorial (NULL si es cargo global de la organización)
@@ -54,7 +57,7 @@ class HistorialNombramiento(BaseModel):
 
     # Trazabilidad: origen del nombramiento
     tipo_origen: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    # 'JUNTA', 'COORDINACION', 'MANUAL', 'MIGRACION'
+    # 'JUNTA', 'MANUAL', 'MIGRACION', 'SEED'
     origen_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, nullable=True)
 
     motivo: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
@@ -62,7 +65,7 @@ class HistorialNombramiento(BaseModel):
 
     # Relaciones
     miembro = relationship('Miembro', lazy='selectin')
-    tipo_cargo = relationship('TipoCargo', lazy='selectin')
+    rol = relationship('Rol', lazy='selectin')
     agrupacion = relationship('AgrupacionTerritorial', lazy='selectin')
 
     @property
@@ -74,6 +77,6 @@ class HistorialNombramiento(BaseModel):
         return (
             f"<HistorialNombramiento("
             f"miembro_id='{self.miembro_id}', "
-            f"cargo='{self.tipo_cargo_id}', "
+            f"rol='{self.rol_id}', "
             f"inicio={self.fecha_inicio})>"
         )
