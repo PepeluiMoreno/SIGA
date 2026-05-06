@@ -24,8 +24,8 @@ from .presupuesto import (
     PartidaPresupuestaria,
     PlanificacionAnual,
 )
-from .cobro import ProveedorPago, TipoPago, Pago, EventoPago, Suscripcion
-from .reclamaciones import Reclamacion, AccionReclamacion
+from .cobro import ProveedorPago, EstadoPago, TipoEventoPago, TipoPago, Pago, EventoPago, EstadoSuscripcion, Suscripcion, FormaPago
+from .reclamaciones import EstadoReclamacion, Reclamacion, TipoAccionReclamacion, AccionReclamacion
 
 __all__ = [
     'TipoMovimientoTesoreria', 'CuentaBancaria', 'MovimientoTesoreria', 'ConciliacionBancaria',
@@ -35,6 +35,6 @@ __all__ = [
     'DonacionConcepto', 'Donacion',
     'Remesa', 'OrdenCobro',
     'EstadoPlanificacion', 'CategoriaPartida', 'PartidaPresupuestaria', 'PlanificacionAnual',
-    'ProveedorPago', 'TipoPago', 'Pago', 'EventoPago', 'Suscripcion',
-    'Reclamacion', 'AccionReclamacion',
+    'ProveedorPago', 'EstadoPago', 'TipoEventoPago', 'TipoPago', 'Pago', 'EventoPago', 'EstadoSuscripcion', 'Suscripcion', 'FormaPago',
+    'EstadoReclamacion', 'Reclamacion', 'TipoAccionReclamacion', 'AccionReclamacion',
 ]

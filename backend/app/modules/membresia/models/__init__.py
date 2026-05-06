@@ -5,10 +5,13 @@ from .estado_miembro import EstadoMiembro
 from .motivo_baja import MotivoBaja
 from .tipo_cargo import TipoCargo
 from .junta import JuntaDirectiva, CargoJunta, HistorialCargoJunta, TipoCargoRol
+from .historial_nombramiento import HistorialNombramiento
+from .coordinacion_territorial import CoordinacionTerritorial
 from .skill import Skill, MiembroSkill
 from .disponibilidad import FranjaDisponibilidad
 from .historial_agrupacion import HistorialAgrupacion
 from .traslados.modelos import SolicitudTraslado, EstadoTraslado
+from .miembro_segmentacion_view import MiembroSegmentacion
 from .voluntariado import (
     CategoriaCompetencia,
     Competencia,
@@ -21,6 +24,7 @@ from .voluntariado import (
 )
 
 __all__ = [
+    'MiembroSegmentacion',
     'TipoMiembro',
     'Miembro',
     'EstadoMiembro',
@@ -30,6 +34,8 @@ __all__ = [
     'CargoJunta',
     'HistorialCargoJunta',
     'TipoCargoRol',
+    'HistorialNombramiento',
+    'CoordinacionTerritorial',
     'Skill',
     'MiembroSkill',
     'FranjaDisponibilidad',
