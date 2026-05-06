@@ -17,6 +17,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+import uuid
+
 from sqlalchemy import select
 
 from app.core.database import async_session
@@ -25,8 +27,7 @@ from app.modules.acceso.models.rol import Rol, TipoRol
 from app.modules.acceso.models.rol_transaccion import RolTransaccion
 from app.modules.acceso.models.transaccion import Transaccion
 from app.modules.acceso.models.usuario import Usuario, UsuarioRol
-from app.modules.core.geografico.direccion import Pais, AgrupacionTerritorial
-from app.modules.membresia.models.tipo_cargo import TipoCargo
+from app.modules.configuracion.models.configuracion import Configuracion
 
 
 INITIAL_DATA_DIR = Path(__file__).resolve().parents[2] / "initial_data"
@@ -204,78 +205,71 @@ async def ensure_admin_user(session, superadmin: Rol) -> Optional[Usuario]:
     return usuario
 
 
-async def ensure_base_geografico(session) -> Optional[Pais]:
-    """Asegura que existe el país España (requerido por AgrupacionTerritorial)."""
-    espana = (
-        await session.execute(select(Pais).where(Pais.codigo == "ES"))
-    ).scalar_one_or_none()
 
-    if espana is None:
-        espana = Pais(
-            codigo="ES",
-            codigo_iso3="ESP",
-            nombre="España",
-            nombre_oficial="Reino de España",
-            codigo_telefono="+34",
-            continente="Europa",
-            activo=True,
-        )
-        session.add(espana)
-        await session.flush()
-        print("[bootstrap] País España creado")
-    return espana
-
-
-async def ensure_agrupacion_central(session, pais: Pais) -> AgrupacionTerritorial:
-    """Asegura la agrupación nacional 'Europa Laica'."""
-    ag = (
-        await session.execute(
-            select(AgrupacionTerritorial).where(AgrupacionTerritorial.nombre_corto == "EL")
-        )
-    ).scalar_one_or_none()
-
-    if ag is None:
-        ag = AgrupacionTerritorial(
-            nombre="Europa Laica",
-            nombre_corto="EL",
-            tipo="NACIONAL",
-            nivel=4,
-            pais_id=pais.id,
-            email="info@laicismo.org",
-            web="https://laicismo.org",
-            activo=True,
-        )
-        session.add(ag)
-        await session.flush()
-        print("[bootstrap] Agrupación 'Europa Laica' (central) creada")
-    return ag
-
-
-_TIPOS_CARGO = [
-    ("PRESIDENTE",     "Presidente/a",     0, False),
-    ("VICEPRESIDENTE", "Vicepresidente/a", 1, False),
-    ("SECRETARIO",     "Secretario/a",     2, False),
-    ("TESORERO",       "Tesorero/a",       3, False),
-    ("VOCAL",          "Vocal",            4, True),
+_ORG_DEFAULTS = [
+    ('org.nombre',               'string', ''),
+    ('org.nif',                  'string', ''),
+    ('org.tipo_entidad',         'string', 'ASOCIACION'),
+    ('org.contabilidad_compleja','bool',   'false'),
+    ('org.sede_social',          'string', ''),
+    ('org.localidad',            'string', ''),
+    ('org.cp',                   'string', ''),
+    ('org.provincia',            'string', ''),
+    ('org.pais',                 'string', 'España'),
+    ('org.telefono',             'string', ''),
+    ('org.email',                'string', ''),
+    ('org.web',                  'string', ''),
+    ('org.rrss.twitter',         'string', ''),
+    ('org.rrss.facebook',        'string', ''),
+    ('org.rrss.instagram',       'string', ''),
+    ('org.rrss.linkedin',        'string', ''),
+    ('org.rrss.youtube',         'string', ''),
+    ('org.logo',                       'string', ''),
+    ('org.implantacion_geografica',     'string', ''),
+    ('org.tipo_agrupacion_territorial', 'string', ''),
+    ('org.multiterritorial',            'bool',   'false'),
+    # Autenticación
+    ('auth.modo',                       'string', 'LOCAL'),   # LOCAL | AUTHELIA | OIDC
+    ('auth.authelia_url',               'string', ''),
+    ('auth.oidc_issuer',                'string', ''),
+    # SMTP (usado en modo LOCAL para envío de emails)
+    ('smtp.host',                       'string', ''),
+    ('smtp.port',                       'string', '587'),
+    ('smtp.usuario',                    'string', ''),
+    ('smtp.password',                   'string', ''),
+    ('smtp.from',                       'string', ''),
+    ('smtp.tls',                        'bool',   'true'),
+    ('smtp.ssl',                        'bool',   'false'),
 ]
 
 
-async def ensure_tipos_cargo(session) -> None:
-    """Asegura los tipos de cargo estándar de la junta directiva."""
-    for codigo, nombre, orden, permite_multiples in _TIPOS_CARGO:
-        existing = (
-            await session.execute(select(TipoCargo).where(TipoCargo.codigo == codigo))
-        ).scalar_one_or_none()
-        if existing is None:
-            session.add(TipoCargo(
-                codigo=codigo,
-                nombre=nombre,
-                orden=orden,
-                permite_multiples=permite_multiples,
-                activo=True,
+async def ensure_parametros_organizacion(session) -> None:
+    """Crea las claves org.* con valores vacíos si no existen. Idempotente."""
+    existing = {
+        c.clave
+        for c in (
+            await session.execute(
+                select(Configuracion).where(Configuracion.grupo == 'organizacion')
+            )
+        ).scalars()
+    }
+    added = 0
+    now = datetime.utcnow()
+    for clave, tipo_dato, valor_default in _ORG_DEFAULTS:
+        if clave not in existing:
+            session.add(Configuracion(
+                id=uuid.uuid4(),
+                clave=clave,
+                valor=valor_default,
+                tipo_dato=tipo_dato,
+                grupo='organizacion',
+                modificable=True,
+                fecha_creacion=now,
             ))
-    await session.flush()
-    print("[bootstrap] TiposCargo estándar sincronizados")
+            added += 1
+    if added:
+        await session.flush()
+        print(f"[bootstrap] Parámetros organización: +{added} claves creadas")
 
 
 async def main() -> None:
@@ -286,9 +280,7 @@ async def main() -> None:
             superadmin = await ensure_superadmin(session, transacciones)
             print(f"[bootstrap] Rol SUPERADMIN listo (id={superadmin.id})")
             await ensure_admin_user(session, superadmin)
-            espana = await ensure_base_geografico(session)
-            await ensure_agrupacion_central(session, espana)
-            await ensure_tipos_cargo(session)
+            await ensure_parametros_organizacion(session)
             await session.commit()
         except Exception:
             await session.rollback()

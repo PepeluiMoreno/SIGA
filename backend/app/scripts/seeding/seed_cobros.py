@@ -7,6 +7,7 @@ from models import (
     EstadoPago,
     EstadoSuscripcion,
     TipoEventoPago,
+    FormaPago,
 )
 
 def seed_cobro(session: Session):
@@ -81,5 +82,19 @@ def seed_cobro(session: Session):
     ]
 
     session.add_all(eventos)
+
+    # -------------------------
+    # FORMAS DE PAGO
+    # -------------------------
+    formas_pago = [
+        FormaPago(id=uuid.uuid4(), codigo='TRANSFERENCIA', nombre='Transferencia bancaria'),
+        FormaPago(id=uuid.uuid4(), codigo='TARJETA', nombre='Tarjeta de crédito/débito'),
+        FormaPago(id=uuid.uuid4(), codigo='DOMICILIACION', nombre='Domiciliación bancaria (SEPA)'),
+        FormaPago(id=uuid.uuid4(), codigo='EFECTIVO', nombre='Efectivo'),
+        FormaPago(id=uuid.uuid4(), codigo='PAYPAL', nombre='PayPal'),
+        FormaPago(id=uuid.uuid4(), codigo='OTRO', nombre='Otro'),
+    ]
+
+    session.add_all(formas_pago)
 
     session.commit()
