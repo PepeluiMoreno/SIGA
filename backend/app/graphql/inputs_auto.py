@@ -1,38 +1,16 @@
-"""
-Tipos de Input GraphQL generados automáticamente desde modelos SQLAlchemy.
+"""Tipos de Input y Filter GraphQL generados con strawchemy para cada modelo."""
 
-Strawchemy genera automáticamente:
-- Input types para Create (mode="create_input")
-- Input types para Update by PK (mode="update_by_pk_input")
-- Filter types para queries y deletes
-
-Este módulo usa introspección de SQLAlchemy para:
-1. Detectar automáticamente los campos de auditoría del mixin AuditoriaMixin
-2. Detectar automáticamente todas las relaciones del modelo (relationship())
-3. Excluirlos de los inputs para evitar conflictos de tipos anidados
-"""
-
-from typing import Type, List
+import uuid
+from typing import Type, List, Optional
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy import inspect
 
+import strawberry
 from . import strawchemy
-from ..infrastructure.base_model import AuditoriaMixin
 
 
 def get_audit_fields() -> List[str]:
-    """Obtiene los nombres de los campos de auditoría del mixin."""
-    audit_fields = []
-
-    # Campos definidos directamente en AuditoriaMixin
-    for attr_name in dir(AuditoriaMixin):
-        if not attr_name.startswith('_'):
-            attr = getattr(AuditoriaMixin, attr_name, None)
-            # Es un campo mapeado (Mapped) o un declared_attr
-            if hasattr(attr, 'property') or hasattr(attr, '__func__'):
-                audit_fields.append(attr_name)
-
-    # Lista explícita para asegurar que están todos
+    """Devuelve los campos de auditoría que deben excluirse de los inputs."""
     return [
         "fecha_creacion",
         "fecha_modificacion",
@@ -130,7 +108,8 @@ class TransaccionFilter:
 
 @strawchemy.input(RolTransaccion, mode="create_input", include="all", exclude=get_exclude_fields(RolTransaccion))
 class RolTransaccionCreateInput:
-    pass
+    rol_id: uuid.UUID
+    transaccion_id: uuid.UUID
 
 
 @strawchemy.filter(RolTransaccion, include="all")
@@ -155,7 +134,8 @@ class FuncionalidadFilter:
 
 @strawchemy.input(RolFuncionalidad, mode="create_input", include="all", exclude=get_exclude_fields(RolFuncionalidad))
 class RolFuncionalidadCreateInput:
-    pass
+    rol_id: uuid.UUID
+    funcionalidad_id: uuid.UUID
 
 
 @strawchemy.filter(RolFuncionalidad, include="all")
@@ -851,7 +831,7 @@ class TareaGrupoFilter:
 # ============================================================================
 
 from ..modules.economico.models import (
-    ImporteCuotaAnio, CuotaAnual, DonacionConcepto, Donacion, Remesa, OrdenCobro
+    ImporteCuotaAnio, CuotaAnual, DonacionConcepto, Donacion, Remesa, OrdenCobro, FormaPago
 )
 
 
@@ -942,6 +922,21 @@ class OrdenCobroUpdateInput:
 
 @strawchemy.filter(OrdenCobro)
 class OrdenCobroFilter:
+    pass
+
+
+@strawchemy.input(FormaPago, mode="create_input", include="all", exclude=get_exclude_fields(FormaPago))
+class FormaPagoCreateInput:
+    pass
+
+
+@strawchemy.input(FormaPago, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(FormaPago))
+class FormaPagoUpdateInput:
+    pass
+
+
+@strawchemy.filter(FormaPago)
+class FormaPagoFilter:
     pass
 
 

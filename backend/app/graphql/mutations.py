@@ -12,34 +12,31 @@ import strawberry
 
 from . import strawchemy
 from .auth import AuthMutation
+from .configuracion_resolvers import ConfiguracionOrganizacionMutation
+from .acceso_resolvers import AccesoMutation
 from .types_auto import *
 from .inputs_auto import *
 
 
 @strawberry.type
-class Mutation(AuthMutation):
+class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation):
     """Mutations GraphQL del sistema SIGA con generación automática."""
 
-    # === ACCESO: roles, transacciones, funcionalidades ===
-    crear_rol: RolType = strawchemy.create(RolCreateInput)
-    actualizar_rol: RolType = strawchemy.update_by_ids(RolUpdateInput)
+    # === ACCESO: roles y transacciones (CRUD) ===
+    # crear_rol / actualizar_rol → AccesoMutation (custom, atómico con funcionalidades)
     eliminar_roles: list[RolType] = strawchemy.delete(RolFilter)
 
     crear_transaccion: TransaccionType = strawchemy.create(TransaccionCreateInput)
     actualizar_transaccion: TransaccionType = strawchemy.update_by_ids(TransaccionUpdateInput)
     eliminar_transacciones: list[TransaccionType] = strawchemy.delete(TransaccionFilter)
 
-    crear_rol_transaccion: RolTransaccionType = strawchemy.create(RolTransaccionCreateInput)
-    eliminar_roles_transacciones: list[RolTransaccionType] = strawchemy.delete(RolTransaccionFilter)
+    # asignar_transaccion_rol / revocar_transaccion_rol → AccesoMutation (custom)
 
     crear_funcionalidad: FuncionalidadType = strawchemy.create(FuncionalidadCreateInput)
     actualizar_funcionalidad: FuncionalidadType = strawchemy.update_by_ids(FuncionalidadUpdateInput)
     eliminar_funcionalidades: list[FuncionalidadType] = strawchemy.delete(FuncionalidadFilter)
 
-    crear_rol_funcionalidad: RolFuncionalidadType = strawchemy.create(RolFuncionalidadCreateInput)
-    eliminar_roles_funcionalidades: list[RolFuncionalidadType] = strawchemy.delete(RolFuncionalidadFilter)
-
-    crear_usuario_rol: UsuarioRolType = strawchemy.create(UsuarioRolCreateInput)
+    # asignar_rol_usuario / revocar_rol_usuario → AccesoMutation (custom)
     eliminar_usuarios_roles: list[UsuarioRolType] = strawchemy.delete(UsuarioRolFilter)
 
     # === CORE - Estados ===
@@ -288,3 +285,8 @@ class Mutation(AuthMutation):
     crear_convenio: ConvenioType = strawchemy.create(ConvenioCreateInput)
     actualizar_convenio: ConvenioType = strawchemy.update_by_ids(ConvenioUpdateInput)
     eliminar_convenios: list[ConvenioType] = strawchemy.delete(ConvenioFilter)
+
+    # === FORMAS DE PAGO ===
+    crear_forma_pago: FormaPagoType = strawchemy.create(FormaPagoCreateInput)
+    actualizar_forma_pago: FormaPagoType = strawchemy.update_by_ids(FormaPagoUpdateInput)
+    eliminar_formas_pago: list[FormaPagoType] = strawchemy.delete(FormaPagoFilter)

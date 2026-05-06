@@ -12,6 +12,7 @@ from ..core.security import create_access_token, verify_password
 from ..modules.acceso.models.auditoria import TipoAccion
 from ..modules.acceso.models.usuario import Usuario
 from ..modules.acceso.services.acceso_service import AccesoService
+from ..modules.acceso.services.password_reset_service import PasswordResetService
 
 
 @strawberry.type
@@ -158,6 +159,46 @@ class AuthMutation:
         )
         await session.commit()
         return cargo.id
+
+    # ── Reset de contraseña ──────────────────────────────────────────────────
+
+    @strawberry.mutation
+    async def solicitar_reset_password(
+        self,
+        info: strawberry.Info,
+        email: str,
+        honeypot: str = "",
+    ) -> bool:
+        """Envía un email con enlace de restablecimiento de contraseña.
+
+        Siempre devuelve True para no revelar si el email existe.
+        El campo honeypot debe llegar vacío; si tiene valor, es un bot.
+        """
+        if honeypot:
+            return True  # bot detectado — respuesta silenciosa
+
+        svc = PasswordResetService(info.context.session)
+        try:
+            await svc.solicitar_reset(email.strip().lower())
+            await info.context.session.commit()
+        except ValueError as exc:
+            raise ValueError(str(exc))
+        except RuntimeError as exc:
+            raise ValueError(str(exc))
+        return True
+
+    @strawberry.mutation
+    async def reset_password(
+        self,
+        info: strawberry.Info,
+        token: str,
+        nueva_password: str,
+    ) -> bool:
+        """Aplica la nueva contraseña si el token es válido y no ha expirado."""
+        svc = PasswordResetService(info.context.session)
+        await svc.confirmar_reset(token, nueva_password)
+        await info.context.session.commit()
+        return True
 
     @strawberry.mutation
     async def revocar_cargo(

@@ -207,6 +207,7 @@ from ..modules.economico.models import (
     CategoriaPartida,
     PartidaPresupuestaria,
     PlanificacionAnual,
+    FormaPago,
 )
 
 @strawchemy.type(ImporteCuotaAnio, include="all", override=True)
@@ -231,6 +232,10 @@ class RemesaType:
 
 @strawchemy.type(OrdenCobro, include="all", override=True)
 class OrdenCobroType:
+    pass
+
+@strawchemy.type(FormaPago, include="all", override=True)
+class FormaPagoType:
     pass
 
 @strawchemy.type(EstadoPlanificacion, include="all", override=True)
@@ -318,6 +323,7 @@ class MiembroType:
     provincia: Optional['ProvinciaType'] = None
     pais_documento: Optional['PaisType'] = None
     pais_domicilio: Optional['PaisType'] = None
+    pais_nacimiento: Optional['PaisType'] = None
     motivo_baja_rel: Optional['MotivoBajaType'] = None
     cargo: Optional['TipoCargoType'] = None
 
