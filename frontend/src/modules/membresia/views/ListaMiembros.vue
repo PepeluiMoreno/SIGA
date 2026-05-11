@@ -1,162 +1,63 @@
 <template>
-  <AppLayout title="Militancia" subtitle="Gestión de miembros, colaboración y disponibilidad">
-    <!-- Barra superior con búsqueda y botón nuevo -->
-    <div class="mb-4 flex items-center justify-between gap-4">
-      <div class="relative flex-1 max-w-md">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Buscar por nombre, apellido o email de un miembro..."
-          class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-          @keyup.enter="aplicarFiltros"
-        />
-        <span class="absolute left-3 top-2.5 text-gray-400">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </span>
-      </div>
-      <button @click="router.push('/miembros/nuevo')" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Nuevo miembro
-      </button>
-    </div>
-
+  <AppLayout :title="orgConfig.Miembros" subtitle="Gestión, colaboración y disponibilidad">
     <!-- Panel de Filtros -->
-    <div class="mb-4 bg-white border border-gray-200 rounded-lg p-4">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <FilterBar
+      v-model="filters"
+      v-model:search="searchQuery"
+      :search-placeholder="`Buscar por nombre, apellido o email…`"
+      :create-label="`Nuevo ${orgConfig.miembro}`"
+      create-route="/miembros/nuevo"
+      :fields="filterFields"
+      :description="descripcionBusqueda"
+      :lazy="true"
+      :loading="loading"
+      class="mb-4"
+      @apply="aplicarFiltros"
+      @clear="limpiarFiltros">
 
-        <!-- Situación (EstadoMiembro) -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Situación</label>
-          <div class="space-y-1 max-h-48 overflow-y-auto">
-            <template v-if="estadosMiembro.length > 0">
-              <!-- Estados que NO son Baja -->
-              <template v-for="estado in estadosMiembroOrdenados" :key="estado.id">
-                <label
-                  v-if="estado.nombre !== 'Baja'"
-                  class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded"
-                >
-                  <input
-                    type="checkbox"
-                    :value="estado.id"
-                    v-model="filters.estados"
-                    class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                  />
-                  <span class="text-sm text-gray-700">{{ estado.nombre }}</span>
-                </label>
-              </template>
-
-              <!-- Baja con desplegable de motivos -->
-              <div class="flex items-center gap-2 p-1">
-                <input
-                  type="checkbox"
-                  :value="estadoBajaId"
-                  v-model="filters.estados"
-                  class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                />
-                <span class="text-sm text-gray-700">Baja por</span>
-                <select
-                  v-model="filters.motivoBaja"
-                  :disabled="!filters.estados.includes(estadoBajaId)"
-                  class="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100 disabled:text-gray-400"
-                >
-                  <option value="">Cualquier causa</option>
-                  <option v-for="motivo in motivosBaja" :key="motivo.id" :value="motivo.id">
-                    {{ motivo.nombre }}
-                  </option>
-                </select>
-              </div>
-            </template>
-            <p v-else class="text-sm text-gray-400 italic p-1">Cargando...</p>
-          </div>
-        </div>
-
-        <!-- Tipo de miembro -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de miembro</label>
-          <div class="space-y-1 max-h-40 overflow-y-auto">
-            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
-              <input
-                type="checkbox"
-                :checked="todosTiposSeleccionados"
-                :indeterminate="algunTipoSeleccionado && !todosTiposSeleccionados"
-                @change="toggleTodosTipos"
-                class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-              />
-              <span class="text-sm font-medium text-gray-900">Todos</span>
-            </label>
-            <template v-if="tiposMiembro.length > 0">
-              <label
-                v-for="tipo in tiposMiembroOrdenados"
-                :key="tipo.id"
-                class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded"
-              >
-                <input
-                  type="checkbox"
-                  :value="tipo.id"
-                  v-model="filters.tipos"
-                  class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                />
-                <span class="text-sm text-gray-700">{{ tipo.nombre }}</span>
-              </label>
-            </template>
-            <p v-else class="text-sm text-gray-400 italic p-1">Cargando...</p>
-          </div>
-        </div>
-
-        <!-- Agrupación Territorial -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Agrupación Territorial</label>
-          <select
-            v-model="filters.agrupacion"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-          >
-            <option value="">Todas las agrupaciones</option>
-            <template v-if="agrupaciones.length > 0">
-              <option v-for="agrup in agrupacionesJerarquicas" :key="agrup.id" :value="agrup.id">
-                {{ agrup.displayNombre }}
-              </option>
-            </template>
-          </select>
-
-          <!-- Checkbox voluntarios -->
-          <label class="flex items-center gap-2 cursor-pointer mt-4 hover:bg-gray-50 p-1 rounded">
-            <input
-              type="checkbox"
-              v-model="filters.soloVoluntarios"
-              class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-            />
-            <span class="text-sm text-gray-700">Solo voluntarios</span>
+      <!-- Situación: dropdown personalizado con sub-selección de motivo de baja -->
+      <template #dropdown-estados="{ filters: f, setFilters }">
+        <div class="space-y-1">
+          <label class="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-gray-50">
+            <input type="checkbox"
+              :checked="f.estados.length === estadosMiembro.length"
+              :indeterminate.prop="f.estados.length > 0 && f.estados.length < estadosMiembro.length"
+              @change="setFilters({ estados: $event.target.checked ? estadosMiembro.map(e => e.id) : [] })"
+              class="w-4 h-4 text-purple-600 border-gray-300 rounded" />
+            <span class="text-sm font-medium text-gray-900">Cualquiera</span>
           </label>
+          <template v-for="estado in estadosMiembroOrdenados" :key="estado.id">
+            <div v-if="estado.nombre === 'Baja'" class="space-y-1">
+              <label class="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-gray-50">
+                <input type="checkbox"
+                  :checked="f.estados.includes(estado.id)"
+                  @change="setFilters({ estados: $event.target.checked ? [...f.estados, estado.id] : f.estados.filter(id => id !== estado.id) })"
+                  class="w-4 h-4 text-purple-600 border-gray-300 rounded" />
+                <span class="text-sm text-gray-700">Baja</span>
+              </label>
+              <select v-if="f.estados.includes(estado.id)"
+                :value="f.motivoBaja"
+                @change="setFilters({ motivoBaja: $event.target.value })"
+                class="ml-6 w-[calc(100%-1.5rem)] text-sm border border-gray-300 rounded px-2 py-1">
+                <option value="">Cualquier causa</option>
+                <option v-for="motivo in motivosBajaOrdenados" :key="motivo.id" :value="motivo.id">{{ motivo.nombre }}</option>
+              </select>
+            </div>
+            <label v-else class="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-gray-50">
+              <input type="checkbox"
+                :checked="f.estados.includes(estado.id)"
+                @change="setFilters({ estados: $event.target.checked ? [...f.estados, estado.id] : f.estados.filter(id => id !== estado.id) })"
+                class="w-4 h-4 text-purple-600 border-gray-300 rounded" />
+              <span class="text-sm text-gray-700">{{ estado.nombre }}</span>
+            </label>
+          </template>
         </div>
+      </template>
 
-        <!-- Botones de acción -->
-        <div class="flex flex-col justify-end gap-2">
-          <button
-            @click="aplicarFiltros"
-            :disabled="loading"
-            class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {{ loading ? 'Buscando...' : 'Buscar' }}
-          </button>
-          <button
-            @click="limpiarFiltros"
-            class="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-          >
-            Limpiar filtros
-          </button>
-        </div>
-      </div>
-    </div>
+    </FilterBar>
 
     <!-- Estado de carga -->
-    <div v-if="loading" class="bg-white border border-gray-200 rounded-lg p-12 text-center">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-purple-600 border-t-transparent mb-3"></div>
-      <p class="text-gray-600">Cargando registros de militancia...</p>
-    </div>
+    <EstadoCarga v-if="loading" mensaje="Cargando registros de militancia..." />
 
     <!-- Error -->
     <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -170,12 +71,7 @@
     <!-- Resultados -->
     <div v-else class="bg-white border border-gray-200 rounded-lg overflow-hidden">
       <!-- Mensaje inicial -->
-      <div v-if="!filtersApplied" class="p-12 text-center text-gray-500">
-        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-        </svg>
-        <p class="text-lg">Configura los filtros y pulsa "Buscar"</p>
-      </div>
+      <EstadoPendiente v-if="!filtersApplied" />
 
       <!-- Sin resultados -->
       <div v-else-if="miembros.length === 0" class="p-12 text-center text-gray-500">
@@ -186,99 +82,119 @@
         <p class="text-sm mt-1">Prueba con otros filtros</p>
       </div>
 
-      <!-- Tabla de resultados -->
+      <!-- Tabla jerárquica de resultados -->
       <template v-else>
-        <!-- Barra de resultados con título descriptivo -->
+        <!-- Barra de resultados -->
         <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
           <span class="text-sm text-gray-600">
             <strong>{{ total }}</strong> {{ tituloDescriptivo }}
           </span>
-          <button @click="limpiarFiltros" class="text-sm text-purple-600 hover:text-purple-800">
-            Limpiar filtros
-          </button>
+          <button @click="limpiarFiltros" class="text-sm text-purple-600 hover:text-purple-800">Limpiar filtros</button>
         </div>
 
-        <!-- Tabla -->
         <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Miembro</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agrupación</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alta</th>
-              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="miembro in miembros" :key="miembro.id" class="hover:bg-gray-50">
-              <td class="px-4 py-3">
-                <div class="flex items-center">
-                  <div
-                    class="h-9 w-9 rounded-full flex items-center justify-center mr-3 text-white text-sm font-medium"
-                    :class="miembro.activo ? 'bg-purple-500' : 'bg-gray-400'"
-                  >
-                    {{ getInitials(miembro.nombre, miembro.apellido1) }}
+          <tbody class="bg-white divide-y divide-gray-100">
+            <template v-for="fila in filasJerarquicas" :key="fila.type === 'agrupacion' ? 'ag-' + fila.agrupacion.id : 'mb-' + fila.miembro.id">
+
+              <!-- Fila cabecera de agrupación -->
+              <tr
+                v-if="fila.type === 'agrupacion'"
+                class="cursor-pointer select-none bg-purple-50 hover:bg-purple-100 border-t border-purple-100"
+                @click="toggleAgrupacion(fila.agrupacion.id)"
+              >
+                <td colspan="4" class="py-2 pr-4" :style="{ paddingLeft: (fila.depth * 20 + 16) + 'px' }">
+                  <div class="flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5 text-purple-400 shrink-0 transition-transform"
+                         :class="colapsadas.has(fila.agrupacion.id) ? '' : 'rotate-90'"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                    <span class="text-sm font-semibold text-purple-800">{{ fila.agrupacion.nombre }}</span>
+                    <span class="text-xs text-purple-400 font-normal">{{ fila.countTotal }} miembro{{ fila.countTotal !== 1 ? 's' : '' }}</span>
                   </div>
-                  <div>
-                    <div class="text-sm font-medium text-gray-900">
-                      {{ miembro.nombre }} {{ miembro.apellido1 }} {{ miembro.apellido2 || '' }}
+                </td>
+              </tr>
+
+              <!-- Fila de miembro -->
+              <tr v-else class="hover:bg-gray-50">
+                <td class="py-3 pr-4" :style="{ paddingLeft: (fila.depth * 20 + 16) + 'px' }">
+                  <div class="flex items-center gap-3">
+                    <div class="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-white text-xs font-medium bg-purple-500">
+                      {{ getInitials(fila.miembro.nombre, fila.miembro.apellido1) }}
                     </div>
-                    <div v-if="miembro.esVoluntario" class="text-xs text-purple-600">Voluntario</div>
+                    <div>
+                      <div class="text-sm font-medium text-gray-900">
+                        {{ fila.miembro.apellido1 }}{{ fila.miembro.apellido2 ? ' ' + fila.miembro.apellido2 : '' }}, {{ fila.miembro.nombre }}
+                      </div>
+                      <div class="flex items-center gap-2 mt-0.5">
+                        <span v-if="fila.miembro.tipoMiembro" class="text-xs text-gray-400">{{ fila.miembro.tipoMiembro.nombre }}</span>
+                        <span v-if="fila.miembro.esVoluntario" class="text-xs bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full">Voluntario</span>
+                        <span v-if="fila.miembro.usuario?.activo" title="Tiene acceso a la aplicación"
+                          class="inline-flex items-center gap-0.5 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
+                          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                          </svg>
+                          App
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-700">
-                {{ miembro.agrupacion?.nombre || '-' }}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-500">
-                {{ formatDate(miembro.fechaAlta) }}
-              </td>
-              <td class="px-4 py-3 text-right text-sm space-x-2">
-                <button @click="editarMiembro(miembro)" class="text-purple-600 hover:text-purple-900">Editar</button>
-                <button @click="verDetalle(miembro)" class="text-gray-500 hover:text-gray-700">Ver</button>
-              </td>
-            </tr>
+                </td>
+                <td class="px-4 py-3">
+                  <p class="text-xs text-gray-400 mb-1">Datos de contacto</p>
+                  <div class="flex items-center gap-1.5 text-sm text-gray-700">
+                    <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                    <span>{{ fila.miembro.email || '—' }}</span>
+                  </div>
+                  <div v-if="fila.miembro.telefono" class="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                    <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                    </svg>
+                    <span>{{ fila.miembro.telefono }}</span>
+                  </div>
+                </td>
+                <td class="px-4 py-3">
+                  <p class="text-xs text-gray-400 mb-1">Es socio desde</p>
+                  <p class="text-sm text-gray-600">{{ formatDate(fila.miembro.fechaAlta) }}</p>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <div class="flex items-center justify-end gap-0.5">
+                    <router-link :to="`/miembros/${fila.miembro.id}`"
+                      class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                      title="Ver ficha">
+                      <EyeIcon class="w-4 h-4" />
+                    </router-link>
+                    <router-link :to="`/miembros/${fila.miembro.id}?modo=editar`"
+                      class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                      title="Editar">
+                      <PencilIcon class="w-4 h-4" />
+                    </router-link>
+                  </div>
+                </td>
+              </tr>
+
+            </template>
           </tbody>
         </table>
-
-        <!-- Paginación -->
-        <div v-if="totalPages > 1" class="px-4 py-3 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
-          <span class="text-sm text-gray-600">
-            Mostrando {{ from }}-{{ to }} de {{ total }}
-          </span>
-          <div class="flex gap-2">
-            <button
-              @click="previousPage"
-              :disabled="currentPage === 1"
-              class="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-            >
-              Anterior
-            </button>
-            <span class="px-3 py-1 text-sm text-gray-600">
-              {{ currentPage }} / {{ totalPages }}
-            </span>
-            <button
-              @click="nextPage"
-              :disabled="currentPage === totalPages"
-              class="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-            >
-              Siguiente
-            </button>
-          </div>
-        </div>
       </template>
     </div>
   </AppLayout>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, computed, watch } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
+import { EyeIcon, PencilIcon } from '@heroicons/vue/24/outline'
 import { useGraphQL } from '@/composables/useGraphQL.js'
+import { useOrgConfigStore } from '@/stores/orgConfig'
 import { GET_MIEMBROS, GET_AGRUPACIONES, GET_TIPOS_MIEMBRO, GET_ESTADOS_MIEMBRO, GET_MOTIVOS_BAJA } from '@/graphql/queries/miembros.js'
-
-const router = useRouter()
+import EstadoCarga from '@/components/common/EstadoCarga.vue'
+import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
 const { loading, error, query } = useGraphQL()
+const orgConfig = useOrgConfigStore()
 
 // Datos
 const miembros = ref([])
@@ -294,6 +210,7 @@ const filtersApplied = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
+const colapsadas = ref(new Set())
 
 // Filtros
 const filters = ref({
@@ -301,7 +218,27 @@ const filters = ref({
   motivoBaja: '',  // '' = cualquier causa, UUID = motivo específico (solo aplica a Baja)
   tipos: [],
   agrupacion: '',
-  soloVoluntarios: false
+  soloVoluntarios: false,
+  soloConAcceso: false,
+})
+
+// Limpiar resultados al cambiar cualquier filtro
+watch(filters, () => {
+  if (filtersApplied.value) {
+    miembros.value = []
+    allMiembros.value = []
+    filtersApplied.value = false
+    total.value = 0
+    currentPage.value = 1
+  }
+}, { deep: true })
+
+// Búsqueda en tiempo real sobre datos ya cargados
+watch(searchQuery, () => {
+  if (allMiembros.value.length > 0) {
+    currentPage.value = 1
+    applyClientFilters()
+  }
 })
 
 // Computed: paginación
@@ -316,18 +253,20 @@ const estadoBajaId = computed(() =>
 
 // Computed: ordenar estados por campo 'orden'
 const estadosMiembroOrdenados = computed(() =>
-  [...estadosMiembro.value].sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999))
+  [...estadosMiembro.value].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
 )
 
-// Computed: checkbox "Todos" para tipos
-const todosTiposSeleccionados = computed(() =>
-  tiposMiembro.value.length > 0 && filters.value.tipos.length === tiposMiembro.value.length
+// Computed: "Cualquiera" para estados — también usado en applyClientFilters
+const todosEstadosSeleccionados = computed(() =>
+  estadosMiembro.value.length > 0 && filters.value.estados.length === estadosMiembro.value.length
 )
-const algunTipoSeleccionado = computed(() => filters.value.tipos.length > 0)
 
-// Computed: ordenar tipos alfabéticamente
+// Computed: ordenar tipos y motivos alfabéticamente
 const tiposMiembroOrdenados = computed(() =>
   [...tiposMiembro.value].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+)
+const motivosBajaOrdenados = computed(() =>
+  [...motivosBaja.value].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
 )
 
 // Computed: agrupaciones en árbol jerárquico
@@ -335,15 +274,13 @@ const agrupacionesJerarquicas = computed(() => {
   const lista = agrupaciones.value
   if (!lista.length) return []
 
-  const tipoOrden = { ESTATAL: 1, AUTONOMICA: 2, PROVINCIAL: 3, LOCAL: 4 }
-
   const buildTree = (padreId = null, nivel = 0) => {
     const hijos = lista
       .filter(a => a.agrupacionPadreId === padreId)
       .sort((a, b) => {
-        const ordenA = tipoOrden[a.tipo] || 99
-        const ordenB = tipoOrden[b.tipo] || 99
-        if (ordenA !== ordenB) return ordenA - ordenB
+        const nA = a.tipoUnidad?.nivel || 99
+        const nB = b.tipoUnidad?.nivel || 99
+        if (nA !== nB) return nA - nB
         return a.nombre.localeCompare(b.nombre, 'es')
       })
 
@@ -357,6 +294,174 @@ const agrupacionesJerarquicas = computed(() => {
   }
 
   return buildTree(null, 0)
+})
+
+// Computed: campos del FilterBar
+const filterFields = computed(() => [
+  {
+    key: 'agrupacion',
+    label: 'Agrupación',
+    type: 'select',
+    options: agrupacionesJerarquicas.value.map(a => ({ value: a.id, label: a.displayNombre })),
+    allLabel: 'Todas las agrupaciones',
+    width: 'w-72',
+  },
+  {
+    key: 'estados',
+    label: 'Situación',
+    type: 'custom',
+    defaultValue: [],
+    isActive: (val) => val?.length > 0 && val.length < estadosMiembro.value.length,
+    pillLabel: (val) => {
+      if (!val?.length || val.length === estadosMiembro.value.length) return 'Situación'
+      return `Situación · ${val.length}`
+    },
+  },
+  {
+    key: 'tipos',
+    label: 'Tipo',
+    type: 'multiselect',
+    options: tiposMiembroOrdenados.value.map(t => ({ value: t.id, label: t.nombre })),
+    allLabel: 'Todos',
+    width: 'w-56',
+  },
+  {
+    key: 'soloVoluntarios',
+    label: 'Solo voluntarios',
+    type: 'toggle',
+  },
+  {
+    key: 'soloConAcceso',
+    label: 'Con acceso a la app',
+    type: 'toggle',
+  },
+  { key: 'motivoBaja', type: 'custom', hidden: true, defaultValue: '' },
+])
+
+// Computed: literal descriptivo del criterio de búsqueda
+const descripcionBusqueda = computed(() => {
+  // Tipos
+  let tipoStr
+  const tiposSeleccionados = filters.value.tipos
+    .map(id => tiposMiembro.value.find(t => t.id === id)?.nombre)
+    .filter(Boolean)
+  if (tiposSeleccionados.length === 0 || tiposSeleccionados.length === tiposMiembro.value.length) {
+    tipoStr = 'socios'
+  } else if (tiposSeleccionados.length === 1) {
+    tipoStr = tiposSeleccionados[0]
+  } else {
+    tipoStr = tiposSeleccionados.slice(0, -1).join(', ') + ' y ' + tiposSeleccionados.slice(-1)
+  }
+
+  // Situación
+  let situacionStr
+  const estadosSeleccionados = filters.value.estados
+    .map(id => {
+      const e = estadosMiembro.value.find(e => e.id === id)
+      if (!e) return null
+      if (e.nombre === 'Baja' && filters.value.motivoBaja) {
+        const m = motivosBaja.value.find(m => m.id === filters.value.motivoBaja)
+        return m ? `baja por ${m.nombre.toLowerCase()}` : 'baja'
+      }
+      return e.nombre.toLowerCase()
+    })
+    .filter(Boolean)
+  if (estadosSeleccionados.length === 0 || estadosSeleccionados.length === estadosMiembro.value.length) {
+    situacionStr = 'en cualquier situación'
+  } else if (estadosSeleccionados.length === 1) {
+    situacionStr = `en situación ${estadosSeleccionados[0]}`
+  } else {
+    situacionStr = `en situación ${estadosSeleccionados.slice(0, -1).join(', ')} o ${estadosSeleccionados.slice(-1)}`
+  }
+
+  // Agrupación
+  let agrupStr
+  if (filters.value.agrupacion) {
+    const agrup = agrupaciones.value.find(a => a.id === filters.value.agrupacion)
+    agrupStr = agrup ? `pertenecientes a ${agrup.nombre}` : ''
+  } else {
+    agrupStr = 'de todas las agrupaciones'
+  }
+
+  // Voluntarios
+  const volStr = filters.value.soloVoluntarios ? ', solo voluntarios' : ''
+
+  return `${tipoStr} ${situacionStr} ${agrupStr}${volStr}`
+})
+
+// Toggle colapso de agrupación en la tabla jerárquica
+const toggleAgrupacion = (id) => {
+  const s = new Set(colapsadas.value)
+  if (s.has(id)) s.delete(id)
+  else s.add(id)
+  colapsadas.value = s
+}
+
+// Mapa agrupacionId → miembros directos en el resultado filtrado
+const miembrosPorAgrupacion = computed(() => {
+  const map = {}
+  miembros.value.forEach(m => {
+    const key = m.agrupacion?.id ?? '__sin__'
+    if (!map[key]) map[key] = []
+    map[key].push(m)
+  })
+  return map
+})
+
+// Lista plana de filas { type, agrupacion|miembro, depth, countTotal } para la tabla jerárquica
+const filasJerarquicas = computed(() => {
+  const rows = []
+  const mapa = miembrosPorAgrupacion.value
+  const alpha = (a, b) => a.nombre.localeCompare(b.nombre, 'es')
+  const alphaM = (a, b) => {
+    const c = (a.apellido1 || '').localeCompare(b.apellido1 || '', 'es')
+    if (c !== 0) return c
+    return (a.apellido2 || '').localeCompare(b.apellido2 || '', 'es')
+  }
+
+  // Cuenta miembros (directos + descendientes) con datos ya filtrados
+  const contarTotal = (agrupId) => {
+    const ids = getDescendantIds(agrupId)
+    return miembros.value.filter(m => m.agrupacion?.id && ids.has(m.agrupacion.id)).length
+  }
+
+  const walk = (agrup, depth) => {
+    const total = contarTotal(agrup.id)
+    if (total === 0) return
+
+    const colapsada = colapsadas.value.has(agrup.id)
+    rows.push({ type: 'agrupacion', agrupacion: agrup, depth, countTotal: total, colapsada })
+
+    if (!colapsada) {
+      const directos = (mapa[agrup.id] || []).slice().sort(alphaM)
+      directos.forEach(m => rows.push({ type: 'miembro', miembro: m, depth: depth + 1 }))
+
+      agrupaciones.value
+        .filter(a => a.agrupacionPadreId === agrup.id)
+        .sort(alpha)
+        .forEach(hijo => walk(hijo, depth + 1))
+    }
+  }
+
+  // Raíces: sin padre, o el nodo seleccionado en el filtro
+  const raices = filters.value.agrupacion
+    ? agrupaciones.value.filter(a => a.id === filters.value.agrupacion)
+    : agrupaciones.value.filter(a => !a.agrupacionPadreId).sort(alpha)
+
+  raices.forEach(r => walk(r, 0))
+
+  // Miembros sin agrupación asignada
+  const sinAgrup = (mapa['__sin__'] || []).slice().sort(alphaM)
+  if (sinAgrup.length > 0) {
+    const sinId = '__sin__'
+    const colapsada = colapsadas.value.has(sinId)
+    rows.push({ type: 'agrupacion', agrupacion: { id: sinId, nombre: 'Sin agrupación asignada' }, depth: 0, countTotal: sinAgrup.length, colapsada })
+    if (!colapsada) {
+      sinAgrup.forEach(m => rows.push({ type: 'miembro', miembro: m, depth: 1 }))
+    }
+  }
+
+  return rows
 })
 
 // Computed: título descriptivo para resultados (ej: "miembros activos", "miembros, simpatizantes de baja")
@@ -438,15 +543,6 @@ const estadoEnPlural = (nombre) => {
   return nombre.toLowerCase()
 }
 
-// Toggle todos tipos
-const toggleTodosTipos = () => {
-  if (todosTiposSeleccionados.value) {
-    filters.value.tipos = []
-  } else {
-    filters.value.tipos = tiposMiembro.value.map(t => t.id)
-  }
-}
-
 // Cargar catálogos al montar
 const loadCatalogos = async () => {
   try {
@@ -477,10 +573,25 @@ const aplicarFiltros = async () => {
     if (data?.miembros) {
       allMiembros.value = data.miembros
       applyClientFilters()
+      colapsadas.value = new Set([...agrupaciones.value.map(a => a.id), '__sin__'])
     }
   } catch (err) {
     console.error('Error al cargar miembros:', err)
   }
+}
+
+// Devuelve un Set con el ID dado y todos sus descendientes en el árbol de agrupaciones
+const getDescendantIds = (rootId) => {
+  const ids = new Set()
+  const queue = [rootId]
+  while (queue.length) {
+    const id = queue.shift()
+    ids.add(id)
+    agrupaciones.value
+      .filter(a => a.agrupacionPadreId === id)
+      .forEach(a => queue.push(a.id))
+  }
+  return ids
 }
 
 // Filtrar en cliente
@@ -498,8 +609,8 @@ const applyClientFilters = () => {
     )
   }
 
-  // Filtro por estados (con caso especial para Baja + motivo)
-  if (filters.value.estados.length > 0) {
+  // Filtro por estados — si todos seleccionados o ninguno, no filtrar
+  if (filters.value.estados.length > 0 && !todosEstadosSeleccionados.value) {
     const estadosSeleccionados = filters.value.estados
     const motivoBaja = filters.value.motivoBaja
     const incluyeBaja = estadoBajaId.value && estadosSeleccionados.includes(estadoBajaId.value)
@@ -526,9 +637,10 @@ const applyClientFilters = () => {
     filtered = filtered.filter(m => m.tipoMiembro && filters.value.tipos.includes(m.tipoMiembro.id))
   }
 
-  // Filtro por agrupación
+  // Filtro por agrupación (incluye todos los descendientes)
   if (filters.value.agrupacion) {
-    filtered = filtered.filter(m => m.agrupacion?.id === filters.value.agrupacion)
+    const idsDescendientes = getDescendantIds(filters.value.agrupacion)
+    filtered = filtered.filter(m => m.agrupacion?.id && idsDescendientes.has(m.agrupacion.id))
   }
 
   // Filtro solo voluntarios
@@ -536,9 +648,21 @@ const applyClientFilters = () => {
     filtered = filtered.filter(m => m.esVoluntario === true)
   }
 
+  // Filtro con acceso a la aplicación (tiene usuario vinculado, activo o no)
+  if (filters.value.soloConAcceso) {
+    filtered = filtered.filter(m => m.tieneAcceso === true)
+  }
+
+  filtered.sort((a, b) => {
+    const ap1 = (a.apellido1 || '').localeCompare(b.apellido1 || '', 'es')
+    if (ap1 !== 0) return ap1
+    const ap2 = (a.apellido2 || '').localeCompare(b.apellido2 || '', 'es')
+    if (ap2 !== 0) return ap2
+    return (a.nombre || '').localeCompare(b.nombre || '', 'es')
+  })
+
   total.value = filtered.length
-  const start = (currentPage.value - 1) * pageSize.value
-  miembros.value = filtered.slice(start, start + pageSize.value)
+  miembros.value = filtered
 }
 
 // Limpiar filtros
@@ -548,7 +672,8 @@ const limpiarFiltros = () => {
     motivoBaja: '',
     tipos: [],
     agrupacion: '',
-    soloVoluntarios: false
+    soloVoluntarios: false,
+    soloConAcceso: false,
   }
   searchQuery.value = ''
   filtersApplied.value = false
@@ -573,9 +698,6 @@ const nextPage = () => {
   }
 }
 
-// Acciones
-const editarMiembro = (miembro) => router.push(`/miembros/${miembro.id}`)
-const verDetalle = (miembro) => router.push(`/miembros/${miembro.id}`)
 
 // Utilidades
 const formatDate = (dateString) => {

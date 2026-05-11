@@ -1,12 +1,15 @@
 """Modelos del módulo de membresía."""
 
 from .miembro import TipoMiembro, Miembro
+from .nivel_estudios import NivelEstudios
+from .nivel_habilidad import NivelHabilidad
 from .estado_miembro import EstadoMiembro
 from .motivo_baja import MotivoBaja
 from .junta import JuntaDirectiva
 from .historial_nombramiento import HistorialNombramiento
 from .coordinacion_territorial import CoordinacionTerritorial
-from .skill import Skill, MiembroSkill
+from .categoria_habilidad import CategoriaHabilidad
+from .habilidad import Habilidad, MiembroHabilidad
 from .disponibilidad import FranjaDisponibilidad
 from .historial_agrupacion import HistorialAgrupacion
 from .traslados.modelos import SolicitudTraslado, EstadoTraslado
@@ -26,13 +29,16 @@ __all__ = [
     'MiembroSegmentacion',
     'TipoMiembro',
     'Miembro',
+    'NivelEstudios',
+    'NivelHabilidad',
     'EstadoMiembro',
     'MotivoBaja',
     'JuntaDirectiva',
     'HistorialNombramiento',
     'CoordinacionTerritorial',
-    'Skill',
-    'MiembroSkill',
+    'CategoriaHabilidad',
+    'Habilidad',
+    'MiembroHabilidad',
     'FranjaDisponibilidad',
     'HistorialAgrupacion',
     'SolicitudTraslado',

@@ -1,10 +1,10 @@
-"""create historial_nombramientos y coordinaciones_territoriales tables
+"""create historial_nombramientos table
 
 historial_nombramientos apunta directamente a roles (tipo ORGANIZACION)
 en lugar de tipos_cargo, simplificando el modelo de nombramientos.
 
 Revision ID: m009
-Revises: m008
+Revises: f3a4b5c6d7e8
 Create Date: 2026-05-06 15:00:00.000000
 
 """
@@ -12,38 +12,17 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = 'm009'
-down_revision: Union[str, None] = 'm008'
+down_revision: Union[str, None] = 'f3a4b5c6d7e8'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.create_table('coordinaciones_territoriales',
-    sa.Column('id', sa.Uuid(), nullable=False),
-    sa.Column('miembro_id', sa.Uuid(), nullable=False),
-    sa.Column('agrupacion_id', sa.Uuid(), nullable=False),
-    sa.Column('fecha_asignacion', sa.Date(), nullable=True),
-    sa.Column('observaciones', sa.String(length=500), nullable=True),
-    sa.Column('fecha_creacion', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('fecha_modificacion', sa.DateTime(), nullable=True),
-    sa.Column('fecha_eliminacion', sa.DateTime(), nullable=True),
-    sa.Column('eliminado', sa.Boolean(), server_default=sa.text('false'), nullable=False),
-    sa.Column('creado_por_id', sa.Uuid(), nullable=True),
-    sa.Column('modificado_por_id', sa.Uuid(), nullable=True),
-    sa.ForeignKeyConstraint(['agrupacion_id'], ['agrupaciones_territoriales.id'], ondelete='RESTRICT'),
-    sa.ForeignKeyConstraint(['creado_por_id'], ['usuarios.id'], ),
-    sa.ForeignKeyConstraint(['miembro_id'], ['miembros.id'], ondelete='RESTRICT'),
-    sa.ForeignKeyConstraint(['modificado_por_id'], ['usuarios.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_coordinaciones_territoriales_agrupacion_id'), 'coordinaciones_territoriales', ['agrupacion_id'], unique=False)
-    op.create_index(op.f('ix_coordinaciones_territoriales_eliminado'), 'coordinaciones_territoriales', ['eliminado'], unique=False)
-    op.create_index(op.f('ix_coordinaciones_territoriales_miembro_id'), 'coordinaciones_territoriales', ['miembro_id'], unique=False)
-
+    # Drop the old historial_nombramientos from f3a4b5c6d7e8 and recreate with rol_id
+    op.execute("DROP TABLE IF EXISTS historial_nombramientos CASCADE")
     op.create_table('historial_nombramientos',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('miembro_id', sa.Uuid(), nullable=False),
@@ -82,7 +61,3 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_historial_nombramientos_eliminado'), table_name='historial_nombramientos')
     op.drop_index(op.f('ix_historial_nombramientos_agrupacion_id'), table_name='historial_nombramientos')
     op.drop_table('historial_nombramientos')
-    op.drop_index(op.f('ix_coordinaciones_territoriales_miembro_id'), table_name='coordinaciones_territoriales')
-    op.drop_index(op.f('ix_coordinaciones_territoriales_eliminado'), table_name='coordinaciones_territoriales')
-    op.drop_index(op.f('ix_coordinaciones_territoriales_agrupacion_id'), table_name='coordinaciones_territoriales')
-    op.drop_table('coordinaciones_territoriales')

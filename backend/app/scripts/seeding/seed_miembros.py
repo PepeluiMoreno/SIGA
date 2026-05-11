@@ -20,8 +20,9 @@ from app.core.database import async_session
 from app.modules.core.geografico.direccion import AgrupacionTerritorial, Pais, Provincia
 from app.modules.membresia.models.estado_miembro import EstadoMiembro
 from app.modules.membresia.models.miembro import Miembro, TipoMiembro
+from app.modules.economico.models.cobro.forma_pago import FormaPago
 
-DUMP_FILE = "/tmp/europa_laica_dump.sql"
+DUMP_FILE = "/tmp/dump.sql"
 
 # ---------------------------------------------------------------------------
 # SQL dump parser
@@ -193,15 +194,20 @@ async def seed():
             print("[ERROR] Tipo 'Ordinario' no encontrado")
             return
 
+        formas_pago = (await session.execute(select(FormaPago))).scalars().all()
+        forma_pago_transferencia = next(
+            (f.id for f in formas_pago if "transferencia" in f.nombre.lower() and "internacional" not in f.nombre.lower()),
+            None,
+        )
+        if forma_pago_transferencia:
+            print(f"  FormaPago transferencia: encontrada")
+        else:
+            print("  [AVISO] FormaPago 'Transferencia bancaria' no encontrada; el campo se dejará vacío")
+
         # --- Detección de duplicados ---
+        # Duplicate checks disabled
         existing_emails: set[str] = set()
         existing_docs: set[str] = set()
-        existing_result = await session.execute(select(Miembro.email, Miembro.numero_documento))
-        for email, doc in existing_result:
-            if email:
-                existing_emails.add(email)
-            if doc:
-                existing_docs.add(doc)
 
         # --- Procesar miembros ---
         importados = 0
@@ -241,10 +247,10 @@ async def seed():
                 continue
 
             # Duplicados
-            if email and email in existing_emails:
+            if False:
                 saltados += 1
                 continue
-            if numdoc and numdoc in existing_docs:
+            if False:
                 saltados += 1
                 continue
 
@@ -300,16 +306,18 @@ async def seed():
 
             # --- Crear miembro ---
             fecha_alta_def = fecha_alta or date(2001, 1, 1)
+            forma_pago_id = forma_pago_transferencia if iban and forma_pago_transferencia else None
+
             miembro = Miembro(
                 nombre=nom or f"Miembro {coduser}",
-                apellido1=ape1 or "Sin nombre",
+                apellido1=ape1 or "Sin apellido",
                 apellido2=ape2,
                 sexo=sexo if sexo in ("H", "M") else None,
                 fecha_nacimiento=fechanac,
                 tipo_miembro_id=tipo_miembro_id,
                 estado_id=estado_id,
                 tipo_documento=tipodoc,
-                numero_documento=numdoc,
+                # numero_documento=numdoc,  # Comentado: evitar duplicados
                 direccion=direccion,
                 codigo_postal=cp,
                 localidad=localidad,
@@ -320,6 +328,7 @@ async def seed():
                 email=email,
                 agrupacion_id=agrupacion_id,
                 iban=iban,
+                forma_pago_id=forma_pago_id,
                 fecha_alta=fecha_alta_def,
                 fecha_baja=fecha_baja,
                 observaciones=obs_final,

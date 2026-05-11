@@ -63,6 +63,24 @@ graphqlClient.request = async function patchedRequest(document, variables, reque
         variables,
       })
     }
+
+    // Si el error es de autenticación (token expirado) y el usuario cree estar logado,
+    // limpiar credenciales y volver al login.
+    const gqlErrors = error?.response?.errors
+    const isAuthError = gqlErrors?.some(e =>
+      e.message?.includes('Autenticación requerida') ||
+      e.message?.toLowerCase().includes('token') && e.message?.toLowerCase().includes('expirado')
+    )
+    if (isAuthError && localStorage.getItem('siga_token')) {
+      localStorage.removeItem('siga_token')
+      localStorage.removeItem('siga_user')
+      localStorage.removeItem('session_start_time')
+      setAuthToken(null)
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+    }
+
     throw error
   }
 }

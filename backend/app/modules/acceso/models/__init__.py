@@ -11,7 +11,7 @@ from .funcionalidad import (
     AmbitoTransaccion,
 )
 from .auditoria import LogAuditoria, TipoAccion
-from .usuario import Usuario, UsuarioRol
+from .usuario import TipoVinculacion, Usuario, UsuarioRol
 from .seguridad import Sesion, HistorialSeguridad, IPBloqueada, IntentoAcceso
 
 __all__ = [
@@ -26,6 +26,7 @@ __all__ = [
     'AmbitoTransaccion',
     'LogAuditoria',
     'TipoAccion',
+    'TipoVinculacion',
     'Usuario',
     'UsuarioRol',
     'Sesion',

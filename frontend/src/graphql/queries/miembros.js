@@ -21,6 +21,23 @@ export const GET_MIEMBROS = `
         nombre
         requiereCuota
       }
+      usuario {
+        id
+        email
+        activo
+        ultimoAcceso
+        tipoVinculacion { id nombre }
+        roles {
+          id
+          activo
+          agrupacionId
+          rol {
+            id
+            nombre
+            tipo
+          }
+        }
+      }
       estado {
         id
         nombre
@@ -33,7 +50,7 @@ export const GET_MIEMBROS = `
       agrupacion {
         id
         nombre
-        tipo
+        tipoUnidad { id nombre naturaleza vinculo }
       }
       fechaAlta
       fechaBaja
@@ -41,6 +58,7 @@ export const GET_MIEMBROS = `
       esSocioHonor
       esVoluntario
       datosAnonimizados
+      tieneAcceso
     }
   }
 `
@@ -54,86 +72,69 @@ export const GET_MIEMBRO_BY_ID = `
       estadoId
       motivoBajaId
       agrupacionId
-      cargoId
       paisDocumentoId
       paisDomicilioId
       paisNacimientoId
       provinciaId
+      formaPagoId
       nombre
       apellido1
       apellido2
       sexo
       fechaNacimiento
+      tipoDocumento
+      numeroDocumento
       email
       telefono
       telefono2
-      tipoDocumento
-      numeroDocumento
-      tipoMiembro {
-        id
-        nombre
-        requiereCuota
-        puedeVotar
-      }
-      estado {
-        id
-        nombre
-        color
-      }
-      motivoBajaRel {
-        id
-        nombre
-      }
-      motivoBajaTexto
-      agrupacion {
-        id
-        nombre
-        tipo
-      }
-      fechaAlta
-      fechaBaja
       direccion
-      codigoPostal
       localidad
-      provincia {
-        id
-        nombre
-      }
-      paisDomicilio {
-        id
-        nombre
-      }
-      paisDocumento {
-        id
-        nombre
-      }
-      paisNacimiento {
-        id
-        nombre
-      }
-      cargo {
-        id
-        nombre
-      }
+      codigoPostal
       iban
-      formaPagoId
-      formaPago { id codigo nombre }
+      swiftBic
+      referenciaPago
       esSocioHonor
       esVoluntario
+      activo
+      fechaAlta
+      fechaBaja
+      motivoBajaTexto
+      observaciones
+      solicitaSupresionDatos
+      datosAnonimizados
+      fechaSolicitudSupresion
+      fechaLimiteRetencion
+      fechaAnonimizacion
       disponibilidad
       horasDisponiblesSemana
       profesion
-      nivelEstudios
+      nivelEstudiosId
+      nivelEstudiosRel { id nombre }
       intereses
-      observaciones
-      solicitaSupresionDatos
-      fechaSolicitudSupresion
-      fechaLimiteRetencion
-      datosAnonimizados
-      fechaAnonimizacion
-      activo
+      experienciaVoluntariado
+      observacionesVoluntariado
+      puedeConducir
+      vehiculoPropio
+      disponibilidadViajar
+      fotoUrl
       fechaCreacion
       fechaModificacion
+      tipoMiembro { id nombre }
+      estado { id nombre color }
+      agrupacion { id nombre }
+      motivoBajaRel { id nombre }
+      usuario {
+        id
+        email
+        activo
+        ultimoAcceso
+        roles {
+          id
+          activo
+          agrupacionId
+          rol { id nombre tipo descripcion }
+        }
+      }
     }
   }
 `
@@ -168,7 +169,6 @@ export const UPDATE_MIEMBRO = `
 `
 
 // Query para obtener tipos de miembro
-// TODO: Añadir 'orden' tras ejecutar migración Alembic
 export const GET_TIPOS_MIEMBRO = `
   query TiposMiembro {
     tiposMiembro {
@@ -178,6 +178,7 @@ export const GET_TIPOS_MIEMBRO = `
       requiereCuota
       puedeVotar
       activo
+      orden
     }
   }
 `
@@ -227,8 +228,8 @@ export const GET_AGRUPACIONES = `
       id
       nombre
       nombreCorto
-      tipo
-      nivel
+      tipoId
+      tipoUnidad { id nombre naturaleza vinculo nivel }
       telefono
       email
       web

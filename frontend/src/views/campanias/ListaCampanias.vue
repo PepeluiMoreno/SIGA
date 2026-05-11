@@ -208,7 +208,8 @@
           >
             <div class="p-6">
               <div class="flex justify-between items-start mb-3">
-                <span :class="getEstadoClass(campania.estado?.nombre)">
+                <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full border"
+                  :style="badgeStyle(campania.estado?.color)">
                   {{ campania.estado?.nombre || 'Sin estado' }}
                 </span>
                 <span v-if="campania.tipoCampania" class="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded">
@@ -285,6 +286,7 @@ import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { executeQuery } from '@/graphql/client'
 import { GET_CAMPANIAS, GET_TIPOS_CAMPANIA, GET_ESTADOS_CAMPANIA } from '@/graphql/queries/campanias'
+import { badgeStyle } from '@/utils/badge'
 
 const router = useRouter()
 
@@ -504,16 +506,6 @@ const limpiarFiltros = () => {
   allCampanias.value = []
 }
 
-const getEstadoClass = (estadoNombre) => {
-  const classes = {
-    'Activa': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800',
-    'Planificada': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800',
-    'Finalizada': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800',
-    'Cancelada': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800',
-    'Suspendida': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800'
-  }
-  return classes[estadoNombre] || 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800'
-}
 
 const formatDate = (dateString) => {
   if (!dateString) return ''

@@ -16,11 +16,53 @@ export const GET_USUARIOS = `
 
 // Mutation para crear usuario
 export const CREAR_USUARIO = `
-  mutation CrearUsuario($email: String!, $password: String!, $activo: Boolean) {
-    crearUsuario(email: $email, password: $password, activo: $activo) {
+  mutation CrearUsuario(
+    $email: String!
+    $password: String
+    $activo: Boolean
+    $miembroId: UUID
+    $tipoVinculacionId: UUID
+    $entidadVinculacion: String
+    $enviarEmailBienvenida: Boolean
+  ) {
+    crearUsuario(
+      email: $email
+      password: $password
+      activo: $activo
+      miembroId: $miembroId
+      tipoVinculacionId: $tipoVinculacionId
+      entidadVinculacion: $entidadVinculacion
+      enviarEmailBienvenida: $enviarEmailBienvenida
+    ) {
       id
       email
       activo
+    }
+  }
+`
+
+export const GET_TIPOS_VINCULACION = `
+  query TiposVinculacion {
+    tiposVinculacion {
+      id
+      nombre
+      requiereEntidad
+      activo
+    }
+  }
+`
+
+export const GET_MIEMBROS_SIMPLE = `
+  query MiembrosSimple {
+    miembros {
+      id
+      nombre
+      apellido1
+      apellido2
+      email
+      tipoMiembro { id nombre }
+      agrupacion { id nombre }
+      tieneAcceso
     }
   }
 `

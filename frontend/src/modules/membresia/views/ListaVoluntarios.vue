@@ -37,58 +37,20 @@
       </div>
     </div>
 
-    <!-- Filtros y búsqueda -->
-    <div class="mb-6 bg-white p-4 rounded-lg shadow">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div class="flex-1">
-          <div class="relative">
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Buscar voluntarios..."
-              class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-            <div class="absolute left-3 top-2.5">
-              <span>🔍</span>
-            </div>
-          </div>
-        </div>
-        <div class="flex gap-2">
-          <button @click="showFilters = !showFilters" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-            Filtros
-          </button>
-        </div>
-      </div>
-
-      <!-- Filtros avanzados -->
-      <div v-if="showFilters" class="mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Disponibilidad</label>
-            <select v-model="filtroDisponibilidad" class="w-full border border-gray-300 rounded-lg px-3 py-2">
-              <option value="">Todas</option>
-              <option value="DISPONIBLE">Disponible</option>
-              <option value="OCUPADO">Ocupado en campaña</option>
-              <option value="INACTIVO">Inactivo</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-            <select v-model="filtroActivo" class="w-full border border-gray-300 rounded-lg px-3 py-2">
-              <option value="">Todos</option>
-              <option value="true">Activos</option>
-              <option value="false">Inactivos</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Filtros -->
+    <FilterBar
+      v-model="filters"
+      v-model:search="searchQuery"
+      search-placeholder="Buscar voluntarios…"
+      :fields="filterFields"
+      :lazy="true"
+      :loading="loading"
+      class="mb-6"
+      @apply="aplicarFiltros"
+    />
 
     <!-- Loading -->
-    <div v-if="loading" class="text-center py-12">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-      <p class="mt-2 text-gray-600">Cargando voluntarios...</p>
-    </div>
+    <EstadoCarga v-if="loading" mensaje="Cargando voluntarios..." />
 
     <!-- Error -->
     <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -103,10 +65,13 @@
 
     <!-- Lista de voluntarios -->
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-if="voluntariosFiltrados.length === 0" class="col-span-full text-center py-12 bg-white rounded-lg shadow">
+      <div v-if="!filtersApplied" class="col-span-full bg-white rounded-lg shadow">
+        <EstadoPendiente />
+      </div>
+      <div v-else-if="voluntariosFiltrados.length === 0" class="col-span-full text-center py-12 bg-white rounded-lg shadow">
         <span class="text-4xl">❤️</span>
         <h3 class="text-sm font-medium text-gray-900 mt-4">No hay voluntarios</h3>
-        <p class="text-sm text-gray-500 mt-1">No se encontraron voluntarios con los filtros seleccionados.</p>
+        <p class="text-sm text-gray-500 mt-1">Prueba con otros filtros.</p>
       </div>
 
       <div
@@ -158,16 +123,34 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
 import { executeQuery } from '@/graphql/client'
 import { GET_VOLUNTARIOS } from '@/graphql/queries/voluntariado.js'
+import EstadoCarga from '@/components/common/EstadoCarga.vue'
+import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
 
 const loading = ref(false)
 const error = ref('')
 const voluntarios = ref([])
 const searchQuery = ref('')
-const showFilters = ref(false)
-const filtroDisponibilidad = ref('')
-const filtroActivo = ref('')
+const filtersApplied = ref(false)
+const filters = ref({ disponibilidad: '', activo: '' })
+
+const filterFields = [
+  {
+    key: 'disponibilidad', label: 'Disponibilidad', type: 'select', allLabel: 'Cualquier disponibilidad',
+    options: [
+      { value: 'DISPONIBLE', label: 'Disponible' },
+      { value: 'OCUPADO',    label: 'En campaña' },
+      { value: 'INACTIVO',   label: 'Inactivo' },
+    ],
+  },
+  {
+    key: 'activo', label: 'Estado', type: 'select', allLabel: 'Todos',
+    options: [{ value: 'true', label: 'Activos' }, { value: 'false', label: 'Inactivos' }],
+    isActive: (v) => v !== '',
+  },
+]
 
 const resumen = computed(() => ({
   total: voluntarios.value.length,
@@ -185,12 +168,11 @@ const voluntariosFiltrados = computed(() => {
       v.email?.toLowerCase().includes(q)
     )
   }
-  if (filtroDisponibilidad.value) {
-    result = result.filter(v => v.disponibilidad === filtroDisponibilidad.value)
+  if (filters.value.disponibilidad) {
+    result = result.filter(v => v.disponibilidad === filters.value.disponibilidad)
   }
-  if (filtroActivo.value !== '') {
-    const activo = filtroActivo.value === 'true'
-    result = result.filter(v => v.activo === activo)
+  if (filters.value.activo !== '') {
+    result = result.filter(v => String(v.activo) === filters.value.activo)
   }
   return result
 })
@@ -225,5 +207,10 @@ async function cargar() {
   }
 }
 
-onMounted(cargar)
+async function aplicarFiltros() {
+  await cargar()
+  filtersApplied.value = true
+}
+
+onMounted(() => {})
 </script>

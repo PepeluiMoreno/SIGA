@@ -2,51 +2,48 @@
   <AppLayout title="Transacciones" subtitle="Jerarquía de funcionalidades y operaciones del sistema">
 
     <!-- Barra de filtros -->
-    <div class="mb-4 bg-white rounded-lg border border-gray-200 px-4 py-3 flex flex-col md:flex-row gap-3 items-center">
-      <div class="flex-1 relative">
-        <MagnifyingGlassIcon class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-        <input v-model="busqueda" type="text" placeholder="Buscar por código, nombre o funcionalidad…"
-          class="w-full pl-8 pr-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-purple-500 focus:border-purple-500 focus:outline-none" />
-      </div>
-      <select v-model="filtroTipo"
-        class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:ring-1 focus:ring-purple-500 focus:outline-none">
-        <option value="">Todos los tipos</option>
-        <option v-for="t in TIPOS" :key="t.value" :value="t.value">{{ t.label }}</option>
-      </select>
-      <button v-if="busqueda || filtroTipo" @click="busqueda = ''; filtroTipo = ''"
-        class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 whitespace-nowrap">
-        Limpiar
+    <FilterBar
+      v-model="filters"
+      v-model:search="busqueda"
+      search-placeholder="Buscar por código, nombre o funcionalidad…"
+      :fields="filterFields"
+      :lazy="true"
+      :loading="loading"
+      class="mb-3"
+      @apply="aplicarFiltros"
+    />
+
+    <!-- Expandir / colapsar (solo tras búsqueda) -->
+    <div v-if="filtersApplied" class="flex justify-end gap-2 mb-4">
+      <button @click="expandirTodo(true)"
+        class="px-2.5 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white">
+        Expandir todo
       </button>
-      <div class="flex gap-2 md:ml-auto">
-        <button @click="expandirTodo(true)"
-          class="px-2.5 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
-          Expandir todo
-        </button>
-        <button @click="expandirTodo(false)"
-          class="px-2.5 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
-          Colapsar todo
-        </button>
-      </div>
+      <button @click="expandirTodo(false)"
+        class="px-2.5 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white">
+        Colapsar todo
+      </button>
     </div>
 
     <!-- Estadísticas por tipo -->
     <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
       <div v-for="t in TIPOS" :key="t.value"
         class="bg-white rounded-lg border border-gray-200 p-3 text-center cursor-pointer hover:border-purple-300 transition-colors"
-        :class="filtroTipo === t.value ? 'ring-2 ring-purple-400 border-purple-300' : ''"
-        @click="filtroTipo = filtroTipo === t.value ? '' : t.value">
+        :class="filters.tipo === t.value ? 'ring-2 ring-purple-400 border-purple-300' : ''"
+        @click="filters.tipo = filters.tipo === t.value ? '' : t.value">
         <p class="text-xl font-bold" :class="t.colorNum">{{ conteoTipo[t.value] ?? 0 }}</p>
         <p class="text-xs text-gray-500 mt-0.5">{{ t.label }}</p>
       </div>
     </div>
 
     <!-- Loading / Error -->
-    <div v-if="loading" class="flex items-center justify-center py-20">
-      <div class="h-8 w-8 rounded-full border-4 border-purple-600 border-t-transparent animate-spin"></div>
-    </div>
+    <EstadoCarga v-if="loading" />
     <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">{{ error }}</div>
 
-    <!-- Sin resultados -->
+    <!-- Estado inicial / sin resultados -->
+    <div v-else-if="!filtersApplied" class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <EstadoPendiente />
+    </div>
     <div v-else-if="arbol.length === 0"
       class="bg-white rounded-lg border border-gray-200 p-12 text-center text-sm text-gray-400">
       No hay coincidencias para los filtros aplicados.
@@ -146,8 +143,11 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { gql } from 'graphql-request'
 import AppLayout from '@/components/common/AppLayout.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
 import { graphqlClient } from '@/graphql/client.js'
-import { MagnifyingGlassIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
+import { ChevronRightIcon } from '@heroicons/vue/24/outline'
+import EstadoCarga from '@/components/common/EstadoCarga.vue'
+import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
 
 const QUERY = gql`
   query Jerarquia {
@@ -215,15 +215,23 @@ const error          = ref('')
 const funcionalidades = ref([])
 const transacciones  = ref([])
 const busqueda       = ref('')
-const filtroTipo     = ref('')
+const filtersApplied = ref(false)
+const filters        = ref({ tipo: '' })
 const modulosExpand  = reactive({})
 const funcsExpand    = reactive({})
+
+const filterFields = [
+  {
+    key: 'tipo', label: 'Tipo', type: 'select', allLabel: 'Todos los tipos',
+    options: TIPOS.map(t => ({ value: t.value, label: t.label })),
+  },
+]
 
 // ── Árbol computado ─────────────────────────────────────────────────────────
 
 const arbol = computed(() => {
   const q    = busqueda.value.trim().toLowerCase()
-  const tipo = filtroTipo.value
+  const tipo = filters.value.tipo
 
   // IDs de transacciones que pertenecen a alguna funcionalidad
   const enFuncionalidad = new Set(
@@ -315,7 +323,7 @@ watch(arbol, (grupos) => {
 }, { immediate: true })
 
 // Si hay búsqueda activa, expandir todo para ver los resultados
-watch([busqueda, filtroTipo], ([q, t]) => {
+watch([busqueda, () => filters.value.tipo], ([q, t]) => {
   if (q || t) expandirTodo(true)
 })
 
@@ -335,5 +343,10 @@ async function cargar() {
   }
 }
 
-onMounted(cargar)
+async function aplicarFiltros() {
+  await cargar()
+  filtersApplied.value = true
+}
+
+onMounted(() => {})
 </script>

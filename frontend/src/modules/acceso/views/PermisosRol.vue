@@ -3,14 +3,7 @@
     :title="`Permisos: ${rol?.nombre || '...'}`"
     :subtitle="rol ? `${rol.codigo} · ${rol.tipo} · Nivel ${rol.nivel}` : ''"
   >
-    <!-- Breadcrumb -->
-    <div class="mb-4 flex items-center gap-2 text-sm text-gray-500">
-      <router-link to="/roles" class="hover:text-purple-600 transition-colors">Roles</router-link>
-      <span>›</span>
-      <span class="text-gray-900 font-medium">{{ rol?.nombre || '...' }}</span>
-      <span>›</span>
-      <span class="text-gray-900">Permisos</span>
-    </div>
+    <DetailHeader fallback="/roles" />
 
     <!-- Carga inicial -->
     <div v-if="loading" class="flex items-center justify-center py-24">
@@ -267,6 +260,7 @@
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
+import DetailHeader from '@/components/common/DetailHeader.vue'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
 import {
   GET_ROL_CON_PERMISOS,

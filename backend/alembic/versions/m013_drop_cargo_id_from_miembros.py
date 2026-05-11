@@ -1,7 +1,7 @@
 """drop cargo_id from miembros (ya no referencia tipos_cargo)
 
 Revision ID: m013
-Revises: m012
+Revises: m011
 Create Date: 2026-05-06
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 from sqlalchemy import text
 
 revision: str = 'm013'
-down_revision: Union[str, None] = 'm012'
+down_revision: Union[str, None] = 'm011'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

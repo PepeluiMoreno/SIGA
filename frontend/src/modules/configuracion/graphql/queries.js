@@ -720,8 +720,8 @@ export const GET_AGRUPACIONES_TERRITORIALES = `
       id
       nombre
       nombreCorto
-      tipo
-      nivel
+      tipoId
+      tipoUnidad { id nombre naturaleza vinculo nivel }
       telefono
       email
       web

@@ -1,7 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gray-100">
+  <div class="min-h-screen" style="background-color: var(--t-page-bg)">
     <!-- Header -->
-    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-20">
+    <header class="shadow-sm border-b sticky top-0 z-20"
+      style="background-color: var(--t-topbar); border-color: var(--t-border)">
       <div class="px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
           <!-- Hamburger + logo -->
@@ -34,208 +35,237 @@
 
       <!-- Sidebar -->
       <aside
-        class="fixed top-16 left-0 bottom-0 z-40 w-64 bg-purple-900 flex flex-col transform transition-transform duration-300 ease-in-out lg:sticky lg:top-16 lg:min-h-[calc(100vh-64px)] lg:shrink-0 lg:translate-x-0"
+        class="sidebar-aside fixed top-16 left-0 bottom-0 z-40 w-64 flex flex-col transform transition-transform duration-300 ease-in-out lg:sticky lg:top-16 lg:min-h-[calc(100vh-64px)] lg:shrink-0 lg:translate-x-0"
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
 
-        <nav class="flex-1 p-3 overflow-y-auto">
+        <nav class="flex-1 p-3 overflow-y-auto flex flex-col">
 
-          <!-- Dashboard -->
-          <ul class="space-y-1 mb-2">
-            <li>
-              <router-link to="/"
-                class="nav-item"
-                :class="$route.path === '/' ? 'active' : 'inactive'">
-                <HomeIcon class="nav-icon" />
-                <span>Dashboard</span>
-              </router-link>
-            </li>
-          </ul>
+          <!-- Módulos principales (empujan hacia arriba) -->
+          <div class="flex-1 space-y-0">
 
-          <!-- Configuración -->
-          <div class="mb-1">
-            <button @click="toggleSection('configuracion')" class="section-btn">
-              <span>Configuración</span>
-              <ChevronDownIcon class="chevron" :class="openSections.configuracion ? '' : '-rotate-90'" />
-            </button>
-            <div class="accordion-wrap" :class="{ closed: !openSections.configuracion }">
-              <ul class="space-y-1 pb-1">
-                <li>
-                  <router-link to="/configuracion/general" class="nav-item"
-                    :class="$route.path.startsWith('/configuracion/general') ? 'active' : 'inactive'">
-                    <BuildingOffice2Icon class="nav-icon" /><span>Parámetros Generales</span>
-                  </router-link>
-                </li>
-                <li>
-                  <router-link to="/parametrizacion/catalogos" class="nav-item"
-                    :class="$route.path.startsWith('/parametrizacion/catalogos') ? 'active' : 'inactive'">
-                    <ListBulletIcon class="nav-icon" /><span>Catálogos</span>
-                  </router-link>
-                </li>
-                <li class="pt-2 pb-0.5 px-3">
-                  <span class="text-[10px] font-semibold text-purple-500 uppercase tracking-wider">Control de Acceso</span>
-                </li>
-                <li>
-                  <router-link to="/usuarios" class="nav-item"
-                    :class="$route.path.startsWith('/usuarios') ? 'active' : 'inactive'">
-                    <UsersIcon class="nav-icon" /><span>Usuarios</span>
-                  </router-link>
-                </li>
-                <li>
-                  <router-link to="/roles" class="nav-item"
-                    :class="$route.path.startsWith('/roles') ? 'active' : 'inactive'">
-                    <KeyIcon class="nav-icon" /><span>Roles y Permisos</span>
-                  </router-link>
-                </li>
-                <li>
-                  <router-link to="/transacciones" class="nav-item"
-                    :class="$route.path.startsWith('/transacciones') ? 'active' : 'inactive'">
-                    <ListBulletIcon class="nav-icon" /><span>Catálogo RBAC</span>
-                  </router-link>
-                </li>
-                <li>
-                  <router-link to="/auditoria" class="nav-item"
-                    :class="$route.path.startsWith('/auditoria') ? 'active' : 'inactive'">
-                    <ClipboardDocumentListIcon class="nav-icon" /><span>Auditoría</span>
-                  </router-link>
-                </li>
-              </ul>
+            <!-- Dashboard + Mis datos -->
+            <ul class="space-y-1 mb-1">
+              <li>
+                <router-link to="/"
+                  class="nav-item"
+                  :class="$route.path === '/' ? 'active' : 'inactive'">
+                  <HomeIcon class="nav-icon" />
+                  <span>Dashboard</span>
+                </router-link>
+              </li>
+              <li>
+                <router-link to="/mis-datos"
+                  class="nav-item"
+                  :class="$route.path === '/mis-datos' ? 'active' : 'inactive'">
+                  <UserCircleIcon class="nav-icon" />
+                  <span>Mis datos</span>
+                </router-link>
+              </li>
+            </ul>
+
+            <hr class="nav-sep" />
+
+            <!-- Membresía -->
+            <div class="mb-1">
+              <button @click="toggleSection('membresia')" class="section-btn">
+                <span>Membresía</span>
+                <ChevronDownIcon class="chevron" :class="openSections.membresia ? '' : '-rotate-90'" />
+              </button>
+              <div class="accordion-wrap" :class="{ closed: !openSections.membresia }">
+                <ul class="space-y-1 pb-1">
+                  <li>
+                    <router-link to="/miembros" class="nav-item"
+                      :class="$route.path.startsWith('/miembros') ? 'active' : 'inactive'">
+                      <UserIcon class="nav-icon" /><span>{{ orgConfigStore.Miembros }}</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/agrupaciones" class="nav-item"
+                      :class="$route.path.startsWith('/agrupaciones') ? 'active' : 'inactive'">
+                      <MapPinIcon class="nav-icon" /><span>{{ orgConfigStore.tipoAgrupacion || 'Unidades Organizativas' }}</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/juntas" class="nav-item"
+                      :class="$route.path.startsWith('/juntas') ? 'active' : 'inactive'">
+                      <BuildingOffice2Icon class="nav-icon" /><span>{{ orgConfigStore.OrganoGobiernoPl }}</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/voluntarios" class="nav-item"
+                      :class="$route.path.startsWith('/voluntarios') ? 'active' : 'inactive'">
+                      <HeartIcon class="nav-icon" /><span>Voluntariado</span>
+                    </router-link>
+                  </li>
+                </ul>
+              </div>
             </div>
-          </div>
 
-          <!-- Membresía -->
-          <div class="mb-1">
-            <button @click="toggleSection('membresia')" class="section-btn">
-              <span>Membresía</span>
-              <ChevronDownIcon class="chevron" :class="openSections.membresia ? '' : '-rotate-90'" />
-            </button>
-            <div class="accordion-wrap" :class="{ closed: !openSections.membresia }">
-              <ul class="space-y-1 pb-1">
-                <li>
-                  <router-link to="/miembros" class="nav-item"
-                    :class="$route.path.startsWith('/miembros') ? 'active' : 'inactive'">
-                    <UserIcon class="nav-icon" /><span>Miembros</span>
-                  </router-link>
-                </li>
-                <li>
-                  <router-link to="/agrupaciones" class="nav-item"
-                    :class="$route.path.startsWith('/agrupaciones') ? 'active' : 'inactive'">
-                    <MapPinIcon class="nav-icon" /><span>Agrupaciones</span>
-                  </router-link>
-                </li>
-                <li>
-                  <router-link to="/juntas" class="nav-item"
-                    :class="$route.path.startsWith('/juntas') ? 'active' : 'inactive'">
-                    <BuildingOffice2Icon class="nav-icon" /><span>Juntas Directivas</span>
-                  </router-link>
-                </li>
-                <li>
-                  <router-link to="/voluntarios" class="nav-item"
-                    :class="$route.path.startsWith('/voluntarios') ? 'active' : 'inactive'">
-                    <HeartIcon class="nav-icon" /><span>Voluntariado</span>
-                  </router-link>
-                </li>
-              </ul>
+            <hr class="nav-sep" />
+
+            <!-- Actividades -->
+            <div class="mb-1">
+              <button @click="toggleSection('actividades')" class="section-btn">
+                <span>Actividades</span>
+                <ChevronDownIcon class="chevron" :class="openSections.actividades ? '' : '-rotate-90'" />
+              </button>
+              <div class="accordion-wrap" :class="{ closed: !openSections.actividades }">
+                <ul class="space-y-1 pb-1">
+                  <li>
+                    <router-link to="/campanias" class="nav-item"
+                      :class="$route.path.startsWith('/campanias') ? 'active' : 'inactive'">
+                      <FlagIcon class="nav-icon" /><span>Campañas</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/eventos" class="nav-item"
+                      :class="$route.path.startsWith('/eventos') ? 'active' : 'inactive'">
+                      <CalendarDaysIcon class="nav-icon" /><span>Eventos</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/grupos" class="nav-item"
+                      :class="$route.path.startsWith('/grupos') ? 'active' : 'inactive'">
+                      <UserGroupIcon class="nav-icon" /><span>Grupos de Trabajo</span>
+                    </router-link>
+                  </li>
+                </ul>
+              </div>
             </div>
-          </div>
 
-          <!-- Actividades -->
-          <div class="mb-1">
-            <button @click="toggleSection('actividades')" class="section-btn">
-              <span>Actividades</span>
-              <ChevronDownIcon class="chevron" :class="openSections.actividades ? '' : '-rotate-90'" />
-            </button>
-            <div class="accordion-wrap" :class="{ closed: !openSections.actividades }">
-              <ul class="space-y-1 pb-1">
-                <li>
-                  <router-link to="/campanias" class="nav-item"
-                    :class="$route.path.startsWith('/campanias') ? 'active' : 'inactive'">
-                    <FlagIcon class="nav-icon" /><span>Campañas</span>
-                  </router-link>
-                </li>
-                <li>
-                  <router-link to="/eventos" class="nav-item"
-                    :class="$route.path.startsWith('/eventos') ? 'active' : 'inactive'">
-                    <CalendarDaysIcon class="nav-icon" /><span>Eventos</span>
-                  </router-link>
-                </li>
-                <li>
-                  <router-link to="/grupos" class="nav-item"
-                    :class="$route.path.startsWith('/grupos') ? 'active' : 'inactive'">
-                    <UserGroupIcon class="nav-icon" /><span>Grupos de Trabajo</span>
-                  </router-link>
-                </li>
-              </ul>
+            <hr class="nav-sep" />
+
+            <!-- Económico -->
+            <div v-if="tieneAlguno('CUOT_LIST','CUOT_GENERATE','CUOT_PAY','REM_CREATE','CONT_VIEW','PRES_VIEW','DON_LIST')" class="mb-1">
+              <button @click="toggleSection('economico')" class="section-btn">
+                <span>Económico</span>
+                <ChevronDownIcon class="chevron" :class="openSections.economico ? '' : '-rotate-90'" />
+              </button>
+              <div class="accordion-wrap" :class="{ closed: !openSections.economico }">
+                <ul class="space-y-1 pb-1">
+                  <li>
+                    <router-link to="/economico/tesoreria" class="nav-item"
+                      :class="$route.path.startsWith('/economico/tesoreria') ? 'active' : 'inactive'">
+                      <BuildingLibraryIcon class="nav-icon" /><span>Tesorería</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/economico/contabilidad" class="nav-item"
+                      :class="$route.path.startsWith('/economico/contabilidad') ? 'active' : 'inactive'">
+                      <CalculatorIcon class="nav-icon" /><span>Contabilidad</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/economico/cuotas" class="nav-item"
+                      :class="$route.path.startsWith('/economico/cuotas') ? 'active' : 'inactive'">
+                      <CreditCardIcon class="nav-icon" /><span>Cuotas</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/economico/remesas" class="nav-item"
+                      :class="$route.path.startsWith('/economico/remesas') ? 'active' : 'inactive'">
+                      <ArrowsRightLeftIcon class="nav-icon" /><span>Remesas</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/economico/presupuesto" class="nav-item"
+                      :class="$route.path.startsWith('/economico/presupuesto') ? 'active' : 'inactive'">
+                      <ChartBarIcon class="nav-icon" /><span>Presupuesto</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/economico/donaciones" class="nav-item"
+                      :class="$route.path.startsWith('/economico/donaciones') ? 'active' : 'inactive'">
+                      <GiftIcon class="nav-icon" /><span>Donaciones</span>
+                    </router-link>
+                  </li>
+                </ul>
+              </div>
             </div>
-          </div>
 
-          <!-- Económico -->
-          <div class="mb-1">
-            <button @click="toggleSection('economico')" class="section-btn">
-              <span>Económico</span>
-              <ChevronDownIcon class="chevron" :class="openSections.economico ? '' : '-rotate-90'" />
-            </button>
-            <div class="accordion-wrap" :class="{ closed: !openSections.economico }">
-              <ul class="space-y-1 pb-1">
-                <li>
-                  <router-link to="/economico/tesoreria" class="nav-item"
-                    :class="$route.path.startsWith('/economico/tesoreria') ? 'active' : 'inactive'">
-                    <BuildingLibraryIcon class="nav-icon" /><span>Tesorería</span>
-                  </router-link>
-                </li>
-                <li>
-                  <router-link to="/economico/contabilidad" class="nav-item"
-                    :class="$route.path.startsWith('/economico/contabilidad') ? 'active' : 'inactive'">
-                    <CalculatorIcon class="nav-icon" /><span>Contabilidad</span>
-                  </router-link>
-                </li>
-                <li>
-                  <router-link to="/economico/cuotas" class="nav-item"
-                    :class="$route.path.startsWith('/economico/cuotas') ? 'active' : 'inactive'">
-                    <CreditCardIcon class="nav-icon" /><span>Cuotas</span>
-                  </router-link>
-                </li>
-                <li>
-                  <router-link to="/economico/remesas" class="nav-item"
-                    :class="$route.path.startsWith('/economico/remesas') ? 'active' : 'inactive'">
-                    <ArrowsRightLeftIcon class="nav-icon" /><span>Remesas</span>
-                  </router-link>
-                </li>
-                <li>
-                  <router-link to="/economico/presupuesto" class="nav-item"
-                    :class="$route.path.startsWith('/economico/presupuesto') ? 'active' : 'inactive'">
-                    <ChartBarIcon class="nav-icon" /><span>Presupuesto</span>
-                  </router-link>
-                </li>
-                <li>
-                  <router-link to="/economico/donaciones" class="nav-item"
-                    :class="$route.path.startsWith('/economico/donaciones') ? 'active' : 'inactive'">
-                    <GiftIcon class="nav-icon" /><span>Donaciones</span>
-                  </router-link>
-                </li>
-              </ul>
+            <hr class="nav-sep" />
+
+            <!-- Ayuda -->
+            <div class="mb-1">
+              <button @click="toggleSection('ayuda')" class="section-btn">
+                <span>Ayuda</span>
+                <ChevronDownIcon class="chevron" :class="openSections.ayuda ? '' : '-rotate-90'" />
+              </button>
+              <div class="accordion-wrap" :class="{ closed: !openSections.ayuda }">
+                <ul class="space-y-1 pb-1">
+                  <li>
+                    <a href="https://laicismo.org" target="_blank" class="nav-item inactive">
+                      <GlobeAltIcon class="nav-icon" /><span>Web Europa Laica</span>
+                    </a>
+                  </li>
+                  <li>
+                    <RouterLink to="/ayuda" class="nav-item" :class="$route.path === '/ayuda' ? 'active' : 'inactive'">
+                      <BookOpenIcon class="nav-icon" /><span>Documentación</span>
+                    </RouterLink>
+                  </li>
+                </ul>
+              </div>
             </div>
-          </div>
 
-          <!-- Ayuda -->
-          <div>
-            <button @click="toggleSection('ayuda')" class="section-btn">
-              <span>Ayuda</span>
-              <ChevronDownIcon class="chevron" :class="openSections.ayuda ? '' : '-rotate-90'" />
-            </button>
-            <div class="accordion-wrap" :class="{ closed: !openSections.ayuda }">
-              <ul class="space-y-1 pb-1">
-                <li>
-                  <a href="https://laicismo.org" target="_blank"
-                    class="nav-item inactive">
-                    <GlobeAltIcon class="nav-icon" /><span>Web Europa Laica</span>
-                  </a>
-                </li>
-                <li>
-                  <a href="#" class="nav-item inactive">
-                    <BookOpenIcon class="nav-icon" /><span>Documentación</span>
-                  </a>
-                </li>
-              </ul>
+          </div><!-- /módulos principales -->
+
+          <!-- Configuración — anclada al fondo -->
+          <div class="mt-auto pt-2">
+            <hr class="nav-sep" />
+            <div v-if="tieneAlguno('CFG_VIEW','CFG_EDIT','USR_LIST','ROL_LIST','PERM_ASSIGN','AUD_VIEW')" class="mb-1">
+              <button @click="toggleSection('configuracion')" class="section-btn">
+                <span>Configuración</span>
+                <ChevronDownIcon class="chevron" :class="openSections.configuracion ? '' : '-rotate-90'" />
+              </button>
+              <div class="accordion-wrap" :class="{ closed: !openSections.configuracion }">
+                <ul class="space-y-1 pb-1">
+                  <li>
+                    <router-link to="/configuracion/general" class="nav-item"
+                      :class="$route.path.startsWith('/configuracion/general') ? 'active' : 'inactive'">
+                      <BuildingOffice2Icon class="nav-icon" /><span>Parámetros Generales</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/parametrizacion/catalogos" class="nav-item"
+                      :class="$route.path.startsWith('/parametrizacion/catalogos') ? 'active' : 'inactive'">
+                      <ListBulletIcon class="nav-icon" /><span>Catálogos</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/parametrizacion/temas" class="nav-item"
+                      :class="$route.path.startsWith('/parametrizacion/temas') ? 'active' : 'inactive'">
+                      <SwatchIcon class="nav-icon" /><span>Temas de color</span>
+                    </router-link>
+                  </li>
+                  <li class="pt-2 pb-0.5 px-3">
+                    <span class="text-[10px] font-semibold text-purple-500 uppercase tracking-wider">Control de Acceso</span>
+                  </li>
+                  <li>
+                    <router-link to="/usuarios" class="nav-item"
+                      :class="$route.path.startsWith('/usuarios') ? 'active' : 'inactive'">
+                      <UsersIcon class="nav-icon" /><span>Usuarios</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/roles" class="nav-item"
+                      :class="$route.path.startsWith('/roles') ? 'active' : 'inactive'">
+                      <KeyIcon class="nav-icon" /><span>Roles y Permisos</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/transacciones" class="nav-item"
+                      :class="$route.path.startsWith('/transacciones') ? 'active' : 'inactive'">
+                      <ListBulletIcon class="nav-icon" /><span>Catálogo RBAC</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/auditoria" class="nav-item"
+                      :class="$route.path.startsWith('/auditoria') ? 'active' : 'inactive'">
+                      <ClipboardDocumentListIcon class="nav-icon" /><span>Auditoría</span>
+                    </router-link>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
 
@@ -271,13 +301,39 @@
         </div>
       </aside>
 
+      <!-- Scroll to top button -->
+      <Transition
+        enter-active-class="transition-all duration-200 ease-out"
+        enter-from-class="opacity-0 translate-y-2"
+        enter-to-class="opacity-100 translate-y-0"
+        leave-active-class="transition-all duration-150 ease-in"
+        leave-from-class="opacity-100 translate-y-0"
+        leave-to-class="opacity-0 translate-y-2"
+      >
+        <button v-if="showScrollTop"
+          @click="scrollToTop"
+          class="fixed bottom-6 right-6 z-50 w-10 h-10 rounded-full bg-purple-600 text-white shadow-lg flex items-center justify-center hover:bg-purple-700 transition-colors"
+          title="Volver arriba">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+          </svg>
+        </button>
+      </Transition>
+
       <!-- Main content -->
-      <main class="flex-1 px-4 sm:px-6 pt-4 pb-4 min-w-0 overflow-y-auto lg:h-[calc(100vh-64px)]">
-        <div class="mb-3">
-          <h1 class="text-lg font-bold text-gray-900">{{ title }}</h1>
-          <p v-if="subtitle" class="text-xs text-gray-500">{{ subtitle }}</p>
+      <main class="flex-1 min-w-0 overflow-hidden lg:h-[calc(100vh-64px)]">
+        <div class="h-full flex flex-col w-full mx-auto px-4 sm:px-6 lg:px-0 lg:max-w-[75%]">
+          <div class="pt-4 flex-shrink-0">
+            <PageHeader v-if="title" :title="title" :subtitle="subtitle" :icon="icon">
+              <template v-if="$slots.actions" #actions>
+                <slot name="actions" />
+              </template>
+            </PageHeader>
+          </div>
+          <div ref="mainRef" class="flex-1 min-h-0 overflow-y-auto pb-4" @scroll="onMainScroll">
+            <slot />
+          </div>
         </div>
-        <slot />
       </main>
     </div>
   </div>
@@ -288,32 +344,48 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
+import { usePermisos } from '@/composables/usePermisos.js'
 import BackendStatus from '@/components/common/BackendStatus.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 import {
   HomeIcon, UserIcon, UsersIcon, MapPinIcon, FlagIcon, UserGroupIcon,
   HeartIcon, KeyIcon, ListBulletIcon, ClipboardDocumentListIcon,
-  GlobeAltIcon, BookOpenIcon, CalendarDaysIcon,
+  GlobeAltIcon, BookOpenIcon, CalendarDaysIcon, SwatchIcon,
   BuildingOffice2Icon, BuildingLibraryIcon, CalculatorIcon, CreditCardIcon,
-  ArrowsRightLeftIcon, ChartBarIcon, GiftIcon,
+  ArrowsRightLeftIcon, ChartBarIcon, GiftIcon, UserCircleIcon,
   Bars3Icon, XMarkIcon, ChevronDownIcon,
 } from '@heroicons/vue/24/outline'
 
 defineProps({
-  title: { type: String, required: true },
+  title:    { type: String, default: '' },
   subtitle: { type: String, default: '' },
+  icon:     { type: String, default: '' },
 })
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const orgConfigStore = useOrgConfigStore()
+const { tienePermiso, tieneAlguno } = usePermisos()
 
 // ── Sidebar mobile (v2) ───────────────────────────────────────────────────────
 const sidebarOpen = ref(false)
 
+// ── Scroll to top ─────────────────────────────────────────────────────────────
+const mainRef = ref(null)
+const showScrollTop = ref(false)
+
+function onMainScroll() {
+  showScrollTop.value = (mainRef.value?.scrollTop || 0) > 300
+}
+
+function scrollToTop() {
+  mainRef.value?.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 // ── Secciones colapsables ─────────────────────────────────────────────────────
 const openSections = reactive({
-  configuracion: false,
+  configuracion: true,
   membresia: false,
   actividades: false,
   economico: false,
@@ -321,6 +393,7 @@ const openSections = reactive({
 })
 
 function sectionForPath(path) {
+  if (path === '/' || path === '/mis-datos') return null
   if (path.startsWith('/configuracion') || path.startsWith('/parametrizacion') ||
       path.startsWith('/usuarios') || path.startsWith('/roles') ||
       path.startsWith('/transacciones') || path.startsWith('/auditoria'))
@@ -356,6 +429,7 @@ const userRole = computed(() => authStore.user?.roles?.[0] || 'Usuario')
 
 const sessionStartTime = ref(Date.now())
 const sessionTime = ref('0m')
+let lastActivity = Date.now()
 let sessionTimer = null
 
 function updateSessionTime() {
@@ -366,8 +440,34 @@ function updateSessionTime() {
   sessionTime.value = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
 }
 
-onMounted(() => {
-  orgConfigStore.fetchConfig()
+function resetActivity() {
+  lastActivity = Date.now()
+}
+
+function checkSessionTimeouts() {
+  updateSessionTime()
+  const now = Date.now()
+
+  const inactividadMin = orgConfigStore.sessionInactividad
+  if (inactividadMin > 0 && (now - lastActivity) > inactividadMin * 60000) {
+    forceLogout()
+    return
+  }
+
+  const maximoMin = orgConfigStore.sessionMaximo
+  if (maximoMin > 0 && (now - sessionStartTime.value) > maximoMin * 60000) {
+    forceLogout()
+  }
+}
+
+function forceLogout() {
+  localStorage.removeItem('session_start_time')
+  authStore.clearAuth()
+  router.push('/login')
+}
+
+onMounted(async () => {
+  await orgConfigStore.fetchConfig()
   const storedTime = localStorage.getItem('session_start_time')
   if (storedTime) {
     sessionStartTime.value = parseInt(storedTime)
@@ -375,10 +475,19 @@ onMounted(() => {
     localStorage.setItem('session_start_time', sessionStartTime.value.toString())
   }
   updateSessionTime()
-  sessionTimer = setInterval(updateSessionTime, 60000)
+  sessionTimer = setInterval(checkSessionTimeouts, 60000)
+
+  window.addEventListener('mousemove', resetActivity)
+  window.addEventListener('keydown', resetActivity)
+  window.addEventListener('click', resetActivity)
 })
 
-onUnmounted(() => { if (sessionTimer) clearInterval(sessionTimer) })
+onUnmounted(() => {
+  if (sessionTimer) clearInterval(sessionTimer)
+  window.removeEventListener('mousemove', resetActivity)
+  window.removeEventListener('keydown', resetActivity)
+  window.removeEventListener('click', resetActivity)
+})
 
 const logout = async () => {
   localStorage.removeItem('session_start_time')
@@ -402,12 +511,19 @@ const logout = async () => {
   min-height: 0;
 }
 
+/* Separador entre módulos */
+.nav-sep {
+  @apply border-0 border-t my-2 mx-1;
+  border-color: rgba(255,255,255,0.20);
+}
+
 /* Botón de sección */
 .section-btn {
   @apply w-full flex items-center justify-between px-3 py-1.5 mb-0.5 rounded-md
-         text-xs font-semibold text-purple-400 uppercase tracking-wider
-         hover:text-purple-200 hover:bg-purple-800/40 transition-colors;
+         text-xs font-semibold uppercase tracking-wider transition-colors;
+  color: rgba(255,255,255,0.65);
 }
+.section-btn:hover { background-color: rgba(255,255,255,0.12); color: white; }
 .chevron {
   @apply w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200;
 }
@@ -416,10 +532,10 @@ const logout = async () => {
 .nav-item {
   @apply flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-colors;
 }
-.nav-item.active  { @apply bg-purple-800 text-white; }
-.nav-item.inactive { @apply text-purple-200 hover:bg-purple-800 hover:text-white; }
-.nav-icon {
-  @apply w-4 h-4 mr-3 flex-shrink-0 text-purple-300;
-}
-.nav-item.active .nav-icon { @apply text-white; }
+.nav-item.active   { background-color: rgba(255,255,255,0.18); color: white; }
+.nav-item.inactive { color: rgba(255,255,255,0.80); }
+.nav-item.inactive:hover { background-color: rgba(255,255,255,0.12); color: white; }
+.nav-icon { @apply w-4 h-4 mr-3 flex-shrink-0; color: rgba(255,255,255,0.65); }
+.nav-item.active .nav-icon { color: white; }
+
 </style>

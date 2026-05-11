@@ -20,99 +20,55 @@
       </div>
     </div>
 
-    <!-- Barra de filtros + toggle de vista -->
-    <div class="mb-6 bg-white p-4 rounded-lg shadow">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div class="flex-1">
-          <div class="relative">
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Buscar eventos..."
-              class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-            <div class="absolute left-3 top-2.5 text-gray-400">🔍</div>
-          </div>
-        </div>
-        <div class="flex gap-2 items-center">
-          <!-- Toggle lista / calendario -->
-          <div class="flex rounded-lg overflow-hidden border border-gray-300 text-sm">
-            <button
-              @click="vista = 'lista'"
-              :class="['px-4 py-2 flex items-center gap-1.5 font-medium transition-colors',
-                vista === 'lista' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-              </svg>
-              Lista
-            </button>
-            <button
-              @click="vista = 'calendario'"
-              :class="['px-4 py-2 flex items-center gap-1.5 font-medium border-l border-gray-300 transition-colors',
-                vista === 'calendario' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-              </svg>
-              Calendario
-            </button>
-          </div>
-          <button
-            @click="showFilters = !showFilters"
-            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
-          >
-            Filtros
-          </button>
-          <router-link
-            to="/eventos/nuevo"
-            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
-          >
-            + Nuevo Evento
-          </router-link>
-        </div>
-      </div>
+    <!-- Filtros -->
+    <FilterBar
+      v-model="filters"
+      v-model:search="searchQuery"
+      search-placeholder="Buscar eventos…"
+      create-label="Nuevo Evento"
+      create-route="/eventos/nuevo"
+      :fields="filterFields"
+      :lazy="true"
+      :loading="loading"
+      class="mb-3"
+      @apply="aplicarFiltros"
+    />
 
-      <div v-if="showFilters" class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <div>
-          <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Tipo</label>
-          <select v-model="filtroTipo" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-            <option value="">Todos</option>
-            <option v-for="t in tiposEvento" :key="t.id" :value="t.id">{{ t.nombre }}</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Estado</label>
-          <select v-model="filtroEstado" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-            <option value="">Todos</option>
-            <option v-for="e in estadosEvento" :key="e.id" :value="e.id">{{ e.nombre }}</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Periodo</label>
-          <select v-model="filtroPeriodo" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-            <option value="">Todos</option>
-            <option value="proximos">Próximos</option>
-            <option value="pasados">Pasados</option>
-            <option value="mes">Este mes</option>
-          </select>
-        </div>
+    <!-- Toggle lista / calendario -->
+    <div class="flex justify-end mb-4">
+      <div class="flex rounded-lg overflow-hidden border border-gray-300 text-sm">
+        <button @click="vista = 'lista'"
+          :class="['px-4 py-1.5 flex items-center gap-1.5 font-medium transition-colors',
+            vista === 'lista' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+          </svg>
+          Lista
+        </button>
+        <button @click="vista = 'calendario'"
+          :class="['px-4 py-1.5 flex items-center gap-1.5 font-medium border-l border-gray-300 transition-colors',
+            vista === 'calendario' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          Calendario
+        </button>
       </div>
     </div>
 
     <!-- Loading / Error -->
-    <div v-if="loading" class="text-center py-12">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-    </div>
+    <EstadoCarga v-if="loading" />
     <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
       {{ error }}
     </div>
 
     <!-- Vista Lista -->
     <div v-else-if="vista === 'lista'" class="space-y-3">
-      <div v-if="eventosFiltrados.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
+      <div v-if="!filtersApplied" class="bg-white rounded-lg shadow">
+        <EstadoPendiente />
+      </div>
+      <div v-else-if="eventosFiltrados.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
         <p class="text-4xl mb-4">📅</p>
         <p class="text-sm text-gray-500">No hay eventos con los filtros seleccionados.</p>
       </div>
@@ -170,12 +126,11 @@
           </div>
 
           <!-- Acciones -->
-          <div class="flex gap-2 flex-shrink-0">
-            <router-link
-              :to="`/eventos/${e.id}`"
-              class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
-            >
-              Ver detalle
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <router-link :to="`/eventos/${e.id}`"
+              class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+              title="Ver detalle">
+              <EyeIcon class="w-4 h-4" />
             </router-link>
           </div>
         </div>
@@ -353,12 +308,11 @@
                 </div>
 
                 <!-- Link al detalle -->
-                <router-link
-                  :to="`/eventos/${e.id}`"
+                <router-link :to="`/eventos/${e.id}`"
                   @click="showModal = false"
-                  class="flex-shrink-0 text-xs font-medium text-purple-600 hover:text-purple-800 hover:underline whitespace-nowrap"
-                >
-                  Ver →
+                  class="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                  title="Ver detalle">
+                  <EyeIcon class="w-4 h-4" />
                 </router-link>
               </div>
             </div>
@@ -372,8 +326,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
+import { EyeIcon } from '@heroicons/vue/24/outline'
 import { executeQuery } from '@/graphql/client'
 import { GET_EVENTOS, GET_TIPOS_EVENTO, GET_ESTADOS_EVENTO } from '@/graphql/queries/eventos.js'
+import EstadoCarga from '@/components/common/EstadoCarga.vue'
+import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
 
 // ---------- datos ----------
 const loading = ref(false)
@@ -384,10 +342,27 @@ const estadosEvento = ref([])
 
 // ---------- filtros ----------
 const searchQuery = ref('')
-const showFilters = ref(false)
-const filtroTipo = ref('')
-const filtroEstado = ref('')
-const filtroPeriodo = ref('')
+const filtersApplied = ref(false)
+const filters = ref({ tipo: '', estado: '', periodo: '' })
+
+const filterFields = computed(() => [
+  {
+    key: 'tipo', label: 'Tipo', type: 'select', allLabel: 'Todos los tipos',
+    options: tiposEvento.value.map(t => ({ value: t.id, label: t.nombre })),
+  },
+  {
+    key: 'estado', label: 'Estado', type: 'select', allLabel: 'Todos los estados',
+    options: estadosEvento.value.map(e => ({ value: e.id, label: e.nombre })),
+  },
+  {
+    key: 'periodo', label: 'Periodo', type: 'select', allLabel: 'Cualquier fecha',
+    options: [
+      { value: 'proximos', label: 'Próximos' },
+      { value: 'pasados',  label: 'Pasados' },
+      { value: 'mes',      label: 'Este mes' },
+    ],
+  },
+])
 
 // ---------- vista ----------
 const vista = ref('lista') // 'lista' | 'calendario'
@@ -431,17 +406,17 @@ const eventosFiltrados = computed(() => {
       e.ciudad?.toLowerCase().includes(q)
     )
   }
-  if (filtroTipo.value) {
-    result = result.filter(e => e.tipoEvento?.id === filtroTipo.value)
+  if (filters.value.tipo) {
+    result = result.filter(e => e.tipoEvento?.id === filters.value.tipo)
   }
-  if (filtroEstado.value) {
-    result = result.filter(e => e.estado?.id === filtroEstado.value)
+  if (filters.value.estado) {
+    result = result.filter(e => e.estado?.id === filters.value.estado)
   }
-  if (filtroPeriodo.value === 'proximos') {
+  if (filters.value.periodo === 'proximos') {
     result = result.filter(e => new Date(e.fechaInicio + 'T00:00:00') >= hoy)
-  } else if (filtroPeriodo.value === 'pasados') {
+  } else if (filters.value.periodo === 'pasados') {
     result = result.filter(e => new Date(e.fechaInicio + 'T00:00:00') < hoy)
-  } else if (filtroPeriodo.value === 'mes') {
+  } else if (filters.value.periodo === 'mes') {
     const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
     const finMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0)
     result = result.filter(e => {
@@ -561,7 +536,7 @@ async function cargar() {
       executeQuery(GET_ESTADOS_EVENTO),
     ])
     eventos.value = dataEventos.eventos || []
-    tiposEvento.value = dataTipos.tiposEvento || []
+    tiposEvento.value = (dataTipos?.tiposEvento || []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
     estadosEvento.value = dataEstados.estadosEvento || []
   } catch (e) {
     error.value = e?.response?.errors?.[0]?.message || 'Error cargando eventos'
@@ -570,5 +545,20 @@ async function cargar() {
   }
 }
 
-onMounted(cargar)
+async function aplicarFiltros() {
+  await cargar()
+  filtersApplied.value = true
+}
+
+onMounted(async () => {
+  // Cargar solo los catálogos para los dropdowns; los eventos se cargan al pulsar Buscar
+  try {
+    const [dataTipos, dataEstados] = await Promise.all([
+      executeQuery(GET_TIPOS_EVENTO),
+      executeQuery(GET_ESTADOS_EVENTO),
+    ])
+    tiposEvento.value = (dataTipos?.tiposEvento || []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+    estadosEvento.value = dataEstados.estadosEvento || []
+  } catch { /* ignore */ }
+})
 </script>

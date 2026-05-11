@@ -1,12 +1,14 @@
 """Modelos de datos geográficos, direcciones y agrupaciones territoriales."""
 
 import uuid
+from datetime import date
 from typing import Optional, List
 
-from sqlalchemy import String, Integer, Boolean, Uuid, ForeignKey, UniqueConstraint, Text
+from sqlalchemy import String, Integer, Boolean, Uuid, ForeignKey, UniqueConstraint, Text, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ....infrastructure.base_model import BaseModel
+from app.infrastructure.base_model import BaseModel
+from app.modules.core.geografico.tipo_unidad_organizativa import TipoUnidadOrganizativa
 
 
 class Pais(BaseModel):
@@ -41,6 +43,7 @@ class Provincia(BaseModel):
     pais_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('paises.id'), nullable=False, index=True)
     codigo: Mapped[str] = mapped_column(String(10), nullable=False, index=True)  # Código provincial (ej: '28' para Madrid)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    comunidad_autonoma: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
     # Relaciones
@@ -193,12 +196,14 @@ class AgrupacionTerritorial(BaseModel):
     nombre: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
     nombre_corto: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
-    # Tipo de agrupación
-    tipo: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False,
-        index=True
-    )  # LOCAL, PROVINCIAL, AUTONOMICO, NACIONAL
+    # Tipo de unidad (FK al catálogo)
+    tipo_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('tipos_unidades_organizativas.id'), nullable=True, index=True
+    )
+    # Datos jurídicos (solo si vínculo = FILIAL o FEDERADA)
+    nif: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    fecha_constitucion: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    registro_oficial: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
 
     # Jerarquía
     agrupacion_padre_id: Mapped[Optional[uuid.UUID]] = mapped_column(
@@ -207,7 +212,6 @@ class AgrupacionTerritorial(BaseModel):
         nullable=True,
         index=True
     )
-    nivel: Mapped[int] = mapped_column(Integer, default=1, nullable=False)  # 1=Local, 2=Provincial, 3=Autonómico, 4=Nacional
 
     # Ubicación geográfica
     pais_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('paises.id'), nullable=False, index=True)
@@ -229,6 +233,7 @@ class AgrupacionTerritorial(BaseModel):
     provincia = relationship('Provincia', lazy='selectin')
     municipio = relationship('Municipio', lazy='selectin')
     direccion = relationship('Direccion', lazy='selectin')
+    tipo_unidad: Mapped[Optional[TipoUnidadOrganizativa]] = relationship('TipoUnidadOrganizativa', lazy='selectin')
 
     # Relación jerárquica
     agrupacion_padre = relationship(
@@ -244,7 +249,12 @@ class AgrupacionTerritorial(BaseModel):
     )
 
     def __repr__(self) -> str:
-        return f"<AgrupacionTerritorial(nombre='{self.nombre}', tipo='{self.tipo}')>"
+        return f"<AgrupacionTerritorial(nombre='{self.nombre}')>"
+
+    @property
+    def nivel(self) -> Optional[int]:
+        """Nivel jerárquico derivado del tipo de unidad (1, 2, 3 o None)."""
+        return self.tipo_unidad.nivel if self.tipo_unidad else None
 
     @property
     def nombre_completo(self) -> str:

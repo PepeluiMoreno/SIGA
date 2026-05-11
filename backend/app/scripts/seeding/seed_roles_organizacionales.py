@@ -1,0 +1,126 @@
+"""Seed de roles organizacionales (tipos de cargo).
+
+Crea los roles de tipo ORGANIZACION que representan los cargos:
+- PRESIDENTE, VICEPRESIDENTE, SECRETARIO, TESORERO, VOCAL
+- COORDINADOR (territorial, autonómico, etc.)
+- OTROS cargos organizativos
+"""
+import asyncio
+import uuid
+from sqlalchemy import select
+
+from app.core.database import async_session
+from app.modules.acceso.models.rol import Rol, TipoRol
+
+
+ORGANIZACION_ROLES = [
+    {
+        "codigo": "PRESIDENTE",
+        "nombre": "Presidente",
+        "descripcion": "Presidencia de la organización",
+        "nivel": 1,
+        "es_territorial": False,
+        "nivel_territorial": None,
+    },
+    {
+        "codigo": "VICEPRESIDENTE",
+        "nombre": "Vicepresidente",
+        "descripcion": "Vicepresidencia",
+        "nivel": 2,
+        "es_territorial": False,
+        "nivel_territorial": None,
+    },
+    {
+        "codigo": "SECRETARIO",
+        "nombre": "Secretario",
+        "descripcion": "Secretaría",
+        "nivel": 3,
+        "es_territorial": False,
+        "nivel_territorial": None,
+    },
+    {
+        "codigo": "TESORERO",
+        "nombre": "Tesorero",
+        "descripcion": "Tesorería",
+        "nivel": 4,
+        "es_territorial": False,
+        "nivel_territorial": None,
+    },
+    {
+        "codigo": "VOCAL",
+        "nombre": "Vocal",
+        "descripcion": "Vocal de la junta directiva",
+        "nivel": 5,
+        "es_territorial": False,
+        "nivel_territorial": None,
+    },
+    {
+        "codigo": "COORDINADOR",
+        "nombre": "Coordinador",
+        "descripcion": "Coordinador territorial/autonómico",
+        "nivel": 6,
+        "es_territorial": True,
+        "nivel_territorial": "AUTONOMICO",
+    },
+    {
+        "codigo": "COORD_PROV",
+        "nombre": "Coordinador Provincial",
+        "descripcion": "Coordinador de agrupación provincial",
+        "nivel": 7,
+        "es_territorial": True,
+        "nivel_territorial": "PROVINCIAL",
+    },
+    {
+        "codigo": "COORD_LOCAL",
+        "nombre": "Coordinador Local",
+        "descripcion": "Coordinador de grupo local",
+        "nivel": 8,
+        "es_territorial": True,
+        "nivel_territorial": "LOCAL",
+    },
+]
+
+
+async def seed():
+    print("\n" + "=" * 60)
+    print("SEED ROLES ORGANIZACIONALES")
+    print("=" * 60)
+
+    async with async_session() as session:
+        # Verificar existentes
+        existing = (await session.execute(
+            select(Rol).where(Rol.tipo == TipoRol.ORGANIZACION)
+        )).scalars().all()
+        existing_by_codigo = {r.codigo: r for r in existing}
+        
+        print(f"\n  Roles ORGANIZACION existentes: {len(existing)}")
+        
+        creados = 0
+        for rol_data in ORGANIZACION_ROLES:
+            if rol_data["codigo"] in existing_by_codigo:
+                print(f"  [EXISTE] {rol_data['codigo']}")
+                continue
+            
+            rol = Rol(
+                id=uuid.uuid4(),
+                codigo=rol_data["codigo"],
+                nombre=rol_data["nombre"],
+                descripcion=rol_data["descripcion"],
+                tipo=TipoRol.ORGANIZACION,
+                nivel=rol_data["nivel"],
+                es_territorial=rol_data["es_territorial"],
+                nivel_territorial=rol_data["nivel_territorial"],
+                activo=True,
+                sistema=False,
+            )
+            session.add(rol)
+            creados += 1
+            print(f"  [OK] {rol_data['codigo']}: {rol_data['nombre']}")
+        
+        await session.commit()
+        print(f"\n  Total creados: {creados}")
+        print("=" * 60)
+
+
+if __name__ == "__main__":
+    asyncio.run(seed())

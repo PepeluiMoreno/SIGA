@@ -61,13 +61,12 @@ def upgrade() -> None:
     op.create_foreign_key(None, 'roles_funcionalidades', 'usuarios', ['creado_por_id'], ['id'])
     op.create_foreign_key(None, 'roles_funcionalidades', 'usuarios', ['modificado_por_id'], ['id'])
 
-    op.execute("CREATE TYPE ambito_transaccion AS ENUM ('GLOBAL', 'TERRITORIAL', 'PROPIO')")
     op.create_table(
         'funcionalidades_transacciones',
         sa.Column('id', sa.Uuid(), primary_key=True),
         sa.Column('funcionalidad_id', sa.Uuid(), nullable=False),
         sa.Column('transaccion_id', sa.Uuid(), nullable=False),
-        sa.Column('ambito', sa.Enum('GLOBAL', 'TERRITORIAL', 'PROPIO', name='ambito_transaccion', create_type=False), nullable=False, server_default='TERRITORIAL'),
+        sa.Column('ambito', sa.Enum('GLOBAL', 'TERRITORIAL', 'PROPIO', name='ambito_transaccion'), nullable=False, server_default='TERRITORIAL'),
         sa.UniqueConstraint('funcionalidad_id', 'transaccion_id', name='uq_funcionalidad_transaccion'),
         *_audit(),
     )

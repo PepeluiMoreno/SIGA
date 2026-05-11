@@ -69,6 +69,7 @@ export const GET_DONACIONES = `
       estado {
         id
         nombre
+        color
       }
       campania {
         id
@@ -109,6 +110,7 @@ export const GET_REMESAS = `
       estado {
         id
         nombre
+        color
       }
       archivoSepa
       observaciones

@@ -1,6 +1,10 @@
 <template>
   <DebugPanel />
-  <router-view />
+  <router-view v-slot="{ Component }">
+    <keep-alive :include="['DetalleAgrupacionesTerritoriales','ListaMiembros','ListaUsuarios','ListaRoles','ListaEventos','ListaGrupos','ListaCampanias','ListaVoluntarios','ListaTransacciones']">
+      <component :is="Component" />
+    </keep-alive>
+  </router-view>
 </template>
 
 <script setup>

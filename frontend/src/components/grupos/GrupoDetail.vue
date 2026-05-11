@@ -2,28 +2,10 @@
   <div class="bg-white rounded-lg shadow">
     <!-- Header con tabs -->
     <div class="border-b border-gray-200">
-      <div class="px-6 py-4">
-        <div class="flex justify-between items-center">
-          <div>
-            <h2 class="text-xl font-semibold text-gray-900">{{ grupo.nombre }}</h2>
-            <p class="text-sm text-gray-600">{{ grupo.descripcion }}</p>
-          </div>
-          <div class="flex space-x-3">
-            <button
-              @click="$router.push('/grupos')"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Volver
-            </button>
-            <button
-              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-            >
-              Editar
-            </button>
-          </div>
-        </div>
+      <div class="px-6 pt-4">
+        <DetailHeader fallback="/grupos" />
       </div>
-      
+
       <!-- Tabs -->
       <div class="px-6">
         <nav class="flex space-x-8">
@@ -211,6 +193,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import DetailHeader from '@/components/common/DetailHeader.vue'
 
 const route = useRoute()
 const activeTab = ref('info')

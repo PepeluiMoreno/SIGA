@@ -1,5 +1,5 @@
 <template>
-  <AppLayout :title="agrupacion ? `Junta: ${agrupacion.nombre}` : 'Junta Directiva'" subtitle="Gestión de la junta directiva y cargos">
+  <AppLayout :title="agrupacion ? `${orgConfig.OrganoGobierno}: ${agrupacion.nombre}` : orgConfig.OrganoGobierno" :subtitle="`Gestión del ${orgConfig.organoGobierno} y cargos`">
 
     <!-- Loading agrupación -->
     <div v-if="loadingAgrupacion" class="text-center py-16">
@@ -20,7 +20,7 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
           </svg>
-          Constituir nueva junta
+          Constituir {{ orgConfig.organoGobierno }}
         </button>
       </div>
 
@@ -30,7 +30,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
             d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
         </svg>
-        <p class="text-gray-500 font-medium">Esta agrupación no tiene junta directiva activa</p>
+        <p class="text-gray-500 font-medium">Esta agrupación no tiene {{ orgConfig.organoGobierno }} activo</p>
         <p class="text-sm text-gray-400 mt-1">Usa el botón superior para constituirla</p>
       </div>
 
@@ -79,7 +79,7 @@
           </div>
 
           <div v-if="cargosActivos.length === 0" class="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-            <p class="text-gray-500 text-sm">No hay cargos asignados en esta junta</p>
+            <p class="text-gray-500 text-sm">No hay cargos asignados</p>
           </div>
 
           <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -174,11 +174,11 @@
         <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" @click="modalJunta = false"/>
         <div class="flex min-h-full items-center justify-center p-4">
           <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">Constituir nueva junta</h3>
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Constituir {{ orgConfig.organoGobierno }}</h3>
             <div class="space-y-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de la junta <span class="text-red-500">*</span></label>
-                <input v-model="formJunta.nombre" type="text" placeholder="Ej: Junta Directiva 2025-2027"
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre <span class="text-red-500">*</span></label>
+                <input v-model="formJunta.nombre" type="text" :placeholder="`Ej: ${orgConfig.OrganoGobierno} 2025-2027`"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"/>
               </div>
               <div>
@@ -192,7 +192,7 @@
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"/>
               </div>
               <div v-if="junta" class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-800">
-                La junta actual <strong>{{ junta.nombre }}</strong> quedará desactivada.
+                {{ orgConfig.OrganoGobierno }} actual <strong>{{ junta.nombre }}</strong> quedará desactivado.
               </div>
               <div v-if="modalError" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">{{ modalError }}</div>
             </div>
@@ -319,6 +319,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { graphqlClient } from '@/graphql/client.js'
+import { useOrgConfigStore } from '@/stores/orgConfig'
 import {
   GET_JUNTA_ACTIVA,
   GET_HISTORIAL_JUNTA,
@@ -330,6 +331,7 @@ import {
 
 const route = useRoute()
 const agrupacionId = route.params.id
+const orgConfig = useOrgConfigStore()
 
 // ─── Estado ───────────────────────────────────────────────────────────────────
 const agrupacion = ref(null)

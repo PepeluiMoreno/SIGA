@@ -1,33 +1,38 @@
 <template>
   <AppLayout title="Roles y permisos" subtitle="Roles del sistema, sus funcionalidades y transacciones autorizadas">
 
-    <!-- Cabecera -->
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex gap-3">
-        <div class="bg-white border border-gray-200 rounded-lg px-4 py-2 text-center min-w-[80px]">
-          <p class="text-lg font-bold text-purple-600">{{ roles.length }}</p>
-          <p class="text-xs text-gray-500">Total</p>
-        </div>
-        <div class="bg-white border border-gray-200 rounded-lg px-4 py-2 text-center min-w-[80px]">
-          <p class="text-lg font-bold text-green-600">{{ roles.filter(r => r.activo).length }}</p>
-          <p class="text-xs text-gray-500">Activos</p>
-        </div>
-        <div class="bg-white border border-gray-200 rounded-lg px-4 py-2 text-center min-w-[80px]">
-          <p class="text-lg font-bold text-blue-600">{{ roles.filter(r => r.sistema).length }}</p>
-          <p class="text-xs text-gray-500">Sistema</p>
-        </div>
+    <!-- Resumen -->
+    <div class="flex gap-3 mb-4">
+      <div class="bg-white border border-gray-200 rounded-lg px-4 py-2 text-center min-w-[80px]">
+        <p class="text-lg font-bold text-purple-600">{{ roles.length }}</p>
+        <p class="text-xs text-gray-500">Total</p>
       </div>
-      <router-link to="/roles/nuevo"
-        class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors">
-        <PlusIcon class="w-4 h-4" />
-        Nuevo rol
-      </router-link>
+      <div class="bg-white border border-gray-200 rounded-lg px-4 py-2 text-center min-w-[80px]">
+        <p class="text-lg font-bold text-green-600">{{ roles.filter(r => r.activo).length }}</p>
+        <p class="text-xs text-gray-500">Activos</p>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-lg px-4 py-2 text-center min-w-[80px]">
+        <p class="text-lg font-bold text-blue-600">{{ roles.filter(r => r.sistema).length }}</p>
+        <p class="text-xs text-gray-500">Sistema</p>
+      </div>
     </div>
 
+    <!-- Filtros -->
+    <FilterBar
+      v-model="filters"
+      v-model:search="busqueda"
+      search-placeholder="Buscar por nombre o código…"
+      :fields="filterFields"
+      :lazy="true"
+      :loading="loading"
+      create-label="Nuevo rol"
+      create-route="/roles/nuevo"
+      class="mb-4"
+      @apply="aplicarFiltros"
+    />
+
     <!-- Estado carga / error -->
-    <div v-if="loading" class="flex items-center justify-center py-24">
-      <div class="h-8 w-8 rounded-full border-4 border-purple-600 border-t-transparent animate-spin"></div>
-    </div>
+    <EstadoCarga v-if="loading" />
     <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
       {{ error }}
       <button @click="cargar" class="ml-3 underline font-medium hover:no-underline">Reintentar</button>
@@ -35,7 +40,8 @@
 
     <!-- Tabla -->
     <div v-else class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-100">
+      <EstadoPendiente v-if="!filtersApplied" />
+      <table v-else class="min-w-full divide-y divide-gray-100">
         <thead class="bg-gray-50">
           <tr>
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Código</th>
@@ -49,7 +55,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-50">
-          <tr v-for="r in roles" :key="r.id" class="hover:bg-gray-50 transition-colors">
+          <tr v-for="r in rolesFiltrados" :key="r.id" class="hover:bg-gray-50 transition-colors">
             <td class="px-4 py-3 text-sm font-mono text-gray-700 whitespace-nowrap">
               {{ r.codigo }}
               <span v-if="r.sistema" class="ml-1.5 text-xs bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded">sistema</span>
@@ -143,15 +149,50 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_ROLES, ACTUALIZAR_ROL, ELIMINAR_ROL } from '@/graphql/queries/administracion.js'
-import { PlusIcon, PencilIcon, TrashIcon, KeyIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
+import { PencilIcon, TrashIcon, KeyIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
+import EstadoCarga from '@/components/common/EstadoCarga.vue'
+import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
 
-const loading  = ref(false)
-const error    = ref('')
-const roles    = ref([])
+const loading       = ref(false)
+const error         = ref('')
+const roles         = ref([])
+const filtersApplied = ref(false)
+const busqueda      = ref('')
+const filters       = ref({ tipo: '', activo: '' })
+
+const filterFields = [
+  {
+    key: 'tipo', label: 'Tipo', type: 'select', allLabel: 'Todos los tipos',
+    options: [
+      { value: 'SISTEMA',       label: 'Sistema' },
+      { value: 'ORGANIZACION',  label: 'Organización' },
+      { value: 'TERRITORIAL',   label: 'Territorial' },
+      { value: 'FUNCIONAL',     label: 'Funcional' },
+      { value: 'PERSONALIZADO', label: 'Personalizado' },
+    ],
+  },
+  {
+    key: 'activo', label: 'Estado', type: 'select', allLabel: 'Todos',
+    options: [{ value: 'true', label: 'Activos' }, { value: 'false', label: 'Inactivos' }],
+    isActive: (v) => v !== '',
+  },
+]
+
+const rolesFiltrados = computed(() => {
+  let lista = roles.value
+  if (busqueda.value) {
+    const q = busqueda.value.toLowerCase()
+    lista = lista.filter(r => r.nombre?.toLowerCase().includes(q) || r.codigo?.toLowerCase().includes(q))
+  }
+  if (filters.value.tipo) lista = lista.filter(r => r.tipo === filters.value.tipo)
+  if (filters.value.activo !== '') lista = lista.filter(r => String(r.activo) === filters.value.activo)
+  return lista
+})
 const toggling = ref(null)
 
 const modalEliminar = ref(false)
@@ -179,6 +220,11 @@ async function cargar() {
   } finally {
     loading.value = false
   }
+}
+
+async function aplicarFiltros() {
+  if (!roles.value.length) await cargar()
+  filtersApplied.value = true
 }
 
 async function toggleActivo(rol) {
@@ -221,5 +267,5 @@ async function eliminar() {
   }
 }
 
-onMounted(cargar)
+onMounted(() => {})
 </script>

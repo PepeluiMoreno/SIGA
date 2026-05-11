@@ -5,6 +5,7 @@ import { useOrgConfigStore } from '@/stores/orgConfig.js'
 // Vistas globales (no pertenecen a un módulo específico)
 import Dashboard from '@/views/Dashboard.vue'
 import Login from '@/views/Login.vue'
+import MisDatos from '@/views/MisDatos.vue'
 
 // === Módulo: ACCESO ===
 import ListaUsuarios from '@/modules/acceso/views/ListaUsuarios.vue'
@@ -12,6 +13,10 @@ import ListaUsuarios from '@/modules/acceso/views/ListaUsuarios.vue'
 // === Módulo: MEMBRESIA ===
 import ListaMiembros from '@/modules/membresia/views/ListaMiembros.vue'
 import ListaAgrupaciones from '@/modules/membresia/views/ListaAgrupaciones.vue'
+import DetalleAgrupacionesTerritoriales from '@/modules/membresia/views/DetalleAgrupacionesTerritoriales.vue'
+
+// === Módulo: CONFIGURACION ===
+import EstructuraOrganizativa from '@/views/parametrizacion/EstructuraOrganizativa.vue'
 
 // === Módulo: ACTIVIDADES ===
 import ListaGrupos from '@/modules/actividades/views/ListaGrupos.vue'
@@ -36,6 +41,12 @@ const routes = [
     path: '/',
     component: Dashboard,
     name: 'Dashboard',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/mis-datos',
+    component: MisDatos,
+    name: 'MisDatos',
     meta: { requiresAuth: true }
   },
   {
@@ -122,8 +133,14 @@ const routes = [
   },
   {
     path: '/agrupaciones',
-    component: ListaAgrupaciones,
+    component: DetalleAgrupacionesTerritoriales,
     name: 'Agrupaciones',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/configuracion/estructura',
+    component: EstructuraOrganizativa,
+    name: 'EstructuraOrganizativa',
     meta: { requiresAuth: true }
   },
   {
@@ -281,6 +298,18 @@ const routes = [
     path: '/parametrizacion/estados-cuota',
     component: () => import('@/modules/configuracion/views/catalogos/EstadosCuota.vue'),
     name: 'EstadosCuota',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/parametrizacion/temas',
+    component: () => import('@/views/configuracion/TemasCatalogo.vue'),
+    name: 'TemasCatalogo',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/ayuda',
+    component: () => import('@/views/Ayuda.vue'),
+    name: 'Ayuda',
     meta: { requiresAuth: true }
   },
 ]

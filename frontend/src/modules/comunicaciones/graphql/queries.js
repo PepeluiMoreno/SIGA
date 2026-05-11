@@ -78,6 +78,11 @@ export const GET_CAMPANIA = `
       metaRecaudacion
       metaParticipantes
       metaFirmas
+      plan {
+        id
+        modalidad
+        presupuestoAsignado
+      }
     }
   }
 `
@@ -105,9 +110,9 @@ export const GET_ESTADOS_CAMPANIA = `
   }
 `
 
-export const GET_SKILLS = `
-  query Skills {
-    skills {
+export const GET_HABILIDADES = `
+  query Habilidades {
+    habilidades {
       id
       nombre
       categoria
@@ -117,8 +122,8 @@ export const GET_SKILLS = `
 `
 
 export const CREAR_CAMPANIA = `
-  mutation CrearCampania($data: CampaniaCreateInput!) {
-    crearCampania(data: $data) {
+  mutation CrearCampaniaConPlan($data: CampaniaConPlanCreateInput!) {
+    crearCampaniaConPlan(data: $data) {
       id
       nombre
     }
@@ -126,8 +131,8 @@ export const CREAR_CAMPANIA = `
 `
 
 export const ACTUALIZAR_CAMPANIA = `
-  mutation ActualizarCampania($data: CampaniaUpdateInput!) {
-    actualizarCampania(data: $data) {
+  mutation ActualizarCampaniaConPlan($data: CampaniaConPlanUpdateInput!) {
+    actualizarCampaniaConPlan(data: $data) {
       id
       nombre
     }

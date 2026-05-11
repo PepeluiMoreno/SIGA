@@ -7,11 +7,11 @@ INSERT automáticamente. Además agrupa las operaciones en una sola transacción
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import List, Optional
 
 import strawberry
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 
 from app.modules.acceso.models.rol import Rol, TipoRol
 from app.modules.acceso.models.funcionalidad import RolFuncionalidad
@@ -184,19 +184,17 @@ class AccesoMutation:
         transaccion_id: uuid.UUID,
     ) -> uuid.UUID:
         session = info.context.session
-        rt = RolTransaccion(rol_id=rol_id, transaccion_id=transaccion_id)
-        session.add(rt)
-        try:
-            await session.commit()
-        except IntegrityError:
-            await session.rollback()
-            res = await session.execute(
-                select(RolTransaccion).where(
-                    RolTransaccion.rol_id == rol_id,
-                    RolTransaccion.transaccion_id == transaccion_id,
-                )
+        existing = (await session.execute(
+            select(RolTransaccion).where(
+                RolTransaccion.rol_id == rol_id,
+                RolTransaccion.transaccion_id == transaccion_id,
             )
-            rt = res.scalar_one()
+        )).scalar_one_or_none()
+        if existing:
+            return existing.id
+        rt = RolTransaccion(rol_id=rol_id, transaccion_id=transaccion_id, eliminado=False, fecha_creacion=datetime.utcnow())
+        session.add(rt)
+        await session.commit()
         return rt.id
 
     @strawberry.mutation
@@ -230,19 +228,23 @@ class AccesoMutation:
         agrupacion_id: Optional[uuid.UUID] = None,
     ) -> uuid.UUID:
         session = info.context.session
-        ur = UsuarioRol(usuario_id=usuario_id, rol_id=rol_id, agrupacion_id=agrupacion_id)
-        session.add(ur)
-        try:
-            await session.commit()
-        except IntegrityError:
-            await session.rollback()
-            res = await session.execute(
-                select(UsuarioRol).where(
-                    UsuarioRol.usuario_id == usuario_id,
-                    UsuarioRol.rol_id == rol_id,
-                )
+        existing = (await session.execute(
+            select(UsuarioRol).where(
+                UsuarioRol.usuario_id == usuario_id,
+                UsuarioRol.rol_id == rol_id,
             )
-            ur = res.scalar_one()
+        )).scalar_one_or_none()
+        if existing:
+            return existing.id
+        ur = UsuarioRol(
+            usuario_id=usuario_id,
+            rol_id=rol_id,
+            agrupacion_id=agrupacion_id,
+            eliminado=False,
+            fecha_creacion=datetime.utcnow(),
+        )
+        session.add(ur)
+        await session.commit()
         return ur.id
 
     @strawberry.mutation

@@ -60,9 +60,11 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection):
+    # No pasamos target_metadata aquí para evitar que los DDL events de
+    # los modelos (Enum con create_type=True) interfieran con las migraciones.
+    # target_metadata solo es necesario para autogenerate.
     context.configure(
         connection=connection,
-        target_metadata=target_metadata,
         include_object=include_object,
     )
     with context.begin_transaction():

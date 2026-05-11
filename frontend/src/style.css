@@ -1,3 +1,146 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SISTEMA DE TEMAS — cada tema define la paleta completa (50…900 + sidebar)
+   JS solo hace:  document.documentElement.dataset.theme = 'azul'
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root,
+[data-theme="violeta"] {
+  --t-50:      #f5f3ff;
+  --t-100:     #ede9fe;
+  --t-200:     #ddd6fe;
+  --t-300:     #c4b5fd;
+  --t-400:     #a78bfa;
+  --t-500:     #8b5cf6;
+  --t-600:     #7c3aed;
+  --t-700:     #6d28d9;
+  --t-800:     #5b21b6;
+  --t-900:     #4c1d95;
+  --t-sidebar: hsl(262,82%,20%);
+  --t-topbar:  #ffffff;
+  --t-page-bg: #f5f3ff;
+  --t-card-bg: #ffffff;
+  --t-text-main:  #111827;
+  --t-text-muted: #6b7280;
+  --t-border:     #e5e7eb;
+  --font-main: 'Inter', sans-serif;
+}
+
+[data-theme="azul"] {
+  --t-50:      #eff6ff;
+  --t-100:     #dbeafe;
+  --t-200:     #bfdbfe;
+  --t-300:     #93c5fd;
+  --t-400:     #60a5fa;
+  --t-500:     #3b82f6;
+  --t-600:     #2563eb;
+  --t-700:     #1d4ed8;
+  --t-800:     #1e40af;
+  --t-900:     #1e3a8a;
+  --t-sidebar: hsl(219,82%,20%);
+}
+
+[data-theme="esmeralda"] {
+  --t-50:      #ecfdf5;
+  --t-100:     #d1fae5;
+  --t-200:     #a7f3d0;
+  --t-300:     #6ee7b7;
+  --t-400:     #34d399;
+  --t-500:     #10b981;
+  --t-600:     #059669;
+  --t-700:     #047857;
+  --t-800:     #065f46;
+  --t-900:     #064e3b;
+  --t-sidebar: hsl(158,75%,15%);
+}
+
+[data-theme="granate"] {
+  --t-50:      #fff1f2;
+  --t-100:     #ffe4e6;
+  --t-200:     #fecdd3;
+  --t-300:     #fda4af;
+  --t-400:     #fb7185;
+  --t-500:     #f43f5e;
+  --t-600:     #e11d48;
+  --t-700:     #be123c;
+  --t-800:     #9f1239;
+  --t-900:     #881337;
+  --t-sidebar: hsl(344,80%,18%);
+}
+
+[data-theme="pizarra"] {
+  --t-50:      #f8fafc;
+  --t-100:     #f1f5f9;
+  --t-200:     #e2e8f0;
+  --t-300:     #cbd5e1;
+  --t-400:     #94a3b8;
+  --t-500:     #64748b;
+  --t-600:     #475569;
+  --t-700:     #334155;
+  --t-800:     #1e293b;
+  --t-900:     #0f172a;
+  --t-sidebar: hsl(215,28%,17%);
+}
+
+[data-theme="ambar"] {
+  --t-50:      #fffbeb;
+  --t-100:     #fef3c7;
+  --t-200:     #fde68a;
+  --t-300:     #fcd34d;
+  --t-400:     #fbbf24;
+  --t-500:     #f59e0b;
+  --t-600:     #d97706;
+  --t-700:     #b45309;
+  --t-800:     #92400e;
+  --t-900:     #78350f;
+  --t-sidebar: hsl(25,75%,18%);
+}
+
+/* ── Global ─────────────────────────────────────────────────────────────────── */
+body { font-family: var(--font-main); color: var(--t-text-main); }
+.sidebar-aside { background-color: var(--t-sidebar); }
+.bg-white  { background-color: var(--t-card-bg)  !important; }
+.text-gray-900 { color: var(--t-text-main) !important; }
+.text-gray-500, .text-gray-600 { color: var(--t-text-muted) !important; }
+.border-gray-200 { border-color: var(--t-border) !important; }
+
+/* ── Overrides: Tailwind purple → variables del tema activo ─────────────────── */
+
+/* Backgrounds */
+.bg-purple-50  { background-color: var(--t-50)  !important; }
+.bg-purple-100 { background-color: var(--t-100) !important; }
+.bg-purple-600 { background-color: var(--t-600) !important; }
+.bg-purple-700 { background-color: var(--t-700) !important; }
+.bg-purple-800 { background-color: var(--t-800) !important; }
+.bg-purple-900 { background-color: var(--t-900) !important; }
+
+/* Hover backgrounds */
+.hover\:bg-purple-50:hover  { background-color: var(--t-50)  !important; }
+.hover\:bg-purple-600:hover { background-color: var(--t-600) !important; }
+.hover\:bg-purple-700:hover { background-color: var(--t-700) !important; }
+.hover\:bg-purple-800:hover { background-color: var(--t-800) !important; }
+
+/* Text */
+.text-purple-200 { color: var(--t-200) !important; }
+.text-purple-300 { color: var(--t-300) !important; }
+.text-purple-400 { color: var(--t-400) !important; }
+.text-purple-500 { color: var(--t-500) !important; }
+.text-purple-600 { color: var(--t-600) !important; }
+.text-purple-700 { color: var(--t-700) !important; }
+.text-purple-800 { color: var(--t-800) !important; }
+
+/* Borders */
+.border-purple-100 { border-color: var(--t-100) !important; }
+.border-purple-200 { border-color: var(--t-200) !important; }
+.border-purple-400 { border-color: var(--t-400) !important; }
+.border-purple-500 { border-color: var(--t-500) !important; }
+.border-purple-800 { border-color: var(--t-800) !important; }
+
+/* Focus */
+.focus\:border-purple-400:focus { border-color: var(--t-400) !important; }
+.focus\:border-purple-500:focus { border-color: var(--t-500) !important; }
+.focus\:ring-purple-400:focus   { --tw-ring-color: var(--t-400); }
+.focus\:ring-purple-500:focus   { --tw-ring-color: var(--t-500); }

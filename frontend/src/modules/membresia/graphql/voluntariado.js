@@ -15,7 +15,7 @@ export const GET_VOLUNTARIOS = `
       disponibilidad
       horasDisponiblesSemana
       profesion
-      nivelEstudios
+      nivelEstudiosId
       intereses
       activo
       fechaAlta
@@ -36,7 +36,8 @@ export const GET_VOLUNTARIO_BY_ID = `
       disponibilidad
       horasDisponiblesSemana
       profesion
-      nivelEstudios
+      nivelEstudiosId
+      nivelEstudiosRel { id nombre }
       intereses
       experienciaVoluntariado
       observacionesVoluntariado

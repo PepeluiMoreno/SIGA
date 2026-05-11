@@ -2,10 +2,13 @@
 
 import uuid
 from datetime import date
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .nivel_estudios import NivelEstudios
 
 from sqlalchemy import String, Integer, Uuid, ForeignKey, Date, Boolean, Text, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from ....infrastructure.base_model import BaseModel
@@ -50,11 +53,11 @@ class Miembro(BaseModel):
     fecha_nacimiento: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     pais_nacimiento_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('paises.id'), nullable=True)
 
-    # Tipo de miembro
-    tipo_miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('tipos_miembro.id'), nullable=False, index=True)
+    # Tipo de miembro (nullable: puede registrarse sin tipo y completarse después)
+    tipo_miembro_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('tipos_miembro.id'), nullable=True, index=True)
 
-    # Estado del miembro (ciclo de vida)
-    estado_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('estados_miembro.id'), nullable=False, index=True)
+    # Estado del miembro (nullable: puede registrarse sin estado y asignarse después)
+    estado_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('estados_miembro.id'), nullable=True, index=True)
 
     # Documento de identidad
     tipo_documento: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # DNI, NIE, PASAPORTE
@@ -75,8 +78,10 @@ class Miembro(BaseModel):
     # Pertenencia organizativa
     agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('agrupaciones_territoriales.id'), nullable=True, index=True)
 
-    # Datos bancarios (IBAN encriptado)
-    iban: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)  # Encriptado
+    # Datos bancarios / pago
+    iban: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    swift_bic: Mapped[Optional[str]] = mapped_column(String(11), nullable=True)
+    referencia_pago: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     forma_pago_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('formas_pago.id'), nullable=True, index=True)
 
     # Fechas de afiliación
@@ -102,10 +107,15 @@ class Miembro(BaseModel):
     disponibilidad: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # COMPLETA, FINES_SEMANA, TARDES, etc.
     horas_disponibles_semana: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     profesion: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    nivel_estudios: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    nivel_estudios_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('niveles_estudios.id', ondelete='SET NULL'), nullable=True, index=True
+    )
     experiencia_voluntariado: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
     intereses: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
     observaciones_voluntariado: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+
+    # Imagen de perfil
+    foto_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
     # Movilidad
     puede_conducir: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -115,6 +125,7 @@ class Miembro(BaseModel):
     # Relaciones
     tipo_miembro = relationship('TipoMiembro', back_populates='miembros', lazy='selectin')
     estado = relationship('EstadoMiembro', lazy='selectin')
+    usuario = relationship('Usuario', back_populates='miembro', foreign_keys='Usuario.miembro_id', uselist=False, lazy='selectin')
     motivo_baja_rel = relationship('MotivoBaja', back_populates='miembros', lazy='selectin')
     agrupacion = relationship('AgrupacionTerritorial', lazy='selectin')
     pais_documento = relationship('Pais', foreign_keys=[pais_documento_id], lazy='selectin')
@@ -122,9 +133,23 @@ class Miembro(BaseModel):
     pais_nacimiento = relationship('Pais', foreign_keys=[pais_nacimiento_id], lazy='selectin')
     provincia = relationship('Provincia', lazy='selectin')
     forma_pago = relationship('FormaPago', lazy='selectin')
+    nivel_estudios_rel: Mapped[Optional['NivelEstudios']] = relationship(
+        'NivelEstudios', back_populates='miembros', lazy='selectin'
+    )
 
     def __repr__(self) -> str:
         return f"<Miembro(nombre='{self.nombre} {self.apellido1}', tipo='{self.tipo_miembro_id}')>"
+
+    @validates('nombre', 'apellido1', 'apellido2')
+    def _normalizar_nombre(self, key, value):
+        if value is None:
+            return value
+        return value.strip().title()
+
+    @property
+    def tiene_acceso(self) -> bool:
+        """True si el miembro tiene un usuario vinculado en el sistema."""
+        return self.usuario is not None
 
     @property
     def nombre_completo(self) -> str:
@@ -140,7 +165,7 @@ class Miembro(BaseModel):
         Un miembro se considera activo si:
         - No tiene fecha de baja (fecha_baja es None)
         - Es voluntario (es_voluntario=True)
-        - Tiene sus habilidades informadas (profesion, nivel_estudios, intereses)
+        - Tiene sus habilidades informadas (profesion, nivel_estudios_id, intereses)
         """
         if self.fecha_baja is not None:
             return False
@@ -151,7 +176,7 @@ class Miembro(BaseModel):
         # Verificar que tenga al menos algunos campos de habilidades informados
         tiene_habilidades = (
             (self.profesion is not None and self.profesion.strip() != "") or
-            (self.nivel_estudios is not None and self.nivel_estudios.strip() != "") or
+            (self.nivel_estudios_id is not None) or
             (self.intereses is not None and self.intereses.strip() != "")
         )
 

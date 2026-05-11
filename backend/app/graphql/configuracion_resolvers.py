@@ -12,6 +12,7 @@ from sqlalchemy import select
 from app.modules.configuracion.models.configuracion import Configuracion
 from app.modules.acceso.models.rol import Rol
 from app.modules.acceso.models.usuario import UsuarioRol
+from app.modules.core.geografico import TipoUnidadOrganizativa, NaturalezaUnidad, VinculoUnidad
 
 
 # ---------------------------------------------------------------------------
@@ -22,6 +23,7 @@ from app.modules.acceso.models.usuario import UsuarioRol
 class ParametrosOrganizacion:
     nombre: str
     nif: str
+    numero_registro: str
     tipo_entidad: str
     contabilidad_compleja: bool
     sede_social: str
@@ -40,6 +42,8 @@ class ParametrosOrganizacion:
     logo: str
     implantacion_geografica: str
     tipo_agrupacion_territorial: str
+    denominacion_miembro: str
+    denominacion_miembro_plural: str
     multiterritorial: bool
     # Autenticación
     auth_modo: str
@@ -55,6 +59,15 @@ class ParametrosOrganizacion:
     smtp_ssl: bool
     # Edad máxima para socio joven
     edad_max_joven: int
+    # Denominaciones configurables
+    denominacion_organo_gobierno: str
+    denominacion_organo_gobierno_plural: str
+    # Sesión
+    session_inactividad_minutos: int
+    session_maximo_minutos: int
+    # Apariencia
+    tema: str
+    fuente_principal: str
 
 
 # ---------------------------------------------------------------------------
@@ -65,6 +78,7 @@ class ParametrosOrganizacion:
 class ParametrosOrganizacionInput:
     nombre: Optional[str] = ''
     nif: Optional[str] = ''
+    numero_registro: Optional[str] = ''
     tipo_entidad: Optional[str] = 'ASOCIACION'
     contabilidad_compleja: Optional[bool] = False
     sede_social: Optional[str] = ''
@@ -83,6 +97,8 @@ class ParametrosOrganizacionInput:
     logo: Optional[str] = ''
     implantacion_geografica: Optional[str] = ''
     tipo_agrupacion_territorial: Optional[str] = ''
+    denominacion_miembro: Optional[str] = 'miembro'
+    denominacion_miembro_plural: Optional[str] = 'miembros'
     multiterritorial: Optional[bool] = False
     # Autenticación
     auth_modo: Optional[str] = 'LOCAL'
@@ -98,6 +114,15 @@ class ParametrosOrganizacionInput:
     smtp_ssl: Optional[bool] = False
     # Edad máxima para socio joven
     edad_max_joven: Optional[int] = 30
+    # Denominaciones configurables
+    denominacion_organo_gobierno: Optional[str] = 'junta directiva'
+    denominacion_organo_gobierno_plural: Optional[str] = 'juntas directivas'
+    # Sesión
+    session_inactividad_minutos: Optional[int] = 30
+    session_maximo_minutos: Optional[int] = 480
+    # Apariencia
+    tema: Optional[str] = 'violeta'
+    fuente_principal: Optional[str] = 'Inter'
 
 
 # ---------------------------------------------------------------------------
@@ -107,6 +132,7 @@ class ParametrosOrganizacionInput:
 _MAPPING = [
     ('org.nombre',              'string', 'nombre'),
     ('org.nif',                 'string', 'nif'),
+    ('org.numero_registro',     'string', 'numero_registro'),
     ('org.tipo_entidad',        'string', 'tipo_entidad'),
     ('org.contabilidad_compleja','bool',  'contabilidad_compleja'),
     ('org.sede_social',         'string', 'sede_social'),
@@ -125,6 +151,8 @@ _MAPPING = [
     ('org.logo',                'string', 'logo'),
     ('org.implantacion_geografica',       'string', 'implantacion_geografica'),
     ('org.tipo_agrupacion_territorial',   'string', 'tipo_agrupacion_territorial'),
+    ('org.denominacion_miembro',          'string', 'denominacion_miembro'),
+    ('org.denominacion_miembro_plural',   'string', 'denominacion_miembro_plural'),
     ('org.multiterritorial',              'bool',   'multiterritorial'),
     ('auth.modo',                         'string', 'auth_modo'),
     ('auth.authelia_url',                 'string', 'auth_authelia_url'),
@@ -136,7 +164,13 @@ _MAPPING = [
     ('smtp.from',                         'string', 'smtp_from'),
     ('smtp.tls',                          'bool',   'smtp_tls'),
     ('smtp.ssl',                          'bool',   'smtp_ssl'),
-    ('org.edad_max_joven',                'int',    'edad_max_joven'),
+    ('org.edad_max_joven',                        'int',    'edad_max_joven'),
+    ('org.denominacion_organo_gobierno',           'string', 'denominacion_organo_gobierno'),
+    ('org.denominacion_organo_gobierno_plural',    'string', 'denominacion_organo_gobierno_plural'),
+    ('auth.session_inactividad_minutos',           'int',    'session_inactividad_minutos'),
+    ('auth.session_maximo_minutos',                'int',    'session_maximo_minutos'),
+    ('org.tema',                                   'string', 'tema'),
+    ('org.fuente_principal',                       'string', 'fuente_principal'),
 ]
 
 
@@ -145,9 +179,22 @@ async def _load_org_params(session) -> ParametrosOrganizacion:
         select(Configuracion).where(Configuracion.grupo == 'organizacion')
     )
     cfg = {c.clave: c.get_valor() for c in result.scalars()}
+
+    # Deriva el nombre del nivel de agrupación desde el catálogo (nivel 2 = justo bajo la raíz)
+    tipo_agrup_row = (await session.execute(
+        select(TipoUnidadOrganizativa)
+        .where(TipoUnidadOrganizativa.nivel == 2, TipoUnidadOrganizativa.eliminado == False)
+        .limit(1)
+    )).scalar_one_or_none()
+    tipo_agrupacion_territorial = (
+        tipo_agrup_row.nombre if tipo_agrup_row
+        else cfg.get('org.tipo_agrupacion_territorial', '')
+    )
+
     return ParametrosOrganizacion(
         nombre=cfg.get('org.nombre', ''),
         nif=cfg.get('org.nif', ''),
+        numero_registro=cfg.get('org.numero_registro', ''),
         tipo_entidad=cfg.get('org.tipo_entidad', 'ASOCIACION'),
         contabilidad_compleja=bool(cfg.get('org.contabilidad_compleja', False)),
         sede_social=cfg.get('org.sede_social', ''),
@@ -165,7 +212,9 @@ async def _load_org_params(session) -> ParametrosOrganizacion:
         rrss_youtube=cfg.get('org.rrss.youtube', ''),
         logo=cfg.get('org.logo', ''),
         implantacion_geografica=cfg.get('org.implantacion_geografica', ''),
-        tipo_agrupacion_territorial=cfg.get('org.tipo_agrupacion_territorial', ''),
+        tipo_agrupacion_territorial=tipo_agrupacion_territorial,
+        denominacion_miembro=cfg.get('org.denominacion_miembro', 'miembro'),
+        denominacion_miembro_plural=cfg.get('org.denominacion_miembro_plural', 'miembros'),
         multiterritorial=bool(cfg.get('org.multiterritorial', False)),
         auth_modo=cfg.get('auth.modo', 'LOCAL'),
         auth_authelia_url=cfg.get('auth.authelia_url', ''),
@@ -178,6 +227,12 @@ async def _load_org_params(session) -> ParametrosOrganizacion:
         smtp_tls=bool(cfg.get('smtp.tls', True)),
         smtp_ssl=bool(cfg.get('smtp.ssl', False)),
         edad_max_joven=int(cfg.get('org.edad_max_joven', 30)),
+        denominacion_organo_gobierno=cfg.get('org.denominacion_organo_gobierno', 'junta directiva'),
+        denominacion_organo_gobierno_plural=cfg.get('org.denominacion_organo_gobierno_plural', 'juntas directivas'),
+        session_inactividad_minutos=int(cfg.get('auth.session_inactividad_minutos', 30)),
+        session_maximo_minutos=int(cfg.get('auth.session_maximo_minutos', 480)),
+        tema=cfg.get('org.tema', 'violeta'),
+        fuente_principal=cfg.get('org.fuente_principal', 'Inter'),
     )
 
 
@@ -265,6 +320,7 @@ class ConfiguracionOrganizacionMutation:
         input_dict = {
             'nombre': datos.nombre or '',
             'nif': datos.nif or '',
+            'numero_registro': datos.numero_registro or '',
             'tipo_entidad': datos.tipo_entidad or 'ASOCIACION',
             'contabilidad_compleja': datos.contabilidad_compleja or False,
             'sede_social': datos.sede_social or '',
@@ -283,6 +339,8 @@ class ConfiguracionOrganizacionMutation:
             'logo': datos.logo or '',
             'implantacion_geografica': datos.implantacion_geografica or '',
             'tipo_agrupacion_territorial': datos.tipo_agrupacion_territorial or '',
+            'denominacion_miembro': datos.denominacion_miembro or 'miembro',
+            'denominacion_miembro_plural': datos.denominacion_miembro_plural or 'miembros',
             'multiterritorial': datos.multiterritorial or False,
             'auth_modo': datos.auth_modo or 'LOCAL',
             'auth_authelia_url': datos.auth_authelia_url or '',
@@ -295,6 +353,10 @@ class ConfiguracionOrganizacionMutation:
             'smtp_tls': datos.smtp_tls if datos.smtp_tls is not None else True,
             'smtp_ssl': datos.smtp_ssl or False,
             'edad_max_joven': datos.edad_max_joven if datos.edad_max_joven is not None else 30,
+            'denominacion_organo_gobierno': datos.denominacion_organo_gobierno or 'junta directiva',
+            'denominacion_organo_gobierno_plural': datos.denominacion_organo_gobierno_plural or 'juntas directivas',
+            'session_inactividad_minutos': datos.session_inactividad_minutos if datos.session_inactividad_minutos is not None else 30,
+            'session_maximo_minutos': datos.session_maximo_minutos if datos.session_maximo_minutos is not None else 480,
         }
 
         # No sobreescribir la contraseña SMTP si el frontend devuelve el placeholder
@@ -326,3 +388,30 @@ class ConfiguracionOrganizacionMutation:
 
         await session.commit()
         return await _load_org_params(session)
+
+    # ── TipoUnidadOrganizativa: create custom (strawchemy no persiste FKs UUID) ──
+
+    @strawberry.mutation
+    async def crear_tipo_unidad_organizativa(
+        self,
+        info: strawberry.Info,
+        nombre: str,
+        naturaleza: str,
+        vinculo: str,
+        nivel: Optional[int] = None,
+        padre_tipo_id: Optional[uuid.UUID] = None,
+        activo: bool = True,
+    ) -> uuid.UUID:
+        session = info.context.session
+        tipo = TipoUnidadOrganizativa(
+            id=uuid.uuid4(),
+            nombre=nombre,
+            naturaleza=NaturalezaUnidad(naturaleza),
+            vinculo=VinculoUnidad(vinculo),
+            nivel=nivel,
+            padre_tipo_id=padre_tipo_id,
+            activo=activo,
+        )
+        session.add(tipo)
+        await session.commit()
+        return tipo.id

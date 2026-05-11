@@ -9,6 +9,7 @@ from sqlalchemy import String, Integer, Uuid, ForeignKey, Date, Numeric, Text, B
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ....infrastructure.base_model import BaseModel
+from .plan_actividad import PlanActividad  # noqa: F401 — importado para que SQLAlchemy resuelva la relación
 
 
 class TipoCampania(BaseModel):
@@ -57,6 +58,7 @@ class Campania(BaseModel):
     descripcion_corta: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     descripcion_larga: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     url_externa: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)  # URL en laicismo.org u otra web
+    foto_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)  # Infografía principal
 
     # Tipo y estado
     tipo_campania_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('tipos_campania.id'), nullable=False, index=True)
@@ -78,7 +80,14 @@ class Campania(BaseModel):
     responsable_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('miembros.id'), nullable=True, index=True)
     agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('agrupaciones_territoriales.id'), nullable=True, index=True)
 
+    # JTI: vínculo 1:1 con PlanActividad (raíz)
+    plan_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('plan_actividades.id', ondelete='SET NULL'),
+        nullable=True, unique=True, index=True,
+    )
+
     # Relaciones
+    plan = relationship('PlanActividad', back_populates='campania', lazy='selectin')
     tipo_campania = relationship('TipoCampania', back_populates='campanias', lazy='selectin')
     estado = relationship('EstadoCampania', foreign_keys=[estado_id], lazy='selectin')
     agrupacion = relationship('AgrupacionTerritorial', lazy='selectin')

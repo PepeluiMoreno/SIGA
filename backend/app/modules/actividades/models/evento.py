@@ -9,6 +9,7 @@ from sqlalchemy import String, Integer, Uuid, ForeignKey, Date, Numeric, Text, B
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ....infrastructure.base_model import BaseModel
+from .plan_actividad import PlanActividad  # noqa: F401
 
 
 class TipoEvento(BaseModel):
@@ -101,10 +102,17 @@ class Evento(BaseModel):
     # Ámbito territorial
     agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('agrupaciones_territoriales.id'), nullable=True, index=True)
 
+    # JTI: vínculo 1:1 con PlanActividad (raíz)
+    plan_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('plan_actividades.id', ondelete='SET NULL'),
+        nullable=True, unique=True, index=True,
+    )
+
     # Observaciones internas
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Relaciones
+    plan = relationship('PlanActividad', back_populates='evento', lazy='selectin')
     tipo_evento = relationship('TipoEvento', back_populates='eventos', lazy='selectin')
     estado = relationship('EstadoEvento', back_populates='eventos', lazy='selectin')
     responsable = relationship('Miembro', foreign_keys=[responsable_id], lazy='selectin')

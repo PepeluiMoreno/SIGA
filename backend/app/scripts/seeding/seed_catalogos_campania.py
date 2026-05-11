@@ -1,8 +1,8 @@
 """
 Seed de catálogos para el módulo de campañas.
 
-Crea (si no existen):
-  - TipoCampania
+Crea/actualiza:
+  - TipoCampania  (7 tipos con tipología real de Europa Laica)
   - EstadoCampania
 """
 import asyncio
@@ -18,36 +18,59 @@ from app.modules.configuracion.models.estados import EstadoCampania
 
 
 TIPOS = [
-    ("Sensibilización",  "Campaña de concienciación y divulgación pública"),
-    ("Recaudación",      "Campaña orientada a captación de fondos o donaciones"),
-    ("Institucional",    "Relaciones con administraciones y organismos públicos"),
-    ("Formación",        "Cursos, talleres o jornadas formativas"),
-    ("Judicial",         "Seguimiento o apoyo a procedimientos judiciales"),
-    ("Evento",           "Organización de un evento público o acto"),
+    ("Recogida de firmas",         "Petición dirigida a institución o administración pública"),
+    ("Sensibilización",            "Concienciación y divulgación pública sobre laicidad"),
+    ("Captación de socios",        "Captación de nuevos socios o donaciones económicas"),
+    ("Campaña formativa",          "Cursos, talleres, jornadas y actividades educativas"),
+    ("Movilización",               "Manifestaciones, concentraciones y actos públicos"),
+    ("Acción legal/institucional", "Recursos, denuncias, lobbying y relaciones institucionales"),
+    ("Comunicación mediática",     "Notas de prensa, presencia en medios y redes sociales"),
 ]
 
+# (nombre, orden, es_inicial, es_final, descripcion)
 ESTADOS = [
-    ("Borrador",    1, "Campaña en elaboración, no publicada"),
-    ("Programada",  2, "Campaña aprobada y pendiente de inicio"),
-    ("En Curso",    3, "Campaña activa en ejecución"),
-    ("Pausada",     4, "Campaña temporalmente suspendida"),
-    ("Finalizada",  5, "Campaña concluida satisfactoriamente"),
-    ("Cancelada",   6, "Campaña cancelada antes de finalizar"),
+    ("Borrador",   1, True,  False, "Campaña en elaboración, no publicada"),
+    ("Programada", 2, False, False, "Campaña aprobada y pendiente de inicio"),
+    ("En Curso",   3, False, False, "Campaña activa en ejecución"),
+    ("Pausada",    4, False, False, "Campaña temporalmente suspendida"),
+    ("Finalizada", 5, False, True,  "Campaña concluida satisfactoriamente"),
+    ("Cancelada",  6, False, True,  "Campaña cancelada antes de finalizar"),
 ]
 
 
 async def seed(session: AsyncSession):
+    # ── Tipos ─────────────────────────────────────────────────────────────────
     print("\n— Tipos de campaña —")
+
+    # Eliminar tipos obsoletos que no tengan campañas asociadas
+    nombres_nuevos = {nombre for nombre, _ in TIPOS}
+    res = await session.execute(select(TipoCampania))
+    tipos_existentes = res.scalars().all()
+    for tipo in tipos_existentes:
+        if tipo.nombre not in nombres_nuevos:
+            campanas = await session.execute(
+                text("SELECT 1 FROM campanias WHERE tipo_campania_id = :id LIMIT 1"),
+                {"id": tipo.id},
+            )
+            if campanas.fetchone() is None:
+                await session.delete(tipo)
+                print(f"  [elimina obsoleto] {tipo.nombre}")
+
+    # Insertar o actualizar
     for nombre, descripcion in TIPOS:
         res = await session.execute(select(TipoCampania).where(TipoCampania.nombre == nombre))
-        if res.scalar_one_or_none():
-            print(f"  [ya existe] {nombre}")
-            continue
-        session.add(TipoCampania(id=uuid.uuid4(), nombre=nombre, descripcion=descripcion, activo=True))
-        print(f"  [+] {nombre}")
+        existing = res.scalar_one_or_none()
+        if existing:
+            existing.descripcion = descripcion
+            existing.activo = True
+            print(f"  [actualiza] {nombre}")
+        else:
+            session.add(TipoCampania(id=uuid.uuid4(), nombre=nombre, descripcion=descripcion, activo=True))
+            print(f"  [+] {nombre}")
 
+    # ── Estados ───────────────────────────────────────────────────────────────
     print("\n— Estados de campaña —")
-    for nombre, orden, descripcion in ESTADOS:
+    for nombre, orden, es_inicial, es_final, descripcion in ESTADOS:
         res = await session.execute(
             text("SELECT id FROM estados_campania WHERE nombre = :n"), {"n": nombre}
         )
@@ -56,10 +79,15 @@ async def seed(session: AsyncSession):
             continue
         await session.execute(
             text("""
-                INSERT INTO estados_campania (id, nombre, orden, activo, descripcion)
-                VALUES (:id, :nombre, :orden, true, :descripcion)
+                INSERT INTO estados_campania
+                  (id, nombre, orden, es_inicial, es_final, activo, descripcion)
+                VALUES
+                  (:id, :nombre, :orden, :es_inicial, :es_final, true, :descripcion)
             """),
-            {"id": uuid.uuid4(), "nombre": nombre, "orden": orden, "descripcion": descripcion},
+            {
+                "id": str(uuid.uuid4()), "nombre": nombre, "orden": orden,
+                "es_inicial": es_inicial, "es_final": es_final, "descripcion": descripcion,
+            },
         )
         print(f"  [+] {nombre}")
 
@@ -69,7 +97,10 @@ async def seed(session: AsyncSession):
 
 async def main():
     url = get_database_url()
-    engine = create_async_engine(url, echo=False, connect_args={"server_settings": {"jit": "off"}, "statement_cache_size": 0})
+    engine = create_async_engine(
+        url, echo=False,
+        connect_args={"server_settings": {"jit": "off"}, "statement_cache_size": 0},
+    )
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     async with async_session() as session:
         await seed(session)

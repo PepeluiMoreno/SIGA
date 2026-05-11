@@ -19,6 +19,7 @@ export const GET_CAMPANIAS = `
       estado {
         id
         nombre
+        color
       }
       responsable {
         id
@@ -34,6 +35,7 @@ export const GET_CAMPANIAS = `
       metaRecaudacion
       metaParticipantes
       metaFirmas
+      fotoUrl
     }
   }
 `
@@ -55,6 +57,7 @@ export const GET_CAMPANIA = `
       estado {
         id
         nombre
+        color
       }
       responsable {
         id
@@ -78,6 +81,7 @@ export const GET_CAMPANIA = `
       metaRecaudacion
       metaParticipantes
       metaFirmas
+      fotoUrl
     }
   }
 `
@@ -99,6 +103,7 @@ export const GET_ESTADOS_CAMPANIA = `
     estadosCampania {
       id
       nombre
+      color
       orden
       activo
     }

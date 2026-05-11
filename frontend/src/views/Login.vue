@@ -5,10 +5,7 @@
         <div v-if="orgConfigStore.logo" class="mx-auto flex justify-center mb-2">
           <img :src="orgConfigStore.logo" alt="Logo organización" class="h-20 w-auto object-contain" />
         </div>
-        <h2 class="mt-4 text-center text-xl font-extrabold text-purple-700">
-          {{ orgConfigStore.nombre || 'SIGA' }}
-        </h2>
-        <p class="mt-2 text-center text-sm text-gray-600">
+        <p class="mt-4 text-center text-sm text-gray-600">
           Inicia sesión para acceder al sistema
         </p>
       </div>

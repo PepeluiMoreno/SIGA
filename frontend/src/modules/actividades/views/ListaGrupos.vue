@@ -1,58 +1,21 @@
 <template>
   <AppLayout title="Grupos de Trabajo" subtitle="Gestión de grupos y equipos">
-    <!-- Filtros y búsqueda -->
-    <div class="mb-6 bg-white p-4 rounded-lg shadow">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div class="flex-1">
-          <div class="relative">
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Buscar grupos..."
-              class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-            <div class="absolute left-3 top-2.5">
-              <span>🔍</span>
-            </div>
-          </div>
-        </div>
-        <div class="flex gap-2">
-          <button @click="showFilters = !showFilters" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-            Filtros
-          </button>
-          <button class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-            + Nuevo Grupo
-          </button>
-        </div>
-      </div>
-
-      <!-- Filtros avanzados -->
-      <div v-if="showFilters" class="mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-            <select v-model="filters.tipo" class="w-full border border-gray-300 rounded-lg px-3 py-2">
-              <option value="">Todos</option>
-              <option v-for="t in tiposGrupo" :key="t.id" :value="t.id">{{ t.nombre }}</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-            <select v-model="filters.activo" class="w-full border border-gray-300 rounded-lg px-3 py-2">
-              <option value="">Todos</option>
-              <option value="true">Activos</option>
-              <option value="false">Inactivos</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Filtros -->
+    <FilterBar
+      v-model="filters"
+      v-model:search="searchQuery"
+      search-placeholder="Buscar grupos…"
+      create-label="Nuevo Grupo"
+      create-route="/grupos/nuevo"
+      :fields="filterFields"
+      :lazy="true"
+      :loading="loading"
+      class="mb-6"
+      @apply="aplicarFiltros"
+    />
 
     <!-- Loading -->
-    <div v-if="loading" class="text-center py-12">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-      <p class="mt-2 text-gray-600">Cargando grupos...</p>
-    </div>
+    <EstadoCarga v-if="loading" mensaje="Cargando grupos..." />
 
     <!-- Error -->
     <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -67,10 +30,13 @@
 
     <!-- Lista de grupos -->
     <div v-else class="space-y-4">
-      <div v-if="gruposFiltrados.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
+      <div v-if="!filtersApplied" class="bg-white rounded-lg shadow">
+        <EstadoPendiente />
+      </div>
+      <div v-else-if="gruposFiltrados.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
         <span class="text-4xl">👥</span>
         <h3 class="text-sm font-medium text-gray-900 mt-4">No hay grupos</h3>
-        <p class="text-sm text-gray-500 mt-1">Aún no hay grupos de trabajo registrados.</p>
+        <p class="text-sm text-gray-500 mt-1">Prueba con otros filtros.</p>
       </div>
 
       <div
@@ -97,7 +63,7 @@
                 </div>
                 <div class="flex items-center">
                   <span class="mr-1">👥</span>
-                  <span>{{ grupo.miembros?.length ?? 0 }} miembros</span>
+                  <span>{{ grupo.miembros?.length ?? 0 }} {{ orgConfig.miembros }}</span>
                 </div>
                 <div v-if="grupo.fechaCreacion" class="flex items-center">
                   <span class="mr-1">📅</span>
@@ -106,12 +72,11 @@
               </div>
             </div>
 
-            <div class="mt-4 md:mt-0 md:ml-6 flex space-x-2">
-              <router-link
-                :to="`/grupos/${grupo.id}`"
-                class="px-3 py-2 text-sm text-purple-600 hover:text-purple-800 font-medium"
-              >
-                Ver detalle
+            <div class="mt-4 md:mt-0 md:ml-6 flex items-center gap-1">
+              <router-link :to="`/grupos/${grupo.id}`"
+                class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                title="Ver detalle">
+                <EyeIcon class="w-4 h-4" />
               </router-link>
             </div>
           </div>
@@ -124,20 +89,35 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
+import { EyeIcon } from '@heroicons/vue/24/outline'
 import { executeQuery } from '@/graphql/client'
 import { GET_GRUPOS, GET_TIPOS_GRUPO } from '@/graphql/queries/grupos.js'
+import { useOrgConfigStore } from '@/stores/orgConfig'
+import EstadoCarga from '@/components/common/EstadoCarga.vue'
+import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
 
+const orgConfig = useOrgConfigStore()
 const loading = ref(false)
 const error = ref('')
 const grupos = ref([])
 const tiposGrupo = ref([])
 const searchQuery = ref('')
-const showFilters = ref(false)
+const filtersApplied = ref(false)
 
-const filters = ref({
-  tipo: '',
-  activo: '',
-})
+const filters = ref({ tipo: '', activo: '' })
+
+const filterFields = computed(() => [
+  {
+    key: 'tipo', label: 'Tipo', type: 'select', allLabel: 'Todos los tipos',
+    options: tiposGrupo.value.map(t => ({ value: t.id, label: t.nombre })),
+  },
+  {
+    key: 'activo', label: 'Estado', type: 'select', allLabel: 'Todos',
+    options: [{ value: 'true', label: 'Activos' }, { value: 'false', label: 'Inactivos' }],
+    isActive: (v) => v !== '',
+  },
+])
 
 const gruposFiltrados = computed(() => {
   let result = grupos.value
@@ -167,12 +147,17 @@ async function cargar() {
       executeQuery(GET_TIPOS_GRUPO),
     ])
     grupos.value = dataGrupos.gruposTrabajo || []
-    tiposGrupo.value = dataTipos.tiposGrupo || []
+    tiposGrupo.value = (dataTipos?.tiposGrupo || []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
   } catch (e) {
     error.value = e?.response?.errors?.[0]?.message || 'Error cargando grupos'
   } finally {
     loading.value = false
   }
+}
+
+async function aplicarFiltros() {
+  await cargar()
+  filtersApplied.value = true
 }
 
 function getTipoClass(nombre) {
@@ -188,5 +173,5 @@ function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })
 }
 
-onMounted(cargar)
+onMounted(() => {})
 </script>

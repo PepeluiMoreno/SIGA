@@ -33,7 +33,7 @@ export const GET_MIEMBROS = `
       agrupacion {
         id
         nombre
-        tipo
+        tipoUnidad { id nombre naturaleza vinculo }
       }
       fechaAlta
       fechaBaja
@@ -86,7 +86,7 @@ export const GET_MIEMBRO_BY_ID = `
       agrupacion {
         id
         nombre
-        tipo
+        tipoUnidad { id nombre naturaleza vinculo }
       }
       fechaAlta
       fechaBaja
@@ -114,7 +114,7 @@ export const GET_MIEMBRO_BY_ID = `
       disponibilidad
       horasDisponiblesSemana
       profesion
-      nivelEstudios
+      nivelEstudiosId
       intereses
       observaciones
       solicitaSupresionDatos
@@ -141,7 +141,6 @@ export const UPDATE_MIEMBRO = `
 `
 
 // Query para obtener tipos de miembro
-// TODO: Añadir 'orden' tras ejecutar migración Alembic
 export const GET_TIPOS_MIEMBRO = `
   query TiposMiembro {
     tiposMiembro {
@@ -151,6 +150,7 @@ export const GET_TIPOS_MIEMBRO = `
       requiereCuota
       puedeVotar
       activo
+      orden
     }
   }
 `

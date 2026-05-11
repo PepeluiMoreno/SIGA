@@ -214,7 +214,7 @@
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Concepto</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Miembro</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ orgConfig.Miembro }}</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
               <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Importe</th>
@@ -237,7 +237,8 @@
                 <span :class="getTipoClass(transaccion.tipo)">{{ transaccion.tipo }}</span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="getEstadoClass(transaccion.estado)">{{ transaccion.estado }}</span>
+                <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full border"
+                  :style="badgeStyle(transaccion.estadoColor)">{{ transaccion.estado }}</span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right">
                 <span :class="transaccion.tipo === 'GASTO' ? 'text-red-600' : 'text-green-600'" class="font-medium">
@@ -398,7 +399,8 @@
               <td class="px-4 py-3 text-sm">{{ remesa.numOrdenes }} recibos</td>
               <td class="px-4 py-3 text-sm text-right font-medium">{{ formatCurrency(remesa.importeTotal) }}</td>
               <td class="px-4 py-3">
-                <span :class="getRemesaEstadoClass(remesa.estado?.nombre)" class="text-xs px-2 py-1 rounded-full">
+                <span class="inline-flex text-xs px-2 py-1 rounded-full border font-medium"
+                  :style="badgeStyle(remesa.estado?.color)">
                   {{ remesa.estado?.nombre }}
                 </span>
               </td>
@@ -419,7 +421,10 @@ import { ref, onMounted, computed } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { executeQuery } from '@/graphql/client'
 import { GET_CUOTAS_ANUALES, GET_DONACIONES, GET_REMESAS } from '@/graphql/queries/financiero.js'
+import { badgeStyle } from '@/utils/badge'
+import { useOrgConfigStore } from '@/stores/orgConfig'
 
+const orgConfig = useOrgConfigStore()
 const loading = ref(false)
 const activeTab = ref('cobros')
 const cuotas = ref([])
@@ -445,6 +450,7 @@ const transacciones = computed(() => {
       miembro: c.miembro ? `${c.miembro.nombre} ${c.miembro.apellido1}` : '—',
       tipo: 'CUOTA',
       estado: c.estado?.nombre?.toUpperCase() || '—',
+      estadoColor: c.estado?.color,
       importe: c.importe,
     })
   }
@@ -456,6 +462,7 @@ const transacciones = computed(() => {
       miembro: d.anonima ? 'Anónimo' : (d.donanteNombre || '—'),
       tipo: 'DONACION',
       estado: d.estado?.nombre?.toUpperCase() || '—',
+      estadoColor: d.estado?.color,
       importe: d.importe,
     })
   }
@@ -531,25 +538,6 @@ const getTipoClass = (tipo) => {
   return classes[tipo] || 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800'
 }
 
-const getEstadoClass = (estado) => {
-  const classes = {
-    'COBRADA': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800',
-    'PENDIENTE': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800',
-    'DEVUELTA': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800',
-    'ANULADA': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800'
-  }
-  return classes[estado] || 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800'
-}
-
-const getRemesaEstadoClass = (estado) => {
-  const classes = {
-    'Enviada': 'bg-blue-100 text-blue-800',
-    'Cobrada': 'bg-green-100 text-green-800',
-    'Parcial': 'bg-yellow-100 text-yellow-800',
-    'Rechazada': 'bg-red-100 text-red-800'
-  }
-  return classes[estado] || 'bg-gray-100 text-gray-800'
-}
 
 function generarRemesa() {}
 function verDetalle() {}

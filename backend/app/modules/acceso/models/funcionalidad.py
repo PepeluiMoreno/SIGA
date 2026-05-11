@@ -10,7 +10,7 @@ import enum
 import uuid
 from typing import List, Optional
 
-from sqlalchemy import String, Boolean, Uuid, ForeignKey, Enum, UniqueConstraint, Text
+from sqlalchemy import String, Boolean, Uuid, ForeignKey, Enum, UniqueConstraint, Text, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ....infrastructure.base_model import BaseModel
@@ -41,6 +41,7 @@ class Funcionalidad(BaseModel):
     descripcion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     modulo: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    orden: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     activa: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
     sistema: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

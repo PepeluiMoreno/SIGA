@@ -119,11 +119,19 @@
         </div>
         <div class="space-y-4">
           <div v-if="ultimasCampanias.length === 0" class="text-sm text-gray-500 py-4 text-center">Sin campañas registradas</div>
-          <div v-for="campania in ultimasCampanias" :key="campania.id" class="border-l-4 border-purple-500 pl-4 py-2">
-            <h4 class="font-medium text-gray-900">{{ campania.nombre }}</h4>
-            <p class="text-sm text-gray-600">{{ campania.descripcion }}</p>
-            <div class="flex items-center text-sm text-gray-500 mt-1">
-              <span :class="campania.estadoClass">{{ campania.estado }}</span>
+          <div v-for="campania in ultimasCampanias" :key="campania.id"
+            class="flex gap-3 rounded-lg border border-gray-100 overflow-hidden hover:border-purple-200 transition-colors">
+            <img v-if="campania.fotoUrl" :src="campania.fotoUrl" :alt="campania.nombre"
+              class="w-20 h-20 object-cover flex-shrink-0" />
+            <div v-else class="w-20 h-20 bg-purple-50 flex-shrink-0 flex items-center justify-center">
+              <span class="text-2xl">📢</span>
+            </div>
+            <div class="py-2 pr-2 flex flex-col justify-center min-w-0">
+              <h4 class="font-medium text-gray-900 truncate">{{ campania.nombre }}</h4>
+              <p v-if="campania.descripcion" class="text-xs text-gray-500 mt-0.5 line-clamp-2">{{ campania.descripcion }}</p>
+              <div class="mt-1">
+                <span :class="campania.estadoClass">{{ campania.estado }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -212,13 +220,14 @@ const ultimasCampanias = computed(() => campanias.value.slice(0, 3).map(c => ({
   descripcion: c.descripcionCorta || c.lema || '',
   estado: c.estado?.nombre || '—',
   estadoClass: estadoClass(c.estado?.nombre),
+  fotoUrl: c.fotoUrl || null,
 })))
 
 const stats = computed(() => ({
   totalmiembros: miembros.value.length,
   nuevosmiembrosMes: 0,
-  campaniasActivas: campanias.value.filter(c => c.estado?.nombre?.toLowerCase().includes('activ')).length,
-  campaniasPlanificadas: campanias.value.filter(c => c.estado?.nombre?.toLowerCase().includes('planif')).length,
+  campaniasActivas: campanias.value.filter(c => ['En Curso', 'Activa'].includes(c.estado?.nombre)).length,
+  campaniasPlanificadas: campanias.value.filter(c => ['Programada', 'Borrador'].includes(c.estado?.nombre)).length,
   gruposActivos: grupos.value.filter(g => g.activo).length,
   gruposPermanentes: grupos.value.filter(g => g.activo).length,
   cuotasMes: 0,

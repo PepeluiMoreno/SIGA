@@ -1,5 +1,5 @@
 <template>
-  <AppLayout :title="isCreate ? 'Nuevo miembro' : 'Militancia'" :subtitle="isCreate ? 'Registrar un nuevo miembro en la organización' : 'Ficha detallada de miembro'">
+  <AppLayout :title="isCreate ? 'Nuevo miembro' : 'Membresía'" :subtitle="isCreate ? 'Registrar un nuevo miembro en la organización' : 'Ficha detallada de miembro'">
     <MiembroDetail />
   </AppLayout>
 </template>

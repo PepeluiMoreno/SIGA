@@ -1,11 +1,12 @@
 <template>
   <AppLayout title="Catálogos" subtitle="Gestión de tipologías del sistema">
-    <div class="flex -mx-4 sm:-mx-6 border-t border-gray-200" style="height: calc(100vh - 118px)">
+    <div class="flex -mx-4 sm:-mx-6 lg:mx-0 border-t border-gray-200 h-full">
 
       <!-- ── Panel izquierdo: navegación ─────────────────────────────── -->
-      <nav class="w-52 flex-shrink-0 border-r border-gray-200 bg-gray-50 overflow-y-auto py-3 px-2">
-        <div v-for="grupo in CATALOGOS" :key="grupo.grupo" class="mb-4">
-          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-1.5">
+      <nav class="w-max min-w-[10rem] flex-shrink-0 border-r border-gray-200 bg-gray-50 overflow-y-auto py-3 px-2">
+        <div v-for="(grupo, i) in CATALOGOS" :key="grupo.grupo"
+          :class="['mb-3', i > 0 && 'border-t border-gray-200 pt-3']">
+          <p class="text-[11px] font-bold text-gray-700 uppercase tracking-widest px-2 mb-1.5 whitespace-nowrap">
             {{ grupo.grupo }}
           </p>
           <ul class="space-y-0.5">
@@ -17,7 +18,7 @@
                     ? 'bg-purple-100 text-purple-800 font-semibold'
                     : 'text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-sm'
                 ]">
-                <span>{{ cat.label }}</span>
+                <span class="whitespace-nowrap">{{ cat.label }}</span>
                 <span v-if="catalogoActivo?.key === cat.key && !cargando"
                   class="text-[10px] bg-purple-200 text-purple-700 rounded-full px-1.5 py-0.5 font-medium">
                   {{ items.length }}
@@ -149,7 +150,9 @@
 
                     <!-- Descripción y otros -->
                     <template v-else>
-                      <span class="text-gray-500 text-xs max-w-xs line-clamp-2">{{ item[col.key] ?? '—' }}</span>
+                      <span class="text-gray-500 text-xs max-w-xs line-clamp-2">
+                        {{ col.format ? col.format(item) : (item[col.key] ?? '—') }}
+                      </span>
                     </template>
                   </td>
 
@@ -176,15 +179,16 @@
       </div>
     </div>
 
-    <!-- ── Drawer crear / editar ────────────────────────────────────── -->
+    <!-- ── Modal crear / editar ────────────────────────────────────── -->
     <Transition name="drawer">
-      <div v-if="drawerAbierto" class="fixed inset-0 z-50 flex justify-end">
-        <div class="fixed inset-0 bg-black/25 backdrop-blur-[1px]" @click="cerrarDrawer" />
-        <div class="relative w-full max-w-sm bg-white shadow-2xl flex flex-col">
+      <div v-if="drawerAbierto" class="fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div class="fixed inset-0 bg-black/30 backdrop-blur-[1px]" @click="cerrarDrawer" />
+        <div class="relative w-full max-w-md bg-white rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
 
           <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <h3 class="font-semibold text-gray-900">
-              {{ itemEditando ? 'Editar' : 'Nuevo' }} {{ catalogoActivo?.labelSingular }}
+              {{ itemEditando ? (catalogoActivo?.editPrefix ?? 'Editar') : (catalogoActivo?.createPrefix ?? 'Nuevo') }}
+              {{ catalogoActivo?.labelSingular }}
             </h3>
             <button @click="cerrarDrawer"
               class="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
@@ -231,6 +235,42 @@
                   <input v-model="formulario[campo.name]" type="text" placeholder="#RRGGBB"
                     class="w-28 px-2 py-1 text-xs font-mono border border-gray-300 rounded-md
                            focus:border-purple-400 focus:outline-none" />
+                </div>
+              </div>
+
+              <div v-else-if="campo.type === 'select'" class="space-y-1.5">
+                <div class="flex gap-2">
+                  <select v-model="formulario[campo.name]"
+                    class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md
+                           focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none transition-colors">
+                    <option value="">{{ campo.emptyLabel ?? 'Sin selección' }}</option>
+                    <option v-for="opt in selectOptions[campo.name] ?? []"
+                      :key="opt[campo.optionValue ?? 'id']"
+                      :value="opt[campo.optionValue ?? 'id']">
+                      {{ opt[campo.optionLabel ?? 'nombre'] }}
+                    </option>
+                  </select>
+                  <button v-if="campo.allowCreate" type="button"
+                    @click="inlineCreateOpen[campo.name] = !inlineCreateOpen[campo.name]"
+                    class="px-2.5 rounded-md border border-gray-300 text-gray-500
+                           hover:text-purple-600 hover:border-purple-400 transition-colors"
+                    title="Crear nueva categoría">
+                    <PlusIcon class="w-4 h-4" />
+                  </button>
+                </div>
+                <div v-if="campo.allowCreate && inlineCreateOpen[campo.name]"
+                  class="flex gap-2 p-2.5 bg-purple-50 rounded-md border border-purple-100">
+                  <input v-model="inlineCreateValue[campo.name].nombre" type="text"
+                    :placeholder="`Nueva ${campo.labelSingular ?? campo.label.toLowerCase()}…`"
+                    @keyup.enter="crearInline(campo)"
+                    class="flex-1 px-2.5 py-1 text-sm border border-gray-300 rounded
+                           focus:border-purple-400 focus:outline-none" />
+                  <button type="button" @click="crearInline(campo)"
+                    :disabled="inlineCreateLoading[campo.name]"
+                    class="px-3 py-1 text-xs bg-purple-600 text-white rounded
+                           hover:bg-purple-700 disabled:opacity-50 transition-colors">
+                    {{ inlineCreateLoading[campo.name] ? '…' : 'Crear' }}
+                  </button>
                 </div>
               </div>
 
@@ -332,10 +372,13 @@
 import { ref, computed } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { graphqlClient } from '@/graphql/client.js'
+import { useOrgConfigStore } from '@/stores/orgConfig'
 import {
   PlusIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon, CheckIcon, XMarkIcon,
 } from '@heroicons/vue/24/outline'
 import * as Q from '@/graphql/queries/catalogos.js'
+
+const sortItems = items => [...items].sort((a, b) => a.label.localeCompare(b.label, 'es'))
 
 // ── Paleta de colores preset ──────────────────────────────────────────────────
 const COLORES_PRESET = [
@@ -343,13 +386,15 @@ const COLORES_PRESET = [
   '#F97316', '#F59E0B', '#10B981', '#14B8A6', '#6B7280',
 ]
 
+const orgConfig = useOrgConfigStore()
+
 // ── Definición de catálogos ───────────────────────────────────────────────────
-const CATALOGOS = [
+const CATALOGOS = computed(() => [
   {
-    grupo: 'Miembros',
+    grupo: orgConfig.Miembros,
     items: [
       {
-        key: 'tiposMiembro', label: 'Tipos de miembro', labelSingular: 'Tipo de miembro',
+        key: 'tiposMiembro', label: `Tipos de ${orgConfig.miembro}`, labelSingular: `Tipo de ${orgConfig.miembro}`,
         descripcion: 'Socio, Simpatizante, Juvenil…',
         queryName: 'tiposMiembro', query: Q.GET_TIPOS_MIEMBRO,
         mutations: { create: Q.CREATE_TIPO_MIEMBRO, update: Q.UPDATE_TIPO_MIEMBRO, delete: Q.DELETE_TIPO_MIEMBRO },
@@ -407,11 +452,110 @@ const CATALOGOS = [
           { name: 'activo',                label: 'En uso',                  type: 'checkbox', default: true },
         ],
       },
+      {
+        key: 'categoriasHabilidad', label: 'Categorías de habilidad', labelSingular: 'Categoría de habilidad',
+        createPrefix: 'Nueva', editPrefix: 'Editar',
+        descripcion: 'Técnica, Comunicación, Logística…',
+        queryName: 'categoriasHabilidad', query: Q.GET_CATEGORIAS_HABILIDAD,
+        mutations: { create: Q.CREATE_CATEGORIA_HABILIDAD, update: Q.UPDATE_CATEGORIA_HABILIDAD, delete: Q.DELETE_CATEGORIA_HABILIDAD },
+        columnas: [
+          { key: 'nombre',      label: 'Nombre' },
+          { key: 'descripcion', label: 'Descripción' },
+          { key: 'activo',      label: 'Activo', type: 'toggle' },
+        ],
+        campos: [
+          { name: 'nombre',      label: 'Nombre',      type: 'text',     required: true, maxLength: 100 },
+          { name: 'descripcion', label: 'Descripción', type: 'textarea' },
+          { name: 'activo',      label: 'En uso',      type: 'checkbox', default: true },
+        ],
+      },
+      {
+        key: 'nivelesEstudios', label: 'Niveles de estudios', labelSingular: 'Nivel de estudios',
+        descripcion: 'Primaria, ESO, Bachillerato, FP, Grado, Máster…',
+        queryName: 'nivelesEstudios', query: Q.GET_NIVELES_ESTUDIOS,
+        mutations: { create: Q.CREATE_NIVEL_ESTUDIOS, update: Q.UPDATE_NIVEL_ESTUDIOS, delete: Q.DELETE_NIVEL_ESTUDIOS },
+        columnas: [
+          { key: 'orden',       label: 'Orden' },
+          { key: 'nombre',      label: 'Nombre' },
+          { key: 'descripcion', label: 'Descripción' },
+          { key: 'activo',      label: 'Activo', type: 'toggle' },
+        ],
+        campos: [
+          { name: 'nombre',      label: 'Nombre',      type: 'text',     required: true, maxLength: 100 },
+          { name: 'descripcion', label: 'Descripción', type: 'textarea' },
+          { name: 'orden',       label: 'Orden',       type: 'number',   default: 0 },
+          { name: 'activo',      label: 'En uso',      type: 'checkbox', default: true },
+        ],
+      },
+      {
+        key: 'nivelesHabilidad', label: 'Niveles de habilidad', labelSingular: 'Nivel de habilidad',
+        descripcion: 'Principiante, Suficiente, Bueno, Experto…',
+        queryName: 'nivelesHabilidad', query: Q.GET_NIVELES_HABILIDAD,
+        mutations: { create: Q.CREATE_NIVEL_HABILIDAD, update: Q.UPDATE_NIVEL_HABILIDAD, delete: Q.DELETE_NIVEL_HABILIDAD },
+        columnas: [
+          { key: 'orden',       label: 'Orden' },
+          { key: 'nombre',      label: 'Nombre' },
+          { key: 'descripcion', label: 'Descripción' },
+          { key: 'activo',      label: 'Activo', type: 'toggle' },
+        ],
+        campos: [
+          { name: 'nombre',      label: 'Nombre',      type: 'text',     required: true, maxLength: 100 },
+          { name: 'descripcion', label: 'Descripción', type: 'textarea' },
+          { name: 'orden',       label: 'Orden',       type: 'number',   default: 0 },
+          { name: 'activo',      label: 'En uso',      type: 'checkbox', default: true },
+        ],
+      },
+      {
+        key: 'habilidades', label: 'Habilidades', labelSingular: 'Habilidad',
+        createPrefix: 'Nueva', editPrefix: 'Editar',
+        descripcion: 'Conocimientos y competencias del voluntariado…',
+        queryName: 'habilidades', query: Q.GET_HABILIDADES_CATALOGO,
+        mutations: { create: Q.CREATE_HABILIDAD, update: Q.UPDATE_HABILIDAD, delete: Q.DELETE_HABILIDAD },
+        columnas: [
+          { key: 'nombre',      label: 'Nombre' },
+          { key: 'categoria',   label: 'Categoría', format: item => item.categoria?.nombre ?? '—' },
+          { key: 'descripcion', label: 'Descripción' },
+          { key: 'activo',      label: 'Activo', type: 'toggle' },
+        ],
+        campos: [
+          { name: 'nombre',       label: 'Nombre',      type: 'text',     required: true, maxLength: 150 },
+          {
+            name: 'categoriaId', label: 'Categoría', type: 'select',
+            optionsQuery: Q.GET_CATEGORIAS_HABILIDAD, optionsQueryName: 'categoriasHabilidad',
+            optionLabel: 'nombre', optionValue: 'id',
+            allowCreate: true, createMutation: Q.CREATE_CATEGORIA_HABILIDAD,
+            labelSingular: 'categoría', emptyLabel: 'Sin categoría',
+          },
+          { name: 'descripcion', label: 'Descripción', type: 'textarea' },
+          { name: 'activo',      label: 'En uso',      type: 'checkbox', default: true },
+        ],
+      },
     ],
   },
   {
     grupo: 'Financiero',
     items: [
+      {
+        key: 'formasPago', label: 'Formas de pago', labelSingular: 'Forma de pago',
+        descripcion: 'Transferencia, Domiciliación, Tarjeta…',
+        queryName: 'formasPago', query: Q.GET_FORMAS_PAGO_CATALOGO,
+        mutations: { create: Q.CREATE_FORMA_PAGO, update: Q.UPDATE_FORMA_PAGO, delete: Q.DELETE_FORMA_PAGO },
+        beforeSave: (data) => {
+          if (!data.codigo) {
+            data.codigo = crypto.randomUUID().replace(/-/g, '').slice(0, 30)
+          }
+        },
+        columnas: [
+          { key: 'nombre',      label: 'Nombre' },
+          { key: 'descripcion', label: 'Descripción' },
+          { key: 'activo',      label: 'Activo', type: 'toggle' },
+        ],
+        campos: [
+          { name: 'nombre',      label: 'Nombre',      type: 'text', required: true, maxLength: 100 },
+          { name: 'descripcion', label: 'Descripción', type: 'textarea' },
+          { name: 'activo',      label: 'En uso',      type: 'checkbox', default: true },
+        ],
+      },
       {
         key: 'estadosCuota', label: 'Estados de cuota', labelSingular: 'Estado de cuota',
         descripcion: 'Pendiente, Pagada, Vencida…',
@@ -621,7 +765,30 @@ const CATALOGOS = [
       },
     ],
   },
-]
+  {
+    grupo: 'Usuarios',
+    items: [
+      {
+        key: 'tiposVinculacion', label: 'Tipos de vinculación', labelSingular: 'Tipo de vinculación',
+        descripcion: 'Socio, Simpatizante, Empleado externo…',
+        queryName: 'tiposVinculacion', query: Q.GET_TIPOS_VINCULACION_CATALOGO,
+        mutations: { create: Q.CREATE_TIPO_VINCULACION, update: Q.UPDATE_TIPO_VINCULACION, delete: Q.DELETE_TIPO_VINCULACION },
+        columnas: [
+          { key: 'nombre',         label: 'Nombre' },
+          { key: 'requiereEntidad', label: 'Requiere entidad', type: 'bool' },
+          { key: 'activo',         label: 'Activo', type: 'toggle' },
+        ],
+        campos: [
+          { name: 'nombre',         label: 'Nombre',                     type: 'text',     required: true, maxLength: 150 },
+          { name: 'requiereEntidad', label: 'Requiere especificar entidad', type: 'checkbox', default: false },
+          { name: 'activo',         label: 'En uso',                     type: 'checkbox', default: true },
+        ],
+      },
+    ],
+  },
+].map(g => ({ ...g, items: sortItems(g.items) }))
+  .sort((a, b) => a.grupo.localeCompare(b.grupo, 'es'))
+)
 
 // ── Estado ────────────────────────────────────────────────────────────────────
 const catalogoActivo = ref(null)
@@ -634,13 +801,19 @@ const itemEditando   = ref(null)
 const formulario     = ref({})
 const guardando      = ref(false)
 const errorGuardado  = ref('')
-const toggling       = ref(null)   // id del item toggling activo
+const toggling       = ref(null)
 const modalEliminar       = ref(false)
 const itemAEliminar       = ref(null)
 const eliminando          = ref(false)
 const errorEliminar       = ref('')
 const modalConfirmInicial = ref(false)
-const inicialConflicto    = ref(null)  // item que actualmente tiene esInicial=true
+const inicialConflicto    = ref(null)
+
+// Select con creación inline
+const selectOptions      = ref({})
+const inlineCreateOpen   = ref({})
+const inlineCreateValue  = ref({})
+const inlineCreateLoading = ref({})
 
 // ── Computed ──────────────────────────────────────────────────────────────────
 const itemsFiltrados = computed(() => {
@@ -683,18 +856,69 @@ function inicializarFormulario() {
   return f
 }
 
-function abrirCrear() {
+function initInlineCreate() {
+  const open = {}, vals = {}, loading = {}
+  catalogoActivo.value?.campos.forEach(c => {
+    if (c.type === 'select') {
+      open[c.name] = false
+      vals[c.name] = { nombre: '' }
+      loading[c.name] = false
+    }
+  })
+  inlineCreateOpen.value = open
+  inlineCreateValue.value = vals
+  inlineCreateLoading.value = loading
+}
+
+async function cargarSelectOptions() {
+  for (const campo of catalogoActivo.value?.campos ?? []) {
+    if (campo.type === 'select' && campo.optionsQuery) {
+      try {
+        const data = await graphqlClient.request(campo.optionsQuery)
+        selectOptions.value[campo.name] = data[campo.optionsQueryName] ?? []
+      } catch {
+        selectOptions.value[campo.name] = []
+      }
+    }
+  }
+}
+
+async function crearInline(campo) {
+  const nombre = inlineCreateValue.value[campo.name]?.nombre?.trim()
+  if (!nombre) return
+  inlineCreateLoading.value[campo.name] = true
+  try {
+    const result = await graphqlClient.request(campo.createMutation, {
+      data: { nombre, activo: true },
+    })
+    const created = result[Object.keys(result)[0]]
+    selectOptions.value[campo.name] = [...(selectOptions.value[campo.name] ?? []), created]
+    formulario.value[campo.name] = created[campo.optionValue ?? 'id']
+    inlineCreateOpen.value[campo.name] = false
+    inlineCreateValue.value[campo.name] = { nombre: '' }
+  } catch {
+    // silencioso
+  } finally {
+    inlineCreateLoading.value[campo.name] = false
+  }
+}
+
+async function abrirCrear() {
   itemEditando.value = null
   formulario.value = inicializarFormulario()
   errorGuardado.value = ''
+  initInlineCreate()
   drawerAbierto.value = true
+  await cargarSelectOptions()
 }
 
-function abrirEditar(item) {
+async function abrirEditar(item) {
   itemEditando.value = item
   formulario.value = { ...item }
   errorGuardado.value = ''
+  initInlineCreate()
   drawerAbierto.value = true
+  await cargarSelectOptions()
 }
 
 function cerrarDrawer() {
@@ -726,6 +950,7 @@ async function guardar(forzar = false) {
         data[c.name] = formulario.value[c.name]
       }
     })
+    catalogoActivo.value.beforeSave?.(data)
     const mut = catalogoActivo.value.mutations
     if (itemEditando.value) {
       data.id = itemEditando.value.id
@@ -809,11 +1034,11 @@ async function eliminar() {
 <style scoped>
 .drawer-enter-active,
 .drawer-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity 0.15s ease;
 }
 .drawer-enter-active .relative,
 .drawer-leave-active .relative {
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 .drawer-enter-from,
 .drawer-leave-to {
@@ -821,6 +1046,7 @@ async function eliminar() {
 }
 .drawer-enter-from .relative,
 .drawer-leave-to .relative {
-  transform: translateX(100%);
+  opacity: 0;
+  transform: scale(0.96) translateY(-8px);
 }
 </style>

@@ -1,163 +1,22 @@
 <template>
   <AppLayout title="Campañas" subtitle="Gestión de campañas y actividades">
-    <!-- Barra superior con búsqueda y botón nuevo -->
-    <div class="mb-4 flex items-center justify-between gap-4">
-      <div class="relative flex-1 max-w-md">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Buscar por nombre o lema..."
-          class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-          @keyup.enter="aplicarFiltros"
-        />
-        <span class="absolute left-3 top-2.5 text-gray-400">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </span>
-      </div>
-      <router-link
-        to="/campanias/nueva"
-        class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Nueva Campaña
-      </router-link>
-    </div>
-
-    <!-- Panel de Filtros -->
-    <div class="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm">
-      <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-        <div class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-          </svg>
-          Filtros
-        </div>
-        <button
-          v-if="filtersApplied"
-          @click="limpiarFiltros"
-          class="text-xs text-gray-500 hover:text-gray-700 transition-colors"
-        >
-          Limpiar todos
-        </button>
-      </div>
-
-      <div class="p-4 grid grid-cols-1 md:grid-cols-[1fr_1fr_auto_auto] gap-6 items-start">
-
-        <!-- Estado -->
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</span>
-            <button
-              @click="toggleTodosEstados"
-              class="text-xs text-purple-600 hover:text-purple-800 transition-colors"
-            >
-              {{ todosEstadosSeleccionados ? 'Ninguno' : 'Todos' }}
-            </button>
-          </div>
-          <div class="space-y-1.5">
-            <label
-              v-for="estado in estadosCampaniaOrdenados"
-              :key="estado.id"
-              class="flex items-center gap-2 cursor-pointer group"
-            >
-              <input
-                type="checkbox"
-                :value="estado.id"
-                v-model="filters.estados"
-                class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 focus:ring-offset-0"
-              />
-              <span class="text-sm text-gray-700 group-hover:text-gray-900 select-none">{{ estado.nombre }}</span>
-            </label>
-            <p v-if="estadosCampaniaOrdenados.length === 0" class="text-xs text-gray-400 italic">Cargando...</p>
-          </div>
-        </div>
-
-        <!-- Tipo de Campaña -->
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Tipo de campaña</span>
-            <button
-              @click="toggleTodosTipos"
-              class="text-xs text-purple-600 hover:text-purple-800 transition-colors"
-            >
-              {{ todosTiposSeleccionados ? 'Ninguno' : 'Todos' }}
-            </button>
-          </div>
-          <div class="space-y-1.5 max-h-44 overflow-y-auto pr-1 scrollbar-thin">
-            <label
-              v-for="tipo in tiposCampaniaOrdenados"
-              :key="tipo.id"
-              class="flex items-center gap-2 cursor-pointer group"
-            >
-              <input
-                type="checkbox"
-                :value="tipo.id"
-                v-model="filters.tipos"
-                class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 focus:ring-offset-0"
-              />
-              <span class="text-sm text-gray-700 group-hover:text-gray-900 select-none">{{ tipo.nombre }}</span>
-            </label>
-            <p v-if="tiposCampaniaOrdenados.length === 0" class="text-xs text-gray-400 italic">Cargando...</p>
-          </div>
-        </div>
-
-        <!-- Año -->
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Año</span>
-            <button
-              @click="toggleTodosAnios"
-              class="text-xs text-purple-600 hover:text-purple-800 transition-colors"
-            >
-              {{ todosAniosSeleccionados ? 'Ninguno' : 'Todos' }}
-            </button>
-          </div>
-          <div class="space-y-1.5">
-            <label
-              v-for="anio in aniosDisponibles"
-              :key="anio"
-              class="flex items-center gap-2 cursor-pointer group"
-            >
-              <input
-                type="checkbox"
-                :value="anio"
-                v-model="filters.anios"
-                class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 focus:ring-offset-0"
-              />
-              <span class="text-sm text-gray-700 group-hover:text-gray-900 select-none">{{ anio }}</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Botones -->
-        <div class="flex flex-col gap-2 pt-5">
-          <button
-            @click="aplicarFiltros"
-            :disabled="loading"
-            class="px-5 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors whitespace-nowrap"
-          >
-            {{ loading ? 'Buscando...' : 'Buscar' }}
-          </button>
-          <button
-            @click="limpiarFiltros"
-            class="px-5 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap"
-          >
-            Limpiar
-          </button>
-        </div>
-
-      </div>
-    </div>
+    <FilterBar
+      v-model="filters"
+      v-model:search="searchQuery"
+      search-placeholder="Buscar por nombre o lema…"
+      create-label="Nueva Campaña"
+      create-route="/campanias/nueva"
+      :fields="filterFields"
+      :lazy="true"
+      :loading="loading"
+      :description="filtersApplied ? tituloDescriptivo : ''"
+      class="mb-4"
+      @apply="aplicarFiltros"
+      @clear="limpiarFiltros"
+    />
 
     <!-- Estado de carga -->
-    <div v-if="loading" class="bg-white border border-gray-200 rounded-lg p-12 text-center">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-purple-600 border-t-transparent mb-3"></div>
-      <p class="text-gray-600">Cargando campañas...</p>
-    </div>
+    <EstadoCarga v-if="loading" mensaje="Cargando campañas..." />
 
     <!-- Error -->
     <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -171,12 +30,7 @@
     <!-- Resultados -->
     <div v-else class="bg-white border border-gray-200 rounded-lg overflow-hidden">
       <!-- Mensaje inicial -->
-      <div v-if="!filtersApplied" class="p-12 text-center text-gray-500">
-        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-        </svg>
-        <p class="text-lg">Configura los filtros y pulsa "Buscar"</p>
-      </div>
+      <EstadoPendiente v-if="!filtersApplied" />
 
       <!-- Sin resultados -->
       <div v-else-if="campaniasFiltradas.length === 0" class="p-12 text-center text-gray-500">
@@ -208,7 +62,8 @@
           >
             <div class="p-6">
               <div class="flex justify-between items-start mb-3">
-                <span :class="getEstadoClass(campania.estado?.nombre)">
+                <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full border"
+                  :style="badgeStyle(campania.estado?.color)">
                   {{ campania.estado?.nombre || 'Sin estado' }}
                 </span>
                 <span v-if="campania.tipoCampania" class="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded">
@@ -257,20 +112,15 @@
             </div>
 
             <div class="px-6 py-3 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
-              <div class="text-xs text-gray-500 flex items-center gap-1">
-                <span v-if="campania.metaParticipantes">
-                  🎯 {{ campania.metaParticipantes }} participantes objetivo
-                </span>
+              <div class="text-xs text-gray-500">
+                <span v-if="campania.metaParticipantes">🎯 {{ campania.metaParticipantes }} participantes</span>
               </div>
-              <div class="flex space-x-2">
-                <router-link
-                  :to="`/campanias/${campania.id}`"
-                  class="text-purple-600 hover:text-purple-800 text-sm font-medium px-3 py-1 rounded hover:bg-purple-50 transition-colors"
-                  @click.stop
-                >
-                  Ver detalles
-                </router-link>
-              </div>
+              <router-link :to="`/campanias/${campania.id}`"
+                class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+                title="Ver detalles"
+                @click.stop>
+                <EyeIcon class="w-4 h-4" />
+              </router-link>
             </div>
           </div>
         </div>
@@ -283,8 +133,13 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
+import { EyeIcon } from '@heroicons/vue/24/outline'
 import { executeQuery } from '@/graphql/client'
 import { GET_CAMPANIAS, GET_TIPOS_CAMPANIA, GET_ESTADOS_CAMPANIA } from '@/graphql/queries/campanias'
+import { badgeStyle } from '@/utils/badge'
+import EstadoCarga from '@/components/common/EstadoCarga.vue'
+import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
 
 const router = useRouter()
 
@@ -324,23 +179,30 @@ const tiposCampaniaOrdenados = computed(() =>
   [...tiposCampania.value].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
 )
 
-// Computed: checkbox "Todos" para estados
-const todosEstadosSeleccionados = computed(() =>
-  estadosCampania.value.length > 0 && filters.value.estados.length === estadosCampania.value.length
-)
-const algunEstadoSeleccionado = computed(() => filters.value.estados.length > 0)
-
-// Computed: checkbox "Todos" para tipos
-const todosTiposSeleccionados = computed(() =>
-  tiposCampania.value.length > 0 && filters.value.tipos.length === tiposCampania.value.length
-)
-const algunTipoSeleccionado = computed(() => filters.value.tipos.length > 0)
-
-// Computed: checkbox "Todos" para años
-const todosAniosSeleccionados = computed(() =>
-  aniosDisponibles.value.length > 0 && filters.value.anios.length === aniosDisponibles.value.length
-)
-const algunAnioSeleccionado = computed(() => filters.value.anios.length > 0)
+// Campos del FilterBar
+const filterFields = computed(() => [
+  {
+    key: 'estados',
+    label: 'Estado',
+    type: 'multiselect',
+    allLabel: 'Todos los estados',
+    options: estadosCampaniaOrdenados.value.map(e => ({ value: e.id, label: e.nombre })),
+  },
+  {
+    key: 'tipos',
+    label: 'Tipo',
+    type: 'multiselect',
+    allLabel: 'Todos los tipos',
+    options: tiposCampaniaOrdenados.value.map(t => ({ value: t.id, label: t.nombre })),
+  },
+  {
+    key: 'anios',
+    label: 'Año',
+    type: 'multiselect',
+    allLabel: 'Todos los años',
+    options: aniosDisponibles.value.map(y => ({ value: y, label: String(y) })),
+  },
+])
 
 // Computed: campañas filtradas
 const campaniasFiltradas = computed(() => {
@@ -434,33 +296,6 @@ const tituloDescriptivo = computed(() => {
   return `${base}${tiposStr}${estadosStr}${anioStr}`
 })
 
-// Toggle todos estados
-const toggleTodosEstados = () => {
-  if (todosEstadosSeleccionados.value) {
-    filters.value.estados = []
-  } else {
-    filters.value.estados = estadosCampania.value.map(e => e.id)
-  }
-}
-
-// Toggle todos tipos
-const toggleTodosTipos = () => {
-  if (todosTiposSeleccionados.value) {
-    filters.value.tipos = []
-  } else {
-    filters.value.tipos = tiposCampania.value.map(t => t.id)
-  }
-}
-
-// Toggle todos años
-const toggleTodosAnios = () => {
-  if (todosAniosSeleccionados.value) {
-    filters.value.anios = []
-  } else {
-    filters.value.anios = [...aniosDisponibles.value]
-  }
-}
-
 // Cargar catálogos al montar
 const loadCatalogos = async () => {
   try {
@@ -504,16 +339,6 @@ const limpiarFiltros = () => {
   allCampanias.value = []
 }
 
-const getEstadoClass = (estadoNombre) => {
-  const classes = {
-    'Activa': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800',
-    'Planificada': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800',
-    'Finalizada': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800',
-    'Cancelada': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800',
-    'Suspendida': 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800'
-  }
-  return classes[estadoNombre] || 'inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800'
-}
 
 const formatDate = (dateString) => {
   if (!dateString) return ''

@@ -6,13 +6,12 @@ import {
   GET_AGRUPACIONES,
   GET_ESTADOS_MIEMBRO,
   GET_MOTIVOS_BAJA,
-  GET_TIPOS_CARGO,
   GET_TIPOS_MIEMBRO,
   GET_FORMAS_PAGO,
   CREATE_MIEMBRO,
   UPDATE_MIEMBRO,
 } from '@/graphql/queries/miembros.js'
-import { GET_PAISES, GET_PROVINCIAS } from '@/graphql/queries/catalogos.js'
+import { GET_PAISES, GET_PROVINCIAS, GET_NIVELES_ESTUDIOS, GET_NIVELES_HABILIDAD } from '@/graphql/queries/catalogos.js'
 
 export function useMiembro() {
   const router = useRouter()
@@ -25,27 +24,27 @@ export function useMiembro() {
     tiposMiembro: [],
     estadosMiembro: [],
     motivosBaja: [],
-    tiposCargo: [],
     agrupaciones: [],
     paises: [],
     provincias: [],
     formasPago: [],
+    nivelesEstudios: [],
+    nivelesHabilidad: [],
   })
   const miembro = ref(createEmptyMiembro())
 
   const loadCatalogos = async () => {
     try {
+      const alpha = (a, b) => a.nombre.localeCompare(b.nombre, 'es')
+
       const tiposData = await query(GET_TIPOS_MIEMBRO)
-      catalogos.value.tiposMiembro = tiposData?.tiposMiembro || []
+      catalogos.value.tiposMiembro = (tiposData?.tiposMiembro || []).sort(alpha)
 
       const estadosData = await query(GET_ESTADOS_MIEMBRO)
-      catalogos.value.estadosMiembro = estadosData?.estadosMiembro || []
+      catalogos.value.estadosMiembro = (estadosData?.estadosMiembro || []).sort(alpha)
 
       const motivosData = await query(GET_MOTIVOS_BAJA)
-      catalogos.value.motivosBaja = motivosData?.motivosBaja || []
-
-      const cargosData = await query(GET_TIPOS_CARGO)
-      catalogos.value.tiposCargo = cargosData?.tiposCargo || []
+      catalogos.value.motivosBaja = (motivosData?.motivosBaja || []).sort(alpha)
 
       const agrupacionesData = await query(GET_AGRUPACIONES)
       catalogos.value.agrupaciones = agrupacionesData?.agrupacionesTerritoriales || []
@@ -61,6 +60,12 @@ export function useMiembro() {
 
       const formasPagoData = await query(GET_FORMAS_PAGO)
       catalogos.value.formasPago = formasPagoData?.formasPago || []
+
+      const nivelesEstData = await query(GET_NIVELES_ESTUDIOS)
+      catalogos.value.nivelesEstudios = (nivelesEstData?.nivelesEstudios || []).sort((a, b) => a.orden - b.orden)
+
+      const nivelesHabData = await query(GET_NIVELES_HABILIDAD)
+      catalogos.value.nivelesHabilidad = (nivelesHabData?.nivelesHabilidad || []).sort((a, b) => a.orden - b.orden)
     } catch (err) {
       console.error('Error loading member catalogs:', err)
       error.value = err.message || 'Error al cargar catálogos de militancia'
@@ -133,13 +138,18 @@ export function useMiembro() {
     error.value = null
   }
 
+  const ELIMINAR_MIEMBRO = `
+    mutation EliminarMiembro($id: UUID!) {
+      eliminarMiembros(filter: { id: { eq: $id } }) { id }
+    }
+  `
+
   const deleteMiembro = async (id) => {
-    if (!confirm('¿Estás seguro de eliminar este miembro?')) return
+    if (!confirm('¿Estás seguro de que quieres eliminar este miembro? Esta acción no se puede deshacer.')) return
 
     loading.value = true
     try {
-      // TODO: Implementar mutation de eliminación
-      console.log('Deleting miembro:', id)
+      await mutation(ELIMINAR_MIEMBRO, { id })
       router.push('/miembros')
     } catch (err) {
       console.error('Error deleting miembro:', err)
@@ -178,7 +188,6 @@ function createEmptyMiembro() {
     estadoId: null,
     motivoBajaId: null,
     agrupacionId: null,
-    cargoId: null,
     paisDocumentoId: null,
     paisDomicilioId: null,
     paisNacimientoId: null,
@@ -206,13 +215,15 @@ function createEmptyMiembro() {
     provincia: null,
     paisDomicilio: null,
     iban: '',
+    swiftBic: '',
+    referenciaPago: '',
     formaPagoId: null,
     esSocioHonor: false,
     esVoluntario: false,
     disponibilidad: '',
     horasDisponiblesSemana: null,
     profesion: '',
-    nivelEstudios: '',
+    nivelEstudiosId: null,
     intereses: '',
     observaciones: '',
     experienciaVoluntariado: '',
@@ -261,8 +272,10 @@ function buildCreatePayload(miembro) {
     telefono2: normalizeText(miembro.telefono2),
     email: normalizeText(miembro.email),
     agrupacionId: nullIfEmpty(miembro.agrupacionId),
-    cargoId: nullIfEmpty(miembro.cargoId),
+
     iban: normalizeText(miembro.iban),
+    swiftBic: normalizeText(miembro.swiftBic),
+    referenciaPago: normalizeText(miembro.referenciaPago),
     formaPagoId: nullIfEmpty(miembro.formaPagoId),
     esSocioHonor: Boolean(miembro.esSocioHonor),
     fechaAlta: nullIfEmpty(miembro.fechaAlta),
@@ -280,7 +293,7 @@ function buildCreatePayload(miembro) {
     disponibilidad: normalizeText(miembro.disponibilidad),
     horasDisponiblesSemana: miembro.horasDisponiblesSemana === '' ? null : miembro.horasDisponiblesSemana,
     profesion: normalizeText(miembro.profesion),
-    nivelEstudios: normalizeText(miembro.nivelEstudios),
+    nivelEstudiosId: nullIfEmpty(miembro.nivelEstudiosId),
     experienciaVoluntariado: normalizeText(miembro.experienciaVoluntariado),
     intereses: normalizeText(miembro.intereses),
     observacionesVoluntariado: normalizeText(miembro.observacionesVoluntariado),
@@ -313,8 +326,10 @@ function buildUpdatePayload(miembro) {
     telefono2: normalizeText(miembro.telefono2),
     email: normalizeText(miembro.email),
     agrupacionId: nullIfEmpty(miembro.agrupacionId),
-    cargoId: nullIfEmpty(miembro.cargoId),
+
     iban: normalizeText(miembro.iban),
+    swiftBic: normalizeText(miembro.swiftBic),
+    referenciaPago: normalizeText(miembro.referenciaPago),
     formaPagoId: nullIfEmpty(miembro.formaPagoId),
     esSocioHonor: Boolean(miembro.esSocioHonor),
     fechaAlta: nullIfEmpty(miembro.fechaAlta),
@@ -332,7 +347,7 @@ function buildUpdatePayload(miembro) {
     disponibilidad: normalizeText(miembro.disponibilidad),
     horasDisponiblesSemana: miembro.horasDisponiblesSemana === '' ? null : miembro.horasDisponiblesSemana,
     profesion: normalizeText(miembro.profesion),
-    nivelEstudios: normalizeText(miembro.nivelEstudios),
+    nivelEstudiosId: nullIfEmpty(miembro.nivelEstudiosId),
     experienciaVoluntariado: normalizeText(miembro.experienciaVoluntariado),
     intereses: normalizeText(miembro.intereses),
     observacionesVoluntariado: normalizeText(miembro.observacionesVoluntariado),

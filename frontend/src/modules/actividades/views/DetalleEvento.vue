@@ -9,34 +9,7 @@
     </div>
 
     <div v-else-if="evento">
-      <!-- Cabecera -->
-      <div class="bg-white rounded-lg shadow p-6 mb-6 border border-gray-100">
-        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          <div class="flex-1">
-            <div class="flex flex-wrap items-center gap-2 mb-3">
-              <span
-                v-if="evento.tipoEvento"
-                class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800"
-              >{{ evento.tipoEvento.nombre }}</span>
-              <span
-                v-if="evento.estado"
-                class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
-                :style="evento.estado.color ? `background:${evento.estado.color}22;color:${evento.estado.color}` : 'background:#f3f4f6;color:#374151'"
-              >{{ evento.estado.nombre }}</span>
-            </div>
-            <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ evento.nombre }}</h1>
-            <p v-if="evento.descripcionCorta" class="text-gray-600">{{ evento.descripcionCorta }}</p>
-          </div>
-          <div class="flex gap-2 flex-shrink-0">
-            <router-link
-              to="/eventos"
-              class="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              ← Volver
-            </router-link>
-          </div>
-        </div>
-      </div>
+      <DetailHeader fallback="/eventos" />
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Columna principal -->
@@ -72,7 +45,7 @@
             <table v-else class="min-w-full divide-y divide-gray-200 text-sm">
               <thead class="bg-gray-50">
                 <tr>
-                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Miembro</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ orgConfig.Miembro }}</th>
                   <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rol</th>
                   <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                 </tr>
@@ -239,10 +212,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
+import DetailHeader from '@/components/common/DetailHeader.vue'
 import { executeQuery } from '@/graphql/client'
 import { GET_EVENTO_BY_ID } from '@/graphql/queries/eventos.js'
+import { useOrgConfigStore } from '@/stores/orgConfig'
 
 const route = useRoute()
+const orgConfig = useOrgConfigStore()
 const loading = ref(false)
 const error = ref('')
 const evento = ref(null)

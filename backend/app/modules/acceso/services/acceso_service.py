@@ -45,6 +45,9 @@ class AccesoService:
         email: str,
         password: str,
         activo: bool = True,
+        miembro_id: Optional[UUID] = None,
+        tipo_vinculacion_id: Optional[UUID] = None,
+        entidad_vinculacion: Optional[str] = None,
     ) -> Usuario:
         """Crea un nuevo usuario del sistema con password hasheado.
 
@@ -61,6 +64,9 @@ class AccesoService:
             email=email,
             password_hash=hash_password(password),
             activo=activo,
+            miembro_id=miembro_id,
+            tipo_vinculacion_id=tipo_vinculacion_id,
+            entidad_vinculacion=entidad_vinculacion,
         )
         self.session.add(usuario)
         await self.session.flush()

@@ -1,16 +1,21 @@
 """Resolvers de autenticación, gestión de usuarios y juntas directivas."""
 
+import secrets
 import uuid
 from datetime import datetime, date
 from typing import Optional
 
 import strawberry
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from ..core.audit import log_action
-from ..core.security import create_access_token, verify_password
+from ..core.security import create_access_token, hash_password, verify_password
 from ..modules.acceso.models.auditoria import TipoAccion
-from ..modules.acceso.models.usuario import Usuario
+from ..modules.acceso.models.usuario import Usuario, UsuarioRol
+from ..modules.acceso.models.rol import Rol
+from ..modules.acceso.models.rol_transaccion import RolTransaccion
+from ..modules.acceso.models.transaccion import Transaccion
 from ..modules.acceso.services.acceso_service import AccesoService
 from ..modules.acceso.services.password_reset_service import PasswordResetService
 
@@ -30,8 +35,34 @@ class LoginPayload:
     user: UserPayload
 
 
+@strawberry.type
+class MiPerfilPayload:
+    """Perfil completo del usuario autenticado incluyendo datos de membresía."""
+    id: uuid.UUID
+    email: str
+    activo: bool
+    ultimo_acceso: Optional[datetime]
+    entidad_vinculacion: Optional[str]
+    miembro_id: Optional[uuid.UUID]
+    tipo_vinculacion_id: Optional[uuid.UUID]
+    tipo_vinculacion_nombre: Optional[str]
+
+
 def _to_payload(u: Usuario) -> UserPayload:
     return UserPayload(id=u.id, email=u.email, activo=u.activo)
+
+
+def _to_mi_perfil(u: Usuario) -> MiPerfilPayload:
+    return MiPerfilPayload(
+        id=u.id,
+        email=u.email,
+        activo=u.activo,
+        ultimo_acceso=u.ultimo_acceso,
+        entidad_vinculacion=u.entidad_vinculacion,
+        miembro_id=u.miembro_id,
+        tipo_vinculacion_id=u.tipo_vinculacion_id,
+        tipo_vinculacion_nombre=u.tipo_vinculacion.nombre if u.tipo_vinculacion else None,
+    )
 
 
 @strawberry.type
@@ -43,6 +74,36 @@ class AuthQuery:
         if user is None:
             return None
         return _to_payload(user)
+
+    @strawberry.field
+    async def mi_perfil(self, info: strawberry.Info) -> Optional[MiPerfilPayload]:
+        """Devuelve el perfil completo del usuario autenticado."""
+        user: Optional[Usuario] = info.context.user
+        if user is None:
+            return None
+        return _to_mi_perfil(user)
+
+    @strawberry.field
+    async def mis_transacciones(self, info: strawberry.Info) -> list[str]:
+        """Devuelve los códigos de transacción permitidos para el usuario autenticado."""
+        user: Optional[Usuario] = info.context.user
+        if user is None:
+            return []
+        session = info.context.session
+        result = await session.execute(
+            select(Transaccion.codigo)
+            .join(RolTransaccion, RolTransaccion.transaccion_id == Transaccion.id)
+            .join(Rol, Rol.id == RolTransaccion.rol_id)
+            .join(UsuarioRol, UsuarioRol.rol_id == Rol.id)
+            .where(
+                UsuarioRol.usuario_id == user.id,
+                UsuarioRol.activo == True,  # noqa: E712
+                UsuarioRol.eliminado == False,
+                Transaccion.activa == True,
+            )
+            .distinct()
+        )
+        return list(result.scalars())
 
 
 @strawberry.type
@@ -95,13 +156,41 @@ class AuthMutation:
         self,
         info: strawberry.Info,
         email: str,
-        password: str,
+        password: Optional[str] = None,
         activo: bool = True,
+        miembro_id: Optional[uuid.UUID] = None,
+        tipo_vinculacion_id: Optional[uuid.UUID] = None,
+        entidad_vinculacion: Optional[str] = None,
+        enviar_email_bienvenida: bool = False,
     ) -> UserPayload:
-        """Crea un nuevo usuario del sistema. Requiere permisos de administrador."""
+        """Crea un nuevo usuario del sistema. Requiere permisos de administrador.
+
+        Si enviar_email_bienvenida=True, la contraseña proporcionada es ignorada
+        y se genera una temporal; el usuario recibirá un email para establecer la suya.
+        Requiere que el servidor SMTP esté configurado en Parámetros Generales.
+        """
         session = info.context.session
+
+        pwd = password
+        if enviar_email_bienvenida:
+            pwd = secrets.token_urlsafe(32)
+        elif not pwd:
+            raise ValueError("Debe proporcionar una contraseña o activar el envío de email de bienvenida")
+
         svc = AccesoService(session)
-        usuario = await svc.crear_usuario(email=email, password=password, activo=activo)
+        usuario = await svc.crear_usuario(
+            email=email,
+            password=pwd,
+            activo=activo,
+            miembro_id=miembro_id,
+            tipo_vinculacion_id=tipo_vinculacion_id,
+            entidad_vinculacion=entidad_vinculacion,
+        )
+
+        if enviar_email_bienvenida:
+            reset_svc = PasswordResetService(session)
+            await reset_svc.solicitar_reset(email.strip().lower())
+
         await session.commit()
         return _to_payload(usuario)
 
@@ -197,6 +286,28 @@ class AuthMutation:
         svc = PasswordResetService(info.context.session)
         await svc.confirmar_reset(token, nueva_password)
         await info.context.session.commit()
+        return True
+
+    @strawberry.mutation
+    async def cambiar_mi_password(
+        self,
+        info: strawberry.Info,
+        password_actual: str,
+        nueva_password: str,
+    ) -> bool:
+        """Permite al usuario autenticado cambiar su propia contraseña."""
+        usuario: Optional[Usuario] = info.context.user
+        if not usuario:
+            raise ValueError("No autenticado")
+        if not verify_password(password_actual, usuario.password_hash):
+            raise ValueError("La contraseña actual no es correcta")
+        if len(nueva_password) < 8:
+            raise ValueError("La nueva contraseña debe tener al menos 8 caracteres")
+        session = info.context.session
+        result = await session.execute(select(Usuario).where(Usuario.id == usuario.id))
+        db_usuario = result.scalar_one()
+        db_usuario.password_hash = hash_password(nueva_password)
+        await session.commit()
         return True
 
     @strawberry.mutation

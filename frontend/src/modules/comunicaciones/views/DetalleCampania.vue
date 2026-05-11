@@ -27,48 +27,8 @@
 
     <!-- Contenido principal -->
     <div v-else-if="campania" class="bg-white rounded-lg shadow">
-      <!-- Encabezado -->
-      <div class="px-6 py-4 border-b border-gray-200">
-        <div class="flex justify-between items-start">
-          <div>
-            <div class="flex items-center space-x-3">
-              <h2 class="text-2xl font-bold text-gray-900">{{ campania.nombre }}</h2>
-              <span :class="claseEstado" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium">
-                {{ campania.estado?.nombre || 'Sin estado' }}
-              </span>
-            </div>
-            <div class="mt-2 flex items-center space-x-4 text-sm text-gray-600">
-              <span v-if="campania.lema" class="text-gray-700">Lema: "{{ campania.lema }}"</span>
-              <span v-if="campania.tipoCampania" class="text-purple-600 bg-purple-100 px-2 py-0.5 rounded">
-                {{ campania.tipoCampania.nombre }}
-              </span>
-              <span v-if="campania.fechaInicioPlan || campania.fechaFinPlan">
-                📅 {{ formatearFecha(campania.fechaInicioPlan) }} - {{ formatearFecha(campania.fechaFinPlan) }}
-              </span>
-            </div>
-            <p v-if="campania.descripcionCorta" class="mt-2 text-gray-700">
-              {{ campania.descripcionCorta }}
-            </p>
-            <a
-              v-if="campania.urlExterna"
-              :href="campania.urlExterna"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="mt-2 inline-flex items-center text-sm text-purple-600 hover:text-purple-800"
-            >
-              🔗 Ver en laicismo.org
-            </a>
-          </div>
-
-          <div class="flex space-x-3">
-            <router-link
-              to="/campanias"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Volver
-            </router-link>
-          </div>
-        </div>
+      <div class="px-6 pt-4">
+        <DetailHeader fallback="/campanias" />
       </div>
 
       <!-- Pestañas -->
@@ -96,31 +56,19 @@
 
       <!-- Contenido de pestañas -->
       <div class="p-6">
-        <InformacionGeneralTab 
-          v-if="pestañaActiva === 'informacion'" 
-          :campania="campania" 
-        />
-        
-        <ObjetivosTab 
-          v-else-if="pestañaActiva === 'objetivos'" 
-          :objetivos="objetivos" 
-        />
-        
-        <ActividadesTab 
-          v-else-if="pestañaActiva === 'actividades'" 
-          :actividades="actividades" 
-        />
-        
-        <RecursosTab 
-          v-else-if="pestañaActiva === 'recursos'" 
+        <InformacionGeneralTab
+          v-if="pestañaActiva === 'informacion'"
           :campania="campania"
-          :recursos-humanos="recursosHumanos"
-          :recursos-materiales="recursosMateriales"
         />
-        
-        <ResultadosTab 
-          v-else-if="pestañaActiva === 'resultados'" 
-          :campania="campania" 
+
+        <ActividadesTab
+          v-else-if="pestañaActiva === 'actividades'"
+          :actividades="actividades"
+        />
+
+        <ResultadosTab
+          v-else-if="pestañaActiva === 'resultados'"
+          :campania="campania"
         />
       </div>
     </div>
@@ -131,14 +79,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
+import DetailHeader from '@/components/common/DetailHeader.vue'
 import { executeQuery } from '@/graphql/client'
 import { GET_CAMPANIA } from '@/graphql/queries/campanias'
+import { badgeStyle } from '@/utils/badge'
 
 // Importar componentes de pestañas
 import InformacionGeneralTab from '@/components/campanias/tabs/InformacionGeneralTab.vue'
-import ObjetivosTab from '@/components/campanias/tabs/ObjetivosTab.vue'
 import ActividadesTab from '@/components/campanias/tabs/ActividadesTab.vue'
-import RecursosTab from '@/components/campanias/tabs/RecursosTab.vue'
 import ResultadosTab from '@/components/campanias/tabs/ResultadosTab.vue'
 
 const route = useRoute()
@@ -148,43 +96,27 @@ const campania = ref(null)
 const pestañaActiva = ref('informacion')
 
 // Datos relacionados
-const objetivos = ref([])
 const actividades = ref([])
-const recursosHumanos = ref([])
-const recursosMateriales = ref([])
 
 const titulo = computed(() => '')
 const subtitulo = computed(() => '')
 
-const pestañas = computed(() => [
-  { 
-    id: 'informacion', 
-    nombre: 'Información', 
-    icono: '📋' 
-  },
-  { 
-    id: 'objetivos', 
-    nombre: 'Objetivos', 
-    icono: '🎯', 
-    contador: objetivos.value.length 
-  },
-  { 
-    id: 'actividades', 
-    nombre: 'Actividades', 
-    icono: '📅', 
-    contador: actividades.value.length 
-  },
-  { 
-    id: 'recursos', 
-    nombre: 'Recursos', 
-    icono: '💰' 
-  },
-  { 
-    id: 'resultados', 
-    nombre: 'Resultados', 
-    icono: '📊' 
+const ESTADOS_CIERRE = ['Finalizada', 'Cancelada']
+
+const esCierre = computed(() =>
+  campania.value ? ESTADOS_CIERRE.includes(campania.value.estado?.nombre) : false
+)
+
+const pestañas = computed(() => {
+  const tabs = [
+    { id: 'informacion', nombre: 'Información', icono: '📋' },
+    { id: 'actividades', nombre: 'Tareas', icono: '📅', contador: actividades.value.length },
+  ]
+  if (esCierre.value) {
+    tabs.push({ id: 'resultados', nombre: 'Resultados', icono: '📊' })
   }
-])
+  return tabs
+})
 
 onMounted(() => {
   cargarCampania()
@@ -212,15 +144,6 @@ const cargarCampania = async () => {
   }
 }
 
-const claseEstado = computed(() => {
-  const codigo = campania.value?.estado?.codigo
-  if (codigo === 'ACTIVA') return 'bg-green-100 text-green-800'
-  if (codigo === 'PLANIFICADA') return 'bg-blue-100 text-blue-800'
-  if (codigo === 'FINALIZADA') return 'bg-gray-100 text-gray-800'
-  if (codigo === 'CANCELADA') return 'bg-red-100 text-red-800'
-  if (codigo === 'SUSPENDIDA') return 'bg-yellow-100 text-yellow-800'
-  return 'bg-gray-100 text-gray-800'
-})
 
 const formatearFecha = (fecha) => {
   if (!fecha) return 'No especificada'

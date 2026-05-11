@@ -74,7 +74,7 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Depende de</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Contacto</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Miembros</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ orgConfig.Miembros }}</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -133,10 +133,10 @@
               <router-link
                 :to="{ path: '/miembros', query: { agrupacion: ag.id } }"
                 class="inline-flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 font-medium"
-                :title="'Ver miembros de ' + ag.nombre"
+                :title="`Ver ${orgConfig.miembros} de ${ag.nombre}`"
               >
                 <span>{{ conteoMiembros(ag.id) }}</span>
-                <span class="hidden sm:inline">miembros</span>
+                <span class="hidden sm:inline">{{ orgConfig.miembros }}</span>
                 <span>→</span>
               </router-link>
             </td>
@@ -156,6 +156,7 @@ import { ref, computed, onMounted } from 'vue'
 import { gql } from 'graphql-request'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { graphqlClient } from '@/graphql/client.js'
+import { useOrgConfigStore } from '@/stores/orgConfig'
 
 const QUERY = gql`
   query Agrupaciones {
@@ -187,6 +188,7 @@ const TIPO_CONFIG = {
 
 const TIPOS_ORDEN = ['NACIONAL', 'AUTONOMICO', 'PROVINCIAL', 'LOCAL']
 
+const orgConfig = useOrgConfigStore()
 const loading = ref(false)
 const error = ref('')
 const agrupaciones = ref([])

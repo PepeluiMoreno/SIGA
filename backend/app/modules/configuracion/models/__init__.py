@@ -1,5 +1,6 @@
 """Modelos del módulo de configuración."""
 
+from .tema_ui import TemaUI
 from .configuracion import Configuracion, ReglaValidacionConfig, HistorialConfiguracion
 from .estados import (
     EstadoBase,
@@ -15,6 +16,7 @@ from .estados import (
     HistorialEstado,
 )
 __all__ = [
+    'TemaUI',
     # Configuración del sistema
     'Configuracion',
     'ReglaValidacionConfig',

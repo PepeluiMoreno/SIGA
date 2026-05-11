@@ -25,6 +25,7 @@ from .actividad import (
     KPIActividad,
     MedicionKPI,
 )
+from .plan_actividad import PlanActividad
 from .campana import (
     TipoCampania,
     Campania,
@@ -54,6 +55,8 @@ from .evento import (
 )
 
 __all__ = [
+    # JTI base
+    'PlanActividad',
     # Estados (re-exportados desde configuracion)
     'EstadoActividad',
     'EstadoTarea',

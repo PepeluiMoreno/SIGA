@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="Militancia" subtitle="Gestión de miembros, colaboración y disponibilidad">
+  <AppLayout title="Membresía" subtitle="Gestión de miembros, colaboración y disponibilidad">
     <!-- Barra superior con búsqueda y botón nuevo -->
     <div class="mb-4 flex items-center justify-between gap-4">
       <div class="relative flex-1 max-w-md">

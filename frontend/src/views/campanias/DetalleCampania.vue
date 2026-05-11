@@ -33,7 +33,8 @@
           <div>
             <div class="flex items-center space-x-3">
               <h2 class="text-2xl font-bold text-gray-900">{{ campania.nombre }}</h2>
-              <span :class="claseEstado" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium">
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border"
+                :style="badgeStyle(campania.estado?.color)">
                 {{ campania.estado?.nombre || 'Sin estado' }}
               </span>
             </div>
@@ -133,6 +134,7 @@ import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { executeQuery } from '@/graphql/client'
 import { GET_CAMPANIA } from '@/graphql/queries/campanias'
+import { badgeStyle } from '@/utils/badge'
 
 // Importar componentes de pestañas
 import InformacionGeneralTab from '@/components/campanias/tabs/InformacionGeneralTab.vue'
@@ -212,15 +214,6 @@ const cargarCampania = async () => {
   }
 }
 
-const claseEstado = computed(() => {
-  const codigo = campania.value?.estado?.codigo
-  if (codigo === 'ACTIVA') return 'bg-green-100 text-green-800'
-  if (codigo === 'PLANIFICADA') return 'bg-blue-100 text-blue-800'
-  if (codigo === 'FINALIZADA') return 'bg-gray-100 text-gray-800'
-  if (codigo === 'CANCELADA') return 'bg-red-100 text-red-800'
-  if (codigo === 'SUSPENDIDA') return 'bg-yellow-100 text-yellow-800'
-  return 'bg-gray-100 text-gray-800'
-})
 
 const formatearFecha = (fecha) => {
   if (!fecha) return 'No especificada'

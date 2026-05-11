@@ -5,6 +5,7 @@ import { gql } from 'graphql-request'
 
 import { graphqlClient, setAuthToken } from '@/graphql/client.js'
 import { useDebugStore } from '@/stores/debug.js'
+import { usePermisos } from '@/composables/usePermisos.js'
 
 const LOGIN_MUTATION = gql`
   mutation Login($email: String!, $password: String!) {
@@ -21,6 +22,7 @@ const LOGIN_MUTATION = gql`
 
 export const useAuthStore = defineStore('auth', () => {
   const router = useRouter()
+  const permisos = usePermisos()
 
   const token = ref(localStorage.getItem('siga_token'))
   const user = ref(JSON.parse(localStorage.getItem('siga_user') || 'null'))
@@ -38,6 +40,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('siga_token', authData.token)
     localStorage.setItem('siga_user', JSON.stringify(authData.user))
     setAuthToken(authData.token)
+    permisos.cargar()
     try {
       useDebugStore().refreshSnapshot()
     } catch {
@@ -51,6 +54,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('siga_token')
     localStorage.removeItem('siga_user')
     setAuthToken(null)
+    permisos.limpiar()
     try {
       useDebugStore().refreshSnapshot()
     } catch {

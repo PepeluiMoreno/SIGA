@@ -3,36 +3,32 @@
     :title="esEdicion ? `Editar rol: ${form.nombre || '…'}` : 'Nuevo rol'"
     :subtitle="esEdicion && rolOriginal ? `${rolOriginal.codigo} · ${rolOriginal.tipo} · Nivel ${rolOriginal.nivel}` : 'Definición de atributos y permisos'"
   >
-    <!-- Breadcrumb -->
-    <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
-      <router-link to="/roles" class="hover:text-purple-600 transition-colors">Roles y permisos</router-link>
-      <span>›</span>
-      <span class="text-gray-900 font-medium">{{ esEdicion ? (form.nombre || '…') : 'Nuevo rol' }}</span>
-    </div>
+    <DetailHeader fallback="/roles" />
 
     <!-- Carga inicial -->
     <div v-if="cargandoRol" class="flex items-center justify-center py-24">
-      <div class="h-8 w-8 rounded-full border-4 border-purple-600 border-t-transparent animate-spin"></div>
+      <div class="h-8 w-8 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin"></div>
     </div>
-    <div v-else-if="errorCarga" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
+    <div v-else-if="errorCarga" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
       {{ errorCarga }}
     </div>
 
     <template v-else>
-      <div class="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 lg:h-[calc(100vh-168px)]">
+      <div class="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 lg:h-full pb-16">
 
         <!-- ── Col izquierda: atributos básicos ──────────────────────── -->
         <div class="flex flex-col gap-4 min-h-0">
-          <section class="bg-white rounded-lg border border-gray-200 flex-shrink-0">
-            <div class="px-4 py-2 border-b border-gray-100 bg-gray-50 rounded-t-lg">
-              <h2 class="text-xs font-semibold text-gray-700 uppercase tracking-wide">Datos del rol</h2>
+          <section class="bg-white rounded-xl border border-slate-200 shadow-sm flex-shrink-0">
+            <div class="flex items-center gap-3 px-4 py-3 border-b border-slate-200">
+              <span class="shrink-0 w-1.5 h-5 rounded-full bg-indigo-500"></span>
+              <h2 class="text-sm font-semibold text-slate-800">Datos del rol</h2>
             </div>
             <div class="px-4 py-4 space-y-4">
               <div>
                 <label class="label">Código <span class="text-red-500">*</span></label>
                 <input v-model="form.codigo" type="text" class="input font-mono uppercase"
                   placeholder="MI_ROL" :disabled="esEdicion && rolOriginal?.sistema" />
-                <p class="text-xs text-gray-400 mt-0.5">Letras mayúsculas, números y guión bajo</p>
+                <p class="text-xs text-slate-400 mt-0.5">Letras mayúsculas, números y guión bajo</p>
               </div>
               <div>
                 <label class="label">Nombre <span class="text-red-500">*</span></label>
@@ -46,14 +42,14 @@
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <div class="flex items-center gap-1 mb-0.5">
-                    <label class="text-xs font-medium text-gray-600">Tipo</label>
+                    <label class="text-xs font-medium text-slate-600">Tipo</label>
                     <span class="relative group/tip flex items-center">
-                      <InformationCircleIcon class="w-3.5 h-3.5 text-gray-400 cursor-help" />
-                      <div class="absolute left-0 top-5 z-50 hidden group-hover/tip:block w-64 rounded-lg border border-gray-200 bg-white shadow-lg p-3 text-xs text-gray-700 space-y-2">
-                        <p class="font-semibold text-gray-900 mb-1">Tipos de rol</p>
+                      <InformationCircleIcon class="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                      <div class="absolute left-0 top-5 z-50 hidden group-hover/tip:block w-64 rounded-lg border border-slate-200 bg-white shadow-lg p-3 text-xs text-slate-700 space-y-2">
+                        <p class="font-semibold text-slate-900 mb-1">Tipos de rol</p>
                         <div v-for="t in TIPOS_ROL_INFO" :key="t.valor" class="flex gap-2">
                           <span class="font-medium shrink-0" :class="t.color">{{ t.etiqueta }}</span>
-                          <span class="text-gray-500">{{ t.descripcion }}</span>
+                          <span class="text-slate-500">{{ t.descripcion }}</span>
                         </div>
                       </div>
                     </span>
@@ -91,7 +87,7 @@
                       {{ nv.label }}
                     </option>
                   </select>
-                  <p class="text-xs text-gray-400 mt-0.5">
+                  <p class="text-xs text-slate-400 mt-0.5">
                     Solo se ofrecen los niveles compatibles con la implantación geográfica de la organización.
                   </p>
                 </div>
@@ -106,44 +102,23 @@
 
               <label class="flex items-center gap-2 cursor-pointer">
                 <input v-model="form.activo" type="checkbox"
-                  class="h-3.5 w-3.5 rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
-                <span class="text-xs text-gray-700">Rol activo</span>
+                  class="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                <span class="text-xs text-slate-700">Rol activo</span>
               </label>
             </div>
           </section>
 
-          <!-- Error y acciones -->
-          <div v-if="errorGuardado"
-            class="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700 flex-shrink-0">
-            {{ errorGuardado }}
-          </div>
-
-          <div class="flex items-center gap-3 flex-shrink-0">
-            <button @click="guardar" :disabled="guardando"
-              class="px-5 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors flex items-center gap-2">
-              <span v-if="guardando"
-                class="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin"></span>
-              {{ guardando ? 'Guardando…' : (esEdicion ? 'Guardar cambios' : 'Crear rol') }}
-            </button>
-            <button type="button" @click="router.push('/roles')"
-              class="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5">
-              <ArrowLeftIcon class="w-3.5 h-3.5" />
-              Volver
-            </button>
-            <span v-if="guardadoOk" class="text-sm text-green-600 flex items-center gap-1">
-              <CheckIcon class="w-4 h-4" /> Guardado
-            </span>
-          </div>
         </div>
 
         <!-- ── Col derecha: árbol funcionalidades + transacciones ────── -->
-        <div class="flex flex-col min-h-0 bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div class="flex flex-col min-h-0 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
 
           <!-- Cabecera del panel -->
-          <div class="px-4 py-2 border-b border-gray-100 bg-gray-50 flex items-center justify-between flex-shrink-0">
-            <h2 class="text-xs font-semibold text-gray-700 uppercase tracking-wide">Permisos</h2>
-            <div v-if="!cargandoFuncs" class="flex items-center gap-3 text-xs text-gray-500">
-              <span><span class="font-semibold text-purple-700">{{ selectedFuncIds.length }}</span> funcionalidades</span>
+          <div class="flex items-center gap-3 px-4 py-3 border-b border-slate-200 flex-shrink-0">
+            <span class="shrink-0 w-1.5 h-5 rounded-full bg-violet-500"></span>
+            <h2 class="text-sm font-semibold text-slate-800">Permisos</h2>
+            <div v-if="!cargandoFuncs" class="flex items-center gap-3 text-xs text-slate-500">
+              <span><span class="font-semibold text-indigo-700">{{ selectedFuncIds.length }}</span> funcionalidades</span>
               <span v-if="selectedTxIds.length">
                 · <span class="font-semibold text-blue-600">{{ selectedTxIds.length }}</span> permisos directos
               </span>
@@ -151,9 +126,9 @@
           </div>
 
           <!-- Buscador -->
-          <div class="px-4 py-2 border-b border-gray-100 flex-shrink-0">
+          <div class="px-4 py-2 border-b border-slate-100 flex-shrink-0">
             <div class="relative">
-              <MagnifyingGlassIcon class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+              <MagnifyingGlassIcon class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
               <input v-model="busqueda" type="text" placeholder="Buscar funcionalidad o transacción…"
                 class="input pl-8 py-1.5 text-sm" />
             </div>
@@ -161,12 +136,12 @@
 
           <!-- Cargando -->
           <div v-if="cargandoFuncs" class="flex-1 flex items-center justify-center">
-            <div class="h-6 w-6 rounded-full border-4 border-purple-500 border-t-transparent animate-spin"></div>
+            <div class="h-6 w-6 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
           </div>
 
           <!-- Sin resultados -->
           <div v-else-if="funcsPorModulo.length === 0"
-            class="flex-1 flex items-center justify-center text-sm text-gray-400">
+            class="flex-1 flex items-center justify-center text-sm text-slate-400">
             {{ busqueda ? `Sin resultados para "${busqueda}"` : 'No hay funcionalidades disponibles' }}
           </div>
 
@@ -175,19 +150,19 @@
             <div v-for="grupo in funcsPorModulo" :key="grupo.modulo">
 
               <!-- Nivel 1: Módulo -->
-              <div class="sticky top-0 z-10 flex items-center gap-2 px-4 py-2 bg-gray-50 border-b border-gray-100 cursor-pointer hover:bg-gray-100 select-none"
+              <div class="sticky top-0 z-10 flex items-center gap-2 px-4 py-2 bg-slate-50 border-b border-slate-100 cursor-pointer hover:bg-slate-100 select-none"
                 @click="toggleModuloExpand(grupo.modulo)">
                 <input type="checkbox"
                   :checked="isModuloTodo(grupo.items)"
                   :indeterminate.prop="isModuloParcial(grupo.items)"
-                  class="h-3.5 w-3.5 rounded border-gray-300 text-purple-600 focus:ring-0 flex-shrink-0"
+                  class="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-0 flex-shrink-0"
                   @click.stop
                   @change="toggleModulo(grupo.items, $event.target.checked)" />
-                <span class="text-xs font-bold text-gray-500 uppercase tracking-widest flex-1">{{ grupo.modulo }}</span>
-                <span class="text-xs text-gray-400 mr-1">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-widest flex-1">{{ grupo.modulo }}</span>
+                <span class="text-xs text-slate-400 mr-1">
                   {{ grupo.items.filter(f => selectedFuncIds.includes(f.id)).length }}/{{ grupo.items.length }} funcs
                 </span>
-                <ChevronDownIcon class="w-3.5 h-3.5 text-gray-400 transition-transform flex-shrink-0"
+                <ChevronDownIcon class="w-3.5 h-3.5 text-slate-400 transition-transform flex-shrink-0"
                   :class="expandedModulos[grupo.modulo] === false ? '-rotate-90' : ''" />
               </div>
 
@@ -196,22 +171,22 @@
                 <div v-for="func in grupo.items" :key="func.id">
 
                   <!-- Nivel 2: Funcionalidad -->
-                  <div class="flex items-center gap-2 px-4 py-2.5 border-b border-gray-50 border-l-[3px] cursor-pointer transition-colors select-none"
+                  <div class="flex items-center gap-2 px-4 py-2.5 border-b border-slate-50 border-l-[3px] cursor-pointer transition-colors select-none"
                     :class="selectedFuncIds.includes(func.id)
-                      ? 'border-l-purple-400 bg-purple-50/70 hover:bg-purple-50'
-                      : 'border-l-gray-200 hover:bg-gray-50'"
+                      ? 'border-l-indigo-400 bg-indigo-50/70 hover:bg-indigo-50'
+                      : 'border-l-slate-200 hover:bg-slate-50'"
                     @click="toggleFuncExpand(func.id)">
                     <input type="checkbox" :value="func.id" v-model="selectedFuncIds"
-                      class="h-3.5 w-3.5 rounded border-gray-300 text-purple-600 focus:ring-purple-500 flex-shrink-0"
+                      class="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0"
                       @click.stop @change="onFuncChange(func)" />
-                    <ChevronRightIcon class="w-3 h-3 text-gray-400 flex-shrink-0 transition-transform duration-150"
+                    <ChevronRightIcon class="w-3 h-3 text-slate-400 flex-shrink-0 transition-transform duration-150"
                       :class="expandedFuncs[func.id] ? 'rotate-90' : ''" />
                     <div class="flex-1 min-w-0">
                       <span class="text-sm font-medium"
-                        :class="selectedFuncIds.includes(func.id) ? 'text-purple-900' : 'text-gray-800'">
+                        :class="selectedFuncIds.includes(func.id) ? 'text-indigo-900' : 'text-slate-800'">
                         {{ func.nombre }}
                       </span>
-                      <span class="ml-2 text-xs font-mono text-gray-400">{{ func.codigo }}</span>
+                      <span class="ml-2 text-xs font-mono text-slate-400">{{ func.codigo }}</span>
                     </div>
                     <div class="flex items-center gap-1.5 flex-shrink-0">
                       <span v-if="func.sistema"
@@ -228,33 +203,33 @@
                   <!-- Nivel 3: Transacciones -->
                   <div v-show="expandedFuncs[func.id]">
                     <div v-for="ft in func.transacciones" :key="ft.transaccion.id"
-                      class="flex items-center gap-2 pl-10 pr-4 py-1.5 border-b border-gray-50 border-l-[3px] transition-colors"
+                      class="flex items-center gap-2 pl-10 pr-4 py-1.5 border-b border-slate-50 border-l-[3px] transition-colors"
                       :class="selectedFuncIds.includes(func.id)
-                        ? 'border-l-purple-200 bg-purple-50/40'
-                        : 'border-l-gray-100 hover:bg-gray-50'">
+                        ? 'border-l-indigo-200 bg-indigo-50/40'
+                        : 'border-l-slate-100 hover:bg-slate-50'">
 
                       <!-- Si la funcionalidad está seleccionada: pill "heredado" -->
                       <span v-if="selectedFuncIds.includes(func.id)"
-                        class="text-xs text-purple-400 bg-purple-100 px-1.5 py-0.5 rounded flex-shrink-0">
+                        class="text-xs text-indigo-400 bg-indigo-100 px-1.5 py-0.5 rounded flex-shrink-0">
                         heredado
                       </span>
                       <!-- Si no: checkbox individual para asignación directa -->
                       <input v-else type="checkbox" :value="ft.transaccion.id" v-model="selectedTxIds"
-                        class="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0"
+                        class="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 flex-shrink-0"
                         @click.stop />
 
-                      <code class="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded w-52 flex-shrink-0 truncate"
-                        :class="selectedFuncIds.includes(func.id) ? 'text-purple-600 bg-purple-100' : ''"
+                      <code class="text-xs font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded w-52 flex-shrink-0 truncate"
+                        :class="selectedFuncIds.includes(func.id) ? 'text-indigo-600 bg-indigo-100' : ''"
                         :title="ft.transaccion.codigo">{{ ft.transaccion.codigo }}</code>
-                      <span class="text-xs text-gray-600 flex-1 truncate" :title="ft.transaccion.nombre">
+                      <span class="text-xs text-slate-600 flex-1 truncate" :title="ft.transaccion.nombre">
                         {{ ft.transaccion.nombre }}
                       </span>
                       <span class="inline-flex justify-center w-24 px-1.5 py-0.5 text-xs font-medium rounded-full flex-shrink-0"
-                        :class="TIPO_MAP[ft.transaccion.tipo?.toLowerCase()]?.badge ?? 'bg-gray-100 text-gray-600'">
+                        :class="TIPO_MAP[ft.transaccion.tipo?.toLowerCase()]?.badge ?? 'bg-slate-100 text-slate-600'">
                         {{ TIPO_MAP[ft.transaccion.tipo?.toLowerCase()]?.label ?? ft.transaccion.tipo }}
                       </span>
                       <span class="inline-flex justify-center w-20 px-1.5 py-0.5 text-xs rounded-full flex-shrink-0"
-                        :class="AMBITO_BADGE[ft.ambito] ?? 'bg-gray-100 text-gray-500'">
+                        :class="AMBITO_BADGE[ft.ambito] ?? 'bg-slate-100 text-slate-500'">
                         {{ AMBITO_LABEL[ft.ambito] ?? ft.ambito }}
                       </span>
                     </div>
@@ -269,6 +244,34 @@
         </div>
       </div>
     </template>
+
+    <!-- ══ Barra de acciones fija ═══════════════════════════════════════════ -->
+    <div class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-t border-slate-200 shadow-[0_-4px_16px_-4px_rgba(0,0,0,0.08)]">
+      <div class="max-w-screen-xl mx-auto px-6 py-3 flex items-center justify-between">
+        <p v-if="errorGuardado" class="flex items-center gap-1.5 text-xs text-red-600">
+          <ExclamationTriangleIcon class="w-4 h-4 shrink-0" />
+          {{ errorGuardado }}
+        </p>
+        <span v-else-if="guardadoOk" class="flex items-center gap-1.5 text-xs text-green-600">
+          <CheckIcon class="w-4 h-4" /> Guardado correctamente
+        </span>
+        <div v-else></div>
+        <div class="flex items-center gap-3">
+          <button type="button" @click="window.history.state?.back ? router.back() : router.push('/roles')"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+            <ArrowLeftIcon class="w-4 h-4" />
+            Volver
+          </button>
+          <button @click="guardar" :disabled="guardando"
+            class="inline-flex items-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 shadow-sm transition-colors">
+            <span v-if="guardando" class="animate-spin rounded-full h-3.5 w-3.5 border-[2px] border-white border-t-transparent"></span>
+            <CheckIcon v-else class="w-4 h-4" />
+            {{ esEdicion ? 'Guardar cambios' : 'Crear rol' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
   </AppLayout>
 </template>
 
@@ -276,6 +279,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
+import DetailHeader from '@/components/common/DetailHeader.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_ROLES, CREAR_ROL, ACTUALIZAR_ROL, GET_FUNCIONALIDADES_TODAS } from '@/graphql/queries/administracion.js'
 // GET_AGRUPACIONES_TERRITORIALES ya no se usa para niveles — los derivamos del config org
@@ -307,10 +311,10 @@ const NIVELES_POR_IMPLANTACION = {
 
 // ── Tipos de rol: descripciones para tooltip ──────────────────────────────────
 const TIPOS_ROL_INFO = [
-  { valor: 'FUNCIONAL',     etiqueta: 'Funcional',     color: 'text-purple-700', descripcion: 'Agrupa permisos por área de gestión (tesorería, secretaría, comunicación…).' },
+  { valor: 'FUNCIONAL',     etiqueta: 'Funcional',     color: 'text-indigo-700', descripcion: 'Agrupa permisos por área de gestión (tesorería, secretaría, comunicación…).' },
   { valor: 'TERRITORIAL',   etiqueta: 'Territorial',   color: 'text-green-700',  descripcion: 'Aplica dentro de un ámbito geográfico concreto (provincial, local…). Requiere nivel de agrupación.' },
   { valor: 'ORGANIZACION',  etiqueta: 'Organización',  color: 'text-blue-700',   descripcion: 'Vinculado a la estructura orgánica (comité ejecutivo, asamblea…).' },
-  { valor: 'PERSONALIZADO', etiqueta: 'Personalizado', color: 'text-gray-700',   descripcion: 'De propósito general, compuesto manualmente con funcionalidades sueltas.' },
+  { valor: 'PERSONALIZADO', etiqueta: 'Personalizado', color: 'text-slate-700',   descripcion: 'De propósito general, compuesto manualmente con funcionalidades sueltas.' },
   { valor: 'SISTEMA',       etiqueta: 'Sistema',       color: 'text-red-700',    descripcion: 'Gestionado internamente. No debe modificarse manualmente.' },
 ]
 
@@ -320,7 +324,7 @@ const TIPOS = [
   { value: 'escritura',     label: 'Escritura',     badge: 'bg-green-50 text-green-700',  bg: 'bg-green-50 text-green-600', dot: 'bg-green-400' },
   { value: 'aprobacion',    label: 'Aprobación',    badge: 'bg-amber-50 text-amber-700',  bg: 'bg-amber-50 text-amber-600', dot: 'bg-amber-400' },
   { value: 'critica',       label: 'Crítica',       badge: 'bg-red-50 text-red-700',      bg: 'bg-red-50 text-red-600',     dot: 'bg-red-400' },
-  { value: 'configuracion', label: 'Configuración', badge: 'bg-gray-100 text-gray-600',   bg: 'bg-gray-100 text-gray-500',  dot: 'bg-gray-400' },
+  { value: 'configuracion', label: 'Configuración', badge: 'bg-slate-100 text-slate-600',   bg: 'bg-slate-100 text-slate-500',  dot: 'bg-slate-400' },
 ]
 const TIPO_MAP    = Object.fromEntries(TIPOS.map(t => [t.value, t]))
 const AMBITO_BADGE = { GLOBAL: 'bg-blue-50 text-blue-600', TERRITORIAL: 'bg-green-50 text-green-600', PROPIO: 'bg-orange-50 text-orange-600' }
@@ -532,7 +536,7 @@ async function guardar() {
         },
       })
       guardadoOk.value = true
-      setTimeout(() => router.push('/roles'), 1200)
+      setTimeout(() => window.history.state?.back ? router.back() : router.push('/roles'), 1200)
     } else {
       await graphqlClient.request(CREAR_ROL, {
         data: {
@@ -548,7 +552,8 @@ async function guardar() {
           transaccionIds:   selectedTxIds.value,
         },
       })
-      router.push('/roles')
+      if (window.history.state?.back) router.back()
+      else router.push('/roles')
     }
   } catch (e) {
     errorGuardado.value = e?.response?.errors?.[0]?.message ?? 'Error al guardar'
@@ -568,11 +573,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.label { @apply block text-xs font-medium text-gray-600 mb-0.5; }
+.label { @apply block text-sm font-medium text-slate-700 mb-1.5; }
 .input {
-  @apply w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm text-gray-900
-         placeholder-gray-400 focus:border-purple-500 focus:ring-1 focus:ring-purple-500
-         focus:outline-none transition-colors;
+  @apply h-10 w-full rounded-lg border border-slate-300 px-3 text-sm text-slate-900
+         placeholder-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500
+         focus:outline-none transition-colors bg-white;
 }
-.input:disabled { @apply bg-gray-50 text-gray-500 cursor-not-allowed; }
+.input:disabled { @apply bg-slate-50 text-slate-400 cursor-not-allowed; }
 </style>

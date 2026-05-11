@@ -7,12 +7,12 @@
         v-for="nivel in nivelesResumen"
         :key="nivel.tipo"
         class="rounded-lg shadow p-4 border cursor-pointer transition-colors"
-        :class="[nivel.bg, nivel.border, filtroTipo === nivel.tipo ? 'ring-2 ring-offset-1 ' + nivel.ring : '']"
-        @click="toggleFiltroTipo(nivel.tipo)"
+        :class="[nivel.bg, nivel.border, filters.nivel === nivel.tipo ? 'ring-2 ring-offset-1 ' + nivel.ring : '']"
+        @click="filters.nivel = filters.nivel === nivel.tipo ? '' : nivel.tipo"
       >
         <div class="flex items-center">
           <div class="h-10 w-10 rounded-lg flex items-center justify-center mr-3" :class="nivel.iconBg">
-            <span class="text-lg">{{ nivel.icon }}</span>
+            <component :is="nivel.icon" class="w-5 h-5" :class="nivel.iconText" />
           </div>
           <div>
             <p class="text-xs text-gray-500">{{ nivel.label }}</p>
@@ -23,36 +23,19 @@
     </div>
 
     <!-- Filtros -->
-    <div class="mb-4 bg-white rounded-lg shadow p-4 border border-gray-100">
-      <div class="flex flex-col md:flex-row md:items-center gap-3">
-        <div class="flex-1">
-          <input
-            v-model="busqueda"
-            type="text"
-            placeholder="Buscar por nombre..."
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-          />
-        </div>
-        <select v-model="filtroActivo" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-          <option value="">Todas (activas e inactivas)</option>
-          <option value="true">Solo activas</option>
-          <option value="false">Solo inactivas</option>
-        </select>
-        <button
-          v-if="filtroTipo || busqueda || filtroActivo"
-          @click="limpiarFiltros"
-          class="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50"
-        >
-          Limpiar filtros
-        </button>
-      </div>
-    </div>
+    <FilterBar
+      v-model="filters"
+      v-model:search="busqueda"
+      search-placeholder="Buscar por nombre o código…"
+      :fields="filterFields"
+      :lazy="true"
+      :count-text="filtersApplied ? `${agrupacionesFiltradas.length} de ${agrupaciones.length} agrupaciones` : ''"
+      class="mb-4"
+      @apply="aplicarFiltros"
+    />
 
     <!-- Loading / Error -->
-    <div v-if="loading" class="text-center py-12">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-      <p class="mt-2 text-gray-600 text-sm">Cargando agrupaciones...</p>
-    </div>
+    <EstadoCarga v-if="loading" mensaje="Cargando agrupaciones..." />
 
     <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
       {{ error }}
@@ -60,13 +43,14 @@
 
     <!-- Tabla -->
     <div v-else class="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
-      <div v-if="agrupacionesFiltradas.length === 0" class="text-center py-12">
-        <span class="text-4xl">🗺️</span>
+      <EstadoPendiente v-if="!filtersApplied" />
+      <div v-else-if="agrupacionesFiltradas.length === 0" class="text-center py-12">
+        <MapPinIcon class="w-10 h-10 text-gray-300 mx-auto" />
         <h3 class="text-sm font-medium text-gray-900 mt-2">No hay agrupaciones</h3>
         <p class="text-sm text-gray-500 mt-1">No se encontraron agrupaciones con los filtros seleccionados.</p>
       </div>
 
-      <table v-else class="min-w-full divide-y divide-gray-200">
+      <table v-else-if="filtersApplied" class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agrupación</th>
@@ -74,7 +58,7 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Depende de</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Contacto</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Miembros</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -85,12 +69,12 @@
           >
             <td class="px-6 py-4">
               <div class="flex items-center">
-                <div
-                  class="h-9 w-9 rounded-lg flex items-center justify-center mr-3 flex-shrink-0 text-base"
-                  :class="tipoConfig(ag.tipo).iconBg"
-                >
-                  {{ tipoConfig(ag.tipo).icon }}
-                </div>
+              <div
+                class="h-9 w-9 rounded-lg flex items-center justify-center mr-3 flex-shrink-0"
+                :class="tipoConfig(ag.tipoUnidad).iconBg"
+              >
+                <component :is="tipoConfig(ag.tipoUnidad).icon" class="w-4 h-4" :class="tipoConfig(ag.tipoUnidad).iconText" />
+              </div>
                 <div>
                   <p class="text-sm font-medium text-gray-900">{{ ag.nombre }}</p>
                   <p v-if="ag.nombreCorto && ag.nombreCorto !== ag.nombre" class="text-xs text-gray-500">{{ ag.nombreCorto }}</p>
@@ -100,9 +84,9 @@
             <td class="px-6 py-4 whitespace-nowrap">
               <span
                 class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
-                :class="tipoConfig(ag.tipo).badge"
+                :class="tipoConfig(ag.tipoUnidad).badge"
               >
-                {{ tipoConfig(ag.tipo).label }}
+                {{ tipoConfig(ag.tipoUnidad).label }}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 hidden md:table-cell">
@@ -111,11 +95,11 @@
             <td class="px-6 py-4 hidden lg:table-cell">
               <div class="text-sm text-gray-600 space-y-0.5">
                 <div v-if="ag.email" class="flex items-center gap-1">
-                  <span class="text-xs">✉️</span>
+                  <EnvelopeIcon class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                   <a :href="'mailto:' + ag.email" class="hover:text-purple-600 hover:underline">{{ ag.email }}</a>
                 </div>
                 <div v-if="ag.telefono" class="flex items-center gap-1">
-                  <span class="text-xs">📞</span>
+                  <PhoneIcon class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                   <span>{{ ag.telefono }}</span>
                 </div>
                 <span v-if="!ag.email && !ag.telefono" class="text-gray-400">—</span>
@@ -143,9 +127,9 @@
                 <router-link
                   :to="`/agrupaciones/${ag.id}/junta`"
                   class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium border border-indigo-200 rounded px-2 py-0.5 hover:bg-indigo-50 transition"
-                  title="Gestionar junta directiva"
+                  :title="`Gestionar ${orgConfig.organoGobierno}`"
                 >
-                  Junta
+                  {{ orgConfig.OrganoGobierno }}
                 </router-link>
               </div>
             </td>
@@ -164,7 +148,17 @@
 import { ref, computed, onMounted } from 'vue'
 import { gql } from 'graphql-request'
 import AppLayout from '@/components/common/AppLayout.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
 import { graphqlClient } from '@/graphql/client.js'
+import { useOrgConfigStore } from '@/stores/orgConfig.js'
+import {
+  MapPinIcon, WrenchScrewdriverIcon, GlobeAltIcon, BuildingOfficeIcon,
+  BuildingOffice2Icon, Squares2X2Icon, EnvelopeIcon, PhoneIcon,
+} from '@heroicons/vue/24/outline'
+import EstadoCarga from '@/components/common/EstadoCarga.vue'
+import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
+
+const orgConfig = useOrgConfigStore()
 
 const QUERY = gql`
   query Agrupaciones {
@@ -172,8 +166,8 @@ const QUERY = gql`
       id
       nombre
       nombreCorto
-      tipo
-      nivel
+      tipoId
+      tipoUnidad { id nombre naturaleza vinculo nivel }
       agrupacionPadreId
       email
       telefono
@@ -188,45 +182,96 @@ const QUERY = gql`
 `
 
 const TIPO_CONFIG = {
-  NACIONAL:   { label: 'Nacional',    icon: '🏛️', iconBg: 'bg-purple-100', badge: 'bg-purple-100 text-purple-800', bg: 'bg-purple-50', border: 'border-purple-100', textColor: 'text-purple-600', ring: 'ring-purple-400' },
-  AUTONOMICO: { label: 'Autonómica',  icon: '🌍', iconBg: 'bg-blue-100',   badge: 'bg-blue-100 text-blue-800',   bg: 'bg-blue-50',   border: 'border-blue-100',   textColor: 'text-blue-600',   ring: 'ring-blue-400' },
-  PROVINCIAL: { label: 'Provincial',  icon: '📍', iconBg: 'bg-green-100',  badge: 'bg-green-100 text-green-800', bg: 'bg-green-50',  border: 'border-green-100',  textColor: 'text-green-600',  ring: 'ring-green-400' },
-  LOCAL:      { label: 'Local',       icon: '📌', iconBg: 'bg-yellow-100', badge: 'bg-yellow-100 text-yellow-800', bg: 'bg-yellow-50', border: 'border-yellow-100', textColor: 'text-yellow-600', ring: 'ring-yellow-400' },
+  TERRITORIAL:    { icon: MapPinIcon,            label: 'Territorial',    iconBg: 'bg-blue-100',   iconText: 'text-blue-600',   badge: 'bg-blue-100 text-blue-800',     bg: 'bg-blue-50',   border: 'border-blue-100',   textColor: 'text-blue-600',   ring: 'ring-blue-400'   },
+  FUNCIONAL:      { icon: WrenchScrewdriverIcon, label: 'Funcional',      iconBg: 'bg-green-100',  iconText: 'text-green-600',  badge: 'bg-green-100 text-green-800',   bg: 'bg-green-50',  border: 'border-green-100',  textColor: 'text-green-600',  ring: 'ring-green-400'  },
+  PROGRAMATICA:   { icon: GlobeAltIcon,          label: 'Programática',   iconBg: 'bg-purple-100', iconText: 'text-purple-600', badge: 'bg-purple-100 text-purple-800', bg: 'bg-purple-50', border: 'border-purple-100', textColor: 'text-purple-600', ring: 'ring-purple-400' },
+  ADMINISTRATIVA: { icon: BuildingOfficeIcon,    label: 'Administrativa', iconBg: 'bg-gray-100',   iconText: 'text-gray-600',   badge: 'bg-gray-100 text-gray-800',     bg: 'bg-gray-50',   border: 'border-gray-100',   textColor: 'text-gray-600',   ring: 'ring-gray-400'   },
 }
+const DEFAULT_TIPO = { icon: Squares2X2Icon, label: 'Sin tipo', iconBg: 'bg-slate-100', iconText: 'text-slate-500', badge: 'bg-slate-100 text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100', textColor: 'text-slate-600', ring: 'ring-slate-400' }
 
-const TIPOS_ORDEN = ['NACIONAL', 'AUTONOMICO', 'PROVINCIAL', 'LOCAL']
+const NIVEL_LABELS = { 1: 'Nivel 1 - Nacional', 2: 'Nivel 2 - Regional', 3: 'Nivel 3 - Local' }
 
 const loading = ref(false)
 const error = ref('')
 const agrupaciones = ref([])
 const miembros = ref([])
+const filtersApplied = ref(false)
 
 const busqueda = ref('')
-const filtroTipo = ref('')
-const filtroActivo = ref('true')
+const filters = ref({ naturaleza: '', nivel: '', activo: 'true' })
 
-const tipoConfig = (tipo) => TIPO_CONFIG[tipo] || { label: tipo, icon: '🗂️', iconBg: 'bg-gray-100', badge: 'bg-gray-100 text-gray-700', bg: 'bg-gray-50', border: 'border-gray-100', textColor: 'text-gray-600', ring: 'ring-gray-400' }
+const filterFields = computed(() => [
+  {
+    key: 'naturaleza',
+    label: 'Naturaleza',
+    type: 'select',
+    allLabel: 'Todas las naturalezas',
+    options: [
+      { value: 'TERRITORIAL',    label: 'Territorial' },
+      { value: 'FUNCIONAL',      label: 'Funcional' },
+      { value: 'PROGRAMATICA',   label: 'Programática' },
+      { value: 'ADMINISTRATIVA', label: 'Administrativa' },
+    ],
+  },
+  {
+    key: 'nivel',
+    label: 'Nivel',
+    type: 'select',
+    allLabel: 'Todos los niveles',
+    options: [
+      { value: '1', label: 'Nivel 1 - Nacional' },
+      { value: '2', label: 'Nivel 2 - Regional' },
+      { value: '3', label: 'Nivel 3 - Local' },
+    ],
+  },
+  {
+    key: 'activo',
+    label: 'Estado',
+    type: 'select',
+    allLabel: 'Todos',
+    options: [
+      { value: 'true',  label: 'Solo activas' },
+      { value: 'false', label: 'Solo inactivas' },
+    ],
+    isActive: (val) => val !== '',
+  },
+])
 
-const nivelesResumen = computed(() =>
-  TIPOS_ORDEN.map((tipo) => ({
-    tipo,
-    count: agrupaciones.value.filter((a) => a.tipo === tipo && a.activo).length,
-    ...tipoConfig(tipo),
-  }))
-)
+function tipoConfig(tipoUnidad) {
+  if (!tipoUnidad) return DEFAULT_TIPO
+  const cfg = TIPO_CONFIG[tipoUnidad.naturaleza] ?? DEFAULT_TIPO
+  return { ...cfg, label: tipoUnidad.nombre }
+}
+
+const nivelesResumen = computed(() => {
+  const conteo = { 1: 0, 2: 0, 3: 0, transversal: 0 }
+  agrupaciones.value.forEach((a) => {
+    if (!a.activo) return
+    if (a.tipoUnidad?.nivel) conteo[a.tipoUnidad.nivel] = (conteo[a.tipoUnidad.nivel] || 0) + 1
+    else if (a.tipoUnidad) conteo.transversal = (conteo.transversal || 0) + 1
+  })
+  return [
+    { tipo: '1',           count: conteo[1],           label: 'Nivel 1',       icon: BuildingOffice2Icon,    iconBg: 'bg-purple-100', iconText: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', textColor: 'text-purple-600', ring: 'ring-purple-400' },
+    { tipo: '2',           count: conteo[2],           label: 'Nivel 2',       icon: GlobeAltIcon,           iconBg: 'bg-blue-100',   iconText: 'text-blue-600',   bg: 'bg-blue-50',   border: 'border-blue-100',   textColor: 'text-blue-600',   ring: 'ring-blue-400'   },
+    { tipo: '3',           count: conteo[3],           label: 'Nivel 3',       icon: MapPinIcon,             iconBg: 'bg-green-100',  iconText: 'text-green-600',  bg: 'bg-green-50',  border: 'border-green-100',  textColor: 'text-green-600',  ring: 'ring-green-400'  },
+    { tipo: 'transversal', count: conteo.transversal,  label: 'Transversales', icon: WrenchScrewdriverIcon,  iconBg: 'bg-yellow-100', iconText: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-100', textColor: 'text-yellow-600', ring: 'ring-yellow-400' },
+  ]
+})
 
 const agrupacionesFiltradas = computed(() => {
   let lista = [...agrupaciones.value]
-  if (filtroActivo.value === 'true') lista = lista.filter((a) => a.activo)
-  if (filtroActivo.value === 'false') lista = lista.filter((a) => !a.activo)
-  if (filtroTipo.value) lista = lista.filter((a) => a.tipo === filtroTipo.value)
+  if (filters.value.activo === 'true') lista = lista.filter((a) => a.activo)
+  if (filters.value.activo === 'false') lista = lista.filter((a) => !a.activo)
+  if (filters.value.naturaleza) lista = lista.filter((a) => a.tipoUnidad?.naturaleza === filters.value.naturaleza)
+  if (filters.value.nivel) lista = lista.filter((a) => String(a.tipoUnidad?.nivel) === filters.value.nivel)
   if (busqueda.value) {
     const q = busqueda.value.toLowerCase()
     lista = lista.filter((a) => a.nombre.toLowerCase().includes(q) || (a.nombreCorto || '').toLowerCase().includes(q))
   }
-  // Ordenar: nivel descendente (Nacional primero), luego nombre
   lista.sort((a, b) => {
-    const nivelDiff = (b.nivel || 0) - (a.nivel || 0)
+    const nA = a.tipoUnidad?.nivel || 0
+    const nB = b.tipoUnidad?.nivel || 0
+    const nivelDiff = nB - nA
     return nivelDiff !== 0 ? nivelDiff : a.nombre.localeCompare(b.nombre, 'es')
   })
   return lista
@@ -243,14 +288,9 @@ function conteoMiembros(agrupacionId) {
   return miembros.value.filter((m) => m.agrupacionId === agrupacionId).length
 }
 
-function toggleFiltroTipo(tipo) {
-  filtroTipo.value = filtroTipo.value === tipo ? '' : tipo
-}
 
-function limpiarFiltros() {
-  busqueda.value = ''
-  filtroTipo.value = ''
-  filtroActivo.value = 'true'
+function aplicarFiltros() {
+  filtersApplied.value = true
 }
 
 async function cargar() {

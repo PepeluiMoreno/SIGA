@@ -685,6 +685,7 @@ export const GET_PROVINCIAS = `
     provincias {
       id
       nombre
+      comunidadAutonoma
       pais {
         id
         nombre
@@ -738,14 +739,60 @@ export const GET_AGRUPACIONES_TERRITORIALES = `
       id
       nombre
       nombreCorto
-      tipo
-      nivel
+      tipoId
+      tipoUnidad { id nombre naturaleza vinculo nivel }
+      agrupacionPadreId
+      paisId
+      provinciaId
       telefono
       email
       web
-      agrupacionPadreId
+      nif
+      fechaConstitucion
+      registroOficial
       activo
     }
+    coordinacionesTerritoriales {
+      agrupacionId
+      miembro { id nombre apellido1 fotoUrl }
+    }
+    miembros {
+      agrupacionId
+      esVoluntario
+      activo
+    }
+  }
+`
+
+export const GET_TIPOS_UNIDADES_ORGANIZATIVAS = `
+  query TiposUnidadesOrganizativas {
+    tiposUnidadesOrganizativas(filter: { activo: { eq: true } }) {
+      id nombre naturaleza vinculo nivel padreTipoId activo
+    }
+  }
+`
+
+export const CREATE_TIPO_UNIDAD_ORGANIZATIVA = `
+  mutation CrearTipoUnidadOrganizativa(
+    $nombre: String!, $naturaleza: String!, $vinculo: String!,
+    $nivel: Int, $padreTipoId: UUID, $activo: Boolean!
+  ) {
+    crearTipoUnidadOrganizativa(
+      nombre: $nombre, naturaleza: $naturaleza, vinculo: $vinculo,
+      nivel: $nivel, padreTipoId: $padreTipoId, activo: $activo
+    )
+  }
+`
+
+export const UPDATE_TIPO_UNIDAD_ORGANIZATIVA = `
+  mutation ActualizarTipoUnidadOrganizativa($data: TipoUnidadOrganizativaUpdateInput!) {
+    actualizarTipoUnidadOrganizativa(data: $data) { id nombre naturaleza vinculo nivel padreTipoId activo }
+  }
+`
+
+export const DELETE_TIPO_UNIDAD_ORGANIZATIVA = `
+  mutation EliminarTipoUnidadOrganizativa($filter: TipoUnidadOrganizativaFilter!) {
+    eliminarTiposUnidadesOrganizativas(filter: $filter) { id }
   }
 `
 
@@ -812,5 +859,168 @@ export const DELETE_ESTADO_CONVENIO = `
     eliminarEstadosConvenio(filter: $filter) {
       id
     }
+  }
+`
+
+// ── Formas de pago ────────────────────────────────────────────────────────────
+
+export const GET_FORMAS_PAGO_CATALOGO = `
+  query FormasPago {
+    formasPago {
+      id codigo nombre descripcion activo
+    }
+  }
+`
+
+export const CREATE_FORMA_PAGO = `
+  mutation CrearFormaPago($data: FormaPagoCreateInput!) {
+    crearFormaPago(data: $data) { id nombre }
+  }
+`
+
+export const UPDATE_FORMA_PAGO = `
+  mutation ActualizarFormaPago($data: FormaPagoUpdateInput!) {
+    actualizarFormaPago(data: $data) { id nombre }
+  }
+`
+
+export const DELETE_FORMA_PAGO = `
+  mutation EliminarFormasPago($filter: FormaPagoFilter!) {
+    eliminarFormasPago(filter: $filter) { id }
+  }
+`
+
+// ── Tipos de vinculación (Usuarios) ──────────────────────────────────────────
+
+export const GET_TIPOS_VINCULACION_CATALOGO = `
+  query TiposVinculacion {
+    tiposVinculacion {
+      id
+      nombre
+      requiereEntidad
+      activo
+    }
+  }
+`
+
+export const CREATE_TIPO_VINCULACION = `
+  mutation CrearTipoVinculacion($data: TipoVinculacionCreateInput!) {
+    crearTipoVinculacion(data: $data) { id nombre }
+  }
+`
+
+export const UPDATE_TIPO_VINCULACION = `
+  mutation ActualizarTipoVinculacion($data: TipoVinculacionUpdateInput!) {
+    actualizarTipoVinculacion(data: $data) { id nombre }
+  }
+`
+
+export const DELETE_TIPO_VINCULACION = `
+  mutation EliminarTiposVinculacion($filter: TipoVinculacionFilter!) {
+    eliminarTiposVinculacion(filter: $filter) { id }
+  }
+`
+
+// ── Habilidades (Socios/as) ───────────────────────────────────────────────────
+
+export const GET_CATEGORIAS_HABILIDAD = `
+  query CategoriasHabilidad {
+    categoriasHabilidad {
+      id
+      nombre
+      descripcion
+      activo
+    }
+  }
+`
+
+export const CREATE_CATEGORIA_HABILIDAD = `
+  mutation CrearCategoriaHabilidad($data: CategoriaHabilidadCreateInput!) {
+    crearCategoriaHabilidad(data: $data) { id nombre }
+  }
+`
+
+export const UPDATE_CATEGORIA_HABILIDAD = `
+  mutation ActualizarCategoriaHabilidad($data: CategoriaHabilidadUpdateInput!) {
+    actualizarCategoriaHabilidad(data: $data) { id nombre }
+  }
+`
+
+export const DELETE_CATEGORIA_HABILIDAD = `
+  mutation EliminarCategoriasHabilidad($filter: CategoriaHabilidadFilter!) {
+    eliminarCategoriasHabilidad(filter: $filter) { id }
+  }
+`
+
+export const GET_HABILIDADES_CATALOGO = `
+  query Habilidades {
+    habilidades {
+      id
+      nombre
+      descripcion
+      categoriaId
+      categoria { id nombre }
+      activo
+    }
+  }
+`
+
+export const CREATE_HABILIDAD = `
+  mutation CrearHabilidad($data: HabilidadCreateInput!) {
+    crearHabilidad(data: $data) { id nombre }
+  }
+`
+
+export const UPDATE_HABILIDAD = `
+  mutation ActualizarHabilidad($data: HabilidadUpdateInput!) {
+    actualizarHabilidad(data: $data) { id nombre }
+  }
+`
+
+export const DELETE_HABILIDAD = `
+  mutation EliminarHabilidades($filter: HabilidadFilter!) {
+    eliminarHabilidades(filter: $filter) { id }
+  }
+`
+
+export const GET_NIVELES_ESTUDIOS = `
+  query NivelesEstudios {
+    nivelesEstudios(filter: { activo: { eq: true } }) { id nombre descripcion orden activo }
+  }
+`
+export const CREATE_NIVEL_ESTUDIOS = `
+  mutation CrearNivelEstudios($data: NivelEstudiosCreateInput!) {
+    crearNivelEstudios(data: $data) { id nombre }
+  }
+`
+export const UPDATE_NIVEL_ESTUDIOS = `
+  mutation ActualizarNivelEstudios($data: NivelEstudiosUpdateInput!, $filter: NivelEstudiosFilter!) {
+    actualizarNivelesEstudios(data: $data, filter: $filter) { id nombre }
+  }
+`
+export const DELETE_NIVEL_ESTUDIOS = `
+  mutation EliminarNivelesEstudios($filter: NivelEstudiosFilter!) {
+    eliminarNivelesEstudios(filter: $filter) { id }
+  }
+`
+
+export const GET_NIVELES_HABILIDAD = `
+  query NivelesHabilidad {
+    nivelesHabilidad(filter: { activo: { eq: true } }) { id nombre descripcion orden activo }
+  }
+`
+export const CREATE_NIVEL_HABILIDAD = `
+  mutation CrearNivelHabilidad($data: NivelHabilidadCreateInput!) {
+    crearNivelHabilidad(data: $data) { id nombre }
+  }
+`
+export const UPDATE_NIVEL_HABILIDAD = `
+  mutation ActualizarNivelHabilidad($data: NivelHabilidadUpdateInput!, $filter: NivelHabilidadFilter!) {
+    actualizarNivelesHabilidad(data: $data, filter: $filter) { id nombre }
+  }
+`
+export const DELETE_NIVEL_HABILIDAD = `
+  mutation EliminarNivelesHabilidad($filter: NivelHabilidadFilter!) {
+    eliminarNivelesHabilidad(filter: $filter) { id }
   }
 `

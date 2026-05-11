@@ -16,12 +16,16 @@ from ..modules.acceso.models import (
 )
 
 # Core - Geográfico
-from ..modules.core.geografico import Pais, Provincia, Municipio, Direccion, AgrupacionTerritorial
+from ..modules.core.geografico import (
+    TipoUnidadOrganizativa, NaturalezaUnidad, VinculoUnidad,
+    Pais, Provincia, Municipio, Direccion, AgrupacionTerritorial,
+)
 
 # Core - Comunicación
 from ..modules.core.comunicacion import TipoNotificacion, Notificacion, PreferenciaNotificacion
 
 # Configuración
+from ..modules.configuracion.models.tema_ui import TemaUI
 from ..modules.configuracion.models import (
     Configuracion, ReglaValidacionConfig, HistorialConfiguracion,
     EstadoBase, EstadoCuota, EstadoCampania, EstadoTarea,
@@ -38,7 +42,7 @@ from ..modules.organizaciones.models import (
 from ..modules.membresia.models import (
     TipoMiembro, EstadoMiembro, MotivoBaja, Miembro,
     JuntaDirectiva, HistorialNombramiento, CoordinacionTerritorial,
-    Skill, MiembroSkill, FranjaDisponibilidad,
+    Habilidad, MiembroHabilidad, FranjaDisponibilidad,
     HistorialAgrupacion, SolicitudTraslado, EstadoTraslado,
     CategoriaCompetencia, Competencia, NivelCompetencia, MiembroCompetencia,
     TipoDocumentoVoluntario, DocumentoMiembro, TipoFormacion, FormacionMiembro,
@@ -67,6 +71,7 @@ from ..modules.economico.models import (
     DonacionConcepto, Donacion,
     Remesa, OrdenCobro,
     EstadoPlanificacion, CategoriaPartida, PartidaPresupuestaria, PlanificacionAnual,
-    ProveedorPago, EstadoPago, TipoEventoPago, TipoPago, Pago, EventoPago, EstadoSuscripcion, Suscripcion,
+    ProveedorPago, FormaPago, EstadoPago, TipoEventoPago, TipoPago, Pago, EventoPago,
+    EstadoSuscripcion, Suscripcion,
     EstadoReclamacion, Reclamacion, TipoAccionReclamacion, AccionReclamacion,
 )
