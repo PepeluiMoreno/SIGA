@@ -1,27 +1,26 @@
 <template>
-  <div class="bg-white rounded-lg shadow">
-    <!-- Header con tabs -->
-    <div class="border-b border-gray-200">
-      <div class="px-6 pt-4">
+  <div>
+    <!-- Header -->
+    <div class="bg-white rounded-xl border border-slate-200 mb-4">
+      <div class="px-6 pt-5 pb-0">
         <DetailHeader fallback="/grupos" />
-      </div>
-
-      <!-- Tabs -->
-      <div class="px-6">
-        <nav class="flex space-x-8">
-          <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            @click="activeTab = tab.id"
-            :class="[
+        <div v-if="grupo" class="flex flex-wrap items-center gap-3 pb-1">
+          <h1 class="text-xl font-bold text-slate-900">{{ grupo.nombre }}</h1>
+          <span :class="tipoClass(grupo.tipoGrupo?.nombre)" class="text-xs font-medium px-2.5 py-0.5 rounded-full">
+            {{ grupo.tipoGrupo?.nombre || 'Sin tipo' }}
+          </span>
+          <span v-if="!grupo.activo" class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-red-100 text-red-700">Inactivo</span>
+        </div>
+        <!-- Tabs -->
+        <nav class="flex gap-1 mt-3 -mb-px">
+          <button v-for="tab in tabs" :key="tab.id" @click="activeTab = tab.id"
+            :class="['px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
               activeTab === tab.id
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-              'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
-            ]"
-          >
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300']">
             {{ tab.name }}
-            <span v-if="tab.count" class="ml-2 bg-gray-100 text-gray-900 text-xs font-medium px-2 py-0.5 rounded-full">
+            <span v-if="tab.count != null"
+              class="ml-1.5 text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full">
               {{ tab.count }}
             </span>
           </button>
@@ -29,238 +28,594 @@
       </div>
     </div>
 
-    <!-- Content based on active tab -->
-    <div class="p-6">
-      <!-- Información General -->
-      <div v-if="activeTab === 'info'" class="space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Información básica -->
-          <div class="space-y-4">
-            <h3 class="text-lg font-medium text-gray-900">Información del Grupo</h3>
+    <!-- Loading / Error -->
+    <div v-if="loading" class="flex justify-center py-16">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+    </div>
+    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">{{ error }}</div>
+
+    <div v-else-if="grupo">
+
+      <!-- ── INFO GENERAL ── -->
+      <div v-show="activeTab === 'info'" class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5 space-y-4">
+          <h2 class="text-xs font-semibold uppercase tracking-widest text-indigo-600">Datos del grupo</h2>
+          <div class="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span class="text-sm text-gray-600">Tipo de Grupo</span>
-              <div class="mt-1 font-medium">{{ grupo.tipo_nombre }}</div>
+              <p class="text-xs text-slate-500 mb-0.5">Coordinador</p>
+              <p class="font-medium text-slate-900">
+                {{ grupo.coordinador ? `${grupo.coordinador.nombre} ${grupo.coordinador.apellido1}` : '—' }}
+              </p>
             </div>
             <div>
-              <span class="text-sm text-gray-600">Fecha inicio</span>
-              <div class="mt-1 font-medium">{{ grupo.fecha_inicio }}</div>
+              <p class="text-xs text-slate-500 mb-0.5">Agrupación</p>
+              <p class="font-medium text-slate-900">{{ grupo.agrupacion?.nombre || '—' }}</p>
             </div>
             <div>
-              <span class="text-sm text-gray-600">Fecha fin</span>
-              <div class="mt-1 font-medium">{{ grupo.fecha_fin || 'Permanente' }}</div>
+              <p class="text-xs text-slate-500 mb-0.5">Fecha inicio</p>
+              <p class="font-medium text-slate-900">{{ formatDate(grupo.fechaInicio) || '—' }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-500 mb-0.5">Fecha fin</p>
+              <p class="font-medium text-slate-900">{{ formatDate(grupo.fechaFin) || 'Permanente' }}</p>
             </div>
           </div>
-
-          <!-- Presupuesto -->
-          <div class="space-y-4">
-            <h3 class="text-lg font-medium text-gray-900">Presupuesto</h3>
-            <div>
-              <span class="text-sm text-gray-600">Asignado</span>
-              <div class="mt-1 font-medium text-green-600">{{ formatCurrency(grupo.presupuesto_asignado) }}</div>
-            </div>
-            <div>
-              <span class="text-sm text-gray-600">Ejecutado</span>
-              <div class="mt-1 font-medium text-blue-600">{{ formatCurrency(grupo.presupuesto_ejecutado) }}</div>
-            </div>
-            <div class="pt-2">
-              <div class="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  class="bg-green-600 h-2 rounded-full"
-                  :style="{ width: presupuestoPorcentaje + '%' }"
-                ></div>
-              </div>
-              <div class="text-xs text-gray-600 mt-1">
-                {{ presupuestoPorcentaje }}% del presupuesto ejecutado
-              </div>
-            </div>
+          <div v-if="grupo.objetivo">
+            <p class="text-xs text-slate-500 mb-1">Objetivo</p>
+            <p class="text-sm text-slate-700 bg-slate-50 rounded-lg px-3 py-2">{{ grupo.objetivo }}</p>
+          </div>
+          <div v-if="grupo.descripcion">
+            <p class="text-xs text-slate-500 mb-1">Descripción</p>
+            <p class="text-sm text-slate-700">{{ grupo.descripcion }}</p>
           </div>
         </div>
 
-        <!-- Objetivo -->
-        <div>
-          <h3 class="text-lg font-medium text-gray-900 mb-3">Objetivo</h3>
-          <p class="text-gray-700 bg-gray-50 p-4 rounded-lg">{{ grupo.objetivo }}</p>
-        </div>
-      </div>
-
-      <!-- Miembros -->
-      <div v-else-if="activeTab === 'members'" class="space-y-4">
-        <div class="flex justify-between items-center">
-          <h3 class="text-lg font-medium text-gray-900">Miembros del Grupo</h3>
-          <button class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
-            + Añadir Miembro
-          </button>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div
-            v-for="miembro in miembros"
-            :key="miembro.id"
-            class="p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <div class="flex items-start space-x-3">
-              <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
-                {{ getInitials(miembro.nombre) }}
+        <!-- Presupuesto -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
+          <h2 class="text-xs font-semibold uppercase tracking-widest text-indigo-600">Presupuesto</h2>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between">
+              <span class="text-slate-500">Asignado</span>
+              <span class="font-semibold text-slate-900">{{ formatEur(grupo.presupuestoAsignado) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Ejecutado</span>
+              <span class="font-semibold" :class="pctEjecutado > 90 ? 'text-red-600' : 'text-indigo-600'">
+                {{ formatEur(grupo.presupuestoEjecutado) }}
+              </span>
+            </div>
+            <div>
+              <div class="w-full bg-slate-100 rounded-full h-2 mt-1">
+                <div class="h-2 rounded-full transition-all"
+                  :class="pctEjecutado > 90 ? 'bg-red-500' : 'bg-indigo-500'"
+                  :style="{ width: Math.min(pctEjecutado, 100) + '%' }" />
               </div>
-              <div class="flex-1">
-                <h4 class="font-medium text-gray-900">{{ miembro.nombre }}</h4>
-                <p class="text-sm text-gray-600">{{ miembro.rol }}</p>
-                <p class="text-xs text-gray-500 mt-1">Desde {{ miembro.fecha_incorporacion }}</p>
-              </div>
-              <div class="relative">
-                <button class="p-1 text-gray-400 hover:text-gray-600">
-                  •••
-                </button>
-              </div>
+              <p class="text-xs text-slate-400 mt-1 text-right">{{ pctEjecutado }}% ejecutado</p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Tareas -->
-      <div v-else-if="activeTab === 'tasks'" class="space-y-4">
-        <div class="flex justify-between items-center">
-          <h3 class="text-lg font-medium text-gray-900">Tareas</h3>
-          <button class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
-            + Nueva Tarea
-          </button>
-        </div>
+      <!-- ── MIEMBROS ── -->
+      <div v-show="activeTab === 'miembros'" class="space-y-4">
+        <div class="bg-white rounded-xl border border-slate-200">
+          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-slate-800">Miembros del grupo ({{ miembrosActivos.length }})</h2>
+            <button @click="panelVoluntarios = !panelVoluntarios"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+              <span>{{ panelVoluntarios ? '✕ Cerrar buscador' : '+ Añadir voluntario' }}</span>
+            </button>
+          </div>
 
-        <div class="space-y-3">
-          <div
-            v-for="tarea in tareas"
-            :key="tarea.id"
-            class="p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <div class="flex justify-between items-start">
-              <div>
-                <h4 class="font-medium text-gray-900">{{ tarea.titulo }}</h4>
-                <p class="text-sm text-gray-600 mt-1">{{ tarea.descripcion }}</p>
-                <div class="flex items-center space-x-4 mt-2">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="tarea.prioridadClass">
-                    {{ tarea.prioridadText }}
-                  </span>
-                  <span class="text-sm text-gray-600">{{ tarea.fecha_limite }}</span>
-                  <span class="text-sm text-gray-600">{{ tarea.asignado_a }}</span>
+          <!-- Panel buscador de voluntarios -->
+          <div v-if="panelVoluntarios" class="border-b border-slate-100 bg-indigo-50 px-5 py-4 space-y-3">
+            <p class="text-xs font-semibold text-indigo-800 uppercase tracking-wide">Buscar voluntarios para añadir</p>
+            <div class="flex flex-wrap gap-2">
+              <input v-model="busqVoluntario" type="text" placeholder="Nombre del voluntario…"
+                class="h-9 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white w-48" />
+              <select v-model="filtroHabilidad" class="h-9 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                <option value="">Todas las habilidades</option>
+                <option v-for="h in habilidades" :key="h.id" :value="h.id">{{ h.nombre }}</option>
+              </select>
+              <select v-model="filtroDia" class="h-9 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                <option value="">Cualquier día</option>
+                <option value="0">Lunes</option>
+                <option value="1">Martes</option>
+                <option value="2">Miércoles</option>
+                <option value="3">Jueves</option>
+                <option value="4">Viernes</option>
+                <option value="5">Sábado</option>
+                <option value="6">Domingo</option>
+              </select>
+              <button @click="buscarVoluntarios" :disabled="cargandoVol"
+                class="h-9 px-4 text-sm font-medium rounded-lg bg-white border border-indigo-300 text-indigo-700 hover:bg-indigo-50 transition-colors disabled:opacity-50">
+                {{ cargandoVol ? 'Buscando…' : 'Buscar' }}
+              </button>
+            </div>
+
+            <div v-if="voluntariosResultado.length" class="space-y-1 max-h-56 overflow-y-auto rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
+              <div v-for="vol in voluntariosResultado" :key="vol.id"
+                class="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-slate-50">
+                <div class="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                  {{ iniciales(vol.nombre, vol.apellido1) }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="font-medium text-slate-900">{{ vol.nombre }} {{ vol.apellido1 }}</p>
+                  <p class="text-xs text-slate-400 truncate">
+                    {{ vol.habilidades?.map(h => h.habilidad?.nombre).filter(Boolean).join(', ') || 'Sin habilidades registradas' }}
+                  </p>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <select v-model="rolSeleccionado[vol.id]" class="h-8 text-xs px-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    <option value="">Rol…</option>
+                    <option v-for="r in rolesGrupo" :key="r.id" :value="r.id">{{ r.nombre }}</option>
+                  </select>
+                  <button @click="añadirMiembro(vol)"
+                    :disabled="!rolSeleccionado[vol.id] || yaEsMiembro(vol.id)"
+                    class="px-2 py-1 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 transition-colors">
+                    {{ yaEsMiembro(vol.id) ? 'Ya está' : 'Añadir' }}
+                  </button>
                 </div>
               </div>
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="tarea.estadoClass">
-                {{ tarea.estado }}
+            </div>
+            <p v-else-if="busqRealizada" class="text-xs text-slate-400 text-center py-2">No se encontraron voluntarios con esos criterios.</p>
+            <p v-if="errorAnadir" class="text-xs text-red-600">{{ errorAnadir }}</p>
+          </div>
+
+          <!-- Lista de miembros actuales -->
+          <div v-if="miembrosActivos.length" class="divide-y divide-slate-100">
+            <div v-for="mg in miembrosActivos" :key="mg.id"
+              class="flex items-center gap-3 px-5 py-3">
+              <div class="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 text-sm font-bold flex items-center justify-center flex-shrink-0">
+                {{ iniciales(mg.miembro?.nombre, mg.miembro?.apellido1) }}
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-slate-900">
+                  {{ mg.miembro ? `${mg.miembro.nombre} ${mg.miembro.apellido1}` : mg.miembroId }}
+                </p>
+                <p class="text-xs text-slate-400">
+                  {{ mg.rolGrupo?.nombre }} · desde {{ formatDate(mg.fechaIncorporacion) }}
+                </p>
+              </div>
+              <span v-if="mg.rolGrupo?.esCoordinador"
+                class="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Coordinador</span>
+              <button @click="pendingQuitarMgId = mg.id; showConfirmQuitarMiembro = true" title="Quitar del grupo"
+                class="p-1 text-slate-300 hover:text-red-500 transition-colors rounded">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div v-else class="px-5 py-8 text-center text-sm text-slate-400">
+            El grupo aún no tiene miembros. Usa el buscador de voluntarios para añadir.
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAREAS ── -->
+      <div v-show="activeTab === 'tareas'" class="space-y-4">
+        <div class="bg-white rounded-xl border border-slate-200">
+          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-slate-800">Tareas ({{ grupo.tareas?.length || 0 }})</h2>
+            <button @click="formTarea.visible = !formTarea.visible"
+              class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+              {{ formTarea.visible ? '✕ Cancelar' : '+ Nueva tarea' }}
+            </button>
+          </div>
+
+          <!-- Formulario nueva tarea -->
+          <div v-if="formTarea.visible" class="border-b border-slate-100 bg-slate-50 px-5 py-4 space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-medium text-slate-700 mb-1">Título</label>
+                <input v-model="formTarea.titulo" type="text"
+                  class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Estado</label>
+                <select v-model="formTarea.estadoId" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                  <option value="">Seleccionar…</option>
+                  <option v-for="e in estadosTarea" :key="e.id" :value="e.id">{{ e.nombre }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Prioridad</label>
+                <select v-model="formTarea.prioridad" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                  <option :value="1">Alta</option>
+                  <option :value="2">Media</option>
+                  <option :value="3">Baja</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Fecha límite</label>
+                <input v-model="formTarea.fechaLimite" type="date"
+                  class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Horas estimadas</label>
+                <input v-model.number="formTarea.horasEstimadas" type="number" min="0" step="0.5"
+                  class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-medium text-slate-700 mb-1">Descripción</label>
+                <textarea v-model="formTarea.descripcion" rows="2"
+                  class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white resize-none" />
+              </div>
+            </div>
+            <p v-if="errorTarea" class="text-xs text-red-600">{{ errorTarea }}</p>
+            <div class="flex gap-2 pt-1">
+              <button @click="crearTarea" :disabled="!formTarea.titulo || !formTarea.estadoId || formTarea.guardando"
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+                {{ formTarea.guardando ? 'Guardando…' : 'Crear tarea' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Lista de tareas -->
+          <div v-if="grupo.tareas?.length" class="divide-y divide-slate-100">
+            <div v-for="tarea in tareasOrdenadas" :key="tarea.id"
+              class="flex items-start gap-3 px-5 py-3.5">
+              <span :class="['mt-0.5 flex-shrink-0 w-2 h-2 rounded-full mt-1.5',
+                tarea.prioridad === 1 ? 'bg-red-500' : tarea.prioridad === 2 ? 'bg-amber-400' : 'bg-emerald-400']" />
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-slate-900">{{ tarea.titulo }}</p>
+                <p v-if="tarea.descripcion" class="text-xs text-slate-500 mt-0.5">{{ tarea.descripcion }}</p>
+                <div class="flex flex-wrap gap-3 mt-1.5 text-xs text-slate-400">
+                  <span v-if="tarea.fechaLimite">📅 {{ formatDate(tarea.fechaLimite) }}</span>
+                  <span v-if="tarea.horasEstimadas">⏱ {{ tarea.horasEstimadas }}h est.</span>
+                  <span v-if="tarea.horasReales">✓ {{ tarea.horasReales }}h reales</span>
+                </div>
+              </div>
+              <span :class="estadoTareaClass(tarea.estado?.nombre)"
+                class="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0">
+                {{ tarea.estado?.nombre || '—' }}
               </span>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Reuniones -->
-      <div v-else-if="activeTab === 'meetings'" class="space-y-4">
-        <div class="flex justify-between items-center">
-          <h3 class="text-lg font-medium text-gray-900">Reuniones</h3>
-          <button class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
-            + Nueva Reunión
-          </button>
+          <div v-else class="px-5 py-8 text-center text-sm text-slate-400">No hay tareas registradas.</div>
         </div>
 
-        <div class="space-y-4">
-          <div
-            v-for="reunion in reuniones"
-            :key="reunion.id"
-            class="p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <div class="flex justify-between items-start">
-              <div>
-                <h4 class="font-medium text-gray-900">{{ reunion.titulo }}</h4>
-                <p class="text-sm text-gray-600 mt-1">{{ reunion.fecha }} · {{ reunion.hora_inicio }} - {{ reunion.hora_fin }}</p>
-                <p class="text-sm text-gray-700 mt-2">{{ reunion.descripcion }}</p>
-                <div class="mt-3 flex items-center space-x-2">
-                  <span class="text-sm text-gray-600">{{ reunion.asistentes }} asistentes</span>
-                  <span v-if="reunion.url_online" class="text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
-                    🔗 Enlace
-                  </span>
-                </div>
-              </div>
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="reunion.realizada ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">
-                {{ reunion.realizada ? 'Realizada' : 'Planificada' }}
-              </span>
+        <!-- Resumen horas -->
+        <div v-if="grupo.tareas?.length" class="bg-white rounded-xl border border-slate-200 px-5 py-4">
+          <h3 class="text-xs font-semibold uppercase tracking-widest text-indigo-600 mb-3">Estimación de horas</h3>
+          <div class="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <p class="text-2xl font-bold text-slate-900">{{ totalHorasEstimadas }}</p>
+              <p class="text-xs text-slate-400 mt-0.5">Estimadas</p>
+            </div>
+            <div>
+              <p class="text-2xl font-bold text-indigo-600">{{ totalHorasReales }}</p>
+              <p class="text-xs text-slate-400 mt-0.5">Reales</p>
+            </div>
+            <div>
+              <p class="text-2xl font-bold" :class="desvioHoras > 0 ? 'text-red-600' : 'text-emerald-600'">
+                {{ desvioHoras > 0 ? '+' : '' }}{{ desvioHoras }}
+              </p>
+              <p class="text-xs text-slate-400 mt-0.5">Desvío</p>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- ── REUNIONES ── -->
+      <div v-show="activeTab === 'reuniones'" class="space-y-3">
+        <div class="bg-white rounded-xl border border-slate-200">
+          <div class="px-5 py-4 border-b border-slate-100">
+            <h2 class="text-sm font-semibold text-slate-800">Reuniones ({{ grupo.reuniones?.length || 0 }})</h2>
+          </div>
+          <div v-if="reunionesOrdenadas.length" class="divide-y divide-slate-100">
+            <div v-for="r in reunionesOrdenadas" :key="r.id" class="px-5 py-4 flex gap-4">
+              <div class="flex-shrink-0 text-center w-12">
+                <p class="text-lg font-bold text-slate-900 leading-none">{{ new Date(r.fecha).getDate() }}</p>
+                <p class="text-xs text-slate-400 uppercase">{{ new Date(r.fecha).toLocaleDateString('es-ES', {month:'short'}) }}</p>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-slate-900">{{ r.titulo }}</p>
+                <p v-if="r.horaInicio" class="text-xs text-slate-500 mt-0.5">
+                  {{ r.horaInicio }}{{ r.horaFin ? ` – ${r.horaFin}` : '' }}
+                  <span v-if="r.lugar"> · {{ r.lugar }}</span>
+                  <a v-if="r.urlOnline" :href="r.urlOnline" target="_blank"
+                    class="ml-2 text-indigo-600 hover:underline">🔗 enlace</a>
+                </p>
+                <p v-if="r.descripcion" class="text-xs text-slate-500 mt-1">{{ r.descripcion }}</p>
+              </div>
+              <span :class="r.realizada ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'"
+                class="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 self-start">
+                {{ r.realizada ? 'Realizada' : 'Planificada' }}
+              </span>
+            </div>
+          </div>
+          <div v-else class="px-5 py-8 text-center text-sm text-slate-400">No hay reuniones registradas.</div>
+        </div>
+      </div>
+
     </div>
   </div>
+
+  <ConfirmModal
+    v-model="showConfirmQuitarMiembro"
+    title-soft="¿Quitar este miembro del grupo?"
+    title="¿Quitar este miembro del grupo?"
+    confirm-label="Quitar"
+    @confirm="ejecutarQuitarMiembro"
+  />
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import DetailHeader from '@/components/common/DetailHeader.vue'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import { graphqlClient } from '@/graphql/client.js'
 
 const route = useRoute()
+const grupoId = computed(() => route.params.id)
+
+const loading = ref(true)
+const error = ref('')
+const grupo = ref(null)
+const habilidades = ref([])
+const rolesGrupo = ref([])
+const estadosTarea = ref([])
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
 const activeTab = ref('info')
-
-const grupo = ref({
-  id: route.params.id,
-  nombre: 'Grupo de Comunicación',
-  descripcion: 'Grupo encargado de la comunicación interna y externa',
-  tipo_nombre: 'Permanente',
-  fecha_inicio: '2024-01-15',
-  fecha_fin: null,
-  presupuesto_asignado: 5000,
-  presupuesto_ejecutado: 3250,
-  objetivo: 'Mejorar la comunicación interna y gestionar las redes sociales de la organización.'
-})
-
-const miembros = ref([
-  { id: 1, nombre: 'Ana García', rol: 'Coordinadora', fecha_incorporacion: '2024-01-15' },
-  { id: 2, nombre: 'Carlos Ruiz', rol: 'Redactor', fecha_incorporacion: '2024-02-01' },
-  { id: 3, nombre: 'María López', rol: 'Community Manager', fecha_incorporacion: '2024-01-20' }
-])
-
-const tareas = ref([
-  { id: 1, titulo: 'Redactar boletín mensual', descripcion: 'Preparar contenido para el boletín de marzo', fecha_limite: '2024-03-15', asignado_a: 'Carlos Ruiz', prioridad: 1, estado: 'En progreso' },
-  { id: 2, titulo: 'Actualizar redes sociales', descripcion: 'Programar publicaciones para la próxima semana', fecha_limite: '2024-03-10', asignado_a: 'María López', prioridad: 2, estado: 'Pendiente' }
-])
-
-const reuniones = ref([
-  { id: 1, titulo: 'Reunión semanal', descripcion: 'Revisión de tareas y planificación', fecha: '2024-03-08', hora_inicio: '10:00', hora_fin: '11:30', asistentes: 3, realizada: true, url_online: 'https://meet.google.com/xxx' },
-  { id: 2, titulo: 'Planificación mensual', descripcion: 'Planificación del contenido de abril', fecha: '2024-03-15', hora_inicio: '16:00', hora_fin: '17:30', asistentes: 3, realizada: false, url_online: null }
-])
-
 const tabs = computed(() => [
-  { id: 'info', name: 'Información', count: null },
-  { id: 'members', name: 'Miembros', count: miembros.value.length },
-  { id: 'tasks', name: 'Tareas', count: tareas.value.length },
-  { id: 'meetings', name: 'Reuniones', count: reuniones.value.length }
+  { id: 'info',     name: 'Información',  count: null },
+  { id: 'miembros', name: 'Miembros',     count: miembrosActivos.value.length },
+  { id: 'tareas',   name: 'Tareas',       count: grupo.value?.tareas?.length ?? 0 },
+  { id: 'reuniones',name: 'Reuniones',    count: grupo.value?.reuniones?.length ?? 0 },
 ])
 
-const presupuestoPorcentaje = computed(() => {
-  if (!grupo.value.presupuesto_asignado) return 0
-  return Math.round((grupo.value.presupuesto_ejecutado / grupo.value.presupuesto_asignado) * 100)
-})
+const miembrosActivos = computed(() => (grupo.value?.miembros || []).filter(m => m.activo))
 
-const formatCurrency = (value) => {
-  if (!value) return '€0.00'
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value)
+// ── GraphQL ───────────────────────────────────────────────────────────────────
+const GQL_GRUPO = `
+  query GrupoDetalle($id: UUID!) {
+    gruposTrabajo(filter: { id: { eq: $id } }) {
+      id nombre descripcion objetivo activo
+      fechaInicio fechaFin presupuestoAsignado presupuestoEjecutado
+      tipoGrupo { id nombre esPermanente }
+      coordinador { id nombre apellido1 email }
+      agrupacion { id nombre }
+      miembros {
+        id miembroId activo fechaIncorporacion responsabilidades
+        miembro { id nombre apellido1 email }
+        rolGrupo { id nombre esCoordinador }
+      }
+      tareas {
+        id titulo descripcion prioridad fechaLimite horasEstimadas horasReales
+        estado { id nombre }
+      }
+      reuniones {
+        id titulo descripcion fecha horaInicio horaFin lugar urlOnline realizada
+      }
+    }
+  }
+`
+
+const GQL_CATALOGOS = `
+  query CatalogosGrupo {
+    habilidades { id nombre categoriaId }
+    rolesGrupo { id nombre esCoordinador activo }
+    estadosTarea { id nombre }
+  }
+`
+
+const GQL_VOLUNTARIOS = `
+  query VoluntariosParaGrupo($nombre: String, $habilidadId: UUID, $diaSemana: Int) {
+    miembros(filter: { esVoluntario: { eq: true } }) {
+      id nombre apellido1 email
+      habilidades { id habilidad { id nombre } nivelHabilidad { nombre } validado }
+      franjasDisponibilidad { diaSemana horaInicio horaFin activa }
+    }
+  }
+`
+
+const MUTATION_CREAR_MIEMBRO_GRUPO = `
+  mutation CrearMiembroGrupo($grupoId: UUID!, $miembroId: UUID!, $rolGrupoId: UUID!) {
+    crearMiembroGrupo(data: { grupoId: $grupoId, miembroId: $miembroId, rolGrupoId: $rolGrupoId }) {
+      id miembroId activo fechaIncorporacion
+      miembro { id nombre apellido1 }
+      rolGrupo { id nombre esCoordinador }
+    }
+  }
+`
+
+const MUTATION_ELIMINAR_MIEMBRO_GRUPO = `
+  mutation EliminarMiembroGrupo($id: UUID!) {
+    eliminarMiembrosGrupo(filter: { id: { eq: $id } }) { id }
+  }
+`
+
+const MUTATION_CREAR_TAREA = `
+  mutation CrearTarea($data: TareaCreateData!) {
+    crearTarea(data: $data) {
+      id titulo descripcion prioridad fechaLimite horasEstimadas horasReales
+      estado { id nombre }
+    }
+  }
+`
+
+async function cargar() {
+  loading.value = true
+  error.value = ''
+  try {
+    const [dataGrupo, dataCat] = await Promise.all([
+      graphqlClient.request(GQL_GRUPO, { id: grupoId.value }),
+      graphqlClient.request(GQL_CATALOGOS),
+    ])
+    grupo.value = dataGrupo.gruposTrabajo?.[0] || null
+    habilidades.value = dataCat.habilidades || []
+    rolesGrupo.value = (dataCat.rolesGrupo || []).filter(r => r.activo)
+    estadosTarea.value = dataCat.estadosTarea || []
+    if (!grupo.value) error.value = 'Grupo no encontrado'
+  } catch (e) {
+    error.value = e?.response?.errors?.[0]?.message || 'Error cargando el grupo'
+  } finally {
+    loading.value = false
+  }
 }
 
-const getInitials = (name) => {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+// ── Buscador voluntarios ──────────────────────────────────────────────────────
+const panelVoluntarios = ref(false)
+const busqVoluntario = ref('')
+const filtroHabilidad = ref('')
+const filtroDia = ref('')
+const voluntariosResultado = ref([])
+const cargandoVol = ref(false)
+const busqRealizada = ref(false)
+const rolSeleccionado = ref({})
+const errorAnadir = ref('')
+
+async function buscarVoluntarios() {
+  cargandoVol.value = true
+  busqRealizada.value = false
+  try {
+    const data = await graphqlClient.request(GQL_VOLUNTARIOS)
+    let vols = data.miembros || []
+    const q = busqVoluntario.value.toLowerCase()
+    if (q) vols = vols.filter(v =>
+      `${v.nombre} ${v.apellido1}`.toLowerCase().includes(q)
+    )
+    if (filtroHabilidad.value) vols = vols.filter(v =>
+      v.habilidades?.some(h => h.habilidad?.id === filtroHabilidad.value)
+    )
+    if (filtroDia.value !== '') {
+      const dia = Number(filtroDia.value)
+      vols = vols.filter(v =>
+        v.franjasDisponibilidad?.some(f => f.diaSemana === dia && f.activa)
+      )
+    }
+    voluntariosResultado.value = vols
+    busqRealizada.value = true
+  } catch (e) {
+    errorAnadir.value = e?.response?.errors?.[0]?.message || 'Error buscando voluntarios'
+  } finally {
+    cargandoVol.value = false
+  }
 }
 
-onMounted(() => {
-  // Aquí cargarías los datos del grupo
-  console.log('Cargando grupo:', route.params.id)
+function yaEsMiembro(miembroId) {
+  return miembrosActivos.value.some(m => m.miembroId === miembroId || m.miembro?.id === miembroId)
+}
+
+async function añadirMiembro(vol) {
+  const rolId = rolSeleccionado.value[vol.id]
+  if (!rolId) return
+  errorAnadir.value = ''
+  try {
+    const data = await graphqlClient.request(MUTATION_CREAR_MIEMBRO_GRUPO, {
+      grupoId: grupoId.value,
+      miembroId: vol.id,
+      rolGrupoId: rolId,
+    })
+    grupo.value.miembros = [...(grupo.value.miembros || []), data.crearMiembroGrupo]
+  } catch (e) {
+    errorAnadir.value = e?.response?.errors?.[0]?.message || 'Error añadiendo miembro'
+  }
+}
+
+const showConfirmQuitarMiembro = ref(false)
+const pendingQuitarMgId = ref(null)
+
+async function ejecutarQuitarMiembro() {
+  const mgId = pendingQuitarMgId.value
+  if (!mgId) return
+  pendingQuitarMgId.value = null
+  try {
+    await graphqlClient.request(MUTATION_ELIMINAR_MIEMBRO_GRUPO, { id: mgId })
+    grupo.value.miembros = grupo.value.miembros.filter(m => m.id !== mgId)
+  } catch (e) {
+    error.value = e?.response?.errors?.[0]?.message || 'Error al quitar miembro'
+  }
+}
+
+// ── Tareas ────────────────────────────────────────────────────────────────────
+const formTarea = ref({ visible: false, titulo: '', estadoId: '', prioridad: 2, descripcion: '', fechaLimite: '', horasEstimadas: null, guardando: false })
+const errorTarea = ref('')
+
+const tareasOrdenadas = computed(() =>
+  [...(grupo.value?.tareas || [])].sort((a, b) => a.prioridad - b.prioridad)
+)
+
+const totalHorasEstimadas = computed(() =>
+  (grupo.value?.tareas || []).reduce((s, t) => s + Number(t.horasEstimadas || 0), 0).toFixed(1)
+)
+const totalHorasReales = computed(() =>
+  (grupo.value?.tareas || []).reduce((s, t) => s + Number(t.horasReales || 0), 0).toFixed(1)
+)
+const desvioHoras = computed(() =>
+  (Number(totalHorasReales.value) - Number(totalHorasEstimadas.value)).toFixed(1)
+)
+
+async function crearTarea() {
+  if (!formTarea.value.titulo || !formTarea.value.estadoId) return
+  formTarea.value.guardando = true
+  errorTarea.value = ''
+  try {
+    const data = await graphqlClient.request(MUTATION_CREAR_TAREA, {
+      data: {
+        grupoId: grupoId.value,
+        titulo: formTarea.value.titulo,
+        estadoId: formTarea.value.estadoId,
+        prioridad: formTarea.value.prioridad,
+        descripcion: formTarea.value.descripcion || null,
+        fechaLimite: formTarea.value.fechaLimite || null,
+        horasEstimadas: formTarea.value.horasEstimadas || null,
+      }
+    })
+    grupo.value.tareas = [...(grupo.value.tareas || []), data.crearTarea]
+    formTarea.value = { visible: false, titulo: '', estadoId: '', prioridad: 2, descripcion: '', fechaLimite: '', horasEstimadas: null, guardando: false }
+  } catch (e) {
+    errorTarea.value = e?.response?.errors?.[0]?.message || 'Error creando tarea'
+  } finally {
+    formTarea.value.guardando = false
+  }
+}
+
+// ── Reuniones ─────────────────────────────────────────────────────────────────
+const reunionesOrdenadas = computed(() =>
+  [...(grupo.value?.reuniones || [])].sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+)
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const pctEjecutado = computed(() => {
+  const asig = Number(grupo.value?.presupuestoAsignado || 0)
+  const ejec = Number(grupo.value?.presupuestoEjecutado || 0)
+  return asig ? Math.round((ejec / asig) * 100) : 0
 })
 
-// Computed para clases de prioridad y estado
-tareas.value.forEach(tarea => {
-  tarea.prioridadClass = tarea.prioridad === 1 ? 'bg-red-100 text-red-800' : 
-                         tarea.prioridad === 2 ? 'bg-yellow-100 text-yellow-800' : 
-                         'bg-green-100 text-green-800'
-  tarea.prioridadText = tarea.prioridad === 1 ? 'Alta' : 
-                        tarea.prioridad === 2 ? 'Media' : 'Baja'
-  tarea.estadoClass = tarea.estado === 'Completada' ? 'bg-green-100 text-green-800' :
-                      tarea.estado === 'En progreso' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-})
+function formatDate(d) {
+  if (!d) return ''
+  return new Date(d).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function formatEur(v) {
+  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(Number(v) || 0)
+}
+
+function iniciales(nombre, apellido) {
+  return `${(nombre || '')[0] || ''}${(apellido || '')[0] || ''}`.toUpperCase()
+}
+
+function tipoClass(nombre) {
+  if (!nombre) return 'bg-slate-100 text-slate-600'
+  const n = nombre.toUpperCase()
+  if (n.includes('PERMANENTE')) return 'bg-purple-100 text-purple-700'
+  if (n.includes('TEMPORAL')) return 'bg-amber-100 text-amber-700'
+  return 'bg-slate-100 text-slate-600'
+}
+
+function estadoTareaClass(nombre) {
+  if (!nombre) return 'bg-slate-100 text-slate-600'
+  const n = nombre.toUpperCase()
+  if (n.includes('COMPLET') || n.includes('HECHA')) return 'bg-emerald-100 text-emerald-700'
+  if (n.includes('PROGRES') || n.includes('CURSO')) return 'bg-blue-100 text-blue-700'
+  if (n.includes('BLOQUEA') || n.includes('ESPERA')) return 'bg-red-100 text-red-700'
+  return 'bg-slate-100 text-slate-600'
+}
+
+onMounted(cargar)
 </script>

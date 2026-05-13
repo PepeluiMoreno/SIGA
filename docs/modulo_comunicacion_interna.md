@@ -28,6 +28,9 @@ Indicador de mensajes no leídos
 Respuestas a mensajes (hilos ligeros)
 Silenciar canales
 Archivado/eliminación por usuario
+
+Posibilidad de convertir el mensaje en un mensaje de correo
+
 2.3 Exclusiones iniciales
 No hay emails externos
 No hay federación con sistemas externos

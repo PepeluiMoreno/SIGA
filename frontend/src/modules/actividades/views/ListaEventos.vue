@@ -127,11 +127,16 @@
 
           <!-- Acciones -->
           <div class="flex items-center gap-1 flex-shrink-0">
-            <router-link :to="`/eventos/${e.id}`"
-              class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
-              title="Ver detalle">
-              <EyeIcon class="w-4 h-4" />
-            </router-link>
+            <RowActions
+              :show-view="true"
+              :show-edit="true"
+              confirm-title="¿Eliminar permanentemente?"
+              confirm-title-soft="¿Mover a la papelera?"
+              :confirm-text="`«${e.nombre}» será eliminado.`"
+              @view="$router.push(`/eventos/${e.id}`)"
+              @edit="$router.push(`/eventos/${e.id}`)"
+              @delete="(opts) => eliminarEvento(e, opts)"
+            />
           </div>
         </div>
       </div>
@@ -307,13 +312,19 @@
                   </div>
                 </div>
 
-                <!-- Link al detalle -->
-                <router-link :to="`/eventos/${e.id}`"
-                  @click="showModal = false"
-                  class="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
-                  title="Ver detalle">
-                  <EyeIcon class="w-4 h-4" />
-                </router-link>
+                <!-- Acciones -->
+                <div class="flex-shrink-0">
+                  <RowActions
+                    :show-view="true"
+                    :show-edit="true"
+                    confirm-title="¿Eliminar permanentemente?"
+                    confirm-title-soft="¿Mover a la papelera?"
+                    :confirm-text="`«${e.nombre}» será eliminado.`"
+                    @view="showModal = false; $router.push(`/eventos/${e.id}`)"
+                    @edit="showModal = false; $router.push(`/eventos/${e.id}`)"
+                    @delete="(opts) => eliminarEvento(e, opts)"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -327,9 +338,9 @@
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
-import { EyeIcon } from '@heroicons/vue/24/outline'
-import { executeQuery } from '@/graphql/client'
-import { GET_EVENTOS, GET_TIPOS_EVENTO, GET_ESTADOS_EVENTO } from '@/graphql/queries/eventos.js'
+import RowActions from '@/components/common/RowActions.vue'
+import { graphqlClient, executeQuery } from '@/graphql/client'
+import { GET_EVENTOS, GET_TIPOS_EVENTO, GET_ESTADOS_EVENTO, ELIMINAR_EVENTO, SOFT_DELETE_EVENTO } from '@/graphql/queries/eventos.js'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
 
@@ -548,6 +559,19 @@ async function cargar() {
 async function aplicarFiltros() {
   await cargar()
   filtersApplied.value = true
+}
+
+async function eliminarEvento(evento, { hardDelete } = {}) {
+  try {
+    if (hardDelete) {
+      await graphqlClient.request(ELIMINAR_EVENTO, { id: evento.id })
+    } else {
+      await graphqlClient.request(SOFT_DELETE_EVENTO, { id: evento.id })
+    }
+    eventos.value = eventos.value.filter(e => e.id !== evento.id)
+  } catch (e) {
+    alert(e?.response?.errors?.[0]?.message || 'Error eliminando evento')
+  }
 }
 
 onMounted(async () => {

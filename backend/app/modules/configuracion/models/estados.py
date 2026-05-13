@@ -64,20 +64,16 @@ class EstadoTarea(EstadoBase):
     # BLOQUEADA: Tarea bloqueada por dependencias
 
 
+class EstadoAccion(EstadoBase):
+    """Estados para acciones (unidad operativa)."""
+    __tablename__ = 'estados_accion'
+
+    # propuesta | aprobada | en_preparacion | en_curso | finalizada | cancelada
+
+
 class EstadoActividad(EstadoBase):
-    """Estados para actividades."""
+    """Estados para actividades (legacy — mantenida por compatibilidad)."""
     __tablename__ = 'estados_actividad'
-
-    # Relaciones
-    actividades = relationship('Actividad', back_populates='estado', lazy='selectin')
-
-    # Posibles estados:
-    # PROPUESTA: Actividad propuesta pendiente de aprobación
-    # APROBADA: Actividad aprobada pendiente de programación
-    # PROGRAMADA: Actividad programada con fecha definida
-    # EN_CURSO: Actividad en ejecución
-    # COMPLETADA: Actividad finalizada exitosamente
-    # CANCELADA: Actividad cancelada
 
 
 class EstadoParticipante(EstadoBase):

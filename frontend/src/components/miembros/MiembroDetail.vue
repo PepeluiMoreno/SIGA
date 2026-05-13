@@ -90,6 +90,27 @@
 
             <section class="space-y-4 rounded-xl border border-gray-200 p-5">
               <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Identificación</h3>
+
+              <!-- Foto de perfil -->
+              <div class="flex items-center gap-4 mb-2">
+                <AvatarImg
+                  :src="miembro.fotoUrl"
+                  :nombre="miembro.nombre"
+                  :apellido="miembro.apellido1"
+                  size="xl"
+                />
+                <div v-if="puedeEditarFoto" class="flex flex-col gap-1">
+                  <label class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg cursor-pointer hover:bg-indigo-100 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                    </svg>
+                    Cambiar foto
+                    <input type="file" accept="image/*" class="hidden" @change="subirFoto" />
+                  </label>
+                  <p class="text-xs text-slate-400">JPG, PNG, WebP · máx. 5 MB</p>
+                </div>
+              </div>
+
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FieldText v-model="miembro.nombre" label="Nombre *" :edit-mode="editMode || isCreateMode" />
                 <FieldText v-model="miembro.apellido1" label="Primer apellido *" :edit-mode="editMode || isCreateMode" />
@@ -830,6 +851,7 @@
 import { computed, defineComponent, h, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DetailHeader from '@/components/common/DetailHeader.vue'
+import AvatarImg from '@/components/common/AvatarImg.vue'
 import { gql } from 'graphql-request'
 import { graphqlClient } from '@/graphql/client.js'
 import { useMiembro } from '@/composables/useMiembro'

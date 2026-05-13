@@ -6,7 +6,7 @@
 // Query para obtener miembros
 export const GET_MIEMBROS = `
   query Miembros {
-    miembros {
+    miembros(filter: { eliminado: { eq: false } }) {
       id
       nombre
       apellido1

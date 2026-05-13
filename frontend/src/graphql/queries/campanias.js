@@ -5,7 +5,7 @@
 // Query para obtener campañas
 export const GET_CAMPANIAS = `
   query Campanias {
-    campanias {
+    campanias(filter: { eliminado: { eq: false } }) {
       id
       nombre
       lema

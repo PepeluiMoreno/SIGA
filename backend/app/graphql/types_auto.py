@@ -87,6 +87,7 @@ from ..modules.core.models import (
     HistorialConfiguracion,
     EstadoCuota,
     EstadoCampania,
+    EstadoAccion,
     EstadoTarea,
     EstadoParticipante,
     EstadoOrdenCobro,
@@ -110,6 +111,10 @@ class EstadoCuotaType:
 
 @strawchemy.type(EstadoCampania, include="all", override=True)
 class EstadoCampaniaType:
+    pass
+
+@strawchemy.type(EstadoAccion, include="all", override=True)
+class EstadoAccionType:
     pass
 
 @strawchemy.type(EstadoTarea, include="all", override=True)
@@ -419,18 +424,6 @@ class SolicitudTrasladoType:
     pass
 
 
-# === PLAN DE ACTIVIDADES (JTI raíz) ===
-from ..modules.actividades.models import PlanActividad
-
-@strawchemy.type(PlanActividad, include="all", override=True)
-class PlanActividadType:
-    responsable: Optional['MiembroType'] = None
-    agrupacion: Optional['AgrupacionTerritorialType'] = None
-    parent: Optional['PlanActividadType'] = None
-    campania: Optional['CampaniaType'] = None
-    evento: Optional['EventoType'] = None
-
-
 # === CAMPAÑAS ===
 from ..modules.actividades.models import (
     TipoCampania, Campania, RolParticipante, ParticipanteCampania, Firmante, FirmaCampania
@@ -444,7 +437,6 @@ class TipoCampaniaType:
 class CampaniaType:
     agrupacion: Optional['AgrupacionTerritorialType'] = None
     responsable: Optional['MiembroType'] = None
-    plan: Optional['PlanActividadType'] = None
 
 @strawchemy.type(RolParticipante, include="all", override=True)
 class RolParticipanteType:
@@ -463,86 +455,34 @@ class FirmaCampaniaType:
     pass
 
 
-# === ACTIVIDADES ===
-from ..modules.actividades.models import (
-    TipoActividad, EstadoActividad, EstadoPropuesta, TipoRecurso, TipoKPI,
-    PropuestaActividad, TareaPropuesta, RecursoPropuesta, GrupoPropuesta,
-    Actividad, TareaActividad, RecursoActividad, GrupoActividad, ParticipanteActividad,
-    KPI, KPIActividad, MedicionKPI
-)
+# === ACCIONES (unifica Evento + Actividad) ===
+from ..modules.actividades.models import TipoAccion, Accion, Tarea, Participacion
 
-@strawchemy.type(TipoActividad, include="all", override=True)
-class TipoActividadType:
+
+@strawchemy.type(TipoAccion, include="all", override=True)
+class TipoAccionType:
     pass
 
-@strawchemy.type(EstadoActividad, include="all", override=True)
-class EstadoActividadType:
-    pass
+@strawchemy.type(Accion, include="all", override=True)
+class AccionType:
+    tipo_accion: Optional['TipoAccionType'] = None
+    estado: Optional['EstadoAccionType'] = None
+    iniciativa: Optional['CampaniaType'] = None
+    responsable: Optional['MiembroType'] = None
 
-@strawchemy.type(EstadoPropuesta, include="all", override=True)
-class EstadoPropuestaType:
-    pass
+@strawchemy.type(Tarea, include="all", override=True)
+class TareaType:
+    estado: Optional['EstadoTareaType'] = None
+    responsable: Optional['MiembroType'] = None
 
-@strawchemy.type(TipoRecurso, include="all", override=True)
-class TipoRecursoType:
-    pass
-
-@strawchemy.type(TipoKPI, include="all", override=True)
-class TipoKPIType:
-    pass
-
-@strawchemy.type(PropuestaActividad, include="all", override=True)
-class PropuestaActividadType:
-    pass
-
-@strawchemy.type(TareaPropuesta, include="all", override=True)
-class TareaPropuestaType:
-    pass
-
-@strawchemy.type(RecursoPropuesta, include="all", override=True)
-class RecursoPropuestaType:
-    pass
-
-@strawchemy.type(GrupoPropuesta, include="all", override=True)
-class GrupoPropuestaType:
-    pass
-
-@strawchemy.type(Actividad, include="all", override=True)
-class ActividadType:
-    pass
-
-@strawchemy.type(TareaActividad, include="all", override=True)
-class TareaActividadType:
-    pass
-
-@strawchemy.type(RecursoActividad, include="all", override=True)
-class RecursoActividadType:
-    pass
-
-@strawchemy.type(GrupoActividad, include="all", override=True)
-class GrupoActividadType:
-    pass
-
-@strawchemy.type(ParticipanteActividad, include="all", override=True)
-class ParticipanteActividadType:
-    pass
-
-@strawchemy.type(KPI, include="all", override=True)
-class KPIType:
-    pass
-
-@strawchemy.type(KPIActividad, include="all", override=True)
-class KPIActividadType:
-    pass
-
-@strawchemy.type(MedicionKPI, include="all", override=True)
-class MedicionKPIType:
-    pass
+@strawchemy.type(Participacion, include="all", override=True)
+class ParticipacionType:
+    miembro: Optional['MiembroType'] = None
 
 
 # === GRUPOS ===
 from ..modules.actividades.models import (
-    TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo, TareaGrupo, ReunionGrupo, AsistenteReunion
+    TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo, GrupoIniciativa, ReunionGrupo, AsistenteReunion
 )
 
 @strawchemy.type(TipoGrupo, include="all", override=True)
@@ -561,8 +501,8 @@ class GrupoTrabajoType:
 class MiembroGrupoType:
     pass
 
-@strawchemy.type(TareaGrupo, include="all", override=True)
-class TareaGrupoType:
+@strawchemy.type(GrupoIniciativa, include="all", override=True)
+class GrupoIniciativaType:
     pass
 
 @strawchemy.type(ReunionGrupo, include="all", override=True)
@@ -613,27 +553,3 @@ class FormacionMiembroType:
     pass
 
 
-# === EVENTOS ===
-from ..modules.actividades.models import (
-    TipoEvento, EstadoEvento, Evento, ParticipanteEvento, MaterialEvento
-)
-
-@strawchemy.type(TipoEvento, include="all", override=True)
-class TipoEventoType:
-    pass
-
-@strawchemy.type(EstadoEvento, include="all", override=True)
-class EstadoEventoType:
-    pass
-
-@strawchemy.type(Evento, include="all", override=True)
-class EventoType:
-    plan: Optional['PlanActividadType'] = None
-
-@strawchemy.type(ParticipanteEvento, include="all", override=True)
-class ParticipanteEventoType:
-    pass
-
-@strawchemy.type(MaterialEvento, include="all", override=True)
-class MaterialEventoType:
-    pass

@@ -61,7 +61,7 @@
             </button>
             <button
               type="button"
-              @click="deleteActividad(index)"
+              @click="pendingDeleteIndex = index; showConfirmDelete = true"
               class="p-1 text-gray-400 hover:text-red-600"
               title="Eliminar"
             >
@@ -83,9 +83,18 @@
       />
     </div>
   </div>
+  <ConfirmModal
+    v-model="showConfirmDelete"
+    title-soft="¿Eliminar esta actividad?"
+    title="¿Eliminar esta actividad?"
+    message="Esta operación no se puede deshacer."
+    @confirm="confirmarDelete"
+  />
 </template>
 
 <script setup>
+import { ref } from 'vue'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
 const props = defineProps({
   actividades: {
     type: Array,
@@ -112,9 +121,13 @@ const formatDate = (dateString) => {
   })
 }
 
-const deleteActividad = (index) => {
-  if (confirm('¿Estás seguro de eliminar esta actividad?')) {
-    emit('update:actividades', props.actividades.filter((_, i) => i !== index))
+const showConfirmDelete = ref(false)
+const pendingDeleteIndex = ref(null)
+
+function confirmarDelete() {
+  if (pendingDeleteIndex.value !== null) {
+    emit('update:actividades', props.actividades.filter((_, i) => i !== pendingDeleteIndex.value))
+    pendingDeleteIndex.value = null
   }
 }
 </script>

@@ -6,7 +6,7 @@
 // Query para obtener miembros
 export const GET_MIEMBROS = `
   query Miembros {
-    miembros {
+    miembros(filter: { eliminado: { eq: false } }) {
       id
       nombre
       apellido1
@@ -16,6 +16,7 @@ export const GET_MIEMBROS = `
       telefono
       telefono2
       fechaNacimiento
+      fotoUrl
       tipoMiembro {
         id
         nombre

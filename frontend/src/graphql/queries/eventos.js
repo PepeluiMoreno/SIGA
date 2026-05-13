@@ -180,6 +180,18 @@ export const ACTUALIZAR_EVENTO = `
   }
 `
 
+export const SOFT_DELETE_EVENTO = `
+  mutation SoftDeleteEvento($id: UUID!) {
+    actualizarAccion(data: { id: $id, eliminado: true }) { id }
+  }
+`
+
+export const ELIMINAR_EVENTO = `
+  mutation EliminarEvento($id: UUID!) {
+    eliminarAcciones(filter: { id: { eq: $id } }) { id }
+  }
+`
+
 export const INSCRIBIR_PARTICIPANTE = `
   mutation InscribirParticipante($data: ParticipanteEventoCreateInput!) {
     crearParticipanteEvento(data: $data) {

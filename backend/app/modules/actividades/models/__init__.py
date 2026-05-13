@@ -1,31 +1,15 @@
 """Modelos del módulo de actividades."""
 
-from .catalogos import (
-    TipoActividad,
-    EstadoPropuesta,
-    TipoRecurso,
-    TipoKPI,
-)
 from app.modules.configuracion.models.estados import (
-    EstadoActividad,
+    EstadoAccion,
     EstadoTarea,
-    EstadoParticipante,
 )
-from .actividad import (
-    PropuestaActividad,
-    TareaPropuesta,
-    RecursoPropuesta,
-    GrupoPropuesta,
-    Actividad,
-    TareaActividad,
-    RecursoActividad,
-    GrupoActividad,
-    ParticipanteActividad,
-    KPI,
-    KPIActividad,
-    MedicionKPI,
+from .accion import (
+    TipoAccion,
+    Accion,
+    Participacion,
 )
-from .plan_actividad import PlanActividad
+from .tarea import Tarea
 from .campana import (
     TipoCampania,
     Campania,
@@ -39,47 +23,21 @@ from .grupo import (
     RolGrupo,
     GrupoTrabajo,
     MiembroGrupo,
-    TareaGrupo,
+    GrupoIniciativa,
     ReunionGrupo,
     AsistenteReunion,
 )
-from .evento import (
-    TipoEvento,
-    EstadoEvento,
-    Evento,
-    ParticipanteEvento,
-    MaterialEvento,
-    GrupoEvento,
-    TareaEvento,
-    GastoEvento,
-)
 
 __all__ = [
-    # JTI base
-    'PlanActividad',
     # Estados (re-exportados desde configuracion)
-    'EstadoActividad',
+    'EstadoAccion',
     'EstadoTarea',
-    'EstadoParticipante',
-    # Catálogos
-    'TipoActividad',
-    'EstadoPropuesta',
-    'TipoRecurso',
-    'TipoKPI',
-    # Actividades y propuestas
-    'PropuestaActividad',
-    'TareaPropuesta',
-    'RecursoPropuesta',
-    'GrupoPropuesta',
-    'Actividad',
-    'TareaActividad',
-    'RecursoActividad',
-    'GrupoActividad',
-    'ParticipanteActividad',
-    'KPI',
-    'KPIActividad',
-    'MedicionKPI',
-    # Campañas
+    # Acciones
+    'TipoAccion',
+    'Accion',
+    'Participacion',
+    'Tarea',
+    # Campañas (iniciativas estratégicas)
     'TipoCampania',
     'Campania',
     'RolParticipante',
@@ -91,16 +49,7 @@ __all__ = [
     'RolGrupo',
     'GrupoTrabajo',
     'MiembroGrupo',
-    'TareaGrupo',
+    'GrupoIniciativa',
     'ReunionGrupo',
     'AsistenteReunion',
-    # Eventos
-    'TipoEvento',
-    'EstadoEvento',
-    'Evento',
-    'ParticipanteEvento',
-    'MaterialEvento',
-    'GrupoEvento',
-    'TareaEvento',
-    'GastoEvento',
 ]

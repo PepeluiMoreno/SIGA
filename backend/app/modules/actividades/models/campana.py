@@ -9,7 +9,6 @@ from sqlalchemy import String, Integer, Uuid, ForeignKey, Date, Numeric, Text, B
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ....infrastructure.base_model import BaseModel
-from .plan_actividad import PlanActividad  # noqa: F401 — importado para que SQLAlchemy resuelva la relación
 
 
 class TipoCampania(BaseModel):
@@ -80,19 +79,12 @@ class Campania(BaseModel):
     responsable_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('miembros.id'), nullable=True, index=True)
     agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('agrupaciones_territoriales.id'), nullable=True, index=True)
 
-    # JTI: vínculo 1:1 con PlanActividad (raíz)
-    plan_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('plan_actividades.id', ondelete='SET NULL'),
-        nullable=True, unique=True, index=True,
-    )
-
     # Relaciones
-    plan = relationship('PlanActividad', back_populates='campania', lazy='selectin')
     tipo_campania = relationship('TipoCampania', back_populates='campanias', lazy='selectin')
     estado = relationship('EstadoCampania', foreign_keys=[estado_id], lazy='selectin')
     agrupacion = relationship('AgrupacionTerritorial', lazy='selectin')
     responsable = relationship('Miembro', foreign_keys=[responsable_id], lazy='selectin')
-    actividades = relationship('Actividad', back_populates='campania', lazy='selectin')
+    acciones = relationship('Accion', back_populates='iniciativa', foreign_keys='Accion.iniciativa_id', lazy='selectin')
     participantes = relationship('ParticipanteCampania', back_populates='campania', lazy='selectin')
     firmas = relationship('FirmaCampania', back_populates='campania', lazy='selectin')
     # Las donaciones están en financiero/models/donaciones.py con campania_id

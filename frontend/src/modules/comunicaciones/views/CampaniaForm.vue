@@ -491,8 +491,9 @@ const habilidades     = ref([])
 const habilidadesPorCategoria = computed(() => {
   const map = {}
   habilidades.value.forEach(h => {
-    if (!map[h.categoria]) map[h.categoria] = []
-    map[h.categoria].push(h)
+    const key = h.categoria?.nombre ?? 'Sin categoría'
+    if (!map[key]) map[key] = []
+    map[key].push(h)
   })
   return Object.entries(map)
     .sort(([a], [b]) => a.localeCompare(b, 'es'))

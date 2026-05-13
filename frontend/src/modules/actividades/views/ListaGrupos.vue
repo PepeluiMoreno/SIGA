@@ -72,12 +72,16 @@
               </div>
             </div>
 
-            <div class="mt-4 md:mt-0 md:ml-6 flex items-center gap-1">
-              <router-link :to="`/grupos/${grupo.id}`"
-                class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
-                title="Ver detalle">
-                <EyeIcon class="w-4 h-4" />
-              </router-link>
+            <div class="mt-4 md:mt-0 md:ml-6">
+              <RowActions
+                :show-view="true"
+                :show-edit="true"
+                confirm-title="¿Eliminar este grupo?"
+                :confirm-text="`«${grupo.nombre}» será eliminado permanentemente.`"
+                @view="$router.push(`/grupos/${grupo.id}`)"
+                @edit="$router.push(`/grupos/${grupo.id}`)"
+                @delete="eliminarGrupo(grupo)"
+              />
             </div>
           </div>
         </div>
@@ -90,9 +94,9 @@
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
-import { EyeIcon } from '@heroicons/vue/24/outline'
-import { executeQuery } from '@/graphql/client'
-import { GET_GRUPOS, GET_TIPOS_GRUPO } from '@/graphql/queries/grupos.js'
+import RowActions from '@/components/common/RowActions.vue'
+import { graphqlClient, executeQuery } from '@/graphql/client'
+import { GET_GRUPOS, GET_TIPOS_GRUPO, ELIMINAR_GRUPO } from '@/graphql/queries/grupos.js'
 import { useOrgConfigStore } from '@/stores/orgConfig'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
@@ -158,6 +162,15 @@ async function cargar() {
 async function aplicarFiltros() {
   await cargar()
   filtersApplied.value = true
+}
+
+async function eliminarGrupo(grupo) {
+  try {
+    await graphqlClient.request(ELIMINAR_GRUPO, { id: grupo.id })
+    grupos.value = grupos.value.filter(g => g.id !== grupo.id)
+  } catch (e) {
+    alert(e?.response?.errors?.[0]?.message || 'Error eliminando grupo')
+  }
 }
 
 function getTipoClass(nombre) {

@@ -8,7 +8,7 @@
     >
       ← {{ backText }}
     </router-link>
-    
+
     <!-- Botón Editar -->
     <router-link
       v-if="editRoute"
@@ -18,61 +18,44 @@
       <span class="mr-1">✏️</span>
       {{ editText }}
     </router-link>
-    
+
     <!-- Botón Eliminar -->
     <button
       v-if="showDelete"
-      @click="handleDelete"
+      @click="showConfirm = true"
       class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors flex items-center"
     >
       <span class="mr-1">🗑️</span>
       {{ deleteText }}
     </button>
-    
+
     <!-- Slot para botones adicionales -->
     <slot />
   </div>
+
+  <ConfirmModal
+    v-model="showConfirm"
+    :title="confirmTitle"
+    @confirm="(opts) => $emit('delete', opts)"
+  />
 </template>
 
 <script setup>
-import { defineEmits } from 'vue'
+import { ref } from 'vue'
+import ConfirmModal from './ConfirmModal.vue'
 
 const props = defineProps({
-  showBack: {
-    type: Boolean,
-    default: true
-  },
-  backRoute: {
-    type: [String, Object],
-    default: '/campanias'
-  },
-  backText: {
-    type: String,
-    default: 'Volver'
-  },
-  editRoute: {
-    type: [String, Object],
-    default: ''
-  },
-  editText: {
-    type: String,
-    default: 'Editar'
-  },
-  showDelete: {
-    type: Boolean,
-    default: false
-  },
-  deleteText: {
-    type: String,
-    default: 'Eliminar'
-  }
+  showBack: { type: Boolean, default: true },
+  backRoute: { type: [String, Object], default: '/campanias' },
+  backText: { type: String, default: 'Volver' },
+  editRoute: { type: [String, Object], default: '' },
+  editText: { type: String, default: 'Editar' },
+  showDelete: { type: Boolean, default: false },
+  deleteText: { type: String, default: 'Eliminar' },
+  confirmTitle: { type: String, default: '¿Eliminar este elemento?' },
 })
 
 const emit = defineEmits(['delete'])
 
-const handleDelete = () => {
-  if (confirm('¿Estás seguro de que quieres eliminar este elemento?')) {
-    emit('delete')
-  }
-}
+const showConfirm = ref(false)
 </script>

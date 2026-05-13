@@ -119,9 +119,12 @@
               <tr v-else class="hover:bg-gray-50">
                 <td class="py-3 pr-4" :style="{ paddingLeft: (fila.depth * 20 + 16) + 'px' }">
                   <div class="flex items-center gap-3">
-                    <div class="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-white text-xs font-medium bg-purple-500">
-                      {{ getInitials(fila.miembro.nombre, fila.miembro.apellido1) }}
-                    </div>
+                    <AvatarImg
+                      :src="fila.miembro.fotoUrl"
+                      :nombre="fila.miembro.nombre"
+                      :apellido="fila.miembro.apellido1"
+                      size="sm"
+                    />
                     <div>
                       <div class="text-sm font-medium text-gray-900">
                         {{ fila.miembro.apellido1 }}{{ fila.miembro.apellido2 ? ' ' + fila.miembro.apellido2 : '' }}, {{ fila.miembro.nombre }}
@@ -187,6 +190,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
+import AvatarImg from '@/components/common/AvatarImg.vue'
 import { EyeIcon, PencilIcon } from '@heroicons/vue/24/outline'
 import { useGraphQL } from '@/composables/useGraphQL.js'
 import { useOrgConfigStore } from '@/stores/orgConfig'

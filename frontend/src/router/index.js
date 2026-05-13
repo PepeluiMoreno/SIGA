@@ -170,21 +170,36 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/grupos/nuevo',
+    component: () => import('@/modules/actividades/views/NuevoGrupo.vue'),
+    name: 'NuevoGrupo',
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/grupos/:id',
     component: () => import('@/modules/actividades/views/DetalleGrupo.vue'),
     name: 'DetalleGrupo',
     meta: { requiresAuth: true }
   },
+  // Redirect legacy /eventos URLs to /acciones
+  { path: '/eventos', redirect: '/acciones' },
+  { path: '/eventos/:id', redirect: to => `/acciones/${to.params.id}` },
   {
-    path: '/eventos',
-    component: () => import('@/modules/actividades/views/ListaEventos.vue'),
-    name: 'Eventos',
+    path: '/acciones',
+    component: () => import('@/modules/actividades/views/ListaAcciones.vue'),
+    name: 'Acciones',
     meta: { requiresAuth: true }
   },
   {
-    path: '/eventos/:id',
-    component: () => import('@/modules/actividades/views/DetalleEvento.vue'),
-    name: 'DetalleEvento',
+    path: '/acciones/nueva',
+    component: () => import('@/modules/actividades/views/NuevaAccion.vue'),
+    name: 'NuevaAccion',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/acciones/:id',
+    component: () => import('@/modules/actividades/views/DetalleAccion.vue'),
+    name: 'DetalleAccion',
     meta: { requiresAuth: true }
   },
 
@@ -253,6 +268,13 @@ const routes = [
     component: Donaciones,
     name: 'Donaciones',
     meta: { requiresAuth: true }
+  },
+
+  // ─── PAPELERA ─────────────────────────────────────────────────────────────
+  {
+    path: '/papelera',
+    component: () => import('@/views/PapeleraView.vue'),
+    meta: { requiresAuth: true },
   },
 
   // ─── CONFIGURACION ────────────────────────────────────────────────────────

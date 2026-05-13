@@ -5,7 +5,7 @@
 // Query para obtener miembros voluntarios
 export const GET_VOLUNTARIOS = `
   query Voluntarios {
-    miembros(filter: {esVoluntario: {eq: true}}) {
+    miembros(filter: { _and: [{ esVoluntario: { eq: true } }, { eliminado: { eq: false } }] }) {
       id
       nombre
       apellido1

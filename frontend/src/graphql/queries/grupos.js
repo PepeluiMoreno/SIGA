@@ -3,7 +3,7 @@
 
 export const GET_GRUPOS = `
   query GruposTrabajo {
-    gruposTrabajo {
+    gruposTrabajo(filter: { eliminado: { eq: false } }) {
       id
       nombre
       descripcion
@@ -86,6 +86,12 @@ export const GET_TIPOS_GRUPO = `
       esPermanente
       activo
     }
+  }
+`
+
+export const ELIMINAR_GRUPO = `
+  mutation EliminarGrupo($id: UUID!) {
+    eliminarGruposTrabajo(filter: { id: { eq: $id } }) { id }
   }
 `
 

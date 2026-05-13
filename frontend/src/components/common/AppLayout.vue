@@ -118,9 +118,9 @@
                     </router-link>
                   </li>
                   <li>
-                    <router-link to="/eventos" class="nav-item"
-                      :class="$route.path.startsWith('/eventos') ? 'active' : 'inactive'">
-                      <CalendarDaysIcon class="nav-icon" /><span>Eventos</span>
+                    <router-link to="/acciones" class="nav-item"
+                      :class="$route.path.startsWith('/acciones') ? 'active' : 'inactive'">
+                      <CalendarDaysIcon class="nav-icon" /><span>Acciones</span>
                     </router-link>
                   </li>
                   <li>
@@ -208,6 +208,14 @@
             </div>
 
           </div><!-- /módulos principales -->
+
+          <!-- Papelera -->
+          <div class="px-1 pb-1">
+            <router-link to="/papelera" class="nav-item"
+              :class="$route.path.startsWith('/papelera') ? 'active' : 'inactive'">
+              <TrashIcon class="nav-icon" /><span>Papelera</span>
+            </router-link>
+          </div>
 
           <!-- Configuración — anclada al fondo -->
           <div class="mt-auto pt-2">
@@ -353,7 +361,7 @@ import {
   GlobeAltIcon, BookOpenIcon, CalendarDaysIcon, SwatchIcon,
   BuildingOffice2Icon, BuildingLibraryIcon, CalculatorIcon, CreditCardIcon,
   ArrowsRightLeftIcon, ChartBarIcon, GiftIcon, UserCircleIcon,
-  Bars3Icon, XMarkIcon, ChevronDownIcon,
+  Bars3Icon, XMarkIcon, ChevronDownIcon, TrashIcon,
 } from '@heroicons/vue/24/outline'
 
 defineProps({
@@ -401,7 +409,7 @@ function sectionForPath(path) {
   if (path.startsWith('/miembros') || path.startsWith('/agrupaciones') ||
       path.startsWith('/juntas') || path.startsWith('/voluntarios'))
     return 'membresia'
-  if (path.startsWith('/campanias') || path.startsWith('/eventos') ||
+  if (path.startsWith('/campanias') || path.startsWith('/acciones') ||
       path.startsWith('/grupos'))
     return 'actividades'
   if (path.startsWith('/economico'))

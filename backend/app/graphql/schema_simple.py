@@ -46,6 +46,7 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, FinancieroQuery):
     historialConfiguracion: list[HistorialConfiguracionType] = strawchemy.field()
     estadosCuota: list[EstadoCuotaType] = strawchemy.field(filter_input=EstadoCuotaFilter)
     estadosCampania: list[EstadoCampaniaType] = strawchemy.field(filter_input=EstadoCampaniaFilter)
+    estadosAccion: list[EstadoAccionType] = strawchemy.field(filter_input=EstadoAccionFilter)
     estadosTarea: list[EstadoTareaType] = strawchemy.field(filter_input=EstadoTareaFilter)
     estadosParticipante: list[EstadoParticipanteType] = strawchemy.field(filter_input=EstadoParticipanteFilter)
     estadosOrdenCobro: list[EstadoOrdenCobroType] = strawchemy.field(filter_input=EstadoOrdenCobroFilter)
@@ -129,49 +130,26 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, FinancieroQuery):
     historialAgrupaciones: list[HistorialAgrupacionType] = strawchemy.field(filter_input=HistorialAgrupacionFilter)
     solicitudesTraslado: list[SolicitudTrasladoType] = strawchemy.field(filter_input=SolicitudTrasladoFilter)
 
-    # === PLAN DE ACTIVIDADES (JTI) ===
-    planActividades: list[PlanActividadType] = strawchemy.field(filter_input=PlanActividadFilter)
-
     # === CAMPAÑAS ===
     tiposCampania: list[TipoCampaniaType] = strawchemy.field(filter_input=TipoCampaniaFilter)
     campanias: list[CampaniaType] = strawchemy.field(filter_input=CampaniaFilter)
     rolesParticipante: list[RolParticipanteType] = strawchemy.field(filter_input=RolParticipanteFilter)
     participantesCampania: list[ParticipanteCampaniaType] = strawchemy.field(filter_input=ParticipanteCampaniaFilter)
 
-    # === ACTIVIDADES ===
-    tiposActividad: list[TipoActividadType] = strawchemy.field(filter_input=TipoActividadFilter)
-    estadosActividad: list[EstadoActividadType] = strawchemy.field(filter_input=EstadoActividadFilter)
-    estadosPropuesta: list[EstadoPropuestaType] = strawchemy.field(filter_input=EstadoPropuestaFilter)
-    tiposRecurso: list[TipoRecursoType] = strawchemy.field(filter_input=TipoRecursoFilter)
-    tiposKpi: list[TipoKPIType] = strawchemy.field(filter_input=TipoKPIFilter)
-    propuestasActividad: list[PropuestaActividadType] = strawchemy.field(filter_input=PropuestaActividadFilter)
-    tareasPropuesta: list[TareaPropuestaType] = strawchemy.field()
-    recursosPropuesta: list[RecursoPropuestaType] = strawchemy.field()
-    gruposPropuesta: list[GrupoPropuestaType] = strawchemy.field()
-    actividades: list[ActividadType] = strawchemy.field(filter_input=ActividadFilter)
-    tareasActividad: list[TareaActividadType] = strawchemy.field(filter_input=TareaActividadFilter)
-    recursosActividad: list[RecursoActividadType] = strawchemy.field()
-    gruposActividad: list[GrupoActividadType] = strawchemy.field()
-    participantesActividad: list[ParticipanteActividadType] = strawchemy.field()
-    kpis: list[KPIType] = strawchemy.field()
-    kpisActividad: list[KPIActividadType] = strawchemy.field()
-    medicionesKpi: list[MedicionKPIType] = strawchemy.field()
+    # === ACCIONES (unifica Evento + Actividad) ===
+    tiposAccion: list[TipoAccionType] = strawchemy.field(filter_input=TipoAccionFilter)
+    acciones: list[AccionType] = strawchemy.field(filter_input=AccionFilter)
+    tareas: list[TareaType] = strawchemy.field(filter_input=TareaFilter)
+    participaciones: list[ParticipacionType] = strawchemy.field(filter_input=ParticipacionFilter)
 
     # === GRUPOS ===
     tiposGrupo: list[TipoGrupoType] = strawchemy.field(filter_input=TipoGrupoFilter)
     rolesGrupo: list[RolGrupoType] = strawchemy.field(filter_input=RolGrupoFilter)
     gruposTrabajo: list[GrupoTrabajoType] = strawchemy.field(filter_input=GrupoTrabajoFilter)
     miembrosGrupo: list[MiembroGrupoType] = strawchemy.field(filter_input=MiembroGrupoFilter)
-    tareasGrupo: list[TareaGrupoType] = strawchemy.field(filter_input=TareaGrupoFilter)
+    gruposIniciativa: list[GrupoIniciativaType] = strawchemy.field(filter_input=GrupoIniciativaFilter)
     reunionesGrupo: list[ReunionGrupoType] = strawchemy.field()
     asistentesReunion: list[AsistenteReunionType] = strawchemy.field()
-
-    # === EVENTOS ===
-    tiposEvento: list[TipoEventoType] = strawchemy.field()
-    estadosEvento: list[EstadoEventoType] = strawchemy.field()
-    eventos: list[EventoType] = strawchemy.field()
-    participantesEvento: list[ParticipanteEventoType] = strawchemy.field()
-    materialesEvento: list[MaterialEventoType] = strawchemy.field()
 
     # === VOLUNTARIADO ===
     categoriasCompetencia: list[CategoriaCompetenciaType] = strawchemy.field(filter_input=CategoriaCompetenciaFilter)

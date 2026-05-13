@@ -43,8 +43,8 @@ from .configuracion.models import (
     EstadoBase,
     EstadoCuota,
     EstadoCampania,
+    EstadoAccion,
     EstadoTarea,
-    EstadoActividad,
     EstadoParticipante,
     EstadoOrdenCobro,
     EstadoRemesa,
@@ -89,24 +89,12 @@ from .membresia.models import (
     FormacionMiembro,
 )
 
-# Actividades: campañas, eventos, grupos de trabajo, KPIs
+# Actividades: campañas, acciones, grupos de trabajo
 from .actividades.models import (
-    TipoActividad,
-    EstadoPropuesta,
-    TipoRecurso,
-    TipoKPI,
-    PropuestaActividad,
-    TareaPropuesta,
-    RecursoPropuesta,
-    GrupoPropuesta,
-    Actividad,
-    TareaActividad,
-    RecursoActividad,
-    GrupoActividad,
-    ParticipanteActividad,
-    KPI,
-    KPIActividad,
-    MedicionKPI,
+    TipoAccion as TipoAccionActividades,
+    Accion,
+    Participacion,
+    Tarea,
     TipoCampania,
     Campania,
     RolParticipante,
@@ -117,17 +105,9 @@ from .actividades.models import (
     RolGrupo,
     GrupoTrabajo,
     MiembroGrupo,
-    TareaGrupo,
+    GrupoIniciativa,
     ReunionGrupo,
     AsistenteReunion,
-    TipoEvento,
-    EstadoEvento,
-    Evento,
-    ParticipanteEvento,
-    MaterialEvento,
-    GrupoEvento,
-    TareaEvento,
-    GastoEvento,
 )
 
 # Económico: tesorería, contabilidad, cuotas, donaciones, remesas, cobro
@@ -178,8 +158,8 @@ __all__ = [
     'TipoNotificacion', 'Notificacion', 'PreferenciaNotificacion',
     # Configuración
     'Configuracion', 'ReglaValidacionConfig', 'HistorialConfiguracion',
-    'EstadoBase', 'EstadoCuota', 'EstadoCampania', 'EstadoTarea',
-    'EstadoActividad', 'EstadoParticipante', 'EstadoOrdenCobro',
+    'EstadoBase', 'EstadoCuota', 'EstadoCampania', 'EstadoAccion', 'EstadoTarea',
+    'EstadoParticipante', 'EstadoOrdenCobro',
     'EstadoRemesa', 'EstadoDonacion', 'EstadoNotificacion', 'HistorialEstado',
     # Organizaciones
     'TipoOrganizacion', 'Organizacion', 'EstadoConvenio', 'Convenio',
@@ -192,14 +172,9 @@ __all__ = [
     'CategoriaCompetencia', 'Competencia', 'NivelCompetencia', 'MiembroCompetencia',
     'TipoDocumentoVoluntario', 'DocumentoMiembro', 'TipoFormacion', 'FormacionMiembro',
     # Actividades
-    'TipoActividad', 'EstadoPropuesta', 'TipoRecurso', 'TipoKPI',
-    'PropuestaActividad', 'TareaPropuesta', 'RecursoPropuesta', 'GrupoPropuesta',
-    'Actividad', 'TareaActividad', 'RecursoActividad', 'GrupoActividad',
-    'ParticipanteActividad', 'KPI', 'KPIActividad', 'MedicionKPI',
+    'TipoAccionActividades', 'Accion', 'Participacion', 'Tarea',
     'TipoCampania', 'Campania', 'RolParticipante', 'ParticipanteCampania',
     'Firmante', 'FirmaCampania',
     'TipoGrupo', 'RolGrupo', 'GrupoTrabajo', 'MiembroGrupo',
-    'TareaGrupo', 'ReunionGrupo', 'AsistenteReunion',
-    'TipoEvento', 'EstadoEvento', 'Evento',
-    'ParticipanteEvento', 'MaterialEvento', 'GrupoEvento', 'TareaEvento', 'GastoEvento',
+    'GrupoIniciativa', 'ReunionGrupo', 'AsistenteReunion',
 ]

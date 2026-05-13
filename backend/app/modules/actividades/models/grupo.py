@@ -3,12 +3,15 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from sqlalchemy import String, Integer, Uuid, ForeignKey, Date, Numeric, Text, Boolean, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ....infrastructure.base_model import BaseModel
+
+if TYPE_CHECKING:
+    from ...membresia.models.miembro import Miembro
 
 
 class TipoGrupo(BaseModel):
@@ -79,7 +82,7 @@ class GrupoTrabajo(BaseModel):
     coordinador = relationship('Miembro', foreign_keys=[coordinador_id], lazy='selectin')
     agrupacion = relationship('AgrupacionTerritorial', lazy='selectin')
     miembros = relationship('MiembroGrupo', back_populates='grupo', lazy='selectin')
-    tareas = relationship('TareaGrupo', back_populates='grupo', lazy='selectin')
+    tareas = relationship('Tarea', back_populates='grupo', foreign_keys='Tarea.grupo_id', lazy='selectin')
     reuniones = relationship('ReunionGrupo', back_populates='grupo', lazy='selectin')
 
     def __repr__(self) -> str:
@@ -98,7 +101,9 @@ class MiembroGrupo(BaseModel):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     grupo_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('grupos_trabajo.id'), nullable=False, index=True)
-    miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    miembro_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('miembros.id', ondelete='CASCADE'), nullable=False, index=True
+    )
     rol_grupo_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('roles_grupo.id'), nullable=False, index=True)
 
     fecha_incorporacion: Mapped[date] = mapped_column(Date, server_default=func.now(), nullable=False)
@@ -110,37 +115,25 @@ class MiembroGrupo(BaseModel):
 
     grupo = relationship('GrupoTrabajo', back_populates='miembros', lazy='selectin')
     rol_grupo = relationship('RolGrupo', back_populates='miembros_grupo', lazy='selectin')
+    miembro: Mapped['Miembro'] = relationship('Miembro', foreign_keys=[miembro_id], lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<MiembroGrupo(miembro_id='{self.miembro_id}', grupo_id='{self.grupo_id}')>"
 
 
-class TareaGrupo(BaseModel):
-    """Tarea asignada a un grupo de trabajo."""
-    __tablename__ = 'tareas_grupo'
+class GrupoIniciativa(BaseModel):
+    """Asociación explícita entre un GrupoTrabajo y una Campaña/Iniciativa."""
+    __tablename__ = 'grupo_iniciativa'
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     grupo_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('grupos_trabajo.id'), nullable=False, index=True)
+    iniciativa_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('campanias.id'), nullable=False, index=True)
+    rol: Mapped[str] = mapped_column(String(50), nullable=False, default='colaborador')
 
-    titulo: Mapped[str] = mapped_column(String(200), nullable=False)
-    descripcion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-
-    asignado_a_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, nullable=True, index=True)
-    estado_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('estados_tarea.id'), nullable=False, index=True)
-    prioridad: Mapped[int] = mapped_column(Integer, default=2, nullable=False)
-
-    fecha_creacion: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
-    fecha_limite: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    fecha_completada: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-
-    horas_estimadas: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2), nullable=True)
-    horas_reales: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2), nullable=True)
-
-    grupo = relationship('GrupoTrabajo', back_populates='tareas', lazy='selectin')
-    estado = relationship('EstadoTarea', foreign_keys=[estado_id], lazy='selectin')
+    grupo = relationship('GrupoTrabajo', foreign_keys=[grupo_id], lazy='selectin')
 
     def __repr__(self) -> str:
-        return f"<TareaGrupo(titulo='{self.titulo}', grupo_id='{self.grupo_id}')>"
+        return f"<GrupoIniciativa(grupo_id='{self.grupo_id}', iniciativa_id='{self.iniciativa_id}')>"
 
 
 class ReunionGrupo(BaseModel):

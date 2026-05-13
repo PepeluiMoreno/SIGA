@@ -238,6 +238,7 @@ class CoordinacionTerritorialFilter:
 from ..modules.core.models import (
     EstadoCuota,
     EstadoCampania,
+    EstadoAccion,
     EstadoTarea,
     EstadoParticipante,
     EstadoOrdenCobro,
@@ -274,6 +275,21 @@ class EstadoCampaniaUpdateInput:
 
 @strawchemy.filter(EstadoCampania, include="all")
 class EstadoCampaniaFilter:
+    pass
+
+
+@strawchemy.input(EstadoAccion, mode="create_input", include="all", exclude=get_exclude_fields(EstadoAccion))
+class EstadoAccionCreateInput:
+    pass
+
+
+@strawchemy.input(EstadoAccion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(EstadoAccion))
+class EstadoAccionUpdateInput:
+    pass
+
+
+@strawchemy.filter(EstadoAccion, include="all")
+class EstadoAccionFilter:
     pass
 
 
@@ -644,22 +660,7 @@ class SolicitudTrasladoFilter:
 # CAMPAÑAS
 # ============================================================================
 
-from ..modules.actividades.models import PlanActividad, TipoCampania, Campania, RolParticipante, ParticipanteCampania
-
-
-@strawchemy.input(PlanActividad, mode="create_input", include="all", exclude=get_exclude_fields(PlanActividad))
-class PlanActividadCreateInput:
-    pass
-
-
-@strawchemy.input(PlanActividad, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(PlanActividad))
-class PlanActividadUpdateInput:
-    pass
-
-
-@strawchemy.filter(PlanActividad, include="all")
-class PlanActividadFilter:
-    pass
+from ..modules.actividades.models import TipoCampania, Campania, RolParticipante, ParticipanteCampania
 
 
 @strawchemy.input(TipoCampania, mode="create_input", include="all", exclude=get_exclude_fields(TipoCampania))
@@ -723,132 +724,69 @@ class ParticipanteCampaniaFilter:
 
 
 # ============================================================================
-# ACTIVIDADES
+# ACCIONES (unifica Evento + Actividad)
 # ============================================================================
 
-from ..modules.actividades.models import (
-    TipoActividad, EstadoActividad, EstadoPropuesta, TipoRecurso, TipoKPI,
-    PropuestaActividad, Actividad, TareaActividad
-)
+from ..modules.actividades.models import TipoAccion, Accion, Tarea, Participacion
 
 
-@strawchemy.input(TipoActividad, mode="create_input", include="all", exclude=get_exclude_fields(TipoActividad))
-class TipoActividadCreateInput:
+@strawchemy.input(TipoAccion, mode="create_input", include="all", exclude=get_exclude_fields(TipoAccion))
+class TipoAccionCreateInput:
     pass
 
 
-@strawchemy.input(TipoActividad, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TipoActividad))
-class TipoActividadUpdateInput:
+@strawchemy.input(TipoAccion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TipoAccion))
+class TipoAccionUpdateInput:
     pass
 
 
-@strawchemy.filter(TipoActividad, include="all")
-class TipoActividadFilter:
+@strawchemy.filter(TipoAccion, include="all")
+class TipoAccionFilter:
     pass
 
 
-@strawchemy.input(EstadoActividad, mode="create_input", include="all", exclude=get_exclude_fields(EstadoActividad))
-class EstadoActividadCreateInput:
+@strawchemy.input(Accion, mode="create_input", include="all", exclude=get_exclude_fields(Accion))
+class AccionCreateInput:
     pass
 
 
-@strawchemy.input(EstadoActividad, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(EstadoActividad))
-class EstadoActividadUpdateInput:
+@strawchemy.input(Accion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Accion))
+class AccionUpdateInput:
     pass
 
 
-@strawchemy.filter(EstadoActividad, include="all")
-class EstadoActividadFilter:
+@strawchemy.filter(Accion, include="all")
+class AccionFilter:
     pass
 
 
-@strawchemy.input(EstadoPropuesta, mode="create_input", include="all", exclude=get_exclude_fields(EstadoPropuesta))
-class EstadoPropuestaCreateInput:
+@strawchemy.input(Tarea, mode="create_input", include="all", exclude=get_exclude_fields(Tarea))
+class TareaCreateInput:
     pass
 
 
-@strawchemy.input(EstadoPropuesta, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(EstadoPropuesta))
-class EstadoPropuestaUpdateInput:
+@strawchemy.input(Tarea, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Tarea))
+class TareaUpdateInput:
     pass
 
 
-@strawchemy.filter(EstadoPropuesta)
-class EstadoPropuestaFilter:
+@strawchemy.filter(Tarea, include="all")
+class TareaFilter:
     pass
 
 
-@strawchemy.input(TipoRecurso, mode="create_input", include="all", exclude=get_exclude_fields(TipoRecurso))
-class TipoRecursoCreateInput:
+@strawchemy.input(Participacion, mode="create_input", include="all", exclude=get_exclude_fields(Participacion))
+class ParticipacionCreateInput:
     pass
 
 
-@strawchemy.input(TipoRecurso, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TipoRecurso))
-class TipoRecursoUpdateInput:
+@strawchemy.input(Participacion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Participacion))
+class ParticipacionUpdateInput:
     pass
 
 
-@strawchemy.filter(TipoRecurso)
-class TipoRecursoFilter:
-    pass
-
-
-@strawchemy.input(TipoKPI, mode="create_input", include="all", exclude=get_exclude_fields(TipoKPI))
-class TipoKPICreateInput:
-    pass
-
-
-@strawchemy.input(TipoKPI, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TipoKPI))
-class TipoKPIUpdateInput:
-    pass
-
-
-@strawchemy.filter(TipoKPI)
-class TipoKPIFilter:
-    pass
-
-
-@strawchemy.input(PropuestaActividad, mode="create_input", include="all", exclude=get_exclude_fields(PropuestaActividad))
-class PropuestaActividadCreateInput:
-    pass
-
-
-@strawchemy.input(PropuestaActividad, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(PropuestaActividad))
-class PropuestaActividadUpdateInput:
-    pass
-
-
-@strawchemy.filter(PropuestaActividad)
-class PropuestaActividadFilter:
-    pass
-
-
-@strawchemy.input(Actividad, mode="create_input", include="all", exclude=get_exclude_fields(Actividad))
-class ActividadCreateInput:
-    pass
-
-
-@strawchemy.input(Actividad, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Actividad))
-class ActividadUpdateInput:
-    pass
-
-
-@strawchemy.filter(Actividad)
-class ActividadFilter:
-    pass
-
-
-@strawchemy.input(TareaActividad, mode="create_input", include="all", exclude=get_exclude_fields(TareaActividad))
-class TareaActividadCreateInput:
-    pass
-
-
-@strawchemy.input(TareaActividad, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TareaActividad))
-class TareaActividadUpdateInput:
-    pass
-
-
-@strawchemy.filter(TareaActividad)
-class TareaActividadFilter:
+@strawchemy.filter(Participacion, include="all")
+class ParticipacionFilter:
     pass
 
 
@@ -856,7 +794,7 @@ class TareaActividadFilter:
 # GRUPOS
 # ============================================================================
 
-from ..modules.actividades.models import TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo, TareaGrupo
+from ..modules.actividades.models import TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo, GrupoIniciativa
 
 
 @strawchemy.input(TipoGrupo, mode="create_input", include="all", exclude=get_exclude_fields(TipoGrupo))
@@ -919,18 +857,18 @@ class MiembroGrupoFilter:
     pass
 
 
-@strawchemy.input(TareaGrupo, mode="create_input", include="all", exclude=get_exclude_fields(TareaGrupo))
-class TareaGrupoCreateInput:
+@strawchemy.input(GrupoIniciativa, mode="create_input", include="all", exclude=get_exclude_fields(GrupoIniciativa))
+class GrupoIniciativaCreateInput:
     pass
 
 
-@strawchemy.input(TareaGrupo, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TareaGrupo))
-class TareaGrupoUpdateInput:
+@strawchemy.input(GrupoIniciativa, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(GrupoIniciativa))
+class GrupoIniciativaUpdateInput:
     pass
 
 
-@strawchemy.filter(TareaGrupo)
-class TareaGrupoFilter:
+@strawchemy.filter(GrupoIniciativa, include="all")
+class GrupoIniciativaFilter:
     pass
 
 

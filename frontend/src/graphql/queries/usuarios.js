@@ -54,7 +54,7 @@ export const GET_TIPOS_VINCULACION = `
 
 export const GET_MIEMBROS_SIMPLE = `
   query MiembrosSimple {
-    miembros {
+    miembros(filter: { eliminado: { eq: false } }) {
       id
       nombre
       apellido1

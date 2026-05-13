@@ -1,22 +1,21 @@
-// Queries GraphQL para el módulo de eventos
-// IMPORTANTE: Strawberry usa camelCase automáticamente
+// Queries GraphQL para el módulo de Acciones
 
-export const GET_TIPOS_EVENTO = `
-  query TiposEvento {
-    tiposEvento {
+export const GET_TIPOS_ACCION = `
+  query TiposAccion {
+    tiposAccion {
       id
       nombre
       descripcion
-      requiereInscripcion
-      requiereAforo
+      tieneLugar
+      tieneParticipantes
       activo
     }
   }
 `
 
-export const GET_ESTADOS_EVENTO = `
-  query EstadosEvento {
-    estadosEvento {
+export const GET_ESTADOS_ACCION = `
+  query EstadosAccion {
+    estadosAccion {
       id
       nombre
       descripcion
@@ -28,27 +27,25 @@ export const GET_ESTADOS_EVENTO = `
   }
 `
 
-export const GET_EVENTOS = `
-  query Eventos {
-    eventos {
+export const GET_ACCIONES = `
+  query Acciones {
+    acciones(filter: { eliminado: { eq: false } }) {
       id
       nombre
-      descripcionCorta
+      descripcion
       fechaInicio
       fechaFin
       horaInicio
       horaFin
-      esTodoDia
       lugar
-      ciudad
       esOnline
       urlOnline
-      aforoMaximo
-      requiereInscripcion
-      fechaLimiteInscripcion
-      tipoEvento {
+      aforo
+      tipoAccion {
         id
         nombre
+        tieneLugar
+        tieneParticipantes
       }
       estado {
         id
@@ -60,58 +57,37 @@ export const GET_EVENTOS = `
         nombre
         apellido1
       }
-      grupoOrganizador {
+      iniciativa {
         id
         nombre
-      }
-      campania {
-        id
-        nombre
-      }
-      agrupacion {
-        id
-        nombre
-      }
-      participantes {
-        id
-      }
-      materiales {
-        id
-        tipo
-        nombre
-        url
       }
       fechaCreacion
     }
   }
 `
 
-export const GET_EVENTO_BY_ID = `
-  query Evento($id: UUID!) {
-    eventos(filter: { id: { eq: $id } }) {
+export const GET_ACCION_BY_ID = `
+  query Accion($id: UUID!) {
+    acciones(filter: { id: { eq: $id } }) {
       id
       nombre
-      descripcionCorta
-      descripcionLarga
+      descripcion
       fechaInicio
       fechaFin
       horaInicio
       horaFin
-      esTodoDia
       lugar
       direccion
-      ciudad
+      aforo
       esOnline
       urlOnline
-      aforoMaximo
-      requiereInscripcion
-      fechaLimiteInscripcion
-      observaciones
-      tipoEvento {
+      presupuestoEstimado
+      presupuestoEjecutado
+      tipoAccion {
         id
         nombre
-        requiereInscripcion
-        requiereAforo
+        tieneLugar
+        tieneParticipantes
       }
       estado {
         id
@@ -125,67 +101,114 @@ export const GET_EVENTO_BY_ID = `
         apellido1
         email
       }
-      grupoOrganizador {
+      iniciativa {
         id
         nombre
       }
-      campania {
+      tareas {
         id
-        nombre
+        titulo
+        descripcion
+        prioridad
+        fechaLimite
+        horasEstimadas
+        horasReales
+        estado { id nombre }
+        responsable { id nombre apellido1 }
       }
-      agrupacion {
-        id
-        nombre
-      }
-      participantes {
+      participaciones {
         id
         rol
         confirmado
         asistio
-        fechaInscripcion
+        horasAportadas
         miembro {
           id
           nombre
           apellido1
           email
+          fotoUrl
         }
-      }
-      materiales {
-        id
-        tipo
-        nombre
-        descripcion
-        url
-        fechaSubida
+        nombreExterno
+        emailExterno
       }
     }
   }
 `
 
-export const CREAR_EVENTO = `
-  mutation CrearEvento($data: EventoCreateInput!) {
-    crearEvento(data: $data) {
+export const CREAR_ACCION = `
+  mutation CrearAccion($data: AccionCreateData!) {
+    crearAccion(data: $data) {
       id
       nombre
     }
   }
 `
 
-export const ACTUALIZAR_EVENTO = `
-  mutation ActualizarEvento($data: EventoUpdateInput!) {
-    actualizarEvento(data: $data) {
+export const ACTUALIZAR_ACCION = `
+  mutation ActualizarAccion($data: AccionUpdateData!) {
+    actualizarAccion(data: $data) {
       id
       nombre
     }
   }
 `
 
-export const INSCRIBIR_PARTICIPANTE = `
-  mutation InscribirParticipante($data: ParticipanteEventoCreateInput!) {
-    crearParticipanteEvento(data: $data) {
+export const REGISTRAR_PARTICIPACION = `
+  mutation RegistrarParticipacion($data: ParticipacionCreateData!) {
+    crearParticipacion(data: $data) {
       id
       rol
       confirmado
+    }
+  }
+`
+
+export const ACTUALIZAR_PARTICIPACION = `
+  mutation ActualizarParticipacion($data: ParticipacionUpdateInput!) {
+    actualizarParticipacion(data: $data) {
+      id rol confirmado asistio horasAportadas
+    }
+  }
+`
+
+export const ELIMINAR_PARTICIPACION = `
+  mutation EliminarParticipacion($id: UUID!) {
+    eliminarParticipaciones(filter: { id: { eq: $id } }) { id }
+  }
+`
+
+export const ACTUALIZAR_TAREA = `
+  mutation ActualizarTarea($data: TareaUpdateData!) {
+    actualizarTarea(data: $data) {
+      id titulo descripcion prioridad fechaLimite horasEstimadas horasReales
+      estado { id nombre }
+    }
+  }
+`
+
+export const ELIMINAR_TAREA = `
+  mutation EliminarTarea($id: UUID!) {
+    eliminarTareas(filter: { id: { eq: $id } }) { id }
+  }
+`
+
+export const SOFT_DELETE_ACCION = `
+  mutation SoftDeleteAccion($id: UUID!) {
+    actualizarAccion(data: { id: $id, eliminado: true }) { id }
+  }
+`
+
+export const ELIMINAR_ACCION = `
+  mutation EliminarAccion($id: UUID!) {
+    eliminarAcciones(filter: { id: { eq: $id } }) { id }
+  }
+`
+
+export const CREAR_TAREA = `
+  mutation CrearTarea($data: TareaCreateData!) {
+    crearTarea(data: $data) {
+      id titulo
     }
   }
 `

@@ -3,7 +3,7 @@ Seed de catálogos para el módulo de campañas.
 
 Crea/actualiza:
   - TipoCampania  (7 tipos con tipología real de Europa Laica)
-  - EstadoCampania
+  - EstadoCampania (UUIDs fijos — idempotente vía ON CONFLICT)
 """
 import asyncio
 import uuid
@@ -14,7 +14,6 @@ from sqlalchemy import select, text
 
 from app.core.database import get_database_url
 from app.modules.actividades.models.campana import TipoCampania
-from app.modules.configuracion.models.estados import EstadoCampania
 
 
 TIPOS = [
@@ -27,14 +26,16 @@ TIPOS = [
     ("Comunicación mediática",     "Notas de prensa, presencia en medios y redes sociales"),
 ]
 
-# (nombre, orden, es_inicial, es_final, descripcion)
+# UUIDs fijos: garantizan que el mismo estado tenga el mismo ID en cualquier entorno.
+# Nunca cambiar estos UUIDs. Si se necesita un estado nuevo, añadir una fila con un UUID nuevo.
+# (id, nombre, orden, es_inicial, es_final, descripcion)
 ESTADOS = [
-    ("Borrador",   1, True,  False, "Campaña en elaboración, no publicada"),
-    ("Programada", 2, False, False, "Campaña aprobada y pendiente de inicio"),
-    ("En Curso",   3, False, False, "Campaña activa en ejecución"),
-    ("Pausada",    4, False, False, "Campaña temporalmente suspendida"),
-    ("Finalizada", 5, False, True,  "Campaña concluida satisfactoriamente"),
-    ("Cancelada",  6, False, True,  "Campaña cancelada antes de finalizar"),
+    ("f181fc67-a7e1-44db-8b57-344f37bfe1c4", "Borrador",   1, True,  False, "Campaña en elaboración, no publicada"),
+    ("2a55d055-7055-4657-9f1d-30ba76277bd6", "Programada", 2, False, False, "Campaña aprobada y pendiente de inicio"),
+    ("c7d882d2-1aa0-4e74-b212-95ea731c19a0", "En curso",   3, False, False, "Campaña activa en ejecución"),
+    ("05b3edc1-1230-48ee-b7e5-fb7c5f632eff", "Pausada",    4, False, False, "Campaña temporalmente suspendida"),
+    ("7db81ba1-b5ed-4834-8b11-dd1d6c46d71f", "Finalizada", 5, False, True,  "Campaña concluida satisfactoriamente"),
+    ("156dbbf9-46de-4550-ab2a-a7fef2a546ff", "Cancelada",  6, False, True,  "Campaña cancelada antes de finalizar"),
 ]
 
 
@@ -42,11 +43,9 @@ async def seed(session: AsyncSession):
     # ── Tipos ─────────────────────────────────────────────────────────────────
     print("\n— Tipos de campaña —")
 
-    # Eliminar tipos obsoletos que no tengan campañas asociadas
     nombres_nuevos = {nombre for nombre, _ in TIPOS}
     res = await session.execute(select(TipoCampania))
-    tipos_existentes = res.scalars().all()
-    for tipo in tipos_existentes:
+    for tipo in res.scalars().all():
         if tipo.nombre not in nombres_nuevos:
             campanas = await session.execute(
                 text("SELECT 1 FROM campanias WHERE tipo_campania_id = :id LIMIT 1"),
@@ -56,40 +55,38 @@ async def seed(session: AsyncSession):
                 await session.delete(tipo)
                 print(f"  [elimina obsoleto] {tipo.nombre}")
 
-    # Insertar o actualizar
     for nombre, descripcion in TIPOS:
         res = await session.execute(select(TipoCampania).where(TipoCampania.nombre == nombre))
         existing = res.scalar_one_or_none()
         if existing:
             existing.descripcion = descripcion
             existing.activo = True
-            print(f"  [actualiza] {nombre}")
+            print(f"  [ok] {nombre}")
         else:
             session.add(TipoCampania(id=uuid.uuid4(), nombre=nombre, descripcion=descripcion, activo=True))
             print(f"  [+] {nombre}")
 
     # ── Estados ───────────────────────────────────────────────────────────────
     print("\n— Estados de campaña —")
-    for nombre, orden, es_inicial, es_final, descripcion in ESTADOS:
-        res = await session.execute(
-            text("SELECT id FROM estados_campania WHERE nombre = :n"), {"n": nombre}
-        )
-        if res.fetchone():
-            print(f"  [ya existe] {nombre}")
-            continue
+    for id_fijo, nombre, orden, es_inicial, es_final, descripcion in ESTADOS:
         await session.execute(
             text("""
                 INSERT INTO estados_campania
                   (id, nombre, orden, es_inicial, es_final, activo, descripcion)
                 VALUES
                   (:id, :nombre, :orden, :es_inicial, :es_final, true, :descripcion)
+                ON CONFLICT (id) DO UPDATE SET
+                  nombre      = EXCLUDED.nombre,
+                  orden       = EXCLUDED.orden,
+                  es_inicial  = EXCLUDED.es_inicial,
+                  es_final    = EXCLUDED.es_final,
+                  descripcion = EXCLUDED.descripcion,
+                  activo      = true
             """),
-            {
-                "id": str(uuid.uuid4()), "nombre": nombre, "orden": orden,
-                "es_inicial": es_inicial, "es_final": es_final, "descripcion": descripcion,
-            },
+            {"id": id_fijo, "nombre": nombre, "orden": orden,
+             "es_inicial": es_inicial, "es_final": es_final, "descripcion": descripcion},
         )
-        print(f"  [+] {nombre}")
+        print(f"  [upsert] {id_fijo[:8]}… {nombre}")
 
     await session.commit()
     print("\n[OK] Seed de catálogos de campaña completado.")

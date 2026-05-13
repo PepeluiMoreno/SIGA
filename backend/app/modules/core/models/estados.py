@@ -4,6 +4,7 @@ from app.modules.configuracion.models.estados import (
     EstadoBase,
     EstadoCuota,
     EstadoCampania,
+    EstadoAccion,
     EstadoTarea,
     EstadoActividad,
     EstadoParticipante,
@@ -15,7 +16,7 @@ from app.modules.configuracion.models.estados import (
 )
 
 __all__ = [
-    'EstadoBase', 'EstadoCuota', 'EstadoCampania', 'EstadoTarea',
+    'EstadoBase', 'EstadoCuota', 'EstadoCampania', 'EstadoAccion', 'EstadoTarea',
     'EstadoActividad', 'EstadoParticipante', 'EstadoOrdenCobro',
     'EstadoRemesa', 'EstadoDonacion', 'EstadoNotificacion', 'HistorialEstado',
 ]

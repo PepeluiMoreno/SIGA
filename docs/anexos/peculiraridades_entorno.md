@@ -1,50 +1,171 @@
 # Entorno y patrón de despliegue
 
-Trabajamos directamente con el servidor de staging en `vps2.europalaica.org` mediante un flujo de CI/CD con imágenes en GHCR.
+## Resumen ejecutivo
 
-La aplicación se dockeriza y se sirve detrás del Traefik **ya existente** en `vps2`, dentro de la network `traefik_public`. Se ofrece al usuario en `siga.staging.europalaica.org`.
+El desarrollo activo ocurre en el **Optiplex-790** (máquina física en la red local, accedida por SSH o VSCode Remote SSH). El código vive en `/opt/docker/apps/SIGA` directamente en esa máquina. Los cambios se prueban ahí y, cuando son estables, se hace push a `master`, lo que dispara un pipeline de GitHub Actions que despliega automáticamente en staging (`vps2.europalaica.org`).
 
-Es principio general **no hardcodear** información. Todo lo sensible o variable (passwords, JWT, dominio, prefijo de app, resolver de certificados) vive en variables de entorno; los valores de producción llegan al servidor desde un único GitHub secret.
+---
 
-## Patrón canónico (compartido con `opendatamanager` y demás apps de `vps2`)
+## Entorno de desarrollo — Optiplex-790
 
-### Topología
+### Arranque
 
-- **Backend Python** detrás directamente de Traefik (sin nginx delante).
-- **Frontend Vue3** servido por una imagen `nginx:alpine` con el bundle estático.
-- **Postgres** en red interna, no expuesto.
-- **Reverse proxy**: Traefik existente en `vps2`. Cert resolver `letsencrypt`.
+```bash
+# SIEMPRE usar el compose dev:
+docker compose --env-file .env.dev -f docker-compose.dev.yml up -d
 
-### Estructura de archivos en el repo
+# Primera vez o cuando cambien dependencias Python/npm (requiere build):
+docker compose --env-file .env.dev -f docker-compose.dev.yml up -d --build
+```
 
-- `docker-compose.yml` — base con `build:` (sirve para desarrollo local).
-- `docker-compose.staging.yml` — override con `image: ghcr.io/...` y labels Traefik (sirve para staging).
-- `.env.staging.example` — documenta qué variables hacen falta, sin valores reales.
-- `.github/workflows/deploy.yml` — workflow único: job `build` (build + push GHCR) y job `deploy` (SSH al servidor).
-- `backend/Dockerfile` y `frontend/Dockerfile` con sus respectivos `.dockerignore`.
+> **CRÍTICO**: usar `docker compose --env-file .env.dev` SIN `-f docker-compose.dev.yml` levanta el compose base, que **no tiene bind mounts**. Los cambios en el código no se reflejan en el contenedor y hay que hacer rebuild. Siempre especificar el archivo dev.
 
-### Variables de entorno
+### Contenedores dev
 
-`.env.staging.example` documenta todas las variables. En el servidor de staging, el `.env.staging` se genera en cada deploy a partir del secret `SIGA_ENV_STAGING` (un único string multilínea con todo el contenido del `.env`). No hay un secret por variable; todo va en uno.
+| Contenedor | Nombre | Notas |
+|---|---|---|
+| Backend | `siga_dev_backend` | Python / FastAPI / uvicorn --reload |
+| Frontend | `siga_dev_frontend` | node:22-alpine con Vite dev server (HMR) |
+| Base de datos | `siga_dev_db` | postgres:17-alpine, volumen `pgdata_dev` |
 
-Variables canónicas:
-- `APP_PREFIX` — prefijo para contenedores y routers Traefik (`siga`).
-- `APP_DOMAIN` — host expuesto (`siga.staging.europalaica.org`).
-- `TRAEFIK_CERTRESOLVER` — `letsencrypt`.
-- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`.
-- `JWT_SECRET`.
+### Bind mounts activos
 
-### Flujo de despliegue
+Los siguientes paths del host se montan directamente en el contenedor backend:
 
-1. Push a `master` dispara el workflow.
-2. Job `build`: construye imágenes backend y frontend, las publica en GHCR con tags `latest` y `${{ github.sha }}`. Cache via `type=registry,ref=...:latest` + `type=inline`.
-3. Job `deploy` (vía `appleboy/ssh-action`):
-   - SSH a `vps2` con el secret `DEPLOY_KEY`.
-   - `cd /opt/docker/apps/SIGA && git pull` para actualizar compose y archivos.
-   - Login en GHCR con `secrets.GITHUB_TOKEN`.
-   - Escribe `.env.staging` con permisos `077` desde el secret `SIGA_ENV_STAGING`.
-   - `docker compose --env-file .env.staging -f docker-compose.yml -f docker-compose.staging.yml pull` y `up -d --remove-orphans`.
-   - `docker image prune -f` al final.
+| Host | Contenedor | Efecto |
+|---|---|---|
+| `./backend/app` | `/app/app` | Hot-reload del código Python |
+| `./backend/main.py` | `/app/main.py` | Hot-reload del punto de entrada |
+| `./backend/alembic` | `/app/alembic` | Cambios en migraciones reflejados sin rebuild |
+| `./frontend` | `/app` | HMR de Vue/Vite (node_modules en volumen separado) |
+
+### Secuencia de arranque del backend
+
+El contenedor backend ejecuta en orden:
+
+1. `python -m app.scripts.wait_for_db` — espera a que Postgres responda
+2. `alembic upgrade head` — aplica migraciones pendientes **automáticamente**
+3. `python -m app.scripts.bootstrap` — siembra datos iniciales (admin, catálogos)
+4. `uvicorn main:app --reload` — arranca la API con hot-reload
+
+> Las migraciones **no son manuales** en desarrollo. Se aplican solas al arrancar el backend. Para forzar una migración en caliente: `docker exec siga_dev_backend alembic upgrade head`.
+
+### Hot-reload
+
+| Capa | Mecanismo | Tiempo |
+|---|---|---|
+| Frontend `.vue`, `.js`, `.css` | Vite HMR vía WebSocket (clientPort 443 → Traefik → :3000) | < 1 s |
+| Backend `.py` (app/) | uvicorn `--reload` con watchfiles | 1-3 s |
+| Migraciones Alembic | Automático al reiniciar el backend | — |
+
+### Acceso web
+
+Traefik ya corre en el Optiplex con dnsmasq. El frontend es accesible en:
+- `http://siga.optiplex-790`
+- `https://siga.optiplex-790` (certificado mkcert local)
+
+El backend **no está expuesto directamente**: Vite proxea `/graphql → http://backend:8000` dentro de la red Docker interna.
+
+### Variables de entorno dev
+
+El archivo `.env.dev` (ignorado por git) contiene los valores locales. Partir de `.env.staging.example` y ajustar:
+
+```
+POSTGRES_USER=siga
+POSTGRES_PASSWORD=...
+POSTGRES_DB=siga
+JWT_SECRET=...
+APP_PREFIX=siga
+APP_DEV_DOMAIN=siga.optiplex-790
+INITIAL_ADMIN_EMAIL=...
+INITIAL_ADMIN_PASSWORD=...
+```
+
+### El dump MySQL
+
+El archivo `./01_europa_laica_com-2026_02_17.sql` (dump de la BD antigua en MySQL) está montado como `/tmp/dump.sql:ro` en el contenedor **base** (`docker-compose.yml`). En el compose dev no está montado por defecto; si se necesita para scripts de seeding, añadir temporalmente el volumen o copiar el archivo dentro del contenedor.
+
+---
+
+## Particularidades de Alembic con asyncpg
+
+### El problema de `target_metadata` y los tipos Enum
+
+En `alembic/env.py`, la función `do_run_migrations` **no debe** pasar `target_metadata` a `context.configure()`:
+
+```python
+def do_run_migrations(connection):
+    context.configure(
+        connection=connection,
+        # target_metadata=target_metadata,  ← NO incluir aquí
+        include_object=include_object,
+    )
+    with context.begin_transaction():
+        context.run_migrations()
+```
+
+**Por qué**: cuando `target_metadata` está presente, el sistema de eventos DDL de SQLAlchemy registra listeners `before_create` para todos los tipos Enum de los modelos. Cuando una migración llama a `op.create_table(...)` con una columna Enum, esos listeners emiten `CREATE TYPE nombre_enum` automáticamente — aunque la migración ya lo haya creado con `op.execute("CREATE TYPE ...")` momentos antes. El resultado es `DuplicateObjectError: type "X" already exists`.
+
+`target_metadata` solo es necesario para `alembic revision --autogenerate`. Para ejecutar migraciones (`alembic upgrade head`) no se necesita.
+
+### Migraciones con enums explícitos
+
+Las migraciones que crean tipos Enum propios siguen este patrón:
+
+```python
+def upgrade() -> None:
+    op.execute("CREATE TYPE mi_enum AS ENUM ('A', 'B', 'C')")
+    op.create_table(
+        'mi_tabla',
+        sa.Column('campo', sa.Enum('A', 'B', 'C', name='mi_enum', create_type=False), ...),
+        ...
+    )
+
+def downgrade() -> None:
+    op.drop_table('mi_tabla')
+    op.execute("DROP TYPE IF EXISTS mi_enum")
+```
+
+La clave: `create_type=False` en `sa.Enum` dentro de `op.create_table`, porque el tipo ya se creó en el `op.execute` anterior.
+
+### Módulo económico (pendiente)
+
+La migración `m012` (tablas de contabilidad y tesorería) está **eliminada** temporalmente. El módulo económico se implementará como unidad completa más adelante. Los modelos Python del módulo (`app/modules/economico/`) existen y están importados (necesarios para resolver relaciones SQLAlchemy como `FormaPago` en `Miembro`), pero las tablas correspondientes aún no están en la BD. Las consultas GraphQL a esos endpoints fallarán en la BD hasta que se añada la migración.
+
+La cadena de migraciones salta de `m011` a `m013` (el `down_revision` de m013 apunta a m011).
+
+---
+
+## Compose base (`docker-compose.yml`)
+
+Sirve como base compartida entre desarrollo y staging. Características:
+
+- No tiene bind mounts de código (el código se hornea en la imagen al hacer `build`).
+- `restart: always` (en staging se quiere auto-recuperación; en dev usar `unless-stopped`).
+- No expone puertos Traefik (staging los añade via `docker-compose.staging.yml`).
+- Contenedores se llaman `${APP_PREFIX}_backend`, etc. (con `.env.dev` → `siga_backend`, `siga_frontend`, `siga_db`).
+
+> Si se arranca con solo `docker compose --env-file .env.dev up`, se levantan los contenedores del compose base (`siga_backend`, `siga_frontend`) sin bind mounts. Cualquier cambio en el código requiere `docker compose ... build backend` y luego `up -d`. Es el modo "producción local" y no es lo que queremos en desarrollo.
+
+---
+
+## Entorno de staging — vps2.europalaica.org
+
+El push a `master` dispara el pipeline de GitHub Actions:
+
+1. **Job `build`**: construye imágenes backend y frontend, las publica en GHCR con tags `latest` y `${{ github.sha }}`.
+2. **Job `deploy`** (SSH a vps2 via `appleboy/ssh-action`):
+   - `git pull` para actualizar compose files.
+   - Login GHCR con `secrets.GITHUB_TOKEN`.
+   - Escribe `.env.staging` desde el secret `SIGA_ENV_STAGING`.
+   - `docker compose -f docker-compose.yml -f docker-compose.staging.yml pull && up -d --remove-orphans`.
+
+### Topología staging
+
+- **Backend**: imagen GHCR, detrás de Traefik existente en vps2 (network `traefik_public`).
+- **Frontend**: imagen `nginx:alpine` con bundle estático, detrás de Traefik.
+- **Postgres**: red interna, no expuesto.
+- URL pública: `siga.staging.europalaica.org`.
 
 ### Secrets de GitHub requeridos
 
@@ -52,109 +173,13 @@ Variables canónicas:
 |---|---|
 | `DEPLOY_HOST` | `vps2.europalaica.org` |
 | `DEPLOY_USER` | usuario SSH (`elaicatec`) |
-| `DEPLOY_KEY` | clave SSH privada cuya pública está en `~/.ssh/authorized_keys` del servidor |
-| `SIGA_ENV_STAGING` | contenido completo del `.env.staging` (multilínea) |
+| `DEPLOY_KEY` | clave SSH privada |
+| `SIGA_ENV_STAGING` | contenido completo del `.env.staging` |
 
-### Convenciones de nombres
+### Imágenes y nombres en staging
 
 - Imágenes: `ghcr.io/pepeluimoreno/siga-backend` y `ghcr.io/pepeluimoreno/siga-frontend`.
-- Contenedores: `${APP_PREFIX}_backend`, `${APP_PREFIX}_frontend`, `${APP_PREFIX}_db`.
-- Routers Traefik: `${APP_PREFIX}-api` (con `PathPrefix(/api)` y `stripprefix`), `${APP_PREFIX}-web` (host raíz).
-
-## Entorno de desarrollo local — Optiplex-790
-
-El desarrollo activo se realiza sobre un ordenador físico llamado `optiplex-790` en la misma red local, aunque se accede igual que a un servidor remoto: por SSH (VSCode Remote SSH o terminal). **El código fuente vive directamente en el Optiplex**, en `/opt/docker/apps/SIGA`. No hay paso de sincronización de archivos; se edita in-situ.
-
-### Topología del entorno de desarrollo
-
-- **Traefik** (`traefik_public`, ya existente en el Optiplex). Entrypoints `web` (80) y `websecure` (443) con certificado mkcert local.
-- **Frontend**: Vite dev server (HMR) dentro de Docker; Traefik enruta `siga.optiplex-790` → puerto 3000 del contenedor, tanto en HTTP como HTTPS.
-- **Backend**: `uvicorn --reload` en red interna; Vite proxy reenvía `/graphql → http://backend:8000` (sin exposición directa de puertos).
-- **DB**: Postgres en red interna Docker; volumen `pgdata_dev` separado del staging.
-- El proxy de Vite (`/graphql → http://backend:8000`) resuelve el backend por nombre de contenedor dentro de la red Docker interna.
-
-### DNS para el dominio de desarrollo
-
-El Optiplex-790 ya corre **dnsmasq** con un wildcard `address=/optiplex-790/192.168.1.141` definido en `/etc/dnsmasq.d/optiplex-790.conf`. Eso significa que `siga.optiplex-790` (y cualquier otro subdominio) ya resuelve a la IP del Optiplex **sin tocar nada más**.
-
-Para que un equipo de la red local pueda acceder a `http://siga.optiplex-790`, solo hay que apuntarle el DNS primario a `192.168.1.141`:
-
-- **Linux**: en `/etc/resolv.conf` o via NetworkManager → `nameserver 192.168.1.141`
-- **Windows / macOS**: Configuración de red → DNS primario `192.168.1.141`
-- **Router**: si el router permite configurar el DNS que da a los clientes DHCP, ponerlo ahí y funciona para toda la red sin tocar cada equipo.
-
-### Arranque
-
-```bash
-# Primera vez o cuando cambien dependencias Python/npm:
-docker compose --env-file .env.dev -f docker-compose.dev.yml up --build
-
-# Resto de veces:
-docker compose --env-file .env.dev -f docker-compose.dev.yml up
-```
-
-El fichero `.env.dev` (ignorado por git) contiene las variables locales de desarrollo. Copiar `.env.staging.example` como punto de partida y ajustar los valores.
-
-### Certificados TLS locales (mkcert)
-
-Para que `https://siga.optiplex-790` funcione sin avisos de seguridad se usa **mkcert**, que genera una CA local y certificados firmados por ella.
-
-#### Instalación inicial (una sola vez en el Optiplex)
-
-```bash
-# Descargar mkcert (no requiere sudo)
-curl -sL https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64 \
-     -o /usr/local/bin/mkcert && chmod +x /usr/local/bin/mkcert
-
-# Crear la CA local e instalarla en los stores de Chrome/Firefox del usuario actual
-mkcert -install
-
-# Generar el wildcard para *.optiplex-790
-mkdir -p /opt/docker/apps/traefik/certs
-mkcert \
-  -cert-file /opt/docker/apps/traefik/certs/local.crt \
-  -key-file  /opt/docker/apps/traefik/certs/local.key \
-  "*.optiplex-790" optiplex-790
-```
-
-Traefik monta `/opt/docker/apps/traefik/certs` como `/certs:ro` y usa el cert como default en el entrypoint `websecure` (configurado en `/opt/docker/apps/traefik/config/tls.yml`).
-
-El cert expira en **3 años**; cuando caduque, repetir solo el paso `mkcert -cert-file ...` y recrear el contenedor de Traefik.
-
-#### Confiar en la CA desde otros equipos de la red
-
-1. Copiar el fichero de CA del Optiplex:
-   ```
-   /home/jose/.local/share/mkcert/rootCA.pem
-   ```
-2. Importarlo como CA de confianza en el equipo cliente:
-   - **Chrome/Edge en Windows**: doble clic en el `.pem` (renombrar a `.crt`) → instalar en "Entidades de certificación raíz de confianza".
-   - **Firefox**: Preferencias → Privacidad → Ver certificados → Autoridades → Importar.
-   - **macOS**: Llavero → Importar → confiar siempre.
-
-### Cómo funciona el hot-reload
-
-| Capa | Mecanismo | Tiempo de recarga |
-|---|---|---|
-| Frontend `.vue`, `.js`, `.css` | Vite HMR vía WebSocket (clientPort 443 → Traefik → :3000) | < 1 s |
-| Backend `.py` (app/) | uvicorn `--reload` con watchfiles | 1-3 s |
-| Migraciones Alembic | Manual: `docker exec siga_dev_backend alembic upgrade head` | — |
-
-Los bind mounts activos:
-- `./backend/app` → `/app/app`
-- `./backend/main.py` → `/app/main.py`
-- `./backend/alembic` → `/app/alembic`
-- `./frontend` → `/app` (completo; `node_modules` en volumen anónimo separado)
-
-### Traefik en dev vs. nginx en staging
-
-En desarrollo no hay nginx. El frontend es el servidor de Vite (`node:22-alpine` con `npm run dev`). Las labels de Traefik están en ese contenedor apuntando al puerto 3000; no hay nada más que configurar para el routing.
-
-Nginx solo aparece en producción/staging, donde el bundle estático se sirve con `nginx:alpine`. El `docker-compose.staging.yml` ya tiene sus propias labels de Traefik (con TLS y certresolver).
-
-### Relación con staging
-
-El push a `master` sigue disparando el pipeline de GitHub Actions que despliega en `vps2.europalaica.org`. El Optiplex y staging son entornos completamente independientes con volúmenes de DB distintos. El flujo normal es: **desarrollar en Optiplex → probar → push a master → staging se actualiza automáticamente**.
+- Contenedores: `${APP_PREFIX}_backend`, `${APP_PREFIX}_frontend`, `${APP_PREFIX}_db` (APP_PREFIX=siga en staging).
 
 ---
 
@@ -172,13 +197,33 @@ Regla general: **ningún borrado destruye datos por defecto**. Todo modelo que h
 
 Toda acción de borrado en la UI abre un modal que cumple:
 
-1. **Advertencia explícita de cascada**: lista clara y completa de qué entidades relacionadas quedarán afectadas (p. ej. "Se eliminarán también: 12 cuotas asociadas, 3 inscripciones a campañas, 1 vinculación con un grupo de trabajo").
+1. **Advertencia explícita de cascada**: lista clara y completa de qué entidades relacionadas quedarán afectadas.
 2. **Checkbox "Borrado permanente"** que activa hard-delete en lugar de soft-delete.
-3. El checkbox de **borrado permanente solo es visible/funcional para usuarios con rol de superadministrador**. Para el resto, no aparece o aparece deshabilitado con tooltip explicativo.
+3. El checkbox de **borrado permanente solo es visible/funcional para usuarios con rol de superadministrador**.
 4. Botón de confirmación destructivo (rojo) y botón de cancelar prominente.
 
 ### Hard-delete
 
 - Elimina físicamente el registro de la BD.
-- **Solo disponible para `SUPERADMIN`** (transacción asociada al borrado permanente).
-- Auditoría: cada hard-delete genera entrada en `logs_auditoria` con `accion=ELIMINAR`, descripción detallada y, si es posible, copia del registro en `datos_anteriores`.
+- **Solo disponible para `SUPERADMIN`**.
+- Auditoría: cada hard-delete genera entrada en `logs_auditoria` con `accion=ELIMINAR` y copia del registro en `datos_anteriores`.
+
+---
+
+## DNS y certificados TLS locales (Optiplex-790)
+
+El Optiplex corre **dnsmasq** con wildcard `address=/optiplex-790/192.168.1.141`. Cualquier subdominio `*.optiplex-790` resuelve a la IP del Optiplex sin configuración adicional.
+
+Para acceder desde otros equipos de la red local: apuntar DNS primario a `192.168.1.141`.
+
+Los certificados TLS están generados con **mkcert** (CA local instalada en el Optiplex):
+
+```bash
+# Certificados en:
+/opt/docker/apps/traefik/certs/local.crt
+/opt/docker/apps/traefik/certs/local.key
+# Generados para: *.optiplex-790
+# Expiran en 3 años desde la generación
+```
+
+Traefik monta esa carpeta como `/certs:ro` y la usa como certificado por defecto en el entrypoint `websecure`.

@@ -5,7 +5,7 @@
 // Query para obtener campañas
 export const GET_CAMPANIAS = `
   query Campanias {
-    campanias {
+    campanias(filter: { eliminado: { eq: false } }) {
       id
       nombre
       lema
@@ -115,7 +115,7 @@ export const GET_HABILIDADES = `
     habilidades {
       id
       nombre
-      categoria
+      categoria { id nombre }
       activo
     }
   }

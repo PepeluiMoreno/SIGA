@@ -3,7 +3,7 @@
 
 export const GET_GRUPOS = `
   query GruposTrabajo {
-    gruposTrabajo {
+    gruposTrabajo(filter: { eliminado: { eq: false } }) {
       id
       nombre
       descripcion

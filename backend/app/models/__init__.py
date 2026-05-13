@@ -28,8 +28,8 @@ from ..modules.core.comunicacion import TipoNotificacion, Notificacion, Preferen
 from ..modules.configuracion.models.tema_ui import TemaUI
 from ..modules.configuracion.models import (
     Configuracion, ReglaValidacionConfig, HistorialConfiguracion,
-    EstadoBase, EstadoCuota, EstadoCampania, EstadoTarea,
-    EstadoActividad, EstadoParticipante, EstadoOrdenCobro,
+    EstadoBase, EstadoCuota, EstadoCampania, EstadoAccion, EstadoTarea,
+    EstadoParticipante, EstadoOrdenCobro,
     EstadoRemesa, EstadoDonacion, EstadoNotificacion, HistorialEstado,
 )
 
@@ -50,16 +50,11 @@ from ..modules.membresia.models import (
 
 # Actividades
 from ..modules.actividades.models import (
-    TipoActividad, EstadoPropuesta, TipoRecurso, TipoKPI,
-    PropuestaActividad, TareaPropuesta, RecursoPropuesta, GrupoPropuesta,
-    Actividad, TareaActividad, RecursoActividad, GrupoActividad,
-    ParticipanteActividad, KPI, KPIActividad, MedicionKPI,
+    TipoAccion as TipoAccionActividades, Accion, Participacion, Tarea,
     TipoCampania, Campania, RolParticipante, ParticipanteCampania,
     Firmante, FirmaCampania,
     TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo,
-    TareaGrupo, ReunionGrupo, AsistenteReunion,
-    TipoEvento, EstadoEvento, Evento,
-    ParticipanteEvento, MaterialEvento, GrupoEvento, TareaEvento, GastoEvento,
+    GrupoIniciativa, ReunionGrupo, AsistenteReunion,
 )
 
 # Económico

@@ -27,6 +27,12 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('siga_token'))
   const user = ref(JSON.parse(localStorage.getItem('siga_user') || 'null'))
 
+  // Restore session on page load
+  if (token.value) {
+    setAuthToken(token.value)
+    permisos.cargar()
+  }
+
   const isAuthenticated = computed(() => !!token.value)
   const userName = computed(() => user.value?.email?.split('@')[0] || 'Usuario')
   const userInitials = computed(() => {
