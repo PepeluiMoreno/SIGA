@@ -67,6 +67,7 @@ def do_run_migrations(connection):
     # evitando que un CREATE TYPE duplicado en m014 haga rollback de todo lo anterior.
     context.configure(
         connection=connection,
+        target_metadata=target_metadata,
         include_object=include_object,
         transaction_per_migration=True,
     )
