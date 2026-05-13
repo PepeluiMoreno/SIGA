@@ -56,6 +56,12 @@
           </div>
         </div>
 
+        <div v-if="hintYaInicializado" class="rounded-md bg-blue-50 p-4 border border-blue-200">
+          <p class="text-sm text-blue-800">
+            El sistema ya está configurado. Inicia sesión con tus credenciales de administrador.
+          </p>
+        </div>
+
         <div v-if="error" class="rounded-md bg-red-50 p-4">
           <div class="flex">
             <div class="flex-shrink-0">
@@ -94,14 +100,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue"
-import { useRouter } from "vue-router"
+import { ref, computed, onMounted } from "vue"
+import { useRouter, useRoute } from "vue-router"
 import { useAuthStore } from "@/stores/auth.js"
 import { useOrgConfigStore } from "@/stores/orgConfig.js"
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const orgConfigStore = useOrgConfigStore()
+
+const hintYaInicializado = computed(() => route.query.hint === 'ya-inicializado')
 
 onMounted(() => { orgConfigStore.fetchConfig() })
 

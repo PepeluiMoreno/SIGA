@@ -125,8 +125,6 @@ async def _get_or_create(session, nombre_corto: str, nombre: str, tipo: str, niv
     ag = AgrupacionTerritorial(
         nombre=nombre,
         nombre_corto=nombre_corto,
-        tipo=tipo,
-        nivel=nivel,
         pais_id=pais_id,
         agrupacion_padre_id=padre_id,
         email=email,

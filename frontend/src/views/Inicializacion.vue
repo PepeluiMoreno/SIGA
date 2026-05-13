@@ -26,7 +26,7 @@
             </div>
             <div>
               <label class="cursor-pointer inline-flex items-center px-3 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors text-gray-700">
-                {{ form.logo ? 'Cambiar imagen' : 'Seleccionar imagen' }} <span class="text-red-500 ml-0.5">*</span>
+                {{ form.logo ? 'Cambiar imagen' : 'Seleccionar imagen (opcional)' }}
                 <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp"
                   class="hidden" @change="handleLogoChange" />
               </label>
@@ -133,7 +133,6 @@ async function guardar() {
   if (!form.nif.trim())    { error.value = 'El NIF es obligatorio'; return }
   if (!form.telefono.trim()) { error.value = 'El teléfono es obligatorio'; return }
   if (!form.email.trim())  { error.value = 'El email es obligatorio'; return }
-  if (!form.logo)          { error.value = 'El logotipo es obligatorio'; return }
 
   guardando.value = true
   try {
@@ -149,7 +148,13 @@ async function guardar() {
     orgConfigStore.markInitialized(form.nombre.trim(), form.logo)
     router.push('/login')
   } catch (e) {
-    error.value = e?.response?.errors?.[0]?.message ?? 'Error al guardar. Comprueba la conexión con el servidor.'
+    const msg = e?.response?.errors?.[0]?.message ?? ''
+    if (msg.toLowerCase().includes('autenticaci')) {
+      // El sistema ya está configurado — redirigir al login
+      router.replace({ path: '/login', query: { hint: 'ya-inicializado' } })
+      return
+    }
+    error.value = msg || 'Error al guardar. Comprueba la conexión con el servidor.'
   } finally {
     guardando.value = false
   }

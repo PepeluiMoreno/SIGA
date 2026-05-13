@@ -240,7 +240,7 @@ async def _load_org_params(session) -> ParametrosOrganizacion:
 # Query mixin
 # ---------------------------------------------------------------------------
 
-_REQUIRED_KEYS = {'org.nombre', 'org.nif', 'org.telefono', 'org.email', 'org.logo'}
+_REQUIRED_KEYS = {'org.nombre', 'org.nif', 'org.telefono', 'org.email'}
 
 
 async def _require_superadmin(session, user_id) -> None:
@@ -357,6 +357,8 @@ class ConfiguracionOrganizacionMutation:
             'denominacion_organo_gobierno_plural': datos.denominacion_organo_gobierno_plural or 'juntas directivas',
             'session_inactividad_minutos': datos.session_inactividad_minutos if datos.session_inactividad_minutos is not None else 30,
             'session_maximo_minutos': datos.session_maximo_minutos if datos.session_maximo_minutos is not None else 480,
+            'tema': datos.tema or 'violeta',
+            'fuente_principal': datos.fuente_principal or 'Inter',
         }
 
         # No sobreescribir la contraseña SMTP si el frontend devuelve el placeholder

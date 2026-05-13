@@ -95,8 +95,7 @@ def _split_values(inner: str) -> list:
             else:
                 current += ch
         i += 1
-    if current.strip():
-        values.append(current.strip())
+    values.append(current.strip())  # siempre añadir el último campo (incluso si es '')
     # Convertir a Python
     result = []
     for v in values:
@@ -214,7 +213,8 @@ async def seed():
         saltados = 0
 
         for row in miembro_rows:
-            if len(row) < 30:
+            if len(row) < 16:  # mínimo hasta columna EMAIL
+                saltados += 1
                 continue
 
             coduser = str(row[0]).strip() if row[0] else None
@@ -232,27 +232,14 @@ async def seed():
             profesion = str(row[13]).strip() if row[13] else None
             estudios = str(row[14]).strip() if row[14] else None
             email = str(row[15]).strip() if row[15] else None
-            colabora = str(row[19]).strip() if row[19] else None
-            codpais_dom = str(row[20]).strip() if row[20] else "ES"
-            direccion = str(row[21]).strip() if row[21] else None
-            cp = str(row[22]).strip() if row[22] else None
-            localidad = str(row[23]).strip() if row[23] else None
-            codprov = str(row[24]).strip() if row[24] else None
-            comentarios = str(row[27]).strip() if row[27] else None
-            observaciones = str(row[28]).strip() if row[28] else None
-
-            # Skip sin datos mínimos
-            if not nom and not ape1 and not email:
-                saltados += 1
-                continue
-
-            # Duplicados
-            if False:
-                saltados += 1
-                continue
-            if False:
-                saltados += 1
-                continue
+            colabora = str(row[19]).strip() if len(row) > 19 and row[19] else None
+            codpais_dom = str(row[20]).strip() if len(row) > 20 and row[20] else "ES"
+            direccion = str(row[21]).strip() if len(row) > 21 and row[21] else None
+            cp = str(row[22]).strip() if len(row) > 22 and row[22] else None
+            localidad = str(row[23]).strip() if len(row) > 23 and row[23] else None
+            codprov = str(row[24]).strip() if len(row) > 24 and row[24] else None
+            comentarios = str(row[27]).strip() if len(row) > 27 and row[27] else None
+            observaciones = str(row[28]).strip() if len(row) > 28 and row[28] else None
 
             # --- Datos de SOCIO (si existe) ---
             socio = socio_by_user.get(coduser)
@@ -308,9 +295,13 @@ async def seed():
             fecha_alta_def = fecha_alta or date(2001, 1, 1)
             forma_pago_id = forma_pago_transferencia if iban and forma_pago_transferencia else None
 
+            # Para socios de baja sin datos personales (RGPD), crear con placeholder
+            nombre_final = nom or (f"Socio-{coduser}" if not ape1 else None)
+            ape1_final = ape1 or "Baja"
+
             miembro = Miembro(
-                nombre=nom or f"Miembro {coduser}",
-                apellido1=ape1 or "Sin apellido",
+                nombre=nombre_final or "Baja",
+                apellido1=ape1_final,
                 apellido2=ape2,
                 sexo=sexo if sexo in ("H", "M") else None,
                 fecha_nacimiento=fechanac,
