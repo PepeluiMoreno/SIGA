@@ -27,8 +27,8 @@ def _audit():
 
 def upgrade() -> None:
     # 1. Crear enums PostgreSQL
-    op.execute("CREATE TYPE naturalezaunidad AS ENUM ('TERRITORIAL','FUNCIONAL','PROGRAMATICA','ADMINISTRATIVA')")
-    op.execute("CREATE TYPE vinculounidad AS ENUM ('INTERNA','FILIAL','FEDERADA')")
+    op.execute("CREATE TYPE IF NOT EXISTS naturalezaunidad AS ENUM ('TERRITORIAL','FUNCIONAL','PROGRAMATICA','ADMINISTRATIVA')")
+    op.execute("CREATE TYPE IF NOT EXISTS vinculounidad AS ENUM ('INTERNA','FILIAL','FEDERADA')")
 
     # 2. Crear tabla de catálogo
     op.create_table(
