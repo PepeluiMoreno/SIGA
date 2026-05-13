@@ -63,12 +63,14 @@ def do_run_migrations(connection):
     # No pasamos target_metadata aquí para evitar que los DDL events de
     # los modelos (Enum con create_type=True) interfieran con las migraciones.
     # target_metadata solo es necesario para autogenerate.
+    # transaction_per_migration=True: cada migración hace COMMIT independiente,
+    # evitando que un CREATE TYPE duplicado en m014 haga rollback de todo lo anterior.
     context.configure(
         connection=connection,
         include_object=include_object,
+        transaction_per_migration=True,
     )
-    with context.begin_transaction():
-        context.run_migrations()
+    context.run_migrations()
 
 
 async def run_async_migrations():
