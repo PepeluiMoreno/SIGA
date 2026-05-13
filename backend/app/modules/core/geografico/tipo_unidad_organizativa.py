@@ -28,10 +28,10 @@ class TipoUnidadOrganizativa(BaseModel):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     naturaleza: Mapped[NaturalezaUnidad] = mapped_column(
-        Enum(NaturalezaUnidad), nullable=False, index=True
+        Enum(NaturalezaUnidad, name='naturalezaunidad', create_type=False), nullable=False, index=True
     )
     vinculo: Mapped[VinculoUnidad] = mapped_column(
-        Enum(VinculoUnidad), nullable=False, index=True
+        Enum(VinculoUnidad, name='vinculounidad', create_type=False), nullable=False, index=True
     )
     # nivel derivado de la profundidad en el árbol (1=raíz, 2=hijo, …)
     nivel: Mapped[Optional[int]] = mapped_column(Integer(), nullable=True)
