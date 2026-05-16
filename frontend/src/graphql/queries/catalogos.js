@@ -369,6 +369,59 @@ export const DELETE_ESTADO_CAMPANIA = `
   }
 `
 
+export const GET_TIPOS_META_CAMPANIA = `
+  query TiposMetaCampania {
+    tiposMetaCampania {
+      id
+      nombre
+      descripcion
+      unidadMedida
+      activo
+    }
+  }
+`
+export const CREATE_TIPO_META_CAMPANIA = `
+  mutation CrearTipoMetaCampania($data: TipoMetaCreateInput!) {
+    crearTipoMeta(data: $data) { id nombre }
+  }
+`
+export const UPDATE_TIPO_META_CAMPANIA = `
+  mutation ActualizarTipoMetaCampania($data: TipoMetaUpdateInput!) {
+    actualizarTipoMeta(data: $data) { id nombre }
+  }
+`
+export const DELETE_TIPO_META_CAMPANIA = `
+  mutation EliminarTiposMetaCampania($filter: TipoMetaFilter!) {
+    eliminarTiposMeta(filter: $filter) { id }
+  }
+`
+
+export const GET_TIPOS_CANAL_DIFUSION = `
+  query TiposCanalDifusion {
+    tiposCanalDifusion {
+      id
+      nombre
+      descripcion
+      activo
+    }
+  }
+`
+export const CREATE_TIPO_CANAL_DIFUSION = `
+  mutation CrearTipoCanalDifusion($data: TipoCanalDifusionCreateInput!) {
+    crearTipoCanalDifusion(data: $data) { id nombre }
+  }
+`
+export const UPDATE_TIPO_CANAL_DIFUSION = `
+  mutation ActualizarTipoCanalDifusion($data: TipoCanalDifusionUpdateInput!) {
+    actualizarTipoCanalDifusion(data: $data) { id nombre }
+  }
+`
+export const DELETE_TIPO_CANAL_DIFUSION = `
+  mutation EliminarTiposCanalDifusion($filter: TipoCanalDifusionFilter!) {
+    eliminarTiposCanalDifusion(filter: $filter) { id }
+  }
+`
+
 export const GET_ROLES_PARTICIPANTE = `
   query RolesParticipante {
     rolesParticipante {
@@ -487,42 +540,6 @@ export const DELETE_ESTADO_ACTIVIDAD = `
   }
 `
 
-export const GET_TIPOS_RECURSO = `
-  query TiposRecurso {
-    tiposRecurso {
-      id
-      nombre
-      descripcion
-      activo
-    }
-  }
-`
-
-export const CREATE_TIPO_RECURSO = `
-  mutation CrearTipoRecurso($data: TipoRecursoCreateInput!) {
-    crearTipoRecurso(data: $data) {
-      id
-      nombre
-    }
-  }
-`
-
-export const UPDATE_TIPO_RECURSO = `
-  mutation ActualizarTipoRecurso($data: TipoRecursoUpdateInput!) {
-    actualizarTipoRecurso(data: $data) {
-      id
-      nombre
-    }
-  }
-`
-
-export const DELETE_TIPO_RECURSO = `
-  mutation EliminarTipoRecurso($filter: TipoRecursoFilter!) {
-    eliminarTiposRecurso(filter: $filter) {
-      id
-    }
-  }
-`
 
 export const GET_TIPOS_KPI = `
   query TiposKPI {
@@ -735,7 +752,7 @@ export const GET_MUNICIPIOS = `
 
 export const GET_AGRUPACIONES_TERRITORIALES = `
   query AgrupacionesTerritoriales {
-    agrupacionesTerritoriales {
+    unidadesOrganizativas {
       id
       nombre
       nombreCorto
@@ -766,18 +783,18 @@ export const GET_AGRUPACIONES_TERRITORIALES = `
 
 export const GET_TIPOS_UNIDADES_ORGANIZATIVAS = `
   query TiposUnidadesOrganizativas {
-    tiposUnidadesOrganizativas(filter: { activo: { eq: true } }) {
+    nivelesOrganizativos(filter: { activo: { eq: true } }) {
       id nombre naturaleza vinculo nivel padreTipoId activo
     }
   }
 `
 
 export const CREATE_TIPO_UNIDAD_ORGANIZATIVA = `
-  mutation CrearTipoUnidadOrganizativa(
+  mutation CrearNivelOrganizativo(
     $nombre: String!, $naturaleza: String!, $vinculo: String!,
     $nivel: Int, $padreTipoId: UUID, $activo: Boolean!
   ) {
-    crearTipoUnidadOrganizativa(
+    crearNivelOrganizativo(
       nombre: $nombre, naturaleza: $naturaleza, vinculo: $vinculo,
       nivel: $nivel, padreTipoId: $padreTipoId, activo: $activo
     )
@@ -785,20 +802,20 @@ export const CREATE_TIPO_UNIDAD_ORGANIZATIVA = `
 `
 
 export const UPDATE_TIPO_UNIDAD_ORGANIZATIVA = `
-  mutation ActualizarTipoUnidadOrganizativa($data: TipoUnidadOrganizativaUpdateInput!) {
-    actualizarTipoUnidadOrganizativa(data: $data) { id nombre naturaleza vinculo nivel padreTipoId activo }
+  mutation ActualizarNivelOrganizativo($data: NivelOrganizativoUpdateInput!) {
+    actualizarNivelOrganizativo(data: $data) { id nombre naturaleza vinculo nivel padreTipoId activo }
   }
 `
 
 export const DELETE_TIPO_UNIDAD_ORGANIZATIVA = `
-  mutation EliminarTipoUnidadOrganizativa($filter: TipoUnidadOrganizativaFilter!) {
-    eliminarTiposUnidadesOrganizativas(filter: $filter) { id }
+  mutation EliminarNivelOrganizativo($filter: NivelOrganizativoFilter!) {
+    eliminarNivelesOrganizativos(filter: $filter) { id }
   }
 `
 
 export const CREATE_AGRUPACION_TERRITORIAL = `
-  mutation CrearAgrupacionTerritorial($data: AgrupacionTerritorialCreateInput!) {
-    crearAgrupacionTerritorial(data: $data) {
+  mutation CrearUnidadOrganizativa($data: UnidadOrganizativaCreateInput!) {
+    crearUnidadOrganizativa(data: $data) {
       id
       nombre
     }
@@ -806,8 +823,8 @@ export const CREATE_AGRUPACION_TERRITORIAL = `
 `
 
 export const UPDATE_AGRUPACION_TERRITORIAL = `
-  mutation ActualizarAgrupacionTerritorial($data: AgrupacionTerritorialUpdateInput!) {
-    actualizarAgrupacionTerritorial(data: $data) {
+  mutation ActualizarUnidadOrganizativa($data: UnidadOrganizativaUpdateInput!) {
+    actualizarUnidadOrganizativa(data: $data) {
       id
       nombre
     }
@@ -815,8 +832,8 @@ export const UPDATE_AGRUPACION_TERRITORIAL = `
 `
 
 export const DELETE_AGRUPACION_TERRITORIAL = `
-  mutation EliminarAgrupacionTerritorial($filter: AgrupacionTerritorialFilter!) {
-    eliminarAgrupacionesTerritoriales(filter: $filter) {
+  mutation EliminarUnidadOrganizativa($filter: UnidadOrganizativaFilter!) {
+    eliminarUnidadesOrganizativas(filter: $filter) {
       id
     }
   }

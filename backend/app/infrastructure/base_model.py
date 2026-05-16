@@ -47,6 +47,17 @@ class AuditoriaMixin:
     # creador y modificador se definen en cada modelo según necesidad
 
 
+class InmutableMixin:
+    """Mixin para modelos de catálogo: marca registros de sistema como no eliminables."""
+
+    es_inmutable: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        server_default='false',
+        nullable=False
+    )
+
+
 class BaseModel(Base, AuditoriaMixin):
     """Modelo base que incluye auditoría y soft delete."""
 

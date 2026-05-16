@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.usuario import UsuarioRol
 from ..models.rol_transaccion import RolTransaccion
+from ..models.transaccion import Transaccion
 from ..models.funcionalidad import RolFuncionalidad, FuncionalidadTransaccion
 
 
@@ -34,7 +35,7 @@ class SQLRoleRepository:
     ) -> Set[str]:
         """Roles derivados del cargo activo del usuario en una agrupación."""
         from ...membresia.models.miembro import Miembro
-        from ...core.geografico.models import AgrupacionTerritorial
+        from ...core.geografico.models import UnidadOrganizativa
 
         q = (
             select(UsuarioRol.rol_id)
@@ -69,10 +70,12 @@ class SQLPermissionRepository:
 
     async def get_transactions_by_role(self, role_id: str) -> Set[str]:
         result = await self.session.execute(
-            select(RolTransaccion.transaccion_id)
+            select(Transaccion.codigo)
+            .join(RolTransaccion, RolTransaccion.transaccion_id == Transaccion.id)
             .where(
                 RolTransaccion.rol_id == role_id,
                 RolTransaccion.eliminado == False,
+                Transaccion.activa == True,
             )
         )
         return {str(row[0]) for row in result.all()}
@@ -96,10 +99,12 @@ class SQLFunctionalityRepository:
 
     async def get_transactions_by_functionality(self, functionality_id: str) -> Set[str]:
         result = await self.session.execute(
-            select(FuncionalidadTransaccion.transaccion_id)
+            select(Transaccion.codigo)
+            .join(FuncionalidadTransaccion, FuncionalidadTransaccion.transaccion_id == Transaccion.id)
             .where(
                 FuncionalidadTransaccion.funcionalidad_id == functionality_id,
                 FuncionalidadTransaccion.eliminado == False,
+                Transaccion.activa == True,
             )
         )
         return {str(row[0]) for row in result.all()}

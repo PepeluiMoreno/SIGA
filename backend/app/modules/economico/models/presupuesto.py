@@ -121,6 +121,34 @@ class PartidaPresupuestaria(BaseModel):
         self.importe_ejecutado += importe
 
 
+class CompromisoPresupuestario(BaseModel):
+    """Compromiso de una partida presupuestaria para una campaña o actividad concreta.
+
+    Se crea en fase de Preparación. Incrementa PartidaPresupuestaria.importe_comprometido.
+    """
+    __tablename__ = "compromisos_presupuestarios"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    partida_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("partidas_presupuestarias.id"), nullable=False, index=True
+    )
+
+    # Exactamente uno de los dos debe estar presente:
+    campania_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, nullable=True, index=True)
+    actividad_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, nullable=True, index=True)
+
+    importe_comprometido: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    concepto: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    fecha_compromiso: Mapped[date] = mapped_column(Date, nullable=False)
+    estado: Mapped[str] = mapped_column(String(20), nullable=False, default='activo')
+    # 'activo' → comprometido; 'liberado' → devuelto a disponible; 'ejecutado' → gasto real registrado
+
+    partida: Mapped["PartidaPresupuestaria"] = relationship(lazy='selectin')
+
+    def __repr__(self) -> str:
+        return f"<CompromisoPresupuestario(partida_id='{self.partida_id}', importe={self.importe_comprometido})>"
+
+
 class PlanificacionAnual(BaseModel):
     """Planificación anual de actividades de la organización."""
     __tablename__ = "planificaciones_anuales"

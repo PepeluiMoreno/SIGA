@@ -14,7 +14,7 @@ import asyncio
 from sqlalchemy import select
 
 from app.core.database import async_session
-from app.modules.core.geografico.direccion import AgrupacionTerritorial, Pais
+from app.modules.core.geografico.direccion import UnidadOrganizativa, Pais
 
 
 # ---------------------------------------------------------------------------
@@ -113,16 +113,16 @@ PROVINCIALES = [
 
 async def _get_or_create(session, nombre_corto: str, nombre: str, tipo: str, nivel: int,
                           pais_id, padre_id, email: str | None = None,
-                          web: str | None = None) -> AgrupacionTerritorial:
+                          web: str | None = None) -> UnidadOrganizativa:
     existing = (
         await session.execute(
-            select(AgrupacionTerritorial).where(AgrupacionTerritorial.nombre_corto == nombre_corto)
+            select(UnidadOrganizativa).where(UnidadOrganizativa.nombre_corto == nombre_corto)
         )
     ).scalar_one_or_none()
     if existing:
         return existing
 
-    ag = AgrupacionTerritorial(
+    ag = UnidadOrganizativa(
         nombre=nombre,
         nombre_corto=nombre_corto,
         pais_id=pais_id,
@@ -152,7 +152,7 @@ async def seed():
             # 2. Europa Laica central (ya creada por bootstrap con nombre_corto="EL")
             europa_laica = (
                 await session.execute(
-                    select(AgrupacionTerritorial).where(AgrupacionTerritorial.nombre_corto == "EL")
+                    select(UnidadOrganizativa).where(UnidadOrganizativa.nombre_corto == "EL")
                 )
             ).scalar_one_or_none()
             if not europa_laica:
@@ -160,8 +160,8 @@ async def seed():
                 return
             el_id = europa_laica.id
 
-            # Índice nombre_corto → AgrupacionTerritorial para resolución de padres
-            idx: dict[str, AgrupacionTerritorial] = {"EL": europa_laica}
+            # Índice nombre_corto → UnidadOrganizativa para resolución de padres
+            idx: dict[str, UnidadOrganizativa] = {"EL": europa_laica}
 
             # 3. CC.AA. sintéticas (padre = Europa Laica)
             print("\n--- CC.AA. sintéticas ---")

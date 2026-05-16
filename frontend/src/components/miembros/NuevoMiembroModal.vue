@@ -224,7 +224,7 @@ const QUERY_CATALOGOS = gql`
   query CatalogosNuevoMiembro {
     tiposMiembro(filter: { activo: { eq: true } }) { id nombre }
     estadosMiembro(filter: { activo: { eq: true } }) { id nombre }
-    agrupacionesTerritoriales(filter: { activo: { eq: true } }) { id nombre tipoUnidad { nivel } }
+    unidadesOrganizativas(filter: { activo: { eq: true } }) { id nombre tipoUnidad { nivel } }
     tiposVinculacion(filter: { activo: { eq: true } }) { id nombre requiereEntidad }
   }
 `
@@ -259,7 +259,7 @@ async function cargarCatalogos() {
     const data = await graphqlClient.request(QUERY_CATALOGOS)
     catalogos.value.tiposMiembro    = (data.tiposMiembro || []).sort(alpha)
     catalogos.value.estadosMiembro  = (data.estadosMiembro || []).sort(alpha)
-    catalogos.value.agrupaciones    = data.agrupacionesTerritoriales || []
+    catalogos.value.agrupaciones    = data.unidadesOrganizativas || []
     catalogos.value.tiposVinculacion = (data.tiposVinculacion || []).sort(alpha)
 
     const activo = catalogos.value.estadosMiembro.find(e => e.nombre === 'Activo')

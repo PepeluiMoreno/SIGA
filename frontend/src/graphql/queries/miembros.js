@@ -63,6 +63,17 @@ export const GET_MIEMBROS = `
   }
 `
 
+// Nombramientos activos (coordinadores, presidentes...) — para badges en lista
+export const GET_NOMBRAMIENTOS_ACTIVOS = `
+  query NombramientosActivos {
+    historialNombramientos(filter: { estado: { eq: "ACTIVO" }, eliminado: { eq: false } }) {
+      id miembroId
+      rol { nombre codigo }
+      agrupacion { id nombre }
+    }
+  }
+`
+
 // Query para obtener un miembro por ID
 export const GET_MIEMBRO_BY_ID = `
   query Miembro($id: UUID!) {
@@ -224,7 +235,7 @@ export const GET_TIPOS_CARGO = `
 // Query para obtener agrupaciones territoriales
 export const GET_AGRUPACIONES = `
   query Agrupaciones {
-    agrupacionesTerritoriales {
+    unidadesOrganizativas {
       id
       nombre
       nombreCorto

@@ -59,7 +59,7 @@
             </div>
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600">Cuotas del Mes</p>
+            <p class="text-sm font-medium text-gray-600">Cuotas del ejercicio</p>
             <p class="text-2xl font-bold text-gray-900">{{ formatCurrency(stats.cuotasMes) }}</p>
             <p class="text-sm text-green-600 mt-1">↑ {{ stats.porcentajeCobro }}% cobrado</p>
           </div>
@@ -141,9 +141,9 @@
       <div class="bg-gray-50 rounded-lg shadow p-6 border border-gray-200">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg font-semibold text-gray-900">Actividad Reciente</h3>
-          <button class="text-sm text-purple-600 hover:text-purple-800">
+          <router-link to="/auditoria" class="text-sm text-purple-600 hover:text-purple-800">
             Ver más →
-          </button>
+          </router-link>
         </div>
         <div class="space-y-3">
           <div v-for="actividad in actividadReciente" :key="actividad.id" class="flex items-start">
@@ -167,9 +167,9 @@
     <div class="bg-gray-50 rounded-lg shadow p-6 border border-gray-200">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold text-gray-900">Próximas Actividades</h3>
-        <button class="text-sm text-purple-600 hover:text-purple-800">
+        <router-link to="/acciones" class="text-sm text-purple-600 hover:text-purple-800">
           Ver calendario →
-        </button>
+        </router-link>
       </div>
       <div class="space-y-3">
         <div v-for="actividad in proximasActividades" :key="actividad.id" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
@@ -224,7 +224,7 @@ const ultimasCampanias = computed(() => campanias.value.slice(0, 3).map(c => ({
 })))
 
 const stats = computed(() => ({
-  totalmiembros: miembros.value.length,
+  totalmiembros: miembros.value.filter(m => m.estado?.nombre === 'Alta').length,
   nuevosmiembrosMes: 0,
   campaniasActivas: campanias.value.filter(c => ['En Curso', 'Activa'].includes(c.estado?.nombre)).length,
   campaniasPlanificadas: campanias.value.filter(c => ['Programada', 'Borrador'].includes(c.estado?.nombre)).length,

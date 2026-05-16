@@ -33,7 +33,7 @@ class CuentaBancaria(BaseModel):
     saldo_actual: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal('0.00'), nullable=False)
     
     # Agrupación territorial (para tesorería descentralizada)
-    agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey("agrupaciones_territoriales.id"), nullable=True, index=True)
+    agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey("unidades_organizativas.id"), nullable=True, index=True)
     
     # Estado
     activa: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
@@ -42,7 +42,7 @@ class CuentaBancaria(BaseModel):
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
     # Relaciones
-    agrupacion = relationship('AgrupacionTerritorial', foreign_keys=[agrupacion_id], lazy='selectin')
+    agrupacion = relationship('UnidadOrganizativa', foreign_keys=[agrupacion_id], lazy='selectin')
     movimientos: Mapped[List["MovimientoTesoreria"]] = relationship(back_populates="cuenta", lazy="selectin")
 
     def __repr__(self) -> str:

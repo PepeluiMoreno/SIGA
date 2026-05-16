@@ -252,7 +252,7 @@
                   @click.stop
                 >
                   <span>🔗</span>
-                  <span>Ver en laicismo.org</span>
+                  <span>Ver en la Web</span>
                 </a>
               </div>
             </div>

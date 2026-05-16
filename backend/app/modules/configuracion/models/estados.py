@@ -7,10 +7,10 @@ from typing import Optional
 from sqlalchemy import String, Integer, Boolean, Text, DateTime, Uuid, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ....infrastructure.base_model import BaseModel
+from ....infrastructure.base_model import BaseModel, InmutableMixin
 
 
-class EstadoBase(BaseModel):
+class EstadoBase(InmutableMixin, BaseModel):
     """Clase base abstracta para todos los estados."""
     __abstract__ = True
 

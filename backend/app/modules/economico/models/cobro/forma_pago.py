@@ -6,10 +6,10 @@ from typing import Optional
 from sqlalchemy import String, Boolean, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .....infrastructure.base_model import BaseModel
+from .....infrastructure.base_model import BaseModel, InmutableMixin
 
 
-class FormaPago(BaseModel):
+class FormaPago(InmutableMixin, BaseModel):
     """Catálogo de formas de pago (transferencia, tarjeta, efectivo, domiciliación...)."""
     __tablename__ = "formas_pago"
 

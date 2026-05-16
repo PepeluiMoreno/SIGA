@@ -36,6 +36,8 @@ EXCLUDED_TABLES = {
     'temp_id_mapping',  # Tabla auxiliar para migración MySQL → PostgreSQL
     'organizaciones',  # Pendiente de decisión arquitectónica
     'tipos_organizacion',  # Pendiente de decisión arquitectónica
+    'vista_unidades_organizativas',  # Materialized view, gestionada manualmente
+    'vista_agrupaciones_territoriales',  # Nombre anterior, por compatibilidad
 }
 
 

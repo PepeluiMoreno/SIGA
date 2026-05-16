@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useDebugStore } from '@/stores/debug.js'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
+import { usePermisos } from '@/composables/usePermisos.js'
 
 // Vistas globales (no pertenecen a un módulo específico)
 import Dashboard from '@/views/Dashboard.vue'
@@ -67,49 +68,49 @@ const routes = [
     path: '/usuarios',
     component: ListaUsuarios,
     name: 'Usuarios',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'USR_LIST' }
   },
   {
     path: '/usuarios/crear',
     component: () => import('@/modules/acceso/views/CrearUsuario.vue'),
     name: 'CrearUsuario',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'USR_CREATE' }
   },
   {
     path: '/roles',
     component: () => import('@/modules/acceso/views/ListaRoles.vue'),
     name: 'Roles',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'ROL_LIST' }
   },
   {
     path: '/roles/nuevo',
     component: () => import('@/modules/acceso/views/FormularioRol.vue'),
     name: 'NuevoRol',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'ROL_CREATE' }
   },
   {
     path: '/roles/:id/editar',
     component: () => import('@/modules/acceso/views/FormularioRol.vue'),
     name: 'EditarRol',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'ROL_EDIT' }
   },
   {
     path: '/roles/:id/permisos',
     component: () => import('@/modules/acceso/views/PermisosRol.vue'),
     name: 'PermisosRol',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'ROL_EDIT' }
   },
   {
     path: '/transacciones',
     component: () => import('@/modules/acceso/views/ListaTransacciones.vue'),
     name: 'Transacciones',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'PERM_ASSIGN' }
   },
   {
     path: '/auditoria',
     component: () => import('@/modules/acceso/views/LogAuditoria.vue'),
     name: 'Auditoria',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'AUD_VIEW' }
   },
 
   // ─── MEMBRESIA ────────────────────────────────────────────────────────────
@@ -117,49 +118,55 @@ const routes = [
     path: '/miembros',
     component: ListaMiembros,
     name: 'Miembros',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'SOC_LIST' }
   },
   {
     path: '/miembros/nuevo',
     component: () => import('@/modules/membresia/views/DetalleMiembro.vue'),
     name: 'NuevoMiembro',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'SOC_CREATE' }
   },
   {
     path: '/miembros/:id',
     component: () => import('@/modules/membresia/views/DetalleMiembro.vue'),
     name: 'DetalleMiembro',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'SOC_LIST' }
   },
   {
     path: '/agrupaciones',
     component: DetalleAgrupacionesTerritoriales,
     name: 'Agrupaciones',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'AGR_EDIT' }
   },
   {
     path: '/configuracion/estructura',
     component: EstructuraOrganizativa,
     name: 'EstructuraOrganizativa',
+    meta: { requiresAuth: true, requiredPermission: 'CFG_EDIT' }
+  },
+  {
+    path: '/agrupaciones/:id',
+    component: () => import('@/modules/membresia/views/DetalleAgrupacion.vue'),
+    name: 'DetalleAgrupacion',
     meta: { requiresAuth: true }
   },
   {
     path: '/agrupaciones/:id/junta',
     component: () => import('@/modules/acceso/views/GestionJunta.vue'),
     name: 'GestionJunta',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'NOM_CREATE' }
   },
   {
     path: '/juntas',
     component: () => import('@/modules/membresia/views/JuntasDirectivas.vue'),
     name: 'JuntasDirectivas',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'NOM_CREATE' }
   },
   {
     path: '/voluntarios',
     component: ListaVoluntarios,
     name: 'Voluntarios',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'HAB_LIST' }
   },
 
   // ─── ACTIVIDADES / GRUPOS ─────────────────────────────────────────────────
@@ -167,40 +174,43 @@ const routes = [
     path: '/grupos',
     component: ListaGrupos,
     name: 'Grupos',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'TEAM_LIST' }
   },
   {
     path: '/grupos/nuevo',
     component: () => import('@/modules/actividades/views/NuevoGrupo.vue'),
     name: 'NuevoGrupo',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'TEAM_CREATE' }
   },
   {
     path: '/grupos/:id',
     component: () => import('@/modules/actividades/views/DetalleGrupo.vue'),
     name: 'DetalleGrupo',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'TEAM_LIST' }
   },
-  // Redirect legacy /eventos URLs to /acciones
-  { path: '/eventos', redirect: '/acciones' },
-  { path: '/eventos/:id', redirect: to => `/acciones/${to.params.id}` },
+  // Redirects legacy URLs
+  { path: '/eventos', redirect: '/actividades' },
+  { path: '/eventos/:id', redirect: to => `/actividades/${to.params.id}` },
+  { path: '/acciones', redirect: '/actividades' },
+  { path: '/acciones/nueva', redirect: '/actividades/nueva' },
+  { path: '/acciones/:id', redirect: to => `/actividades/${to.params.id}` },
   {
-    path: '/acciones',
+    path: '/actividades',
     component: () => import('@/modules/actividades/views/ListaAcciones.vue'),
-    name: 'Acciones',
-    meta: { requiresAuth: true }
+    name: 'Actividades',
+    meta: { requiresAuth: true, requiredPermission: 'ACT_LIST' }
   },
   {
-    path: '/acciones/nueva',
+    path: '/actividades/nueva',
     component: () => import('@/modules/actividades/views/NuevaAccion.vue'),
-    name: 'NuevaAccion',
-    meta: { requiresAuth: true }
+    name: 'NuevaActividad',
+    meta: { requiresAuth: true, requiredPermission: 'ACT_CREATE' }
   },
   {
-    path: '/acciones/:id',
+    path: '/actividades/:id',
     component: () => import('@/modules/actividades/views/DetalleAccion.vue'),
-    name: 'DetalleAccion',
-    meta: { requiresAuth: true }
+    name: 'DetalleActividad',
+    meta: { requiresAuth: true, requiredPermission: 'ACT_LIST' }
   },
 
   // ─── COMUNICACIONES ───────────────────────────────────────────────────────
@@ -208,27 +218,33 @@ const routes = [
     path: '/campanias',
     component: () => import('@/modules/comunicaciones/views/ListaCampanias.vue'),
     name: 'Campañas',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'CAMP_LIST' }
   },
   {
     path: '/campanias/nueva',
     component: () => import('@/modules/comunicaciones/views/CampaniaForm.vue'),
     name: 'NuevaCampania',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'CAMP_CREATE' }
   },
   {
     path: '/campanias/:id',
     component: () => import('@/modules/comunicaciones/views/DetalleCampania.vue'),
     name: 'DetalleCampania',
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, requiredPermission: 'CAMP_LIST' },
     props: true
   },
   {
     path: '/campanias/:id/editar',
     component: () => import('@/modules/comunicaciones/views/CampaniaForm.vue'),
     name: 'EditarCampania',
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, requiredPermission: 'CAMP_EDIT' },
     props: true
+  },
+  {
+    path: '/memoria-anual',
+    component: () => import('@/modules/comunicaciones/views/MemoriaAnual.vue'),
+    name: 'MemoriaAnual',
+    meta: { requiresAuth: true, requiredPermission: 'CAMP_LIST' }
   },
 
   // ─── ECONOMICO ────────────────────────────────────────────────────────────
@@ -237,37 +253,37 @@ const routes = [
     path: '/economico/tesoreria',
     component: Tesoreria,
     name: 'Tesoreria',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'FIN_REPORTS' }
   },
   {
     path: '/economico/contabilidad',
     component: Contabilidad,
     name: 'Contabilidad',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'FIN_REPORTS' }
   },
   {
     path: '/economico/cuotas',
     component: Cuotas,
     name: 'Cuotas',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'CUOT_GENERATE' }
   },
   {
     path: '/economico/remesas',
     component: Remesas,
     name: 'Remesas',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'REM_CREATE' }
   },
   {
     path: '/economico/presupuesto',
     component: Presupuesto,
     name: 'Presupuesto',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'FIN_REPORTS' }
   },
   {
     path: '/economico/donaciones',
     component: Donaciones,
     name: 'Donaciones',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'DON_CREATE' }
   },
 
   // ─── PAPELERA ─────────────────────────────────────────────────────────────
@@ -286,7 +302,7 @@ const routes = [
     path: '/configuracion/general',
     component: () => import('@/modules/configuracion/views/ParametrosGenerales.vue'),
     name: 'ParametrosGenerales',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'CFG_VIEW' }
   },
   {
     path: '/parametrizacion',
@@ -296,37 +312,75 @@ const routes = [
     path: '/parametrizacion/catalogos',
     component: () => import('@/modules/configuracion/views/GestorCatalogos.vue'),
     name: 'Catalogos',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
   },
   {
     path: '/parametrizacion/tipos-miembro',
     component: () => import('@/modules/configuracion/views/catalogos/TiposMiembro.vue'),
     name: 'TiposMiembro',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
   },
   {
     path: '/parametrizacion/estados-miembro',
     component: () => import('@/modules/configuracion/views/catalogos/EstadosMiembro.vue'),
     name: 'EstadosMiembro',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
   },
   {
     path: '/parametrizacion/motivos-baja',
     component: () => import('@/modules/configuracion/views/catalogos/MotivosBaja.vue'),
     name: 'MotivosBaja',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
   },
   {
     path: '/parametrizacion/estados-cuota',
     component: () => import('@/modules/configuracion/views/catalogos/EstadosCuota.vue'),
     name: 'EstadosCuota',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
   },
   {
     path: '/parametrizacion/temas',
     component: () => import('@/views/configuracion/TemasCatalogo.vue'),
     name: 'TemasCatalogo',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'CFG_EDIT' }
+  },
+  // Catálogos de campañas
+  {
+    path: '/parametrizacion/tipos-campania',
+    component: () => import('@/modules/comunicaciones/views/catalogos/TiposCampania.vue'),
+    name: 'TiposCampania',
+    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+  },
+  {
+    path: '/parametrizacion/estados-campania',
+    component: () => import('@/modules/comunicaciones/views/catalogos/EstadosCampania.vue'),
+    name: 'EstadosCampania',
+    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+  },
+  {
+    path: '/parametrizacion/tipos-meta-campania',
+    component: () => import('@/modules/comunicaciones/views/catalogos/TiposMetaCampania.vue'),
+    name: 'TiposMetaCampania',
+    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+  },
+  {
+    path: '/parametrizacion/canales-difusion',
+    component: () => import('@/modules/comunicaciones/views/catalogos/CanalesDifusion.vue'),
+    name: 'CanalesDifusion',
+    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+  },
+  // Plantillas de campaña
+  {
+    path: '/parametrizacion/plantillas-campania',
+    component: () => import('@/modules/comunicaciones/views/PlantillasCampania.vue'),
+    name: 'PlantillasCampania',
+    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+  },
+  {
+    path: '/parametrizacion/plantillas-campania/:id',
+    component: () => import('@/modules/comunicaciones/views/DetallePlantilla.vue'),
+    name: 'DetallePlantilla',
+    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
   },
   {
     path: '/ayuda',
@@ -378,11 +432,27 @@ router.beforeEach(async (to, from, next) => {
 
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login')
-  } else if (to.meta.guest && isAuthenticated) {
-    next('/')
-  } else {
-    next()
+    return
   }
+
+  if (to.meta.guest && isAuthenticated) {
+    next('/')
+    return
+  }
+
+  // Comprobación de permisos
+  if (to.meta.requiredPermission && isAuthenticated) {
+    const permisos = usePermisos()
+    if (!permisos.loaded.value) {
+      await permisos.cargar()
+    }
+    if (!permisos.tienePermiso(to.meta.requiredPermission)) {
+      next('/')
+      return
+    }
+  }
+
+  next()
 })
 
 router.afterEach((to, from) => {

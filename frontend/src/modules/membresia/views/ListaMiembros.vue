@@ -5,7 +5,7 @@
       v-model="filters"
       v-model:search="searchQuery"
       :search-placeholder="`Buscar por nombre, apellido o email…`"
-      :create-label="`Nuevo ${orgConfig.miembro}`"
+      :create-label="tienePermiso('MEMBRESIA_MIEMBRO_CREAR') ? `Nuevo ${orgConfig.miembro}` : ''"
       create-route="/miembros/nuevo"
       :fields="filterFields"
       :description="descripcionBusqueda"
@@ -52,6 +52,10 @@
             </label>
           </template>
         </div>
+      </template>
+
+      <template #filters-prefix>
+        <AgrupacionCascada v-model="filters.agrupacion" :agrupaciones="agrupaciones" />
       </template>
 
     </FilterBar>
@@ -139,6 +143,11 @@
                           </svg>
                           App
                         </span>
+                        <span v-for="n in (nombramientosMap[fila.miembro.id] || [])" :key="n.id"
+                          :title="n.agrupacion?.nombre ? `Cargo en ${n.agrupacion.nombre}` : n.rol?.nombre"
+                          class="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
+                          {{ n.rol?.nombre }}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -194,11 +203,14 @@ import AvatarImg from '@/components/common/AvatarImg.vue'
 import { EyeIcon, PencilIcon } from '@heroicons/vue/24/outline'
 import { useGraphQL } from '@/composables/useGraphQL.js'
 import { useOrgConfigStore } from '@/stores/orgConfig'
-import { GET_MIEMBROS, GET_AGRUPACIONES, GET_TIPOS_MIEMBRO, GET_ESTADOS_MIEMBRO, GET_MOTIVOS_BAJA } from '@/graphql/queries/miembros.js'
+import { usePermisos } from '@/composables/usePermisos.js'
+import { GET_MIEMBROS, GET_AGRUPACIONES, GET_TIPOS_MIEMBRO, GET_ESTADOS_MIEMBRO, GET_MOTIVOS_BAJA, GET_NOMBRAMIENTOS_ACTIVOS } from '@/graphql/queries/miembros.js'
+import AgrupacionCascada from '@/components/common/AgrupacionCascada.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
 const { loading, error, query } = useGraphQL()
 const orgConfig = useOrgConfigStore()
+const { tienePermiso } = usePermisos()
 
 // Datos
 const miembros = ref([])
@@ -207,6 +219,18 @@ const agrupaciones = ref([])
 const tiposMiembro = ref([])
 const estadosMiembro = ref([])
 const motivosBaja = ref([])
+const nombramientosActivos = ref([])
+
+// Mapa miembroId → nombramientos activos (para badges)
+const nombramientosMap = computed(() => {
+  const map = {}
+  for (const n of nombramientosActivos.value) {
+    if (!n.miembroId) continue
+    if (!map[n.miembroId]) map[n.miembroId] = []
+    map[n.miembroId].push(n)
+  }
+  return map
+})
 
 // Estado UI
 const searchQuery = ref('')
@@ -222,6 +246,7 @@ const filters = ref({
   motivoBaja: '',  // '' = cualquier causa, UUID = motivo específico (solo aplica a Baja)
   tipos: [],
   agrupacion: '',
+  cargo: '',       // '' = todos, 'SIN_CARGO' = sin cargo, o codigo de rol
   soloVoluntarios: false,
   soloConAcceso: false,
 })
@@ -273,43 +298,17 @@ const motivosBajaOrdenados = computed(() =>
   [...motivosBaja.value].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
 )
 
-// Computed: agrupaciones en árbol jerárquico
-const agrupacionesJerarquicas = computed(() => {
-  const lista = agrupaciones.value
-  if (!lista.length) return []
-
-  const buildTree = (padreId = null, nivel = 0) => {
-    const hijos = lista
-      .filter(a => a.agrupacionPadreId === padreId)
-      .sort((a, b) => {
-        const nA = a.tipoUnidad?.nivel || 99
-        const nB = b.tipoUnidad?.nivel || 99
-        if (nA !== nB) return nA - nB
-        return a.nombre.localeCompare(b.nombre, 'es')
-      })
-
-    const resultado = []
-    for (const agrup of hijos) {
-      const indent = '\u00A0\u00A0'.repeat(nivel)
-      resultado.push({ ...agrup, displayNombre: indent + agrup.nombre })
-      resultado.push(...buildTree(agrup.id, nivel + 1))
-    }
-    return resultado
-  }
-
-  return buildTree(null, 0)
+// Cargos únicos presentes en los nombramientos activos (para el filtro)
+const cargosDisponibles = computed(() => {
+  const seen = new Set()
+  return nombramientosActivos.value
+    .map(n => n.rol)
+    .filter(r => r && !seen.has(r.codigo) && seen.add(r.codigo))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
 })
 
-// Computed: campos del FilterBar
+// Computed: campos del FilterBar (el filtro geográfico va en AgrupacionCascada aparte)
 const filterFields = computed(() => [
-  {
-    key: 'agrupacion',
-    label: 'Agrupación',
-    type: 'select',
-    options: agrupacionesJerarquicas.value.map(a => ({ value: a.id, label: a.displayNombre })),
-    allLabel: 'Todas las agrupaciones',
-    width: 'w-72',
-  },
   {
     key: 'estados',
     label: 'Situación',
@@ -327,6 +326,17 @@ const filterFields = computed(() => [
     type: 'multiselect',
     options: tiposMiembroOrdenados.value.map(t => ({ value: t.id, label: t.nombre })),
     allLabel: 'Todos',
+    width: 'w-56',
+  },
+  {
+    key: 'cargo',
+    label: 'Cargo',
+    type: 'select',
+    options: [
+      { value: 'SIN_CARGO', label: 'Sin cargo' },
+      ...cargosDisponibles.value.map(r => ({ value: r.codigo, label: r.nombre })),
+    ],
+    allLabel: 'Todos los cargos',
     width: 'w-56',
   },
   {
@@ -552,7 +562,7 @@ const loadCatalogos = async () => {
   try {
     // Cargar secuencialmente para evitar errores de concurrencia
     const agrupData = await query(GET_AGRUPACIONES)
-    agrupaciones.value = agrupData?.agrupacionesTerritoriales || []
+    agrupaciones.value = agrupData?.unidadesOrganizativas || []
 
     const tiposData = await query(GET_TIPOS_MIEMBRO)
     tiposMiembro.value = tiposData?.tiposMiembro || []
@@ -562,6 +572,9 @@ const loadCatalogos = async () => {
 
     const motivosData = await query(GET_MOTIVOS_BAJA)
     motivosBaja.value = motivosData?.motivosBaja || []
+
+    const nombramientosData = await query(GET_NOMBRAMIENTOS_ACTIVOS)
+    nombramientosActivos.value = nombramientosData?.historialNombramientos || []
   } catch (err) {
     console.error('Error al cargar catálogos:', err)
   }
@@ -657,6 +670,17 @@ const applyClientFilters = () => {
     filtered = filtered.filter(m => m.tieneAcceso === true)
   }
 
+  // Filtro por cargo
+  if (filters.value.cargo) {
+    if (filters.value.cargo === 'SIN_CARGO') {
+      filtered = filtered.filter(m => !nombramientosMap.value[m.id]?.length)
+    } else {
+      filtered = filtered.filter(m =>
+        nombramientosMap.value[m.id]?.some(n => n.rol?.codigo === filters.value.cargo)
+      )
+    }
+  }
+
   filtered.sort((a, b) => {
     const ap1 = (a.apellido1 || '').localeCompare(b.apellido1 || '', 'es')
     if (ap1 !== 0) return ap1
@@ -676,6 +700,7 @@ const limpiarFiltros = () => {
     motivoBaja: '',
     tipos: [],
     agrupacion: '',
+    cargo: '',
     soloVoluntarios: false,
     soloConAcceso: false,
   }

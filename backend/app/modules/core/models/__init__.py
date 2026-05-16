@@ -8,7 +8,7 @@ Los modelos de core fueron redistribuidos:
 - Comunicación → modules/core/comunicacion/
 """
 
-from ..geografico import Pais, Provincia, Municipio, Direccion, AgrupacionTerritorial
+from ..geografico import Pais, Provincia, Municipio, Direccion, UnidadOrganizativa
 from ..comunicacion import TipoNotificacion, Notificacion, PreferenciaNotificacion
 from ...configuracion.models import (
     Configuracion,
@@ -30,7 +30,7 @@ from ...configuracion.models import (
 from ...acceso.models import Sesion, HistorialSeguridad, IPBloqueada, IntentoAcceso
 
 __all__ = [
-    'Pais', 'Provincia', 'Municipio', 'Direccion', 'AgrupacionTerritorial',
+    'Pais', 'Provincia', 'Municipio', 'Direccion', 'UnidadOrganizativa',
     'TipoNotificacion', 'Notificacion', 'PreferenciaNotificacion',
     'Configuracion', 'ReglaValidacionConfig', 'HistorialConfiguracion',
     'EstadoBase', 'EstadoCuota', 'EstadoCampania', 'EstadoAccion', 'EstadoTarea',

@@ -18,7 +18,7 @@ from sqlalchemy import select, text
 
 from app.core.database import get_database_url
 from app.infrastructure.services.encriptacion_service import get_encriptacion_service
-from app.modules.core.geografico.direccion import AgrupacionTerritorial, Provincia
+from app.modules.core.geografico.direccion import UnidadOrganizativa, Provincia
 from app.scripts.importacion.sql_dump_parser import SQLDumpParser
 
 
@@ -106,7 +106,7 @@ class MapeadorAgrupaciones:
 
         # Cargar agrupaciones existentes en la BD
         result = await session.execute(
-            select(AgrupacionTerritorial.codigo, AgrupacionTerritorial.id)
+            select(UnidadOrganizativa.codigo, UnidadOrganizativa.id)
         )
         for codigo, uuid_val in result:
             if codigo:
@@ -205,7 +205,7 @@ class MapeadorAgrupaciones:
                 pais_id = await self.obtener_pais_espana(session)
 
             # Crear agrupacion con solo los campos que existen en el modelo
-            agrupacion = AgrupacionTerritorial(
+            agrupacion = UnidadOrganizativa(
                 codigo=codigo_str,
                 nombre=str(nombre).strip() if nombre else f"Agrupacion {codigo_str}",
                 tipo=tipo,
@@ -322,7 +322,7 @@ class MapeadorAgrupaciones:
                 pais_id = await self.obtener_pais_espana(session)
 
             # Crear agrupacion con solo los campos que existen en el modelo
-            agrupacion = AgrupacionTerritorial(
+            agrupacion = UnidadOrganizativa(
                 codigo=codigo_str,
                 nombre=str(nombre).strip() if nombre else f"Agrupacion {codigo_str}",
                 tipo=tipo,

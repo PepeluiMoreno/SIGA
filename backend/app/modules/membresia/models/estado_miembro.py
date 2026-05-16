@@ -6,10 +6,10 @@ from typing import Optional
 from sqlalchemy import String, Integer, Uuid, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
-from ....infrastructure.base_model import BaseModel
+from ....infrastructure.base_model import BaseModel, InmutableMixin
 
 
-class EstadoMiembro(BaseModel):
+class EstadoMiembro(InmutableMixin, BaseModel):
     """Estados posibles de un miembro en el sistema.
 
     Estados del ciclo de vida de un miembro:

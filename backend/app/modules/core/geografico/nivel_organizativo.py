@@ -22,8 +22,8 @@ class VinculoUnidad(PyEnum):
     FEDERADA = "FEDERADA"
 
 
-class TipoUnidadOrganizativa(BaseModel):
-    __tablename__ = "tipos_unidades_organizativas"
+class NivelOrganizativo(BaseModel):
+    __tablename__ = "niveles_organizativos"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -36,7 +36,7 @@ class TipoUnidadOrganizativa(BaseModel):
     # nivel derivado de la profundidad en el árbol (1=raíz, 2=hijo, …)
     nivel: Mapped[Optional[int]] = mapped_column(Integer(), nullable=True)
     padre_tipo_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('tipos_unidades_organizativas.id', ondelete='SET NULL'),
+        Uuid, ForeignKey('niveles_organizativos.id', ondelete='SET NULL'),
         nullable=True, index=True
     )
     activo: Mapped[bool] = mapped_column(Boolean, default=True, server_default='true', nullable=False)

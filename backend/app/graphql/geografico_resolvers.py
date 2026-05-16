@@ -5,14 +5,15 @@ from typing import Optional
 
 import strawberry
 from sqlalchemy import select
-from app.modules.core.geografico import AgrupacionTerritorial
-from .types_auto import AgrupacionTerritorialType
+from app.modules.core.geografico import UnidadOrganizativa
+from .types_auto import UnidadOrganizativaType
+from .permissions import RequireTransaction
 
 
 # ── Inputs con FK UUID explícitos ────────────────────────────────────────────
 
 @strawberry.input
-class AgrupacionTerritorialCreateInput:
+class UnidadOrganizativaCreateInput:
     nombre: str
     nombre_corto: Optional[str] = None
     tipo_id: Optional[uuid.UUID] = None
@@ -31,7 +32,7 @@ class AgrupacionTerritorialCreateInput:
 
 
 @strawberry.input
-class AgrupacionTerritorialUpdateInput:
+class UnidadOrganizativaUpdateInput:
     id: uuid.UUID
     nombre: Optional[str] = None
     nombre_corto: Optional[str] = None
@@ -58,8 +59,8 @@ _AG_FIELDS = [
 ]
 
 
-async def _fetch_agrupacion(session, ag_id: uuid.UUID) -> AgrupacionTerritorial:
-    stmt = select(AgrupacionTerritorial).where(AgrupacionTerritorial.id == ag_id)
+async def _fetch_agrupacion(session, ag_id: uuid.UUID) -> UnidadOrganizativa:
+    stmt = select(UnidadOrganizativa).where(UnidadOrganizativa.id == ag_id)
     result = await session.execute(stmt)
     return result.scalar_one()
 
@@ -69,10 +70,10 @@ async def _fetch_agrupacion(session, ag_id: uuid.UUID) -> AgrupacionTerritorial:
 @strawberry.type
 class GeograficoMutation:
 
-    @strawberry.mutation
-    async def crear_agrupacion_territorial(
-        self, info: strawberry.Info, data: AgrupacionTerritorialCreateInput
-    ) -> AgrupacionTerritorialType:
+    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_TERRITORIO_CREAR")])
+    async def crear_unidad_organizativa(
+        self, info: strawberry.Info, data: UnidadOrganizativaCreateInput
+    ) -> UnidadOrganizativaType:
         session = info.context.session
         kwargs = {f: getattr(data, f) for f in _AG_FIELDS if getattr(data, f, None) is not None}
         # Preserve explicit None for optional FK fields passed as None
@@ -80,15 +81,15 @@ class GeograficoMutation:
                    'fecha_constitucion'):
             if hasattr(data, fk):
                 kwargs[fk] = getattr(data, fk)
-        ag = AgrupacionTerritorial(**kwargs)
+        ag = UnidadOrganizativa(**kwargs)
         session.add(ag)
         await session.commit()
         return await _fetch_agrupacion(session, ag.id)
 
-    @strawberry.mutation
-    async def actualizar_agrupacion_territorial(
-        self, info: strawberry.Info, data: AgrupacionTerritorialUpdateInput
-    ) -> AgrupacionTerritorialType:
+    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_TERRITORIO_EDITAR")])
+    async def actualizar_unidad_organizativa(
+        self, info: strawberry.Info, data: UnidadOrganizativaUpdateInput
+    ) -> UnidadOrganizativaType:
         session = info.context.session
         ag = await _fetch_agrupacion(session, data.id)
 
@@ -101,18 +102,18 @@ class GeograficoMutation:
         await session.commit()
         return await _fetch_agrupacion(session, ag.id)
 
-    @strawberry.mutation
-    async def archivar_agrupacion_territorial(
+    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_TERRITORIO_ELIMINAR")])
+    async def archivar_unidad_organizativa(
         self, info: strawberry.Info, id: uuid.UUID
-    ) -> AgrupacionTerritorialType:
+    ) -> UnidadOrganizativaType:
         """Soft-delete de una unidad organizativa."""
         session = info.context.session
         ag = await _fetch_agrupacion(session, id)
 
         hijos = await session.execute(
-            select(AgrupacionTerritorial).where(
-                AgrupacionTerritorial.agrupacion_padre_id == id,
-                AgrupacionTerritorial.eliminado == False,
+            select(UnidadOrganizativa).where(
+                UnidadOrganizativa.agrupacion_padre_id == id,
+                UnidadOrganizativa.eliminado == False,
             )
         )
         if hijos.scalars().first():

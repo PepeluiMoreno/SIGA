@@ -30,7 +30,7 @@ class JuntaDirectiva(BaseModel):
 
     agrupacion_id: Mapped[uuid.UUID] = mapped_column(
         Uuid,
-        ForeignKey('agrupaciones_territoriales.id', ondelete='RESTRICT'),
+        ForeignKey('unidades_organizativas.id', ondelete='RESTRICT'),
         nullable=False,
         index=True,
     )
@@ -41,7 +41,7 @@ class JuntaDirectiva(BaseModel):
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Relaciones
-    agrupacion = relationship('AgrupacionTerritorial', lazy='selectin')
+    agrupacion = relationship('UnidadOrganizativa', lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<JuntaDirectiva(agrupacion_id='{self.agrupacion_id}', activa={self.activa})>"

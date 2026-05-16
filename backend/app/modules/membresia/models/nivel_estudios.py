@@ -6,13 +6,13 @@ from typing import Optional, TYPE_CHECKING
 from sqlalchemy import String, Integer, Boolean, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ....infrastructure.base_model import BaseModel
+from ....infrastructure.base_model import BaseModel, InmutableMixin
 
 if TYPE_CHECKING:
     from .miembro import Miembro
 
 
-class NivelEstudios(BaseModel):
+class NivelEstudios(InmutableMixin, BaseModel):
     __tablename__ = 'niveles_estudios'
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)

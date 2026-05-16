@@ -37,7 +37,7 @@ from sqlalchemy import select, func
 
 from app.core.database import async_session
 from app.modules.configuracion.models.estados import EstadoCuota
-from app.modules.core.geografico.direccion import AgrupacionTerritorial
+from app.modules.core.geografico.direccion import UnidadOrganizativa
 from app.modules.economico.models.cuotas import CuotaAnual
 from app.modules.membresia.models.miembro import Miembro
 
@@ -233,8 +233,8 @@ async def seed():
             if m.email and m.email not in email_to_miembro:
                 email_to_miembro[m.email] = {"id": m.id, "agrupacion_id": m.agrupacion_id}
 
-        # nombre_corto → AgrupacionTerritorial.id
-        agr_result = await session.execute(select(AgrupacionTerritorial))
+        # nombre_corto → UnidadOrganizativa.id
+        agr_result = await session.execute(select(UnidadOrganizativa))
         agr_by_codigo: dict[str, uuid.UUID] = {}
         for a in agr_result.scalars():
             if a.nombre_corto:

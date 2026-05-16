@@ -47,7 +47,7 @@ export function useMiembro() {
       catalogos.value.motivosBaja = (motivosData?.motivosBaja || []).sort(alpha)
 
       const agrupacionesData = await query(GET_AGRUPACIONES)
-      catalogos.value.agrupaciones = agrupacionesData?.agrupacionesTerritoriales || []
+      catalogos.value.agrupaciones = agrupacionesData?.unidadesOrganizativas || []
 
       const paisesData = await query(GET_PAISES)
       const paises = (paisesData?.paises || []).filter(p => p.activo)

@@ -18,6 +18,7 @@ from ..modules.acceso.models.rol_transaccion import RolTransaccion
 from ..modules.acceso.models.transaccion import Transaccion
 from ..modules.acceso.services.acceso_service import AccesoService
 from ..modules.acceso.services.password_reset_service import PasswordResetService
+from app.graphql.permissions import RequireTransaction, RequireAuthenticated
 
 
 @strawberry.type
@@ -151,7 +152,7 @@ class AuthMutation:
         token = create_access_token(usuario.id)
         return LoginPayload(token=token, user=_to_payload(usuario))
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACCESO_USUARIO_CREAR")])
     async def crear_usuario(
         self,
         info: strawberry.Info,
@@ -194,7 +195,7 @@ class AuthMutation:
         await session.commit()
         return _to_payload(usuario)
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_JUNTA_CONFIGURAR")])
     async def constituir_junta(
         self,
         info: strawberry.Info,
@@ -219,7 +220,7 @@ class AuthMutation:
         await session.commit()
         return junta.id
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_CARGO_ASIGNAR")])
     async def asignar_nombramiento(
         self,
         info: strawberry.Info,
@@ -288,7 +289,7 @@ class AuthMutation:
         await info.context.session.commit()
         return True
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireAuthenticated])
     async def cambiar_mi_password(
         self,
         info: strawberry.Info,
@@ -310,7 +311,7 @@ class AuthMutation:
         await session.commit()
         return True
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_CARGO_REVOCAR")])
     async def revocar_nombramiento(
         self,
         info: strawberry.Info,

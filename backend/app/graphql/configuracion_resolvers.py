@@ -10,9 +10,9 @@ import strawberry
 from sqlalchemy import select
 
 from app.modules.configuracion.models.configuracion import Configuracion
-from app.modules.acceso.models.rol import Rol
-from app.modules.acceso.models.usuario import UsuarioRol
-from app.modules.core.geografico import TipoUnidadOrganizativa, NaturalezaUnidad, VinculoUnidad
+from app.modules.core.geografico import NivelOrganizativo, NaturalezaUnidad, VinculoUnidad
+from app.core.email_service import _load_smtp_config
+from app.graphql.permissions import RequireTransaction
 
 
 # ---------------------------------------------------------------------------
@@ -39,9 +39,10 @@ class ParametrosOrganizacion:
     rrss_instagram: str
     rrss_linkedin: str
     rrss_youtube: str
+    rrss_telegram: str
     logo: str
     implantacion_geografica: str
-    tipo_agrupacion_territorial: str
+    tipo_unidad_organizativa: Optional[str]
     denominacion_miembro: str
     denominacion_miembro_plural: str
     multiterritorial: bool
@@ -57,6 +58,10 @@ class ParametrosOrganizacion:
     smtp_from: str
     smtp_tls: bool
     smtp_ssl: bool
+    # Funcionalidades opcionales
+    indico_activo: bool
+    indico_url: str
+    indico_api_token: str     # devuelto enmascarado al frontend
     # Edad máxima para socio joven
     edad_max_joven: int
     # Denominaciones configurables
@@ -94,9 +99,10 @@ class ParametrosOrganizacionInput:
     rrss_instagram: Optional[str] = ''
     rrss_linkedin: Optional[str] = ''
     rrss_youtube: Optional[str] = ''
+    rrss_telegram: Optional[str] = ''
     logo: Optional[str] = ''
     implantacion_geografica: Optional[str] = ''
-    tipo_agrupacion_territorial: Optional[str] = ''
+    tipo_unidad_organizativa: Optional[str] = ''
     denominacion_miembro: Optional[str] = 'miembro'
     denominacion_miembro_plural: Optional[str] = 'miembros'
     multiterritorial: Optional[bool] = False
@@ -112,6 +118,10 @@ class ParametrosOrganizacionInput:
     smtp_from: Optional[str] = ''
     smtp_tls: Optional[bool] = True
     smtp_ssl: Optional[bool] = False
+    # Funcionalidades opcionales
+    indico_activo: Optional[bool] = False
+    indico_url: Optional[str] = ''
+    indico_api_token: Optional[str] = ''   # vacío = no cambiar
     # Edad máxima para socio joven
     edad_max_joven: Optional[int] = 30
     # Denominaciones configurables
@@ -148,9 +158,10 @@ _MAPPING = [
     ('org.rrss.instagram',      'string', 'rrss_instagram'),
     ('org.rrss.linkedin',       'string', 'rrss_linkedin'),
     ('org.rrss.youtube',        'string', 'rrss_youtube'),
+    ('org.rrss.telegram',       'string', 'rrss_telegram'),
     ('org.logo',                'string', 'logo'),
     ('org.implantacion_geografica',       'string', 'implantacion_geografica'),
-    ('org.tipo_agrupacion_territorial',   'string', 'tipo_agrupacion_territorial'),
+    ('org.tipo_agrupacion_territorial',   'string', 'tipo_unidad_organizativa'),
     ('org.denominacion_miembro',          'string', 'denominacion_miembro'),
     ('org.denominacion_miembro_plural',   'string', 'denominacion_miembro_plural'),
     ('org.multiterritorial',              'bool',   'multiterritorial'),
@@ -164,6 +175,9 @@ _MAPPING = [
     ('smtp.from',                         'string', 'smtp_from'),
     ('smtp.tls',                          'bool',   'smtp_tls'),
     ('smtp.ssl',                          'bool',   'smtp_ssl'),
+    ('funcion.indico.activo',             'bool',   'indico_activo'),
+    ('funcion.indico.url',                'string', 'indico_url'),
+    ('funcion.indico.api_token',          'string', 'indico_api_token'),
     ('org.edad_max_joven',                        'int',    'edad_max_joven'),
     ('org.denominacion_organo_gobierno',           'string', 'denominacion_organo_gobierno'),
     ('org.denominacion_organo_gobierno_plural',    'string', 'denominacion_organo_gobierno_plural'),
@@ -182,13 +196,14 @@ async def _load_org_params(session) -> ParametrosOrganizacion:
 
     # Deriva el nombre del nivel de agrupación desde el catálogo (nivel 2 = justo bajo la raíz)
     tipo_agrup_row = (await session.execute(
-        select(TipoUnidadOrganizativa)
-        .where(TipoUnidadOrganizativa.nivel == 2, TipoUnidadOrganizativa.eliminado == False)
+        select(NivelOrganizativo)
+        .where(NivelOrganizativo.nivel == 2, NivelOrganizativo.eliminado == False)
         .limit(1)
     )).scalar_one_or_none()
-    tipo_agrupacion_territorial = (
+    tipo_unidad_organizativa = (
         tipo_agrup_row.nombre if tipo_agrup_row
-        else cfg.get('org.tipo_agrupacion_territorial', '')
+        else cfg.get('org.tipo_unidad_organizativa', '')
+        or cfg.get('org.tipo_agrupacion_territorial', '')
     )
 
     return ParametrosOrganizacion(
@@ -210,9 +225,10 @@ async def _load_org_params(session) -> ParametrosOrganizacion:
         rrss_instagram=cfg.get('org.rrss.instagram', ''),
         rrss_linkedin=cfg.get('org.rrss.linkedin', ''),
         rrss_youtube=cfg.get('org.rrss.youtube', ''),
+        rrss_telegram=cfg.get('org.rrss.telegram', ''),
         logo=cfg.get('org.logo', ''),
         implantacion_geografica=cfg.get('org.implantacion_geografica', ''),
-        tipo_agrupacion_territorial=tipo_agrupacion_territorial,
+        tipo_unidad_organizativa=tipo_unidad_organizativa,
         denominacion_miembro=cfg.get('org.denominacion_miembro', 'miembro'),
         denominacion_miembro_plural=cfg.get('org.denominacion_miembro_plural', 'miembros'),
         multiterritorial=bool(cfg.get('org.multiterritorial', False)),
@@ -226,6 +242,9 @@ async def _load_org_params(session) -> ParametrosOrganizacion:
         smtp_from=cfg.get('smtp.from', ''),
         smtp_tls=bool(cfg.get('smtp.tls', True)),
         smtp_ssl=bool(cfg.get('smtp.ssl', False)),
+        indico_activo=bool(cfg.get('funcion.indico.activo', False)),
+        indico_url=cfg.get('funcion.indico.url', ''),
+        indico_api_token='••••••••' if cfg.get('funcion.indico.api_token') else '',
         edad_max_joven=int(cfg.get('org.edad_max_joven', 30)),
         denominacion_organo_gobierno=cfg.get('org.denominacion_organo_gobierno', 'junta directiva'),
         denominacion_organo_gobierno_plural=cfg.get('org.denominacion_organo_gobierno_plural', 'juntas directivas'),
@@ -241,27 +260,6 @@ async def _load_org_params(session) -> ParametrosOrganizacion:
 # ---------------------------------------------------------------------------
 
 _REQUIRED_KEYS = {'org.nombre', 'org.nif', 'org.telefono', 'org.email'}
-
-
-async def _require_superadmin(session, user_id) -> None:
-    """Lanza PermissionError si el usuario no tiene el rol SUPERADMIN activo."""
-    superadmin = (
-        await session.execute(select(Rol).where(Rol.codigo == 'SUPERADMIN'))
-    ).scalar_one_or_none()
-    if superadmin is None:
-        return  # No hay rol SUPERADMIN configurado — permitir (entorno de arranque)
-    link = (
-        await session.execute(
-            select(UsuarioRol).where(
-                UsuarioRol.usuario_id == user_id,
-                UsuarioRol.rol_id == superadmin.id,
-                UsuarioRol.activo == True,
-                UsuarioRol.eliminado == False,
-            )
-        )
-    ).scalar_one_or_none()
-    if link is None:
-        raise PermissionError("Solo el SUPERADMIN puede modificar los parámetros de la organización")
 
 
 @strawberry.type
@@ -281,6 +279,12 @@ class ConfiguracionOrganizacionQuery:
     @strawberry.field
     async def parametros_organizacion(self, info: strawberry.Info) -> ParametrosOrganizacion:
         return await _load_org_params(info.context.session)
+
+    @strawberry.field
+    async def smtp_configurado(self, info: strawberry.Info) -> bool:
+        """True si los parámetros SMTP obligatorios están rellenos (host, usuario, password)."""
+        config = await _load_smtp_config(info.context.session)
+        return config.configured
 
 
 # ---------------------------------------------------------------------------
@@ -308,9 +312,8 @@ class ConfiguracionOrganizacionMutation:
         already_initialized = all(existing_required.get(k, '') != '' for k in _REQUIRED_KEYS)
 
         if already_initialized:
-            if not info.context.is_authenticated:
-                raise PermissionError("Autenticación requerida para modificar los parámetros")
-            await _require_superadmin(session, info.context.user.id)
+            if not await info.context.check_permission("CFG_EDIT"):
+                raise PermissionError("Permiso denegado: CFG_EDIT")
 
         result = await session.execute(
             select(Configuracion).where(Configuracion.grupo == 'organizacion')
@@ -336,9 +339,10 @@ class ConfiguracionOrganizacionMutation:
             'rrss_instagram': datos.rrss_instagram or '',
             'rrss_linkedin': datos.rrss_linkedin or '',
             'rrss_youtube': datos.rrss_youtube or '',
+            'rrss_telegram': datos.rrss_telegram or '',
             'logo': datos.logo or '',
             'implantacion_geografica': datos.implantacion_geografica or '',
-            'tipo_agrupacion_territorial': datos.tipo_agrupacion_territorial or '',
+            'tipo_unidad_organizativa': datos.tipo_unidad_organizativa or '',
             'denominacion_miembro': datos.denominacion_miembro or 'miembro',
             'denominacion_miembro_plural': datos.denominacion_miembro_plural or 'miembros',
             'multiterritorial': datos.multiterritorial or False,
@@ -352,6 +356,9 @@ class ConfiguracionOrganizacionMutation:
             'smtp_from': datos.smtp_from or '',
             'smtp_tls': datos.smtp_tls if datos.smtp_tls is not None else True,
             'smtp_ssl': datos.smtp_ssl or False,
+            'indico_activo': datos.indico_activo or False,
+            'indico_url': datos.indico_url or '',
+            'indico_api_token': datos.indico_api_token or '',
             'edad_max_joven': datos.edad_max_joven if datos.edad_max_joven is not None else 30,
             'denominacion_organo_gobierno': datos.denominacion_organo_gobierno or 'junta directiva',
             'denominacion_organo_gobierno_plural': datos.denominacion_organo_gobierno_plural or 'juntas directivas',
@@ -363,9 +370,10 @@ class ConfiguracionOrganizacionMutation:
 
         # No sobreescribir la contraseña SMTP si el frontend devuelve el placeholder
         if input_dict.get('smtp_password', '').startswith('•'):
-            input_dict['smtp_password'] = existing.get('smtp.password', existing.get('smtp.password'))
-            # mantener valor actual — se resolverá en el bucle al no encontrarlo en input_dict
-            input_dict['smtp_password'] = None  # señal para omitir
+            input_dict['smtp_password'] = None  # señal para omitir — no sobreescribir
+
+        if input_dict.get('indico_api_token', '').startswith('•'):
+            input_dict['indico_api_token'] = None  # ídem
 
         now = datetime.utcnow()
         for clave, tipo_dato, attr in _MAPPING:
@@ -391,9 +399,9 @@ class ConfiguracionOrganizacionMutation:
         await session.commit()
         return await _load_org_params(session)
 
-    # ── TipoUnidadOrganizativa: create custom (strawchemy no persiste FKs UUID) ──
+    # ── NivelOrganizativo: create custom (strawchemy no persiste FKs UUID) ──
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_EDIT")])
     async def crear_tipo_unidad_organizativa(
         self,
         info: strawberry.Info,
@@ -405,7 +413,7 @@ class ConfiguracionOrganizacionMutation:
         activo: bool = True,
     ) -> uuid.UUID:
         session = info.context.session
-        tipo = TipoUnidadOrganizativa(
+        tipo = NivelOrganizativo(
             id=uuid.uuid4(),
             nombre=nombre,
             naturaleza=NaturalezaUnidad(naturaleza),

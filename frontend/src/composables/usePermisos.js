@@ -8,14 +8,14 @@ const MIS_TRANSACCIONES = `
 `
 
 const _codigos = ref(new Set())
-let _cargado = false
+const _loaded = ref(false)
 
 export function usePermisos() {
   async function cargar() {
     try {
       const data = await graphqlClient.request(MIS_TRANSACCIONES)
       _codigos.value = new Set(data.misTransacciones || [])
-      _cargado = true
+      _loaded.value = true
     } catch {
       _codigos.value = new Set()
     }
@@ -23,7 +23,7 @@ export function usePermisos() {
 
   function limpiar() {
     _codigos.value = new Set()
-    _cargado = false
+    _loaded.value = false
   }
 
   function tienePermiso(codigo) {
@@ -38,5 +38,5 @@ export function usePermisos() {
     return codigos.every(c => _codigos.value.has(c))
   }
 
-  return { cargar, limpiar, tienePermiso, tieneAlguno, tieneTodos, codigos: _codigos }
+  return { cargar, limpiar, tienePermiso, tieneAlguno, tieneTodos, codigos: _codigos, loaded: _loaded }
 }

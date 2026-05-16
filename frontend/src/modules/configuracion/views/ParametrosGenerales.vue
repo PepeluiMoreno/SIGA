@@ -1,24 +1,36 @@
 <template>
-  <AppLayout title="Parámetros Generales" subtitle="Datos de la organización">
-    <div v-if="errorCarga" class="mb-3 rounded-md bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700 flex items-center gap-2">
-      <span>⚠️</span> {{ errorCarga }}
-    </div>
-    <form @submit.prevent="guardar" class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:h-full">
+  <AppLayout title="Parámetros Generales" subtitle="Configuración de la organización">
+    <template #footer>
+      <button type="button" :disabled="guardando" @click="guardar"
+        class="h-10 px-5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+        {{ guardando ? 'Guardando…' : 'Guardar cambios' }}
+      </button>
+      <span v-if="guardadoOk" class="text-sm text-green-600 flex items-center gap-1.5">
+        <CheckCircleIcon class="w-4 h-4" />
+        Guardado
+      </span>
+      <span v-if="error" class="text-sm text-red-600">{{ error }}</span>
+    </template>
 
-      <!-- Col izquierda: Identidad + Contacto + Logotipo -->
-      <div class="flex flex-col gap-4 min-h-0">
+    <form @submit.prevent="guardar" class="flex flex-col"  id="parametros-form">
 
-        <!-- Identidad -->
-        <section class="bg-white rounded-lg border border-gray-200 flex-shrink-0">
-          <div class="px-4 py-2 border-b border-purple-100 bg-purple-50 rounded-t-lg">
-            <h2 class="text-xs font-bold text-purple-800 uppercase tracking-wide">Identidad</h2>
-          </div>
-          <div class="px-4 py-3 space-y-3">
-            <!-- Fila 1: Nombre + NIF + Nº registro -->
-            <div class="flex items-end gap-2">
+      <!-- Error de carga -->
+      <div v-if="errorCarga"
+        class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-center gap-2 flex-shrink-0">
+        <span>⚠️</span> {{ errorCarga }}
+      </div>
+
+      <!-- Acordeones -->
+      <div class="flex-1 space-y-3 pb-4">
+
+        <!-- 1. Identidad y Sede Social -->
+        <AccordionPanel title="Identidad y Sede Social" :default-open="true">
+          <div class="px-5 py-4 space-y-4">
+            <!-- Nombre + NIF + Nº registro -->
+            <div class="flex items-end gap-3">
               <div class="flex-1 min-w-0">
                 <label class="label">Nombre de la organización <span class="text-red-500">*</span></label>
-                <input v-model="form.nombre" type="text" class="input w-full" placeholder="Nombre completo" />
+                <input v-model="form.nombre" type="text" class="input" placeholder="Nombre completo" />
               </div>
               <div class="w-28 flex-shrink-0">
                 <label class="label">NIF <span class="text-red-500">*</span></label>
@@ -29,122 +41,12 @@
                 <input v-model="form.numero_registro" type="text" class="input" placeholder="12345/A" maxlength="40" />
               </div>
             </div>
-            <!-- Fila 2: Tipo de entidad · Denominación membresía · Órgano de gobierno -->
-            <div class="flex items-end gap-2">
-              <div class="w-36 flex-shrink-0">
-                <label class="label">Tipo entidad</label>
-                <select v-model="form.tipo_entidad" class="input">
-                  <option value="ASOCIACION">Asociación</option>
-                  <option value="FUNDACION">Fundación</option>
-                </select>
-              </div>
-              <div class="flex-1 min-w-0">
-                <label class="label">Denominación membresía</label>
-                <div class="flex items-center gap-1.5">
-                  <input v-model="form.denominacion_miembro" type="text" class="input w-0 flex-1" placeholder="socio" maxlength="30" />
-                  <span class="text-gray-400 text-sm flex-shrink-0">/</span>
-                  <input v-model="form.denominacion_miembro_plural" type="text" class="input w-0 flex-1" placeholder="socios" maxlength="30" />
-                </div>
-              </div>
-              <div class="flex-1 min-w-0">
-                <label class="label">Órgano de gobierno</label>
-                <div class="flex items-center gap-1.5">
-                  <input v-model="form.denominacion_organo_gobierno" type="text" class="input w-0 flex-1" placeholder="junta directiva" maxlength="40" />
-                  <span class="text-gray-400 text-sm flex-shrink-0">/</span>
-                  <input v-model="form.denominacion_organo_gobierno_plural" type="text" class="input w-0 flex-1" placeholder="juntas directivas" maxlength="40" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Estructura organizativa -->
-        <section class="bg-white rounded-lg border border-gray-200 flex-shrink-0">
-          <div class="px-4 py-2 border-b border-purple-100 bg-purple-50 rounded-t-lg flex items-center gap-3">
-            <h2 class="text-xs font-bold text-purple-800 uppercase tracking-wide">Estructura organizativa</h2>
-            <span v-if="editorRef?.estructuraProtegida" class="text-xs text-amber-600">
-              🔒 Protegida — hay datos asociados. Solo se puede renombrar.
-            </span>
-          </div>
-          <div class="px-4 py-3">
-            <EstructuraOrganizativaEditor ref="editorRef" />
-          </div>
-        </section>
-
-        <!-- Identidad visual: Logotipo + Apariencia -->
-        <section class="bg-white rounded-lg border border-gray-200 flex-shrink-0">
-          <div class="px-4 py-2 border-b border-purple-100 bg-purple-50 rounded-t-lg">
-            <h2 class="text-xs font-bold text-purple-800 uppercase tracking-wide">Identidad visual</h2>
-          </div>
-          <div class="px-4 py-3 flex gap-5">
-            <!-- Logotipo -->
-            <div class="flex flex-col items-center gap-2 flex-shrink-0">
-              <div class="w-28 h-28 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
-                <img v-if="form.logo" :src="form.logo" alt="Logo" class="w-full h-full object-contain p-2" />
-                <span v-else class="text-4xl text-gray-200">🏛</span>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <label class="cursor-pointer px-2.5 py-1 text-xs font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors text-gray-700">
-                  {{ form.logo ? 'Cambiar' : 'Seleccionar' }}
-                  <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" class="hidden" @change="handleLogoChange" />
-                </label>
-                <button v-if="form.logo" type="button" @click="eliminarLogo"
-                  class="px-2.5 py-1 text-xs font-medium text-red-600 border border-red-200 rounded-md hover:bg-red-50 transition-colors">
-                  Eliminar
-                </button>
-              </div>
-              <p class="text-xs text-gray-400 text-center leading-tight">PNG · JPG · SVG<br>máx. 300 KB</p>
-              <p v-if="logoError" class="text-xs text-red-500 text-center">{{ logoError }}</p>
-            </div>
-            <!-- Apariencia -->
-            <div class="flex-1 min-w-0 space-y-3">
-              <div>
-                <label class="label">Tema de color</label>
-                <div class="grid grid-cols-3 gap-1.5 mt-1">
-                  <button v-for="t in temas" :key="t.slug" type="button"
-                    @click="form.tema = t.slug; orgConfigStore.applyTheme(t, form.fuente_principal)"
-                    class="rounded-lg border-2 p-1.5 text-center transition-all hover:border-gray-400"
-                    :class="form.tema === t.slug ? 'border-gray-700 shadow-sm' : 'border-gray-200'">
-                    <div class="flex gap-0.5 mb-0.5 justify-center">
-                      <div v-for="c in temaPaleta(t)" :key="c"
-                        class="h-3 w-3 rounded-sm" :style="{ backgroundColor: c }" />
-                    </div>
-                    <span class="text-xs font-medium text-gray-700">{{ t.nombre }}</span>
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label class="label">Tipografía</label>
-                <div class="flex items-center gap-3 mt-1">
-                  <select v-model="form.fuente_principal" class="input w-36">
-                    <option v-for="f in fuentesDisponibles" :key="f.valor" :value="f.valor">{{ f.nombre }}</option>
-                  </select>
-                  <span class="text-sm text-gray-500 truncate"
-                    :style="{ fontFamily: `'${form.fuente_principal}', sans-serif` }">
-                    Aa — texto de ejemplo
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-      </div>
-
-      <!-- Col derecha: Sede social + Funcionalidades + Redes sociales -->
-      <div class="flex flex-col gap-4 min-h-0">
-
-        <!-- Sede social -->
-        <section class="bg-white rounded-lg border border-gray-200 flex-shrink-0">
-          <div class="px-4 py-2 border-b border-purple-100 bg-purple-50 rounded-t-lg">
-            <h2 class="text-xs font-bold text-purple-800 uppercase tracking-wide">Sede social</h2>
-          </div>
-          <div class="px-4 py-3 space-y-2">
+            <!-- Sede social -->
             <div>
               <label class="label">Dirección</label>
               <input v-model="form.sede_social" type="text" class="input" placeholder="Calle, número, piso..." />
             </div>
-            <div class="flex items-end gap-2">
+            <div class="flex items-end gap-3">
               <div class="flex-1 min-w-0">
                 <label class="label">Localidad</label>
                 <input v-model="form.localidad" type="text" class="input" />
@@ -162,13 +64,13 @@
                 <input v-model="form.pais" type="text" class="input" />
               </div>
             </div>
-            <div class="flex items-end gap-2">
-              <div class="w-36 flex-shrink-0">
+            <div class="flex items-end gap-3">
+              <div class="w-40 flex-shrink-0">
                 <label class="label">Teléfono <span class="text-red-500">*</span></label>
                 <input v-model="form.telefono" type="tel" class="input" placeholder="+34 900 000 000" />
               </div>
               <div class="flex-1 min-w-0">
-                <label class="label">Email <span class="text-red-500">*</span></label>
+                <label class="label">Email de contacto <span class="text-red-500">*</span></label>
                 <input v-model="form.email" type="email" class="input" placeholder="info@organización.org" />
               </div>
               <div class="flex-1 min-w-0">
@@ -177,156 +79,196 @@
               </div>
             </div>
           </div>
-        </section>
+        </AccordionPanel>
 
-        <!-- Funcionalidades -->
-        <section class="bg-white rounded-lg border border-gray-200 flex-shrink-0">
-          <div class="px-4 py-2 border-b border-purple-100 bg-purple-50 rounded-t-lg">
-            <h2 class="text-xs font-bold text-purple-800 uppercase tracking-wide">Funcionalidades</h2>
-          </div>
-          <div class="px-4 py-3 grid grid-cols-1 gap-3">
-            <label class="flex items-start gap-2 cursor-pointer">
-              <input v-model="form.contabilidad_compleja" type="checkbox"
-                :disabled="esObligatorioContabilidad"
-                class="h-3.5 w-3.5 mt-0.5 rounded border-gray-300 text-purple-600 focus:ring-purple-500 disabled:opacity-60 disabled:cursor-not-allowed" />
-              <span class="text-xs text-gray-700">
-                Contabilidad según Plan General Contable
-                <span class="text-gray-400">(RD 1491/2011 — obligatorio para fundaciones)</span>
-              </span>
-            </label>
-          </div>
-        </section>
-
-        <!-- Autenticación -->
-        <section class="bg-white rounded-lg border border-gray-200 flex-shrink-0">
-          <div class="px-4 py-2 border-b border-purple-100 bg-purple-50 rounded-t-lg">
-            <h2 class="text-xs font-bold text-purple-800 uppercase tracking-wide">Autenticación</h2>
-          </div>
-          <div class="px-4 py-3 grid grid-cols-1 gap-3">
-            <div>
-              <label class="label">Mecanismo</label>
-              <select v-model="form.auth_modo" class="input">
-                <option value="LOCAL">Local (usuario/contraseña en SIGA)</option>
-                <option value="AUTHELIA">Authelia (forward-auth)</option>
-                <option value="OIDC">OIDC / OAuth2</option>
-              </select>
-            </div>
-            <div v-if="form.auth_modo === 'AUTHELIA'">
-              <label class="label">URL de Authelia</label>
-              <input v-model="form.auth_authelia_url" type="url" class="input" placeholder="https://auth.midominio.org" />
-            </div>
-            <div v-if="form.auth_modo === 'OIDC'">
-              <label class="label">OIDC Issuer URL</label>
-              <input v-model="form.auth_oidc_issuer" type="url" class="input" placeholder="https://accounts.google.com" />
-            </div>
-            <div class="flex gap-3">
-              <div class="flex-1">
-                <label class="label">Timeout de inactividad (min)</label>
-                <input v-model.number="form.session_inactividad_minutos" type="number" min="0" class="input" />
-                <p class="text-xs text-gray-400 mt-0.5">0 = sin timeout</p>
-              </div>
-              <div class="flex-1">
-                <label class="label">Sesión máxima (min)</label>
-                <input v-model.number="form.session_maximo_minutos" type="number" min="0" class="input" />
-                <p class="text-xs text-gray-400 mt-0.5">0 = ilimitada</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Correo electrónico (SMTP) -->
-        <section class="bg-white rounded-lg border border-gray-200 flex-shrink-0">
-          <div class="px-4 py-2 border-b border-purple-100 bg-purple-50 rounded-t-lg">
-            <h2 class="text-xs font-bold text-purple-800 uppercase tracking-wide">Correo electrónico (SMTP)</h2>
-          </div>
-          <div class="px-4 py-3 space-y-2">
-            <!-- Servidor + Puerto -->
-            <div class="flex items-end gap-2">
-              <div class="flex-1 min-w-0">
-                <label class="label">Servidor SMTP</label>
-                <input v-model="form.smtp_host" type="text" class="input" placeholder="smtp.ejemplo.org" />
-              </div>
-              <div class="w-20 flex-shrink-0">
-                <label class="label">Puerto</label>
-                <input v-model="form.smtp_port" type="text" class="input" placeholder="587" maxlength="5" />
-              </div>
-            </div>
-            <!-- Usuario + Contraseña -->
-            <div class="flex items-end gap-2">
-              <div class="flex-1 min-w-0">
-                <label class="label">Usuario</label>
-                <input v-model="form.smtp_usuario" type="text" class="input" autocomplete="off" placeholder="usuario@ejemplo.org" />
+        <!-- 2. Estructura organizativa -->
+        <AccordionPanel title="Estructura organizativa" :default-open="true">
+          <div class="px-5 pt-4 space-y-4">
+            <!-- Tipo entidad + denominaciones -->
+            <div class="flex items-end gap-3">
+              <div class="w-36 flex-shrink-0">
+                <label class="label">Tipo entidad</label>
+                <select v-model="form.tipo_entidad" class="input">
+                  <option value="ASOCIACION">Asociación</option>
+                  <option value="FUNDACION">Fundación</option>
+                </select>
               </div>
               <div class="flex-1 min-w-0">
-                <label class="label">Contraseña</label>
-                <input v-model="form.smtp_password" type="password" class="input" autocomplete="new-password" placeholder="••••••••" />
+                <label class="label">Denominación membresía (singular / plural)</label>
+                <div class="flex items-center gap-2">
+                  <input v-model="form.denominacion_miembro" type="text" class="input w-0 flex-1" placeholder="socio" maxlength="30" />
+                  <span class="text-slate-400 text-sm flex-shrink-0">/</span>
+                  <input v-model="form.denominacion_miembro_plural" type="text" class="input w-0 flex-1" placeholder="socios" maxlength="30" />
+                </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <label class="label">Órgano de gobierno (singular / plural)</label>
+                <div class="flex items-center gap-2">
+                  <input v-model="form.denominacion_organo_gobierno" type="text" class="input w-0 flex-1" placeholder="junta directiva" maxlength="40" />
+                  <span class="text-slate-400 text-sm flex-shrink-0">/</span>
+                  <input v-model="form.denominacion_organo_gobierno_plural" type="text" class="input w-0 flex-1" placeholder="juntas directivas" maxlength="40" />
+                </div>
               </div>
             </div>
-            <!-- Dirección remitente -->
-            <div>
-              <label class="label">Dirección remitente (From)</label>
-              <input v-model="form.smtp_from" type="email" class="input" placeholder="noreply@miasociacion.org" />
-            </div>
-            <!-- TLS / SSL -->
-            <div class="flex items-center gap-4 pt-0.5">
-              <label class="flex items-center gap-1.5 cursor-pointer">
-                <input v-model="form.smtp_tls" type="checkbox"
-                  class="h-3.5 w-3.5 rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
-                <span class="text-xs text-gray-700">STARTTLS</span>
-              </label>
-              <label class="flex items-center gap-1.5 cursor-pointer">
-                <input v-model="form.smtp_ssl" type="checkbox"
-                  class="h-3.5 w-3.5 rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
-                <span class="text-xs text-gray-700">SSL/TLS (puerto 465)</span>
-              </label>
+            <!-- Aviso protección + editor jerárquico -->
+            <div v-if="editorRef?.estructuraProtegida" class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              🔒 Protegida — hay datos asociados. Solo se puede renombrar.
             </div>
           </div>
-        </section>
+          <div class="px-5 pb-4">
+            <EstructuraOrganizativaEditor ref="editorRef" />
+          </div>
+        </AccordionPanel>
 
-        <!-- Redes sociales -->
-        <section class="bg-white rounded-lg border border-gray-200 flex-shrink-0">
-          <div class="px-4 py-2 border-b border-purple-100 bg-purple-50 rounded-t-lg">
-            <h2 class="text-xs font-bold text-purple-800 uppercase tracking-wide">Redes sociales</h2>
+        <!-- 3. Identidad visual -->
+        <AccordionPanel title="Identidad visual" :default-open="true">
+          <div class="px-5 py-4 flex gap-6">
+            <!-- Logotipo -->
+            <div class="flex flex-col items-center gap-2 flex-shrink-0">
+              <div class="w-28 h-28 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden">
+                <img v-if="form.logo" :src="form.logo" alt="Logo" class="w-full h-full object-contain p-2" />
+                <span v-else class="text-4xl text-slate-200">🏛</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <label class="cursor-pointer px-2.5 py-1.5 text-xs font-medium bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-slate-700">
+                  {{ form.logo ? 'Cambiar' : 'Seleccionar' }}
+                  <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" class="hidden" @change="handleLogoChange" />
+                </label>
+                <button v-if="form.logo" type="button" @click="eliminarLogo"
+                  class="px-2.5 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
+                  Eliminar
+                </button>
+              </div>
+              <p class="text-xs text-slate-400 text-center leading-tight">PNG · JPG · SVG · máx. 300 KB</p>
+              <p v-if="logoError" class="text-xs text-red-500 text-center">{{ logoError }}</p>
+            </div>
+            <!-- Tema + Fuente -->
+            <div class="flex-1 min-w-0 space-y-4">
+              <div>
+                <label class="label">Tema de color</label>
+                <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-1.5">
+                  <button v-for="t in temas" :key="t.slug" type="button"
+                    @click="form.tema = t.slug; orgConfigStore.applyTheme(t, form.fuente_principal)"
+                    class="rounded-lg border-2 p-1.5 text-center transition-all hover:border-slate-400"
+                    :class="form.tema === t.slug ? 'border-slate-700 shadow-sm' : 'border-slate-200'">
+                    <div class="flex gap-0.5 mb-0.5 justify-center">
+                      <div v-for="c in temaPaleta(t)" :key="c" class="h-3 w-3 rounded-sm" :style="{ backgroundColor: c }" />
+                    </div>
+                    <span class="text-xs font-medium text-slate-700">{{ t.nombre }}</span>
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label class="label">Tipografía</label>
+                <select v-model="form.fuente_principal" class="input w-44 mt-1.5">
+                  <option v-for="f in fuentesDisponibles" :key="f.valor" :value="f.valor">{{ f.nombre }}</option>
+                </select>
+              </div>
+            </div>
           </div>
-          <div class="px-3 py-2 grid grid-cols-2 gap-1.5">
-            <div v-for="red in redesSociales" :key="red.key" class="flex items-center gap-1.5 min-w-0">
-              <div class="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+        </AccordionPanel>
+
+        <!-- 4. Funcionalidades -->
+        <AccordionPanel title="Funcionalidades" :default-open="false">
+          <div class="px-5 py-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              <div v-for="feat in catalogoFuncionalidades" :key="feat.clave" class="space-y-3">
+                <label class="flex items-start gap-3 cursor-pointer"
+                  :class="feat.deshabilitado?.() ? 'cursor-not-allowed' : ''">
+                  <input
+                    v-model="form[feat.campo]"
+                    type="checkbox"
+                    :disabled="feat.deshabilitado?.()"
+                    class="h-4 w-4 mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                  />
+                  <span class="text-sm text-slate-700">
+                    {{ feat.nombre }}
+                    <span class="text-slate-400 text-xs block mt-0.5">{{ feat.descripcion }}</span>
+                  </span>
+                </label>
+                <div v-if="form[feat.campo] && feat.campos?.length"
+                  class="ml-7 space-y-3 border-l-2 border-indigo-100 pl-4">
+                  <div v-for="campo in feat.campos" :key="campo.key">
+                    <label class="label">{{ campo.label }}</label>
+                    <input
+                      v-model="form[campo.key]"
+                      :type="campo.tipo"
+                      :placeholder="campo.placeholder"
+                      class="input"
+                      :autocomplete="campo.tipo === 'password' ? 'off' : undefined"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </AccordionPanel>
+
+        <!-- 6. Autenticación y Email -->
+        <AccordionPanel title="Autenticación y Email" :default-open="false">
+          <div class="px-5 py-4 space-y-5">
+
+            <!-- Mecanismo de autenticación -->
+            <div class="space-y-3">
+              <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Autenticación</h3>
+              <!-- Mecanismo + Inactividad + Sesión en una fila -->
+              <div class="flex items-start gap-4">
+                <div class="flex-1 min-w-0">
+                  <label class="label">Mecanismo</label>
+                  <select v-model="form.auth_modo" class="input">
+                    <option value="LOCAL">Local (SIGA)</option>
+                    <option value="AUTHELIA">Authelia (forward-auth)</option>
+                    <option value="OIDC">OIDC / OAuth2</option>
+                  </select>
+                </div>
+                <div class="w-40 flex-shrink-0">
+                  <label class="label">Inactividad (min)</label>
+                  <input v-model.number="form.session_inactividad_minutos" type="number" min="0" class="input" />
+                  <p class="text-xs text-slate-400 mt-1">0 = sin timeout</p>
+                </div>
+                <div class="w-40 flex-shrink-0">
+                  <label class="label">Sesión máxima (min)</label>
+                  <input v-model.number="form.session_maximo_minutos" type="number" min="0" class="input" />
+                  <p class="text-xs text-slate-400 mt-1">0 = ilimitada</p>
+                </div>
+              </div>
+              <div v-if="form.auth_modo === 'AUTHELIA'">
+                <label class="label">URL de Authelia</label>
+                <input v-model="form.auth_authelia_url" type="url" class="input" placeholder="https://auth.midominio.org" />
+              </div>
+              <div v-if="form.auth_modo === 'OIDC'">
+                <label class="label">OIDC Issuer URL</label>
+                <input v-model="form.auth_oidc_issuer" type="url" class="input" placeholder="https://accounts.google.com" />
+              </div>
+            </div>
+
+          </div>
+        </AccordionPanel>
+
+        <!-- 7. Redes sociales -->
+        <AccordionPanel title="Redes sociales" :default-open="false">
+          <div class="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div v-for="red in redesSociales" :key="red.key" class="flex items-center gap-2 min-w-0">
+              <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                    :style="{ backgroundColor: red.bg, color: red.color }" :title="red.label">
-                <svg viewBox="0 0 24 24" fill="currentColor" class="w-3 h-3">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5">
                   <path :d="red.path" />
                 </svg>
               </div>
-              <div class="flex-1 min-w-0 flex items-center border border-gray-200 rounded overflow-hidden
-                          focus-within:border-purple-400 focus-within:ring-1 focus-within:ring-purple-400 transition-colors">
+              <label class="label mb-0 w-20 flex-shrink-0">{{ red.label }}</label>
+              <div class="flex-1 min-w-0 flex items-center border border-slate-300 rounded-lg overflow-hidden h-10
+                          focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-colors">
                 <span v-if="red.handle"
-                  class="px-1.5 text-xs text-gray-400 bg-gray-50 border-r border-gray-200 flex-shrink-0 select-none leading-6">
+                  class="px-2 text-sm text-slate-400 bg-slate-50 border-r border-slate-200 flex-shrink-0 select-none h-full flex items-center">
                   {{ red.handle }}
                 </span>
-                <input v-model="form[red.key]" type="text" :placeholder="red.label"
-                  class="flex-1 min-w-0 px-2 py-1 text-xs text-gray-900 placeholder-gray-400 focus:outline-none bg-transparent" />
+                <input v-model="form[red.key]" type="text" :placeholder="red.placeholder"
+                  class="flex-1 min-w-0 px-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none bg-transparent" />
               </div>
             </div>
           </div>
-        </section>
+        </AccordionPanel>
 
-      </div>
-
-      <!-- Fila inferior: botones -->
-      <div class="lg:col-span-2 flex items-center gap-3 pt-1">
-        <button type="submit" :disabled="guardando"
-          class="px-5 py-1.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors">
-          {{ guardando ? 'Guardando...' : 'Guardar cambios' }}
-        </button>
-        <button type="button" @click="router.go(-1)"
-          class="px-4 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5">
-          <ArrowLeftIcon class="w-3.5 h-3.5" />
-          Volver
-        </button>
-        <span v-if="guardadoOk" class="text-sm text-green-600 flex items-center gap-1">
-          <CheckCircleIcon class="w-4 h-4" />
-          Guardado
-        </span>
-        <span v-if="error" class="text-sm text-red-600">{{ error }}</span>
       </div>
 
     </form>
@@ -335,12 +277,13 @@
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { RouterLink, useRouter, onBeforeRouteLeave } from 'vue-router'
+import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
+import AccordionPanel from '@/components/common/AccordionPanel.vue'
 import EstructuraOrganizativaEditor from '@/components/configuracion/EstructuraOrganizativaEditor.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
-import { CheckCircleIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline'
+import { CheckCircleIcon } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
 const orgConfigStore = useOrgConfigStore()
@@ -372,6 +315,7 @@ const form = reactive({
   rrss_instagram: '',
   rrss_linkedin: '',
   rrss_youtube: '',
+  rrss_telegram: '',
   logo: '',
   numero_registro: '',
   denominacion_miembro: 'miembro',
@@ -383,18 +327,13 @@ const form = reactive({
   auth_oidc_issuer: '',
   session_inactividad_minutos: 30,
   session_maximo_minutos: 480,
-  smtp_host: '',
-  smtp_port: '587',
-  smtp_usuario: '',
-  smtp_password: '',
-  smtp_from: '',
-  smtp_tls: true,
-  smtp_ssl: false,
   tema: 'violeta',
   fuente_principal: 'Inter',
+  indico_activo: false,
+  indico_url: '',
+  indico_api_token: '',
 })
 
-// Snapshot del tema/fuente al entrar, para revertir si se sale sin guardar
 const temaOriginal = ref(orgConfigStore.temaActivo)
 const fuenteOriginal = ref(orgConfigStore.fuentePrincipal)
 let guardadoExitoso = false
@@ -406,7 +345,7 @@ onBeforeRouteLeave(() => {
 })
 
 const temas = computed(() => orgConfigStore.temas)
-const temaPaleta = (t) => [t.t50, t.t300, t.t600, t.t800, t.t900]
+const temaPaleta = (t) => [t.t50, t.t300, t.t600, t.t800, t.t900].filter(Boolean)
 
 const fuentesDisponibles = [
   { nombre: 'Inter',          valor: 'Inter' },
@@ -415,6 +354,27 @@ const fuentesDisponibles = [
   { nombre: 'Roboto',         valor: 'Roboto' },
   { nombre: 'Open Sans',      valor: 'Open Sans' },
   { nombre: 'Plus Jakarta',   valor: 'Plus Jakarta Sans' },
+]
+
+const catalogoFuncionalidades = [
+  {
+    clave: 'contabilidad_compleja',
+    campo: 'contabilidad_compleja',
+    nombre: 'Contabilidad según Plan General Contable',
+    descripcion: 'RD 1491/2011 — obligatorio para fundaciones',
+    deshabilitado: () => esObligatorioContabilidad.value,
+    campos: [],
+  },
+  {
+    clave: 'indico',
+    campo: 'indico_activo',
+    nombre: 'Integración con Indico (gestión de eventos)',
+    descripcion: 'Sincroniza acciones/eventos con una instalación de Indico vía API REST',
+    campos: [
+      { key: 'indico_url',       label: 'URL de la instancia Indico', tipo: 'url',      placeholder: 'https://indico.tuorganizacion.org' },
+      { key: 'indico_api_token', label: 'API Token',                  tipo: 'password', placeholder: '••••••••' },
+    ],
+  },
 ]
 
 const esObligatorioContabilidad = computed(() => {
@@ -431,7 +391,7 @@ watch(() => form.fuente_principal, (font) => {
 const redesSociales = [
   {
     key: 'rrss_twitter', label: 'Twitter / X', handle: '@', placeholder: 'usuario',
-    color: '#000', bg: '#f3f4f6',
+    color: '#000', bg: '#f1f5f9',
     path: 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z',
   },
   {
@@ -454,6 +414,11 @@ const redesSociales = [
     color: '#FF0000', bg: '#fff1f2',
     path: 'M23.495 6.205a3.007 3.007 0 00-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 00.527 6.205a31.247 31.247 0 00-.522 5.805 31.247 31.247 0 00.522 5.783 3.007 3.007 0 002.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 002.088-2.088 31.247 31.247 0 00.5-5.783 31.247 31.247 0 00-.5-5.805zM9.609 15.601V8.408l6.264 3.602z',
   },
+  {
+    key: 'rrss_telegram', label: 'Telegram', handle: '@', placeholder: 'canal',
+    color: '#0088cc', bg: '#e8f4fd',
+    path: 'M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z',
+  },
 ]
 
 const QUERY_PARAMETROS = `
@@ -462,12 +427,12 @@ const QUERY_PARAMETROS = `
       nombre nif numeroRegistro tipoEntidad contabilidadCompleja
       sedeSocial localidad cp provincia pais
       telefono email web
-      rrssTwitter rrssFacebook rrssInstagram rrssLinkedin rrssYoutube
-      logo tipoAgrupacionTerritorial denominacionMiembro denominacionMiembroPlural
+      rrssTwitter rrssFacebook rrssInstagram rrssLinkedin rrssYoutube rrssTelegram
+      logo denominacionMiembro denominacionMiembroPlural
       denominacionOrganoGobierno denominacionOrganoGobiernoPlural
       authModo authAutheliaUrl authOidcIssuer
       sessionInactividadMinutos sessionMaximoMinutos
-      smtpHost smtpPort smtpUsuario smtpPassword smtpFrom smtpTls smtpSsl
+      indicoActivo indicoUrl indicoApiToken
       tema fuentePrincipal
     }
   }
@@ -508,46 +473,42 @@ onMounted(async () => {
   try {
     const data = await graphqlClient.request(QUERY_PARAMETROS)
     const p = data.parametrosOrganizacion
-    form.nombre                = p.nombre               ?? ''
-    form.nif                   = p.nif                  ?? ''
-    form.numero_registro       = p.numeroRegistro        ?? ''
-    form.tipo_entidad          = p.tipoEntidad           ?? 'ASOCIACION'
-    form.contabilidad_compleja = p.contabilidadCompleja  ?? false
-    form.sede_social           = p.sedeSocial            ?? ''
-    form.localidad             = p.localidad             ?? ''
-    form.cp                    = p.cp                    ?? ''
-    form.provincia             = p.provincia             ?? ''
-    form.pais                  = p.pais                  ?? 'España'
-    form.telefono              = p.telefono              ?? ''
-    form.email                 = p.email                 ?? ''
-    form.web                   = p.web                   ?? ''
-    form.rrss_twitter          = p.rrssTwitter           ?? ''
-    form.rrss_facebook         = p.rrssFacebook          ?? ''
-    form.rrss_instagram        = p.rrssInstagram         ?? ''
-    form.rrss_linkedin         = p.rrssLinkedin          ?? ''
-    form.rrss_youtube          = p.rrssYoutube           ?? ''
-    form.logo                       = p.logo                  ?? ''
-    form.denominacion_miembro               = p.denominacionMiembro              ?? 'miembro'
-    form.denominacion_miembro_plural        = p.denominacionMiembroPlural        ?? 'miembros'
-    form.denominacion_organo_gobierno       = p.denominacionOrganoGobierno       ?? 'junta directiva'
-    form.denominacion_organo_gobierno_plural= p.denominacionOrganoGobiernoPlural ?? 'juntas directivas'
-    orgConfigStore.tipoAgrupacion = p.tipoAgrupacionTerritorial ?? ''
-    orgConfigStore.miembro  = form.denominacion_miembro
-    orgConfigStore.miembros = form.denominacion_miembro_plural
-    form.auth_modo                     = p.authModo                   ?? 'LOCAL'
-    form.auth_authelia_url             = p.authAutheliaUrl             ?? ''
-    form.auth_oidc_issuer              = p.authOidcIssuer              ?? ''
-    form.session_inactividad_minutos   = p.sessionInactividadMinutos   ?? 30
-    form.session_maximo_minutos        = p.sessionMaximoMinutos        ?? 480
-    form.smtp_host                     = p.smtpHost                    ?? ''
-    form.smtp_port                     = p.smtpPort                    ?? '587'
-    form.smtp_usuario                  = p.smtpUsuario                 ?? ''
-    form.smtp_password                 = p.smtpPassword                ?? ''
-    form.smtp_from                     = p.smtpFrom                    ?? ''
-    form.smtp_tls                      = p.smtpTls                     ?? true
-    form.smtp_ssl                      = p.smtpSsl                     ?? false
-    form.tema                          = p.tema                        ?? 'violeta'
-    form.fuente_principal              = p.fuentePrincipal             ?? 'Inter'
+    form.nombre                          = p.nombre                           ?? ''
+    form.nif                             = p.nif                              ?? ''
+    form.numero_registro                 = p.numeroRegistro                   ?? ''
+    form.tipo_entidad                    = p.tipoEntidad                      ?? 'ASOCIACION'
+    form.contabilidad_compleja           = p.contabilidadCompleja             ?? false
+    form.sede_social                     = p.sedeSocial                       ?? ''
+    form.localidad                       = p.localidad                        ?? ''
+    form.cp                              = p.cp                               ?? ''
+    form.provincia                       = p.provincia                        ?? ''
+    form.pais                            = p.pais                             ?? 'España'
+    form.telefono                        = p.telefono                         ?? ''
+    form.email                           = p.email                            ?? ''
+    form.web                             = p.web                              ?? ''
+    form.rrss_twitter                    = p.rrssTwitter                      ?? ''
+    form.rrss_facebook                   = p.rrssFacebook                     ?? ''
+    form.rrss_instagram                  = p.rrssInstagram                    ?? ''
+    form.rrss_linkedin                   = p.rrssLinkedin                     ?? ''
+    form.rrss_youtube                    = p.rrssYoutube                      ?? ''
+    form.rrss_telegram                   = p.rrssTelegram                     ?? ''
+    form.logo                            = p.logo                             ?? ''
+    form.denominacion_miembro            = p.denominacionMiembro              ?? 'miembro'
+    form.denominacion_miembro_plural     = p.denominacionMiembroPlural        ?? 'miembros'
+    form.denominacion_organo_gobierno    = p.denominacionOrganoGobierno       ?? 'junta directiva'
+    form.denominacion_organo_gobierno_plural = p.denominacionOrganoGobiernoPlural ?? 'juntas directivas'
+    orgConfigStore.miembro               = form.denominacion_miembro
+    orgConfigStore.miembros              = form.denominacion_miembro_plural
+    form.auth_modo                       = p.authModo                         ?? 'LOCAL'
+    form.auth_authelia_url               = p.authAutheliaUrl                  ?? ''
+    form.auth_oidc_issuer                = p.authOidcIssuer                   ?? ''
+    form.session_inactividad_minutos     = p.sessionInactividadMinutos        ?? 30
+    form.session_maximo_minutos          = p.sessionMaximoMinutos             ?? 480
+    form.indico_activo                   = p.indicoActivo                     ?? false
+    form.indico_url                      = p.indicoUrl                        ?? ''
+    form.indico_api_token                = p.indicoApiToken                   ?? ''
+    form.tema                            = p.tema                             ?? 'violeta'
+    form.fuente_principal                = p.fuentePrincipal                  ?? 'Inter'
     temaOriginal.value   = orgConfigStore.temas.find(t => t.slug === form.tema) ?? null
     fuenteOriginal.value = form.fuente_principal
     if (esObligatorioContabilidad.value) form.contabilidad_compleja = true
@@ -556,7 +517,6 @@ onMounted(async () => {
       ?? 'No se pudieron cargar los parámetros. Comprueba la conexión con el servidor.'
   }
 })
-
 
 async function guardar() {
   error.value = ''
@@ -571,52 +531,50 @@ async function guardar() {
   try {
     await graphqlClient.request(MUTATION_GUARDAR, {
       datos: {
-        nombre:               form.nombre,
-        nif:                  form.nif,
-        numeroRegistro:       form.numero_registro,
-        tipoEntidad:          form.tipo_entidad,
-        contabilidadCompleja: form.contabilidad_compleja,
-        sedeSocial:           form.sede_social,
-        localidad:            form.localidad,
-        cp:                   form.cp,
-        provincia:            form.provincia,
-        pais:                 form.pais,
-        telefono:             form.telefono,
-        email:                form.email,
-        web:                  form.web,
-        rrssTwitter:          form.rrss_twitter,
-        rrssFacebook:         form.rrss_facebook,
-        rrssInstagram:        form.rrss_instagram,
-        rrssLinkedin:         form.rrss_linkedin,
-        rrssYoutube:          form.rrss_youtube,
-        logo:                         form.logo,
-        denominacionMiembro:                 form.denominacion_miembro,
-        denominacionMiembroPlural:           form.denominacion_miembro_plural,
-        denominacionOrganoGobierno:          form.denominacion_organo_gobierno,
-        denominacionOrganoGobiernoPlural:    form.denominacion_organo_gobierno_plural,
-        authModo:                     form.auth_modo,
-        authAutheliaUrl:              form.auth_authelia_url,
-        authOidcIssuer:               form.auth_oidc_issuer,
-        sessionInactividadMinutos:    form.session_inactividad_minutos,
-        sessionMaximoMinutos:         form.session_maximo_minutos,
-        smtpHost:                     form.smtp_host,
-        smtpPort:                     form.smtp_port,
-        smtpUsuario:                  form.smtp_usuario,
-        smtpPassword:                 form.smtp_password,
-        smtpFrom:                     form.smtp_from,
-        smtpTls:                      form.smtp_tls,
-        smtpSsl:                      form.smtp_ssl,
-        tema:                         form.tema,
-        fuentePrincipal:              form.fuente_principal,
+        nombre:                          form.nombre,
+        nif:                             form.nif,
+        numeroRegistro:                  form.numero_registro,
+        tipoEntidad:                     form.tipo_entidad,
+        contabilidadCompleja:            form.contabilidad_compleja,
+        sedeSocial:                      form.sede_social,
+        localidad:                       form.localidad,
+        cp:                              form.cp,
+        provincia:                       form.provincia,
+        pais:                            form.pais,
+        telefono:                        form.telefono,
+        email:                           form.email,
+        web:                             form.web,
+        rrssTwitter:                     form.rrss_twitter,
+        rrssFacebook:                    form.rrss_facebook,
+        rrssInstagram:                   form.rrss_instagram,
+        rrssLinkedin:                    form.rrss_linkedin,
+        rrssYoutube:                     form.rrss_youtube,
+        rrssTelegram:                    form.rrss_telegram,
+        logo:                            form.logo,
+        denominacionMiembro:             form.denominacion_miembro,
+        denominacionMiembroPlural:       form.denominacion_miembro_plural,
+        denominacionOrganoGobierno:      form.denominacion_organo_gobierno,
+        denominacionOrganoGobiernoPlural: form.denominacion_organo_gobierno_plural,
+        authModo:                        form.auth_modo,
+        authAutheliaUrl:                 form.auth_authelia_url,
+        authOidcIssuer:                  form.auth_oidc_issuer,
+        sessionInactividadMinutos:       form.session_inactividad_minutos,
+        sessionMaximoMinutos:            form.session_maximo_minutos,
+        indicoActivo:                    form.indico_activo,
+        indicoUrl:                       form.indico_url,
+        indicoApiToken:                  form.indico_api_token,
+        tema:                            form.tema,
+        fuentePrincipal:                 form.fuente_principal,
       }
     })
     orgConfigStore.miembro          = form.denominacion_miembro
     orgConfigStore.miembros         = form.denominacion_miembro_plural
     orgConfigStore.organoGobierno   = form.denominacion_organo_gobierno
     orgConfigStore.organoGobiernoPl = form.denominacion_organo_gobierno_plural
-    orgConfigStore.applyTheme(form.tema, form.fuente_principal)
-    orgConfigStore.markInitialized(form.nombre, form.logo, orgConfigStore.tipoAgrupacion)
-    temaOriginal.value   = orgConfigStore.temas.find(t => t.slug === form.tema) ?? null
+    const temaObj = orgConfigStore.temas.find(t => t.slug === form.tema) ?? form.tema
+    orgConfigStore.applyTheme(temaObj, form.fuente_principal)
+    orgConfigStore.markInitialized(form.nombre, form.logo)
+    temaOriginal.value   = typeof temaObj === 'object' ? temaObj : null
     fuenteOriginal.value = form.fuente_principal
     guardadoExitoso = true
     guardadoOk.value = true
@@ -631,11 +589,11 @@ async function guardar() {
 
 <style scoped>
 .label {
-  @apply block text-xs font-medium text-gray-600 mb-0.5;
+  @apply block text-sm font-medium text-slate-700 mb-1;
 }
 .input {
-  @apply w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm text-gray-900
-         placeholder-gray-400 focus:border-purple-500 focus:ring-1 focus:ring-purple-500
-         focus:outline-none transition-colors;
+  @apply w-full h-10 rounded-lg border border-slate-300 px-3 text-sm text-slate-900
+         placeholder:text-slate-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500
+         focus:outline-none transition-colors bg-white;
 }
 </style>

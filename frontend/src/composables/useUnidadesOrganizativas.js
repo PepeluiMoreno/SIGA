@@ -12,7 +12,7 @@ import {
 
 const ARCHIVAR_AGRUPACION = `
   mutation ArchivarAgrupacion($id: UUID!) {
-    archivarAgrupacionTerritorial(id: $id) { id }
+    archivarUnidadOrganizativa(id: $id) { id }
   }
 `
 
@@ -25,13 +25,13 @@ export function useUnidadesOrganizativas() {
 
   const cargarTipos = async () => {
     const data = await query(GET_TIPOS_UNIDADES_ORGANIZATIVAS)
-    tipos.value = (data.tiposUnidadesOrganizativas || []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+    tipos.value = (data.nivelesOrganizativos || []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
     return tipos.value
   }
 
   const cargarArbol = async () => {
     const data = await query(GET_AGRUPACIONES_TERRITORIALES)
-    unidades.value = data.agrupacionesTerritoriales || []
+    unidades.value = data.unidadesOrganizativas || []
     coordinaciones.value = data.coordinacionesTerritoriales || []
     miembros.value = data.miembros || []
     return unidades.value
@@ -59,7 +59,7 @@ export function useUnidadesOrganizativas() {
   const actualizarTipo = async (data) => {
     const res = await mutation(UPDATE_TIPO_UNIDAD_ORGANIZATIVA, { data })
     await cargarTipos()
-    return res.actualizarTipoUnidadOrganizativa
+    return res.actualizarNivelOrganizativo
   }
 
   const eliminarTipo = async (id) => {
@@ -70,13 +70,13 @@ export function useUnidadesOrganizativas() {
   const crearUnidad = async (data) => {
     const res = await mutation(CREATE_AGRUPACION_TERRITORIAL, { data })
     await cargarArbol()
-    return res.crearAgrupacionTerritorial
+    return res.crearUnidadOrganizativa
   }
 
   const actualizarUnidad = async (data) => {
     const res = await mutation(UPDATE_AGRUPACION_TERRITORIAL, { data })
     await cargarArbol()
-    return res.actualizarAgrupacionTerritorial
+    return res.actualizarUnidadOrganizativa
   }
 
   const archivarUnidad = async (id) => {

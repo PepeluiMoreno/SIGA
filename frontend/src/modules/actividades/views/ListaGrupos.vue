@@ -5,7 +5,7 @@
       v-model="filters"
       v-model:search="searchQuery"
       search-placeholder="Buscar grupos…"
-      create-label="Nuevo Grupo"
+      :create-label="tienePermiso('TEAM_CREATE') ? 'Nuevo Grupo' : ''"
       create-route="/grupos/nuevo"
       :fields="filterFields"
       :lazy="true"
@@ -96,12 +96,14 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import RowActions from '@/components/common/RowActions.vue'
 import { graphqlClient, executeQuery } from '@/graphql/client'
+import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_GRUPOS, GET_TIPOS_GRUPO, ELIMINAR_GRUPO } from '@/graphql/queries/grupos.js'
 import { useOrgConfigStore } from '@/stores/orgConfig'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
 
 const orgConfig = useOrgConfigStore()
+const { tienePermiso } = usePermisos()
 const loading = ref(false)
 const error = ref('')
 const grupos = ref([])

@@ -36,10 +36,10 @@ class SolicitudTraslado(BaseModel):
         Uuid, ForeignKey('miembros.id'), nullable=False, index=True
     )
     agrupacion_origen_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('agrupaciones_territoriales.id'), nullable=False
+        Uuid, ForeignKey('unidades_organizativas.id'), nullable=False
     )
     agrupacion_destino_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('agrupaciones_territoriales.id'), nullable=False
+        Uuid, ForeignKey('unidades_organizativas.id'), nullable=False
     )
 
     motivo: Mapped[str] = mapped_column(Text, nullable=False)

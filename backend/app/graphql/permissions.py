@@ -2,7 +2,8 @@
 
 Uso en resolvers:
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_CREAR")])
-    async def crear_campana(...) -> ...
+    @strawberry.mutation(permission_classes=[RequireAuthenticated])
+    async def my_mutation(...) -> ...
 """
 
 from __future__ import annotations
@@ -13,10 +14,6 @@ import strawberry
 from strawberry.types import Info
 
 from .context import Context
-from ..modules.acceso.models.rol import Rol
-from ..modules.acceso.models.rol_transaccion import RolTransaccion
-from ..modules.acceso.models.transaccion import Transaccion
-from ..modules.acceso.models.usuario import UsuarioRol
 
 
 class RequireAuthenticated(strawberry.BasePermission):
@@ -27,36 +24,41 @@ class RequireAuthenticated(strawberry.BasePermission):
         return ctx.is_authenticated
 
 
-class RequireTransaction(strawberry.BasePermission):
-    """Verifica que el usuario posee el permiso de una transacción concreta.
+def RequireTransaction(transaction_id: str) -> type:
+    """Devuelve una clase de permiso que verifica una transacción concreta.
 
-    Usa la PermissionMatrix en memoria — sin consulta DB extra por request.
+    Strawberry necesita clases en permission_classes (no instancias).
+    Esta función actúa como factory para crear una clase anónima por cada código.
     """
 
-    message = "Permiso denegado"
+    class _Perm(strawberry.BasePermission):
+        message = f"Permiso denegado: {transaction_id}"
 
-    def __init__(self, transaction_id: str) -> None:
-        self.transaction_id = transaction_id
-        self.message = f"Permiso denegado: {transaction_id}"
+        async def has_permission(self, source: Any, info: Info, **kwargs: Any) -> bool:
+            ctx: Context = info.context
+            return await ctx.check_permission(transaction_id)
 
-    async def has_permission(self, source: Any, info: Info, **kwargs: Any) -> bool:
-        ctx: Context = info.context
-        return await ctx.check_permission(self.transaction_id)
+    _Perm.__name__ = f"Require_{transaction_id}"
+    _Perm.__qualname__ = f"Require_{transaction_id}"
+    return _Perm
 
 
-class RequireAnyTransaction(strawberry.BasePermission):
-    """Pasa si el usuario tiene al menos uno de los permisos indicados."""
+def RequireAnyTransaction(*transaction_ids: str) -> type:
+    """Devuelve una clase de permiso que pasa si el usuario tiene al menos uno de los permisos."""
 
-    message = "Permiso denegado"
+    class _Perm(strawberry.BasePermission):
+        message = "Permiso denegado"
 
-    def __init__(self, *transaction_ids: str) -> None:
-        self.transaction_ids = transaction_ids
-
-    async def has_permission(self, source: Any, info: Info, **kwargs: Any) -> bool:
-        ctx: Context = info.context
-        if not ctx.is_authenticated:
+        async def has_permission(self, source: Any, info: Info, **kwargs: Any) -> bool:
+            ctx: Context = info.context
+            if not ctx.is_authenticated:
+                return False
+            for tid in transaction_ids:
+                if await ctx.check_permission(tid):
+                    return True
             return False
-        for tid in self.transaction_ids:
-            if await ctx.check_permission(tid):
-                return True
-        return False
+
+    name = f"RequireAny_{'_or_'.join(transaction_ids[:3])}"
+    _Perm.__name__ = name
+    _Perm.__qualname__ = name
+    return _Perm

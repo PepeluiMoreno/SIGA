@@ -19,6 +19,15 @@ class Settings(BaseSettings):
     # URL pública de la aplicación (usada en links de email)
     app_url: str = "http://localhost:5173"
 
+    # SMTP — opcionales: si están vacíos, se usa la configuración guardada en BD.
+    # Prioridad: .env / secret del orquestador > tabla configuracion.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""       # env: SMTP_USERNAME
+    smtp_password: str = ""       # env: SMTP_PASSWORD
+    smtp_from: str = ""           # env: SMTP_FROM  (si vacío usa smtp_username)
+    smtp_encryption: str = "tls"  # env: SMTP_ENCRYPTION  (tls | ssl | none)
+
     @computed_field
     @property
     def database_url(self) -> str:

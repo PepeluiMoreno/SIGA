@@ -13,12 +13,13 @@ from ..modules.acceso.models import (
     LogAuditoria, TipoAccion,
     Usuario, UsuarioRol,
     Sesion, HistorialSeguridad, IPBloqueada, IntentoAcceso,
+    Cargo, CargoRol,
 )
 
 # Core - Geográfico
 from ..modules.core.geografico import (
-    TipoUnidadOrganizativa, NaturalezaUnidad, VinculoUnidad,
-    Pais, Provincia, Municipio, Direccion, AgrupacionTerritorial,
+    NivelOrganizativo, NaturalezaUnidad, VinculoUnidad,
+    Pais, Provincia, Municipio, Direccion, UnidadOrganizativa,
 )
 
 # Core - Comunicación
@@ -50,11 +51,16 @@ from ..modules.membresia.models import (
 
 # Actividades
 from ..modules.actividades.models import (
-    TipoAccion as TipoAccionActividades, Accion, Participacion, Tarea,
+    TipoActividad, TipoAccion as TipoAccionActividades,
+    Actividad, Accion, Participacion, Tarea,
     TipoCampania, Campania, RolParticipante, ParticipanteCampania,
     Firmante, FirmaCampania,
     TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo,
     GrupoIniciativa, ReunionGrupo, AsistenteReunion,
+    RequisitoRecurso, AportacionHoras,
+    TipoMeta, TipoCanalDifusion, MetaCampania, CanalDifusionCampania,
+    PartidaPresupuestoCampania, PlantillaCampania, PlantillaMeta,
+    PlantillaPartida, PlantillaActividad, PlantillaTarea,
 )
 
 # Económico
@@ -65,7 +71,7 @@ from ..modules.economico.models import (
     ModoIngreso, ImporteCuotaAnio, CuotaAnual,
     DonacionConcepto, Donacion,
     Remesa, OrdenCobro,
-    EstadoPlanificacion, CategoriaPartida, PartidaPresupuestaria, PlanificacionAnual,
+    EstadoPlanificacion, CategoriaPartida, PartidaPresupuestaria, CompromisoPresupuestario, PlanificacionAnual,
     ProveedorPago, FormaPago, EstadoPago, TipoEventoPago, TipoPago, Pago, EventoPago,
     EstadoSuscripcion, Suscripcion,
     EstadoReclamacion, Reclamacion, TipoAccionReclamacion, AccionReclamacion,

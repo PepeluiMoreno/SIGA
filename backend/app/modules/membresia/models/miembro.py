@@ -11,14 +11,14 @@ from sqlalchemy import String, Integer, Uuid, ForeignKey, Date, Boolean, Text, f
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from ....infrastructure.base_model import BaseModel
+from ....infrastructure.base_model import BaseModel, InmutableMixin
 
 
 # Constantes para segmentación
 EDAD_JOVEN_LIMITE = 30  # Menores de 30 años se consideran jóvenes
 
 
-class TipoMiembro(BaseModel):
+class TipoMiembro(InmutableMixin, BaseModel):
     """Tipos de miembro (miembro, simpatizante, colaborador, etc.)."""
     __tablename__ = 'tipos_miembro'
 
@@ -76,7 +76,7 @@ class Miembro(BaseModel):
     email: Mapped[Optional[str]] = mapped_column(String(200), nullable=True, index=True)
 
     # Pertenencia organizativa
-    agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('agrupaciones_territoriales.id'), nullable=True, index=True)
+    agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('unidades_organizativas.id'), nullable=True, index=True)
 
     # Datos bancarios / pago
     iban: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
@@ -127,7 +127,7 @@ class Miembro(BaseModel):
     estado = relationship('EstadoMiembro', lazy='selectin')
     usuario = relationship('Usuario', back_populates='miembro', foreign_keys='Usuario.miembro_id', uselist=False, lazy='selectin')
     motivo_baja_rel = relationship('MotivoBaja', back_populates='miembros', lazy='selectin')
-    agrupacion = relationship('AgrupacionTerritorial', lazy='selectin')
+    agrupacion = relationship('UnidadOrganizativa', lazy='selectin')
     pais_documento = relationship('Pais', foreign_keys=[pais_documento_id], lazy='selectin')
     pais_domicilio = relationship('Pais', foreign_keys=[pais_domicilio_id], lazy='selectin')
     pais_nacimiento = relationship('Pais', foreign_keys=[pais_nacimiento_id], lazy='selectin')

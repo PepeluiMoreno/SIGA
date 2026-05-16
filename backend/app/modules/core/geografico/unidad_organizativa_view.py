@@ -18,7 +18,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from ....infrastructure.base_model import Base  # No heredar de BaseModel, es una vista
 
 
-class AgrupacionTerritorial(Base):
+class UnidadOrganizativaVista(Base):
     """
     Vista materializada de agrupaciones territoriales.
 
@@ -27,7 +27,7 @@ class AgrupacionTerritorial(Base):
 
     NO usar para inserts/updates, usar el modelo Organizacion directamente.
     """
-    __tablename__ = 'vista_agrupaciones_territoriales'
+    __tablename__ = 'vista_unidades_organizativas'
     __table_args__ = {'info': {'is_view': True}}  # Metadata para indicar que es vista
 
     # Campos mapeados desde organizaciones
@@ -59,36 +59,43 @@ class AgrupacionTerritorial(Base):
     descripcion: Mapped[Optional[str]] = mapped_column(Text)
     activo: Mapped[bool] = mapped_column(Boolean, index=True)
 
-    # Relaciones (se mapean igual que en un modelo normal)
+    # Relaciones (vista sin FK reales — se declara primaryjoin explícito)
     @declared_attr
     def pais(cls):
-        return relationship('Pais', foreign_keys=[cls.pais_id], lazy='selectin')
+        return relationship('Pais',
+            primaryjoin='UnidadOrganizativaVista.pais_id == Pais.id',
+            foreign_keys=[cls.pais_id], viewonly=True, lazy='selectin')
 
     @declared_attr
     def provincia(cls):
-        return relationship('Provincia', foreign_keys=[cls.provincia_id], lazy='selectin')
+        return relationship('Provincia',
+            primaryjoin='UnidadOrganizativaVista.provincia_id == Provincia.id',
+            foreign_keys=[cls.provincia_id], viewonly=True, lazy='selectin')
 
     @declared_attr
     def municipio(cls):
-        return relationship('Municipio', foreign_keys=[cls.municipio_id], lazy='selectin')
+        return relationship('Municipio',
+            primaryjoin='UnidadOrganizativaVista.municipio_id == Municipio.id',
+            foreign_keys=[cls.municipio_id], viewonly=True, lazy='selectin')
 
     @declared_attr
     def direccion(cls):
-        return relationship('Direccion', foreign_keys=[cls.direccion_id], lazy='selectin')
+        return relationship('Direccion',
+            primaryjoin='UnidadOrganizativaVista.direccion_id == Direccion.id',
+            foreign_keys=[cls.direccion_id], viewonly=True, lazy='selectin')
 
     # Jerarquía (self-referencing)
     @declared_attr
     def agrupacion_padre(cls):
         return relationship(
-            'AgrupacionTerritorial',
-            remote_side=[cls.id],
+            'UnidadOrganizativaVista',
+            primaryjoin='UnidadOrganizativaVista.agrupacion_padre_id == remote(UnidadOrganizativaVista.id)',
             foreign_keys=[cls.agrupacion_padre_id],
-            backref='agrupaciones_hijas',
-            lazy='selectin'
+            viewonly=True, lazy='selectin'
         )
 
     def __repr__(self) -> str:
-        return f"<AgrupacionTerritorial(nombre='{self.nombre}', tipo='{self.tipo}')>"
+        return f"<UnidadOrganizativa(nombre='{self.nombre}', tipo='{self.tipo}')>"
 
     @property
     def telefono_principal(self) -> Optional[str]:
@@ -105,7 +112,7 @@ class AgrupacionTerritorial(Base):
         from sqlalchemy import text
 
         sql = text("""
-        CREATE MATERIALIZED VIEW IF NOT EXISTS vista_agrupaciones_territoriales AS
+        CREATE MATERIALIZED VIEW IF NOT EXISTS vista_unidades_organizativas AS
         SELECT
             o.id,
             o.nombre,
@@ -135,11 +142,11 @@ class AgrupacionTerritorial(Base):
           AND o.eliminado = FALSE;
 
         -- Crear índices en la vista materializada
-        CREATE UNIQUE INDEX IF NOT EXISTS idx_vista_agrup_id ON vista_agrupaciones_territoriales(id);
-        CREATE INDEX IF NOT EXISTS idx_vista_agrup_tipo ON vista_agrupaciones_territoriales(tipo);
-        CREATE INDEX IF NOT EXISTS idx_vista_agrup_padre ON vista_agrupaciones_territoriales(agrupacion_padre_id);
-        CREATE INDEX IF NOT EXISTS idx_vista_agrup_provincia ON vista_agrupaciones_territoriales(provincia_id);
-        CREATE INDEX IF NOT EXISTS idx_vista_agrup_activo ON vista_agrupaciones_territoriales(activo);
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_vista_agrup_id ON vista_unidades_organizativas(id);
+        CREATE INDEX IF NOT EXISTS idx_vista_agrup_tipo ON vista_unidades_organizativas(tipo);
+        CREATE INDEX IF NOT EXISTS idx_vista_agrup_padre ON vista_unidades_organizativas(agrupacion_padre_id);
+        CREATE INDEX IF NOT EXISTS idx_vista_agrup_provincia ON vista_unidades_organizativas(provincia_id);
+        CREATE INDEX IF NOT EXISTS idx_vista_agrup_activo ON vista_unidades_organizativas(activo);
         """)
 
         with engine.connect() as conn:
@@ -155,5 +162,5 @@ class AgrupacionTerritorial(Base):
         """
         from sqlalchemy import text
 
-        session.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY vista_agrupaciones_territoriales"))
+        session.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY vista_unidades_organizativas"))
         session.commit()

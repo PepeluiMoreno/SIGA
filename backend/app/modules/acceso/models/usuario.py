@@ -7,10 +7,10 @@ from typing import Optional, List
 from sqlalchemy import String, Boolean, ForeignKey, DateTime, Uuid, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ....infrastructure.base_model import BaseModel
+from ....infrastructure.base_model import BaseModel, InmutableMixin
 
 
-class TipoVinculacion(BaseModel):
+class TipoVinculacion(InmutableMixin, BaseModel):
     """Catálogo de tipos de vinculación de un usuario con la organización."""
     __tablename__ = "tipos_vinculacion"
 
@@ -95,9 +95,15 @@ class UsuarioRol(BaseModel):
         Uuid, ForeignKey("roles.id"), nullable=False, index=True
     )
 
-    # Ámbito del rol (ej: coordinador de agrupación X)
+    # Ámbito del rol (NULL = global; si tiene valor, restringe al subárbol de esa unidad)
     agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey("agrupaciones_territoriales.id"), nullable=True, index=True
+        Uuid, ForeignKey("unidades_organizativas.id"), nullable=True, index=True
+    )
+
+    # Nombramiento que originó esta asignación (NULL = asignación manual directa)
+    nombramiento_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("historial_nombramientos.id", ondelete="SET NULL"),
+        nullable=True, index=True
     )
 
     # Permite desactivar la asignación sin eliminarla (útil para suspensiones temporales)

@@ -12,7 +12,7 @@ from typing import Optional
 import strawberry
 from . import strawchemy
 
-# === ACCESO: roles, transacciones, funcionalidades ===
+# === ACCESO: roles, transacciones, funcionalidades, cargos ===
 from ..modules.acceso.models import (
     Transaccion,
     Rol,
@@ -23,6 +23,7 @@ from ..modules.acceso.models import (
     FuncionalidadTransaccion,
     FlujoAprobacion,
 )
+from ..modules.acceso.models.cargo import Cargo, CargoRol
 
 @strawchemy.type(Transaccion, include="all", override=True)
 class TransaccionType:
@@ -71,6 +72,16 @@ class UsuarioType:
 @strawchemy.type(UsuarioRol, include="all", override=True)
 class UsuarioRolType:
     pass
+
+
+@strawchemy.type(CargoRol, include="all", override=True)
+class CargoRolType:
+    rol: Optional['RolType'] = None
+
+@strawchemy.type(Cargo, include="all", override=True)
+class CargoType:
+    roles_sistema: list['CargoRolType'] = strawberry.field(default_factory=list)
+    cargo_aprobador: Optional['CargoType'] = None
 
 
 from ..modules.configuracion.models.tema_ui import TemaUI
@@ -171,10 +182,10 @@ class IntentoAccesoType:
 
 
 # === GEOGRÁFICO ===
-from ..modules.core.geografico import Pais, Provincia, Municipio, Direccion, AgrupacionTerritorial, TipoUnidadOrganizativa
+from ..modules.core.geografico import Pais, Provincia, Municipio, Direccion, UnidadOrganizativa, NivelOrganizativo
 
-@strawchemy.type(TipoUnidadOrganizativa, include="all", override=True)
-class TipoUnidadOrganizativaType:
+@strawchemy.type(NivelOrganizativo, include="all", override=True)
+class NivelOrganizativoType:
     pass
 
 @strawchemy.type(Pais, include="all", override=True)
@@ -193,13 +204,13 @@ class MunicipioType:
 class DireccionType:
     pass
 
-@strawchemy.type(AgrupacionTerritorial, include="all", exclude=["agrupacion_padre", "agrupaciones_hijas"], override=True)
-class AgrupacionTerritorialType:
+@strawchemy.type(UnidadOrganizativa, include="all", exclude=["agrupacion_padre", "agrupaciones_hijas"], override=True)
+class UnidadOrganizativaType:
     pass
 
 
-# === NOTIFICACIONES ===
-from ..modules.core.comunicacion import TipoNotificacion, Notificacion, PreferenciaNotificacion
+# === NOTIFICACIONES Y PLANTILLAS EMAIL ===
+from ..modules.core.comunicacion import TipoNotificacion, Notificacion, PreferenciaNotificacion, PlantillaEmail
 
 @strawchemy.type(TipoNotificacion, include="all", override=True)
 class TipoNotificacionType:
@@ -214,6 +225,10 @@ class NotificacionType:
 class PreferenciaNotificacionType:
     pass
 
+@strawchemy.type(PlantillaEmail, exclude=["variables_disponibles"], override=True)
+class PlantillaEmailType:
+    pass
+
 
 # === FINANCIERO ===
 from ..modules.economico.models import (
@@ -226,6 +241,7 @@ from ..modules.economico.models import (
     EstadoPlanificacion,
     CategoriaPartida,
     PartidaPresupuestaria,
+    CompromisoPresupuestario,
     PlanificacionAnual,
     FormaPago,
     CuentaBancaria,
@@ -275,6 +291,10 @@ class CategoriaPartidaType:
 
 @strawchemy.type(PartidaPresupuestaria, include="all", override=True)
 class PartidaPresupuestariaType:
+    pass
+
+@strawchemy.type(CompromisoPresupuestario, include="all", override=True)
+class CompromisoPresupuestarioType:
     pass
 
 @strawchemy.type(PlanificacionAnual, include="all", override=True)
@@ -359,17 +379,18 @@ class JuntaDirectivaType:
 class HistorialNombramientoType:
     rol: Optional['RolType'] = None
     miembro: Optional['MiembroType'] = None
-    agrupacion: Optional['AgrupacionTerritorialType'] = None
+    agrupacion: Optional['UnidadOrganizativaType'] = None
+    cargo: Optional['CargoType'] = None
 
 @strawchemy.type(CoordinacionTerritorial, include="all", exclude=["fecha_asignacion"], override=True)
 class CoordinacionTerritorialType:
     miembro: Optional['MiembroType'] = None
-    agrupacion: Optional['AgrupacionTerritorialType'] = None
+    agrupacion: Optional['UnidadOrganizativaType'] = None
 
 @strawchemy.type(Miembro, include="all", override=True)
 class MiembroType:
     # Hacer nullable las relaciones opcionales que Strawchemy infiere como no-nullable
-    agrupacion: Optional['AgrupacionTerritorialType'] = None
+    agrupacion: Optional['UnidadOrganizativaType'] = None
     provincia: Optional['ProvinciaType'] = None
     pais_documento: Optional['PaisType'] = None
     pais_domicilio: Optional['PaisType'] = None
@@ -426,16 +447,60 @@ class SolicitudTrasladoType:
 
 # === CAMPAÑAS ===
 from ..modules.actividades.models import (
-    TipoCampania, Campania, RolParticipante, ParticipanteCampania, Firmante, FirmaCampania
+    TipoCampania, TipoMeta, TipoCanalDifusion,
+    Campania, MetaCampania, CanalDifusionCampania, PartidaPresupuestoCampania,
+    PlantillaCampania, PlantillaMeta, PlantillaPartida, PlantillaActividad, PlantillaTarea,
+    RolParticipante, ParticipanteCampania, Firmante, FirmaCampania,
 )
+
+@strawchemy.type(TipoMeta, include="all", override=True)
+class TipoMetaType:
+    pass
+
+@strawchemy.type(TipoCanalDifusion, include="all", override=True)
+class TipoCanalDifusionType:
+    pass
 
 @strawchemy.type(TipoCampania, include="all", override=True)
 class TipoCampaniaType:
     pass
 
+@strawchemy.type(MetaCampania, include="all", override=True)
+class MetaCampaniaType:
+    tipo_meta: Optional['TipoMetaType'] = None
+
+@strawchemy.type(CanalDifusionCampania, include="all", override=True)
+class CanalDifusionCampaniaType:
+    canal: Optional['TipoCanalDifusionType'] = None
+
+@strawchemy.type(PartidaPresupuestoCampania, include="all", override=True)
+class PartidaPresupuestoCampaniaType:
+    pass
+
+@strawchemy.type(PlantillaMeta, include="all", override=True)
+class PlantillaMetaType:
+    tipo_meta: Optional['TipoMetaType'] = None
+
+@strawchemy.type(PlantillaPartida, include="all", override=True)
+class PlantillaPartidaType:
+    pass
+
+@strawchemy.type(PlantillaTarea, include="all", override=True)
+class PlantillaTareaType:
+    habilidad: Optional['HabilidadType'] = None
+    nivel_habilidad: Optional['NivelHabilidadType'] = None
+
+@strawchemy.type(PlantillaActividad, include="all", override=True)
+class PlantillaActividadType:
+    pass
+
+@strawchemy.type(PlantillaCampania, include="all", override=True)
+class PlantillaCampaniaType:
+    tipo_campania: Optional['TipoCampaniaType'] = None
+
 @strawchemy.type(Campania, include="all", override=True)
 class CampaniaType:
-    agrupacion: Optional['AgrupacionTerritorialType'] = None
+    agrupacion: Optional['UnidadOrganizativaType'] = None
     responsable: Optional['MiembroType'] = None
 
 @strawchemy.type(RolParticipante, include="all", override=True)
@@ -455,20 +520,26 @@ class FirmaCampaniaType:
     pass
 
 
-# === ACCIONES (unifica Evento + Actividad) ===
-from ..modules.actividades.models import TipoAccion, Accion, Tarea, Participacion
+# === ACTIVIDADES ===
+from ..modules.actividades.models import TipoActividad, TipoAccion, Actividad, Accion, Tarea, Participacion
 
 
-@strawchemy.type(TipoAccion, include="all", override=True)
-class TipoAccionType:
+@strawchemy.type(TipoActividad, include="all", override=True)
+class TipoActividadType:
     pass
 
-@strawchemy.type(Accion, include="all", override=True)
-class AccionType:
-    tipo_accion: Optional['TipoAccionType'] = None
+# Alias de compatibilidad
+TipoAccionType = TipoActividadType
+
+@strawchemy.type(Actividad, include="all", override=True)
+class ActividadType:
+    tipo_actividad: Optional['TipoActividadType'] = None
     estado: Optional['EstadoAccionType'] = None
-    iniciativa: Optional['CampaniaType'] = None
+    campania: Optional['CampaniaType'] = None
     responsable: Optional['MiembroType'] = None
+
+# Alias de compatibilidad
+AccionType = ActividadType
 
 @strawchemy.type(Tarea, include="all", override=True)
 class TareaType:
@@ -482,7 +553,8 @@ class ParticipacionType:
 
 # === GRUPOS ===
 from ..modules.actividades.models import (
-    TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo, GrupoIniciativa, ReunionGrupo, AsistenteReunion
+    TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo, GrupoIniciativa, ReunionGrupo, AsistenteReunion,
+    RequisitoRecurso, AportacionHoras,
 )
 
 @strawchemy.type(TipoGrupo, include="all", override=True)
@@ -511,6 +583,14 @@ class ReunionGrupoType:
 
 @strawchemy.type(AsistenteReunion, include="all", override=True)
 class AsistenteReunionType:
+    pass
+
+@strawchemy.type(RequisitoRecurso, include="all", override=True)
+class RequisitoRecursoType:
+    pass
+
+@strawchemy.type(AportacionHoras, include="all", override=True)
+class AportacionHorasType:
     pass
 
 

@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select, text
 
 from app.core.database import get_database_url
-from app.modules.core.geografico.direccion import AgrupacionTerritorial
+from app.modules.core.geografico.direccion import UnidadOrganizativa
 
 
 async def main():
@@ -37,7 +37,7 @@ async def main():
             # Cargar todas las agrupaciones
             print("\nCargando agrupaciones...")
             result = await session.execute(
-                select(AgrupacionTerritorial).order_by(AgrupacionTerritorial.codigo)
+                select(UnidadOrganizativa).order_by(UnidadOrganizativa.codigo)
             )
             agrupaciones = result.scalars().all()
             print(f"  [OK] {len(agrupaciones)} agrupaciones encontradas")
@@ -104,10 +104,10 @@ async def main():
             # Verificar resultados
             print("\nVerificando jerarquia establecida...")
             result = await session.execute(
-                select(AgrupacionTerritorial.tipo,
+                select(UnidadOrganizativa.tipo,
                        text("COUNT(*) as total"),
                        text("COUNT(agrupacion_padre_id) as con_padre"))
-                .group_by(AgrupacionTerritorial.tipo)
+                .group_by(UnidadOrganizativa.tipo)
             )
 
             print("\nResumen por tipo:")

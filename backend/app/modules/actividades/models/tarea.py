@@ -12,7 +12,7 @@ from ....infrastructure.base_model import BaseModel
 
 
 class Tarea(BaseModel):
-    """Tarea asignable. Pertenece a una Accion o directamente a un GrupoTrabajo."""
+    """Tarea asignable. Pertenece a una Actividad o directamente a un GrupoTrabajo."""
     __tablename__ = 'tareas'
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
@@ -33,9 +33,9 @@ class Tarea(BaseModel):
     fecha_limite: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     fecha_completada: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
-    # Exactamente uno de los dos debe estar poblado:
-    accion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('acciones.id'), nullable=True, index=True
+    # Al menos uno de los dos debe estar poblado:
+    actividad_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('actividades.id'), nullable=True, index=True
     )
     grupo_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid, ForeignKey('grupos_trabajo.id'), nullable=True, index=True
@@ -43,7 +43,7 @@ class Tarea(BaseModel):
 
     estado = relationship('EstadoTarea', foreign_keys=[estado_id], lazy='selectin')
     responsable = relationship('Miembro', foreign_keys=[responsable_id], lazy='selectin')
-    accion = relationship('Accion', back_populates='tareas', foreign_keys=[accion_id], lazy='selectin')
+    actividad = relationship('Actividad', back_populates='tareas', foreign_keys=[actividad_id], lazy='selectin')
     grupo = relationship('GrupoTrabajo', foreign_keys=[grupo_id], lazy='selectin')
 
     def __repr__(self) -> str:

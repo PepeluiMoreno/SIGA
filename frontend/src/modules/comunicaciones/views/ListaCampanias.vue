@@ -4,7 +4,7 @@
       v-model="filters"
       v-model:search="searchQuery"
       search-placeholder="Buscar por nombre o lema…"
-      create-label="Nueva Campaña"
+      :create-label="tienePermiso('CAMP_CREATE') ? 'Nueva Campaña' : ''"
       create-route="/campanias/nueva"
       :fields="filterFields"
       :lazy="true"
@@ -106,7 +106,7 @@
                   @click.stop
                 >
                   <span>🔗</span>
-                  <span>Ver en laicismo.org</span>
+                  <span>Ver en la Web</span>
                 </a>
               </div>
             </div>
@@ -136,12 +136,14 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import { EyeIcon } from '@heroicons/vue/24/outline'
 import { executeQuery } from '@/graphql/client'
+import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_CAMPANIAS, GET_TIPOS_CAMPANIA, GET_ESTADOS_CAMPANIA } from '@/graphql/queries/campanias'
 import { badgeStyle } from '@/utils/badge'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
 
 const router = useRouter()
+const { tienePermiso } = usePermisos()
 
 // Datos
 const allCampanias = ref([])

@@ -6,7 +6,7 @@
       v-model="filters"
       v-model:search="searchQuery"
       search-placeholder="Buscar por nombre, apellido o email…"
-      create-label="Nuevo usuario"
+      :create-label="tienePermiso('USR_CREATE') ? 'Nuevo usuario' : ''"
       create-route="/usuarios/crear"
       :fields="filterFields"
       description="usuarios con acceso a SIGA"
@@ -234,12 +234,14 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import TablaJerarquica from '@/components/common/TablaJerarquica.vue'
 import { graphqlClient } from '@/graphql/client.js'
+import { usePermisos } from '@/composables/usePermisos.js'
 import { useGraphQL } from '@/composables/useGraphQL.js'
 import { GET_MIEMBROS, GET_AGRUPACIONES } from '@/graphql/queries/miembros.js'
 import { GET_ROLES, ASIGNAR_ROL_USUARIO, REVOCAR_ROL_USUARIO } from '@/graphql/queries/administracion.js'
 import { GET_TIPOS_VINCULACION } from '@/graphql/queries/usuarios.js'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 
+const { tienePermiso } = usePermisos()
 const { loading, error, query } = useGraphQL()
 
 // ── Estilos de roles ─────────────────────────────────────────────────────────
@@ -492,7 +494,7 @@ async function cargar() {
     ])
     // Solo miembros con usuario
     allMiembros.value      = (miembrosData?.miembros ?? []).filter(m => m.usuario != null)
-    agrupaciones.value     = agrupData?.agrupacionesTerritoriales ?? []
+    agrupaciones.value     = agrupData?.unidadesOrganizativas ?? []
     todosRoles.value       = rolesData?.roles ?? []
     tiposVinculacion.value = (vinculData?.tiposVinculacion ?? []).filter(t => t.activo)
   } catch (e) {

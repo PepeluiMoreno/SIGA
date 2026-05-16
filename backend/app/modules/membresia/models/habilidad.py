@@ -7,14 +7,14 @@ from typing import Optional, TYPE_CHECKING
 from sqlalchemy import String, Uuid, Boolean, UniqueConstraint, Date, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ....infrastructure.base_model import BaseModel
+from ....infrastructure.base_model import BaseModel, InmutableMixin
 
 if TYPE_CHECKING:
     from .categoria_habilidad import CategoriaHabilidad
     from .nivel_habilidad import NivelHabilidad
 
 
-class Habilidad(BaseModel):
+class Habilidad(InmutableMixin, BaseModel):
     """Habilidad del catálogo de la asociación."""
     __tablename__ = 'habilidades'
 

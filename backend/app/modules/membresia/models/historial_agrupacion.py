@@ -22,7 +22,7 @@ class HistorialAgrupacion(BaseModel):
         Uuid, ForeignKey('miembros.id', ondelete='CASCADE'), nullable=False, index=True
     )
     agrupacion_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('agrupaciones_territoriales.id'), nullable=False, index=True
+        Uuid, ForeignKey('unidades_organizativas.id'), nullable=False, index=True
     )
 
     fecha_inicio: Mapped[date] = mapped_column(Date, nullable=False)

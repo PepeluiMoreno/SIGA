@@ -23,7 +23,7 @@ from app.modules.acceso.models.usuario import Usuario, UsuarioRol
 from app.modules.membresia.models.historial_nombramiento import HistorialNombramiento
 from app.modules.membresia.models.miembro import Miembro
 from app.modules.membresia.models.junta import JuntaDirectiva
-from app.modules.core.geografico.agrupacion_territorial_view import AgrupacionTerritorial
+from app.modules.core.geografico.unidad_organizativa_view import UnidadOrganizativaVista as UnidadOrganizativa
 
 
 DUMP_FILE = "/tmp/europa_laica_dump.sql"
@@ -151,7 +151,7 @@ async def seed():
                 MIEMBRO_MAP[m.email.lower()] = m.id
 
         # Agrupaciones por código (nombre_corto)
-        agrupaciones = (await session.execute(select(AgrupacionTerritorial))).scalars().all()
+        agrupaciones = (await session.execute(select(UnidadOrganizativa))).scalars().all()
         for a in agrupaciones:
             if a.nombre_corto:
                 AGRUPACION_MAP[a.nombre_corto] = a.id

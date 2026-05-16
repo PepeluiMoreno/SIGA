@@ -452,7 +452,7 @@ const loadCatalogos = async () => {
   try {
     // Cargar secuencialmente para evitar errores de concurrencia
     const agrupData = await query(GET_AGRUPACIONES)
-    agrupaciones.value = agrupData?.agrupacionesTerritoriales || []
+    agrupaciones.value = agrupData?.unidadesOrganizativas || []
 
     const tiposData = await query(GET_TIPOS_MIEMBRO)
     tiposMiembro.value = tiposData?.tiposMiembro || []

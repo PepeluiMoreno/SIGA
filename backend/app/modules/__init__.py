@@ -27,12 +27,13 @@ from .core.geografico import (
     Provincia,
     Municipio,
     Direccion,
-    AgrupacionTerritorial,
+    UnidadOrganizativa,
 )
 from .core.comunicacion import (
     TipoNotificacion,
     Notificacion,
     PreferenciaNotificacion,
+    PlantillaEmail,
 )
 
 # Configuración: parámetros, estados, catálogos
@@ -89,9 +90,11 @@ from .membresia.models import (
     FormacionMiembro,
 )
 
-# Actividades: campañas, acciones, grupos de trabajo
+# Actividades: campañas, actividades, grupos de trabajo
 from .actividades.models import (
+    TipoActividad,
     TipoAccion as TipoAccionActividades,
+    Actividad,
     Accion,
     Participacion,
     Tarea,
@@ -108,6 +111,8 @@ from .actividades.models import (
     GrupoIniciativa,
     ReunionGrupo,
     AsistenteReunion,
+    RequisitoRecurso,
+    AportacionHoras,
 )
 
 # Económico: tesorería, contabilidad, cuotas, donaciones, remesas, cobro
@@ -153,9 +158,9 @@ __all__ = [
     'Usuario', 'UsuarioRol',
     'Sesion', 'HistorialSeguridad', 'IPBloqueada', 'IntentoAcceso',
     # Core - Geográfico
-    'Pais', 'Provincia', 'Municipio', 'Direccion', 'AgrupacionTerritorial',
+    'Pais', 'Provincia', 'Municipio', 'Direccion', 'UnidadOrganizativa',
     # Core - Comunicación
-    'TipoNotificacion', 'Notificacion', 'PreferenciaNotificacion',
+    'TipoNotificacion', 'Notificacion', 'PreferenciaNotificacion', 'PlantillaEmail',
     # Configuración
     'Configuracion', 'ReglaValidacionConfig', 'HistorialConfiguracion',
     'EstadoBase', 'EstadoCuota', 'EstadoCampania', 'EstadoAccion', 'EstadoTarea',
@@ -172,9 +177,10 @@ __all__ = [
     'CategoriaCompetencia', 'Competencia', 'NivelCompetencia', 'MiembroCompetencia',
     'TipoDocumentoVoluntario', 'DocumentoMiembro', 'TipoFormacion', 'FormacionMiembro',
     # Actividades
-    'TipoAccionActividades', 'Accion', 'Participacion', 'Tarea',
+    'TipoActividad', 'TipoAccionActividades', 'Actividad', 'Accion', 'Participacion', 'Tarea',
     'TipoCampania', 'Campania', 'RolParticipante', 'ParticipanteCampania',
     'Firmante', 'FirmaCampania',
     'TipoGrupo', 'RolGrupo', 'GrupoTrabajo', 'MiembroGrupo',
     'GrupoIniciativa', 'ReunionGrupo', 'AsistenteReunion',
+    'RequisitoRecurso', 'AportacionHoras',
 ]

@@ -22,6 +22,7 @@ from .presupuesto import (
     EstadoPlanificacion,
     CategoriaPartida,
     PartidaPresupuestaria,
+    CompromisoPresupuestario,
     PlanificacionAnual,
 )
 from .cobro import ProveedorPago, EstadoPago, TipoEventoPago, TipoPago, Pago, EventoPago, EstadoSuscripcion, Suscripcion, FormaPago
@@ -34,7 +35,7 @@ __all__ = [
     'ModoIngreso', 'ImporteCuotaAnio', 'CuotaAnual',
     'DonacionConcepto', 'Donacion',
     'Remesa', 'OrdenCobro',
-    'EstadoPlanificacion', 'CategoriaPartida', 'PartidaPresupuestaria', 'PlanificacionAnual',
+    'EstadoPlanificacion', 'CategoriaPartida', 'PartidaPresupuestaria', 'CompromisoPresupuestario', 'PlanificacionAnual',
     'ProveedorPago', 'EstadoPago', 'TipoEventoPago', 'TipoPago', 'Pago', 'EventoPago', 'EstadoSuscripcion', 'Suscripcion', 'FormaPago',
     'EstadoReclamacion', 'Reclamacion', 'TipoAccionReclamacion', 'AccionReclamacion',
 ]

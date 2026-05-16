@@ -8,7 +8,7 @@ from sqlalchemy import String, Integer, Boolean, Uuid, ForeignKey, UniqueConstra
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.base_model import BaseModel
-from app.modules.core.geografico.tipo_unidad_organizativa import TipoUnidadOrganizativa
+from app.modules.core.geografico.nivel_organizativo import NivelOrganizativo
 
 
 class Pais(BaseModel):
@@ -181,14 +181,14 @@ class Direccion(BaseModel):
         return " ".join(partes)
 
 
-class AgrupacionTerritorial(BaseModel):
+class UnidadOrganizativa(BaseModel):
     """
     Agrupaciones territoriales de la organización política.
 
     Representa las estructuras organizativas territoriales como
     agrupaciones locales, provinciales, autonómicas, etc.
     """
-    __tablename__ = 'agrupaciones_territoriales'
+    __tablename__ = 'unidades_organizativas'
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
 
@@ -198,7 +198,7 @@ class AgrupacionTerritorial(BaseModel):
 
     # Tipo de unidad (FK al catálogo)
     tipo_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('tipos_unidades_organizativas.id'), nullable=True, index=True
+        Uuid, ForeignKey('niveles_organizativos.id'), nullable=True, index=True
     )
     # Datos jurídicos (solo si vínculo = FILIAL o FEDERADA)
     nif: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
@@ -208,7 +208,7 @@ class AgrupacionTerritorial(BaseModel):
     # Jerarquía
     agrupacion_padre_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid,
-        ForeignKey('agrupaciones_territoriales.id'),
+        ForeignKey('unidades_organizativas.id'),
         nullable=True,
         index=True
     )
@@ -233,23 +233,23 @@ class AgrupacionTerritorial(BaseModel):
     provincia = relationship('Provincia', lazy='selectin')
     municipio = relationship('Municipio', lazy='selectin')
     direccion = relationship('Direccion', lazy='selectin')
-    tipo_unidad: Mapped[Optional[TipoUnidadOrganizativa]] = relationship('TipoUnidadOrganizativa', lazy='selectin')
+    tipo_unidad: Mapped[Optional[NivelOrganizativo]] = relationship('NivelOrganizativo', lazy='selectin')
 
     # Relación jerárquica
     agrupacion_padre = relationship(
-        'AgrupacionTerritorial',
+        'UnidadOrganizativa',
         remote_side=[id],
         back_populates='agrupaciones_hijas',
         lazy='selectin'
     )
-    agrupaciones_hijas: Mapped[List["AgrupacionTerritorial"]] = relationship(
-        'AgrupacionTerritorial',
+    agrupaciones_hijas: Mapped[List["UnidadOrganizativa"]] = relationship(
+        'UnidadOrganizativa',
         back_populates='agrupacion_padre',
         lazy='selectin'
     )
 
     def __repr__(self) -> str:
-        return f"<AgrupacionTerritorial(nombre='{self.nombre}')>"
+        return f"<UnidadOrganizativa(nombre='{self.nombre}')>"
 
     @property
     def nivel(self) -> Optional[int]:

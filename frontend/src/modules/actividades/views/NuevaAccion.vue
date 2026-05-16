@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="Nueva acción" subtitle="Crear una nueva acción">
+  <AppLayout title="Nueva actividad" subtitle="Crear una nueva actividad">
     <div class="max-w-3xl">
 
     <form @submit.prevent="guardar" class="space-y-5 bg-white rounded-xl border border-slate-200 p-6">
@@ -19,12 +19,12 @@
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Tipo *</label>
           <select
-            v-model="form.tipoAccionId"
+            v-model="form.tipoActividadId"
             required
             class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="">Seleccionar tipo…</option>
-            <option v-for="t in tiposAccion" :key="t.id" :value="t.id">{{ t.nombre }}</option>
+            <option v-for="t in tiposActividad" :key="t.id" :value="t.id">{{ t.nombre }}</option>
           </select>
         </div>
         <div>
@@ -127,7 +127,7 @@
           :disabled="saving"
           class="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
         >
-          {{ saving ? 'Guardando…' : 'Crear acción' }}
+          {{ saving ? 'Guardando…' : 'Crear actividad' }}
         </button>
       </div>
     </form>
@@ -144,14 +144,14 @@ import { GET_TIPOS_ACCION, GET_ESTADOS_ACCION, CREAR_ACCION } from '../graphql/q
 
 const router = useRouter()
 
-const tiposAccion = ref([])
+const tiposActividad = ref([])
 const estadosAccion = ref([])
 const saving = ref(false)
 const error = ref('')
 
 const form = ref({
   nombre: '',
-  tipoAccionId: '',
+  tipoActividadId: '',
   estadoId: '',
   descripcion: '',
   fechaInicio: '',
@@ -164,7 +164,7 @@ const form = ref({
 })
 
 const tipoSeleccionado = computed(() =>
-  tiposAccion.value.find(t => t.id === form.value.tipoAccionId) || null
+  tiposActividad.value.find(t => t.id === form.value.tipoActividadId) || null
 )
 
 onMounted(async () => {
@@ -172,7 +172,7 @@ onMounted(async () => {
     graphqlClient.request(GET_TIPOS_ACCION),
     graphqlClient.request(GET_ESTADOS_ACCION),
   ])
-  tiposAccion.value = rTipos.tiposAccion || []
+  tiposActividad.value = rTipos.tiposActividad || []
   estadosAccion.value = rEstados.estadosAccion || []
   const inicial = estadosAccion.value.find(e => e.esInicial)
   if (inicial) form.value.estadoId = inicial.id
@@ -184,7 +184,7 @@ async function guardar() {
   try {
     const data = {
       nombre: form.value.nombre,
-      tipoAccionId: form.value.tipoAccionId,
+      tipoActividadId: form.value.tipoActividadId,
       estadoId: form.value.estadoId,
       descripcion: form.value.descripcion || null,
       fechaInicio: form.value.fechaInicio || null,
@@ -196,10 +196,10 @@ async function guardar() {
       urlOnline: form.value.urlOnline || null,
     }
     const res = await graphqlClient.request(CREAR_ACCION, { data })
-    const id = res.crearAccion?.id
-    router.push(`/acciones/${id}`)
+    const id = res.crearActividad?.id
+    router.push(`/actividades/${id}`)
   } catch (e) {
-    error.value = e.message || 'Error al crear la acción'
+    error.value = e.message || 'Error al crear la actividad'
   } finally {
     saving.value = false
   }

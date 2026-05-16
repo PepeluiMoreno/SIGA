@@ -16,6 +16,7 @@ from sqlalchemy import select
 from app.modules.membresia.models.miembro import Miembro
 from app.modules.acceso.services.acceso_service import AccesoService
 from app.graphql.types_auto import MiembroType
+from app.graphql.permissions import RequireTransaction
 
 
 # ---------------------------------------------------------------------------
@@ -155,7 +156,7 @@ async def _fetch_miembro(session, miembro_id: uuid.UUID):
 @strawberry.type
 class MembresiaResolverMutation:
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_CREAR")])
     async def crear_miembro(
         self,
         info: strawberry.Info,
@@ -170,7 +171,7 @@ class MembresiaResolverMutation:
 
         return await _fetch_miembro(session, miembro.id)
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_CREAR")])
     async def crear_miembro_con_acceso(
         self,
         info: strawberry.Info,
@@ -200,7 +201,7 @@ class MembresiaResolverMutation:
         await session.commit()
         return await _fetch_miembro(session, miembro.id)
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_EDITAR")])
     async def actualizar_miembro(
         self,
         info: strawberry.Info,

@@ -126,7 +126,7 @@ class MiembroSegmentacion(Base):
         FROM miembros m
         INNER JOIN tipos_miembro tm ON m.tipo_miembro_id = tm.id
         INNER JOIN estados_miembro em ON m.estado_id = em.id
-        LEFT JOIN vista_agrupaciones_territoriales a ON m.agrupacion_id = a.id
+        LEFT JOIN vista_unidades_organizativas a ON m.agrupacion_id = a.id
         WHERE m.eliminado = FALSE;
 
         -- Crear índices en la vista materializada

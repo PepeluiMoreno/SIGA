@@ -66,32 +66,32 @@
             <hr class="nav-sep" />
 
             <!-- Membresía -->
-            <div class="mb-1">
+            <div v-if="tieneAlguno('SOC_LIST','AGR_EDIT','NOM_CREATE','HAB_LIST')" class="mb-1">
               <button @click="toggleSection('membresia')" class="section-btn">
                 <span>Membresía</span>
                 <ChevronDownIcon class="chevron" :class="openSections.membresia ? '' : '-rotate-90'" />
               </button>
               <div class="accordion-wrap" :class="{ closed: !openSections.membresia }">
                 <ul class="space-y-1 pb-1">
-                  <li>
+                  <li v-if="tienePermiso('SOC_LIST')">
                     <router-link to="/miembros" class="nav-item"
                       :class="$route.path.startsWith('/miembros') ? 'active' : 'inactive'">
                       <UserIcon class="nav-icon" /><span>{{ orgConfigStore.Miembros }}</span>
                     </router-link>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('AGR_EDIT')">
                     <router-link to="/agrupaciones" class="nav-item"
                       :class="$route.path.startsWith('/agrupaciones') ? 'active' : 'inactive'">
                       <MapPinIcon class="nav-icon" /><span>{{ orgConfigStore.tipoAgrupacion || 'Unidades Organizativas' }}</span>
                     </router-link>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('NOM_CREATE')">
                     <router-link to="/juntas" class="nav-item"
                       :class="$route.path.startsWith('/juntas') ? 'active' : 'inactive'">
                       <BuildingOffice2Icon class="nav-icon" /><span>{{ orgConfigStore.OrganoGobiernoPl }}</span>
                     </router-link>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('HAB_LIST')">
                     <router-link to="/voluntarios" class="nav-item"
                       :class="$route.path.startsWith('/voluntarios') ? 'active' : 'inactive'">
                       <HeartIcon class="nav-icon" /><span>Voluntariado</span>
@@ -104,26 +104,32 @@
             <hr class="nav-sep" />
 
             <!-- Actividades -->
-            <div class="mb-1">
+            <div v-if="tieneAlguno('CAMP_LIST','ACT_LIST','TEAM_LIST')" class="mb-1">
               <button @click="toggleSection('actividades')" class="section-btn">
                 <span>Actividades</span>
                 <ChevronDownIcon class="chevron" :class="openSections.actividades ? '' : '-rotate-90'" />
               </button>
               <div class="accordion-wrap" :class="{ closed: !openSections.actividades }">
                 <ul class="space-y-1 pb-1">
-                  <li>
+                  <li v-if="tienePermiso('CAMP_LIST')">
                     <router-link to="/campanias" class="nav-item"
                       :class="$route.path.startsWith('/campanias') ? 'active' : 'inactive'">
                       <FlagIcon class="nav-icon" /><span>Campañas</span>
                     </router-link>
                   </li>
-                  <li>
-                    <router-link to="/acciones" class="nav-item"
-                      :class="$route.path.startsWith('/acciones') ? 'active' : 'inactive'">
-                      <CalendarDaysIcon class="nav-icon" /><span>Acciones</span>
+                  <li v-if="tienePermiso('CAMP_LIST')">
+                    <router-link to="/memoria-anual" class="nav-item"
+                      :class="$route.path === '/memoria-anual' ? 'active' : 'inactive'">
+                      <BookOpenIcon class="nav-icon" /><span>Memoria Anual</span>
                     </router-link>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('ACT_LIST')">
+                    <router-link to="/actividades" class="nav-item"
+                      :class="$route.path.startsWith('/actividades') ? 'active' : 'inactive'">
+                      <CalendarDaysIcon class="nav-icon" /><span>Actividades</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('TEAM_LIST')">
                     <router-link to="/grupos" class="nav-item"
                       :class="$route.path.startsWith('/grupos') ? 'active' : 'inactive'">
                       <UserGroupIcon class="nav-icon" /><span>Grupos de Trabajo</span>
@@ -136,44 +142,44 @@
             <hr class="nav-sep" />
 
             <!-- Económico -->
-            <div v-if="tieneAlguno('CUOT_LIST','CUOT_GENERATE','CUOT_PAY','REM_CREATE','CONT_VIEW','PRES_VIEW','DON_LIST')" class="mb-1">
+            <div v-if="tieneAlguno('FIN_REPORTS','CUOT_GENERATE','REM_CREATE','DON_CREATE')" class="mb-1">
               <button @click="toggleSection('economico')" class="section-btn">
                 <span>Económico</span>
                 <ChevronDownIcon class="chevron" :class="openSections.economico ? '' : '-rotate-90'" />
               </button>
               <div class="accordion-wrap" :class="{ closed: !openSections.economico }">
                 <ul class="space-y-1 pb-1">
-                  <li>
+                  <li v-if="tienePermiso('FIN_REPORTS')">
                     <router-link to="/economico/tesoreria" class="nav-item"
                       :class="$route.path.startsWith('/economico/tesoreria') ? 'active' : 'inactive'">
                       <BuildingLibraryIcon class="nav-icon" /><span>Tesorería</span>
                     </router-link>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('FIN_REPORTS')">
                     <router-link to="/economico/contabilidad" class="nav-item"
                       :class="$route.path.startsWith('/economico/contabilidad') ? 'active' : 'inactive'">
                       <CalculatorIcon class="nav-icon" /><span>Contabilidad</span>
                     </router-link>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('CUOT_GENERATE')">
                     <router-link to="/economico/cuotas" class="nav-item"
                       :class="$route.path.startsWith('/economico/cuotas') ? 'active' : 'inactive'">
                       <CreditCardIcon class="nav-icon" /><span>Cuotas</span>
                     </router-link>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('REM_CREATE')">
                     <router-link to="/economico/remesas" class="nav-item"
                       :class="$route.path.startsWith('/economico/remesas') ? 'active' : 'inactive'">
                       <ArrowsRightLeftIcon class="nav-icon" /><span>Remesas</span>
                     </router-link>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('FIN_REPORTS')">
                     <router-link to="/economico/presupuesto" class="nav-item"
                       :class="$route.path.startsWith('/economico/presupuesto') ? 'active' : 'inactive'">
                       <ChartBarIcon class="nav-icon" /><span>Presupuesto</span>
                     </router-link>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('DON_CREATE')">
                     <router-link to="/economico/donaciones" class="nav-item"
                       :class="$route.path.startsWith('/economico/donaciones') ? 'active' : 'inactive'">
                       <GiftIcon class="nav-icon" /><span>Donaciones</span>
@@ -220,53 +226,53 @@
           <!-- Configuración — anclada al fondo -->
           <div class="mt-auto pt-2">
             <hr class="nav-sep" />
-            <div v-if="tieneAlguno('CFG_VIEW','CFG_EDIT','USR_LIST','ROL_LIST','PERM_ASSIGN','AUD_VIEW')" class="mb-1">
+            <div v-if="tieneAlguno('CFG_VIEW','CFG_EDIT','CAT_ACT_MANAGE','USR_LIST','ROL_LIST','PERM_ASSIGN','AUD_VIEW')" class="mb-1">
               <button @click="toggleSection('configuracion')" class="section-btn">
                 <span>Configuración</span>
                 <ChevronDownIcon class="chevron" :class="openSections.configuracion ? '' : '-rotate-90'" />
               </button>
               <div class="accordion-wrap" :class="{ closed: !openSections.configuracion }">
                 <ul class="space-y-1 pb-1">
-                  <li>
+                  <li v-if="tienePermiso('CFG_VIEW')">
                     <router-link to="/configuracion/general" class="nav-item"
                       :class="$route.path.startsWith('/configuracion/general') ? 'active' : 'inactive'">
                       <BuildingOffice2Icon class="nav-icon" /><span>Parámetros Generales</span>
                     </router-link>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('CAT_ACT_MANAGE')">
                     <router-link to="/parametrizacion/catalogos" class="nav-item"
                       :class="$route.path.startsWith('/parametrizacion/catalogos') ? 'active' : 'inactive'">
                       <ListBulletIcon class="nav-icon" /><span>Catálogos</span>
                     </router-link>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('CFG_EDIT')">
                     <router-link to="/parametrizacion/temas" class="nav-item"
                       :class="$route.path.startsWith('/parametrizacion/temas') ? 'active' : 'inactive'">
                       <SwatchIcon class="nav-icon" /><span>Temas de color</span>
                     </router-link>
                   </li>
-                  <li class="pt-2 pb-0.5 px-3">
+                  <li v-if="tieneAlguno('USR_LIST','ROL_LIST','PERM_ASSIGN','AUD_VIEW')" class="pt-2 pb-0.5 px-3">
                     <span class="text-[10px] font-semibold text-purple-500 uppercase tracking-wider">Control de Acceso</span>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('USR_LIST')">
                     <router-link to="/usuarios" class="nav-item"
                       :class="$route.path.startsWith('/usuarios') ? 'active' : 'inactive'">
                       <UsersIcon class="nav-icon" /><span>Usuarios</span>
                     </router-link>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('ROL_LIST')">
                     <router-link to="/roles" class="nav-item"
                       :class="$route.path.startsWith('/roles') ? 'active' : 'inactive'">
                       <KeyIcon class="nav-icon" /><span>Roles y Permisos</span>
                     </router-link>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('PERM_ASSIGN')">
                     <router-link to="/transacciones" class="nav-item"
                       :class="$route.path.startsWith('/transacciones') ? 'active' : 'inactive'">
                       <ListBulletIcon class="nav-icon" /><span>Catálogo RBAC</span>
                     </router-link>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('AUD_VIEW')">
                     <router-link to="/auditoria" class="nav-item"
                       :class="$route.path.startsWith('/auditoria') ? 'active' : 'inactive'">
                       <ClipboardDocumentListIcon class="nav-icon" /><span>Auditoría</span>
@@ -331,15 +337,25 @@
       <!-- Main content -->
       <main class="flex-1 min-w-0 overflow-hidden lg:h-[calc(100vh-64px)]">
         <div class="h-full flex flex-col w-full mx-auto px-4 sm:px-6 lg:px-0 lg:max-w-[75%]">
-          <div class="pt-4 flex-shrink-0">
+          <div class="pt-7 flex-shrink-0">
             <PageHeader v-if="title" :title="title" :subtitle="subtitle" :icon="icon">
-              <template v-if="$slots.actions" #actions>
+              <template #actions>
                 <slot name="actions" />
+                <button v-if="canGoBack" type="button" @click="goBack"
+                  class="inline-flex items-center gap-1.5 h-8 px-3 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                  </svg>
+                  Volver
+                </button>
               </template>
             </PageHeader>
           </div>
-          <div ref="mainRef" class="flex-1 min-h-0 overflow-y-auto pb-4" @scroll="onMainScroll">
+          <div ref="mainRef" class="flex-1 min-h-0 overflow-y-auto" :class="$slots.footer ? 'pb-2' : 'pb-4'" @scroll="onMainScroll">
             <slot />
+          </div>
+          <div v-if="$slots.footer" class="flex-shrink-0 border-t border-slate-200 bg-white py-3 flex items-center gap-3">
+            <slot name="footer" />
           </div>
         </div>
       </main>
@@ -378,6 +394,10 @@ const { tienePermiso, tieneAlguno } = usePermisos()
 
 // ── Sidebar mobile (v2) ───────────────────────────────────────────────────────
 const sidebarOpen = ref(false)
+
+// ── Volver ────────────────────────────────────────────────────────────────────
+const canGoBack = computed(() => !!window.history.state?.back)
+function goBack() { router.back() }
 
 // ── Scroll to top ─────────────────────────────────────────────────────────────
 const mainRef = ref(null)

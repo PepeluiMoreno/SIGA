@@ -197,7 +197,7 @@ export const GET_TIPOS_CARGO = `
 // Query para obtener agrupaciones territoriales
 export const GET_AGRUPACIONES = `
   query Agrupaciones {
-    agrupacionesTerritoriales {
+    unidadesOrganizativas {
       id
       nombre
       nombreCorto

@@ -17,8 +17,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select, func, text
 
 from app.core.database import get_database_url
-from app.modules.geografico.models.direccion import Pais, Provincia, AgrupacionTerritorial
-from app.modules.core.geografico.direccion import Pais, Provincia, AgrupacionTerritorial
+from app.modules.geografico.models.direccion import Pais, Provincia, UnidadOrganizativa
+from app.modules.core.geografico.direccion import Pais, Provincia, UnidadOrganizativa
 from app.modules.membresia.models.miembro import Miembro, TipoMiembro
 from app.modules.economico.models.cuotas import CuotaAnual, ImporteCuotaAnio
 from app.modules.core.models.estados import EstadoCuota
@@ -97,7 +97,7 @@ class ValidadorImportacion:
         print(f"  provincias: {self.metricas_postgres['provincias']}")
 
         # Agrupaciones
-        result = await session.execute(select(func.count()).select_from(AgrupacionTerritorial))
+        result = await session.execute(select(func.count()).select_from(UnidadOrganizativa))
         self.metricas_postgres['agrupaciones'] = result.scalar()
         print(f"  agrupaciones_territoriales: {self.metricas_postgres['agrupaciones']}")
 

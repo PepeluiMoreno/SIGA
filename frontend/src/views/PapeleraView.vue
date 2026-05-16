@@ -81,7 +81,7 @@ import { graphqlClient } from '@/graphql/client'
 
 const tabs = [
   { key: 'miembros', label: 'Miembros' },
-  { key: 'acciones', label: 'Acciones' },
+  { key: 'actividades', label: 'Actividades' },
   { key: 'grupos', label: 'Grupos' },
   { key: 'campanias', label: 'Campañas' },
 ]
@@ -104,21 +104,21 @@ const itemsActivos = computed(() => items.value[tabActivo.value] || [])
 
 const QUERIES = {
   miembros: `query { miembros(filter: { eliminado: { eq: true } }) { id nombre apellido1 fechaEliminacion } }`,
-  acciones: `query { acciones(filter: { eliminado: { eq: true } }) { id nombre fechaEliminacion } }`,
+  actividades: `query { actividades(filter: { eliminado: { eq: true } }) { id nombre fechaEliminacion } }`,
   grupos: `query { gruposTrabajo(filter: { eliminado: { eq: true } }) { id nombre fechaEliminacion } }`,
   campanias: `query { campanias(filter: { eliminado: { eq: true } }) { id nombre fechaEliminacion } }`,
 }
 
 const RESTORE_QUERY = {
   miembros: `mutation RestaurarMiembro($id: UUID!) { restaurarMiembro(id: $id) { id } }`,
-  acciones: `mutation RestaurarAccion($id: UUID!) { restaurarAccion(id: $id) { id } }`,
+  actividades: `mutation RestaurarActividad($id: UUID!) { restaurarActividad(id: $id) { id } }`,
   grupos: `mutation RestaurarGrupo($id: UUID!) { restaurarGrupoTrabajo(id: $id) { id } }`,
   campanias: `mutation RestaurarCampania($id: UUID!) { restaurarCampania(id: $id) { id } }`,
 }
 
 const HARD_DELETE_QUERY = {
   miembros: `mutation EliminarMiembro($id: UUID!) { eliminarMiembros(filter: { id: { eq: $id } }) { id } }`,
-  acciones: `mutation EliminarAccion($id: UUID!) { eliminarAcciones(filter: { id: { eq: $id } }) { id } }`,
+  actividades: `mutation EliminarActividad($id: UUID!) { eliminarActividades(filter: { id: { eq: $id } }) { id } }`,
   grupos: `mutation EliminarGrupo($id: UUID!) { eliminarGruposTrabajo(filter: { id: { eq: $id } }) { id } }`,
   campanias: `mutation EliminarCampania($id: UUID!) { eliminarCampanias(filter: { id: { eq: $id } }) { id } }`,
 }

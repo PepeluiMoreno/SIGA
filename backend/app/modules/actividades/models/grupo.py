@@ -8,13 +8,13 @@ from typing import Optional, TYPE_CHECKING
 from sqlalchemy import String, Integer, Uuid, ForeignKey, Date, Numeric, Text, Boolean, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ....infrastructure.base_model import BaseModel
+from ....infrastructure.base_model import BaseModel, InmutableMixin
 
 if TYPE_CHECKING:
     from ...membresia.models.miembro import Miembro
 
 
-class TipoGrupo(BaseModel):
+class TipoGrupo(InmutableMixin, BaseModel):
     """Tipos de grupos de trabajo."""
     __tablename__ = 'tipos_grupo'
 
@@ -75,12 +75,12 @@ class GrupoTrabajo(BaseModel):
 
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
     agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('agrupaciones_territoriales.id'), nullable=True, index=True
+        Uuid, ForeignKey('unidades_organizativas.id'), nullable=True, index=True
     )
 
     tipo_grupo = relationship('TipoGrupo', back_populates='grupos', lazy='selectin')
     coordinador = relationship('Miembro', foreign_keys=[coordinador_id], lazy='selectin')
-    agrupacion = relationship('AgrupacionTerritorial', lazy='selectin')
+    agrupacion = relationship('UnidadOrganizativa', lazy='selectin')
     miembros = relationship('MiembroGrupo', back_populates='grupo', lazy='selectin')
     tareas = relationship('Tarea', back_populates='grupo', foreign_keys='Tarea.grupo_id', lazy='selectin')
     reuniones = relationship('ReunionGrupo', back_populates='grupo', lazy='selectin')
@@ -122,18 +122,75 @@ class MiembroGrupo(BaseModel):
 
 
 class GrupoIniciativa(BaseModel):
-    """Asociación explícita entre un GrupoTrabajo y una Campaña/Iniciativa."""
+    """Asociación explícita entre un GrupoTrabajo y una Campaña."""
     __tablename__ = 'grupo_iniciativa'
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     grupo_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('grupos_trabajo.id'), nullable=False, index=True)
-    iniciativa_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('campanias.id'), nullable=False, index=True)
+    campania_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('campanias.id'), nullable=False, index=True)
     rol: Mapped[str] = mapped_column(String(50), nullable=False, default='colaborador')
 
     grupo = relationship('GrupoTrabajo', foreign_keys=[grupo_id], lazy='selectin')
 
     def __repr__(self) -> str:
-        return f"<GrupoIniciativa(grupo_id='{self.grupo_id}', iniciativa_id='{self.iniciativa_id}')>"
+        return f"<GrupoIniciativa(grupo_id='{self.grupo_id}', campania_id='{self.campania_id}')>"
+
+
+class RequisitoRecurso(BaseModel):
+    """Bolsa de horas necesarias de una especialidad/nivel para un grupo en una campaña o actividad."""
+    __tablename__ = 'requisitos_recurso'
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    grupo_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('grupos_trabajo.id'), nullable=False, index=True)
+
+    # Referencia a la especialidad del catálogo (habilidad o competencia)
+    especialidad_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    nivel_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+
+    horas_necesarias: Mapped[Decimal] = mapped_column(Numeric(8, 2), nullable=False)
+    descripcion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    grupo = relationship('GrupoTrabajo', foreign_keys=[grupo_id], lazy='selectin')
+    aportaciones = relationship('AportacionHoras', back_populates='requisito', lazy='selectin')
+
+    @property
+    def horas_cubiertas(self) -> Decimal:
+        return sum(
+            (a.horas_comprometidas for a in self.aportaciones if a.confirmado),
+            Decimal('0.00'),
+        )
+
+    @property
+    def horas_pendientes(self) -> Decimal:
+        return max(self.horas_necesarias - self.horas_cubiertas, Decimal('0.00'))
+
+    def __repr__(self) -> str:
+        return f"<RequisitoRecurso(grupo_id='{self.grupo_id}', horas={self.horas_necesarias})>"
+
+
+class AportacionHoras(BaseModel):
+    """Compromiso de horas de un voluntario para cubrir un RequisitoRecurso."""
+    __tablename__ = 'aportaciones_horas'
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    requisito_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('requisitos_recurso.id'), nullable=False, index=True
+    )
+    miembro_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('miembros.id', ondelete='CASCADE'), nullable=False, index=True
+    )
+
+    horas_comprometidas: Mapped[Decimal] = mapped_column(Numeric(6, 2), nullable=False)
+    horas_reales: Mapped[Decimal] = mapped_column(Numeric(6, 2), default=Decimal('0.00'), nullable=False)
+    confirmado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    fecha_compromiso: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    requisito = relationship('RequisitoRecurso', back_populates='aportaciones', lazy='selectin')
+    miembro = relationship('Miembro', foreign_keys=[miembro_id], lazy='selectin')
+
+    def __repr__(self) -> str:
+        return f"<AportacionHoras(miembro_id='{self.miembro_id}', horas={self.horas_comprometidas})>"
 
 
 class ReunionGrupo(BaseModel):

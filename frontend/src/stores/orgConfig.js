@@ -6,7 +6,7 @@ const QUERY = `
   query {
     appInitialized
     parametrosOrganizacion {
-      logo nombre tipoAgrupacionTerritorial
+      logo nombre tipoUnidadOrganizativa
       denominacionMiembro denominacionMiembroPlural
       denominacionOrganoGobierno denominacionOrganoGobiernoPlural
       sessionInactividadMinutos sessionMaximoMinutos
@@ -47,15 +47,15 @@ export const useOrgConfigStore = defineStore('orgConfig', {
   },
   actions: {
     async fetchConfig() {
-      if (this.loaded) return
+      if (this.loaded && this.temas.length) return
       try {
         const data = await graphqlClient.request(QUERY)
         this.initialized = data.appInitialized
-        this.temas = (data.temasUi ?? []).filter(t => t.activo && !t.eliminado)
+        this.temas = (data.temasUi ?? []).filter(t => t.activo)
         const p = data.parametrosOrganizacion
         this.logo             = p.logo ?? ''
         this.nombre           = p.nombre ?? ''
-        this.tipoAgrupacion   = p.tipoAgrupacionTerritorial ?? ''
+        this.tipoAgrupacion   = p.tipoUnidadOrganizativa ?? ''
         this.miembro          = p.denominacionMiembro       ?? 'miembro'
         this.miembros         = p.denominacionMiembroPlural ?? 'miembros'
         this.organoGobierno   = p.denominacionOrganoGobierno       ?? 'junta directiva'

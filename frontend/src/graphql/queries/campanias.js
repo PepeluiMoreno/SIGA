@@ -82,6 +82,12 @@ export const GET_CAMPANIA = `
       metaParticipantes
       metaFirmas
       fotoUrl
+      presupuestoEstimado
+      presupuestoEjecutado
+      objetivosCumplidos
+      valoracion
+      descripcionCorta
+      notificacionEnviada
     }
   }
 `

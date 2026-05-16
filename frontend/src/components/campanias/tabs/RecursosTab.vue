@@ -135,6 +135,99 @@
       </div>
     </div>
 
+    <!-- Compromisos presupuestarios -->
+    <div class="pt-4 border-t border-slate-200">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-semibold text-slate-700 uppercase tracking-wide">Compromisos presupuestarios ({{ compromisos.length }})</h3>
+        <button @click="formComp.visible = !formComp.visible"
+          class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+          {{ formComp.visible ? '✕ Cancelar' : '+ Añadir compromiso' }}
+        </button>
+      </div>
+
+      <!-- Form nuevo compromiso -->
+      <div v-if="formComp.visible" class="bg-slate-50 rounded-lg border border-slate-200 p-4 mb-3 space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Partida presupuestaria</label>
+            <select v-model="formComp.partidaId" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="">Seleccionar partida…</option>
+              <option v-for="p in partidas" :key="p.id" :value="p.id">{{ p.codigo }} — {{ p.nombre }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Importe (€)</label>
+            <input v-model.number="formComp.importe" type="number" min="0.01" step="0.01"
+              class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Fecha compromiso</label>
+            <input v-model="formComp.fechaCompromiso" type="date"
+              class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Concepto</label>
+            <input v-model="formComp.concepto" type="text" placeholder="Ej: Material de campaña…"
+              class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+        </div>
+        <p v-if="errorComp" class="text-xs text-red-600">{{ errorComp }}</p>
+        <button @click="crearCompromiso" :disabled="!formComp.partidaId || !formComp.importe || formComp.guardando"
+          class="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+          {{ formComp.guardando ? 'Guardando…' : 'Registrar compromiso' }}
+        </button>
+      </div>
+
+      <!-- Lista compromisos -->
+      <div v-if="compromisos.length" class="rounded-lg border border-slate-200 overflow-hidden">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-4 py-3 text-left font-medium text-slate-600">Partida</th>
+              <th class="px-4 py-3 text-left font-medium text-slate-600">Concepto</th>
+              <th class="px-4 py-3 text-right font-medium text-slate-600">Importe</th>
+              <th class="px-4 py-3 text-left font-medium text-slate-600">Fecha</th>
+              <th class="px-4 py-3 text-left font-medium text-slate-600">Estado</th>
+              <th class="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-slate-100">
+            <tr v-for="c in compromisos" :key="c.id" class="hover:bg-slate-50">
+              <td class="px-4 py-3">
+                <div class="font-medium text-slate-800">{{ c.partida?.codigo || '—' }}</div>
+                <div class="text-xs text-slate-400 truncate max-w-[180px]">{{ c.partida?.nombre }}</div>
+              </td>
+              <td class="px-4 py-3 text-slate-600">{{ c.concepto || '—' }}</td>
+              <td class="px-4 py-3 text-right font-semibold text-slate-800">{{ fmt(c.importeComprometido) }}</td>
+              <td class="px-4 py-3 text-slate-500 text-xs">{{ c.fechaCompromiso || '—' }}</td>
+              <td class="px-4 py-3">
+                <span :class="estadoCompClass(c.estado)"
+                  class="text-xs font-medium px-2 py-0.5 rounded-full">{{ c.estado }}</span>
+              </td>
+              <td class="px-4 py-3 text-right">
+                <button @click="eliminarCompromiso(c.id)" title="Eliminar"
+                  class="p-1 text-slate-300 hover:text-red-500 transition-colors rounded">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot v-if="compromisos.length > 1" class="bg-slate-50 border-t-2 border-slate-300">
+            <tr class="font-semibold text-slate-700">
+              <td class="px-4 py-3" colspan="2">Total comprometido</td>
+              <td class="px-4 py-3 text-right">{{ fmt(totalComprometido) }}</td>
+              <td colspan="3"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p v-else-if="!formComp.visible" class="text-sm text-slate-400 text-center py-4">
+        No hay compromisos presupuestarios vinculados a esta campaña.
+      </p>
+    </div>
+
     <!-- Sin datos -->
     <div v-if="grupos.length === 0" class="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
       <p class="text-slate-500 text-sm">Asigna equipos a esta campaña para ver la estimación de recursos</p>
@@ -144,7 +237,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { graphqlClient } from '@/graphql/client.js'
 
 const props = defineProps({
   campania: { type: Object, required: true },
@@ -220,4 +314,97 @@ const tareasPorEstado = computed(() => {
   }
   return counts
 })
+
+// ── Compromisos presupuestarios ───────────────────────────────────────────────
+const compromisos = ref([])
+const partidas = ref([])
+const formComp = ref({ visible: false, partidaId: '', importe: null, fechaCompromiso: '', concepto: '', guardando: false })
+const errorComp = ref('')
+
+const GQL_COMPROMISOS = `
+  query CompromisosPresupuestarios($campaniaId: UUID!) {
+    compromisosPresupuestarios(filter: { campaniaId: { eq: $campaniaId } }) {
+      id campaniaId importeComprometido concepto fechaCompromiso estado
+      partida { id codigo nombre }
+    }
+  }
+`
+const GQL_PARTIDAS = `
+  query PartidasPresupuestarias {
+    partidasPresupuestarias { id codigo nombre tipo ejercicio activo }
+  }
+`
+const MUTATION_CREAR_COMPROMISO = `
+  mutation CrearCompromisoPresupuestario($data: CompromisoPresupuestarioCreateInput!) {
+    crearCompromisoPresupuestario(data: $data) {
+      id campaniaId importeComprometido concepto fechaCompromiso estado
+      partida { id codigo nombre }
+    }
+  }
+`
+const MUTATION_ELIMINAR_COMPROMISO = `
+  mutation EliminarCompromisoPresupuestario($id: UUID!) {
+    eliminarCompromisosPresupuestarios(filter: { id: { eq: $id } }) { id }
+  }
+`
+
+async function cargarCompromisos() {
+  if (!props.campania?.id) return
+  try {
+    const [dataC, dataP] = await Promise.all([
+      graphqlClient.request(GQL_COMPROMISOS, { campaniaId: props.campania.id }),
+      graphqlClient.request(GQL_PARTIDAS),
+    ])
+    compromisos.value = dataC.compromisosPresupuestarios || []
+    partidas.value = (dataP.partidasPresupuestarias || []).filter(p => p.activo)
+  } catch (e) {
+    console.error('Error cargando compromisos:', e)
+  }
+}
+
+async function crearCompromiso() {
+  if (!formComp.value.partidaId || !formComp.value.importe) return
+  formComp.value.guardando = true
+  errorComp.value = ''
+  try {
+    const data = await graphqlClient.request(MUTATION_CREAR_COMPROMISO, {
+      data: {
+        campaniaId: props.campania.id,
+        partidaId: formComp.value.partidaId,
+        importeComprometido: formComp.value.importe,
+        concepto: formComp.value.concepto || null,
+        fechaCompromiso: formComp.value.fechaCompromiso || new Date().toISOString().slice(0, 10),
+        estado: 'activo',
+      }
+    })
+    compromisos.value = [...compromisos.value, data.crearCompromisoPresupuestario]
+    formComp.value = { visible: false, partidaId: '', importe: null, fechaCompromiso: '', concepto: '', guardando: false }
+  } catch (e) {
+    errorComp.value = e?.response?.errors?.[0]?.message || 'Error registrando compromiso'
+  } finally {
+    formComp.value.guardando = false
+  }
+}
+
+async function eliminarCompromiso(id) {
+  try {
+    await graphqlClient.request(MUTATION_ELIMINAR_COMPROMISO, { id })
+    compromisos.value = compromisos.value.filter(c => c.id !== id)
+  } catch (e) {
+    errorComp.value = e?.response?.errors?.[0]?.message || 'Error eliminando compromiso'
+  }
+}
+
+const totalComprometido = computed(() =>
+  compromisos.value.reduce((s, c) => s + parseFloat(c.importeComprometido || 0), 0)
+)
+
+function estadoCompClass(estado) {
+  if (estado === 'activo') return 'bg-indigo-100 text-indigo-700'
+  if (estado === 'ejecutado') return 'bg-emerald-100 text-emerald-700'
+  if (estado === 'liberado') return 'bg-slate-100 text-slate-600'
+  return 'bg-slate-100 text-slate-600'
+}
+
+onMounted(cargarCompromisos)
 </script>

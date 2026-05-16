@@ -15,6 +15,7 @@ from app.modules.economico.models.tesoreria import TipoMovimientoTesoreria
 from app.modules.economico.services.tesoreria_service import TesoreriaService
 from app.modules.economico.services.contabilidad_service import ContabilidadService
 from app.graphql.types_auto import CuotaAnualType
+from app.graphql.permissions import RequireTransaction
 
 
 # ---------------------------------------------------------------------------
@@ -138,7 +139,7 @@ class FinancieroMutation:
 
     # ── Tesorería ────────────────────────────────────────────────────────────
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUENTA_CREAR")])
     async def crear_cuenta_bancaria(self, info: strawberry.Info, data: CrearCuentaBancariaInput) -> uuid.UUID:
         service = TesoreriaService(info.context.session)
         cuenta = await service.crear_cuenta_bancaria(
@@ -151,7 +152,7 @@ class FinancieroMutation:
         )
         return cuenta.id
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_MOVIMIENTO_REGISTRAR")])
     async def crear_movimiento_tesoreria(self, info: strawberry.Info, data: CrearMovimientoTesoreriaInput) -> uuid.UUID:
         service = TesoreriaService(info.context.session)
         movimiento = await service.registrar_movimiento(
@@ -167,7 +168,7 @@ class FinancieroMutation:
         )
         return movimiento.id
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CONCILIACION_REALIZAR")])
     async def marcar_movimiento_conciliado(
         self, info: strawberry.Info, movimiento_id: uuid.UUID, fecha_conciliacion: Optional[date] = None
     ) -> bool:
@@ -175,7 +176,7 @@ class FinancieroMutation:
         await service.marcar_movimiento_conciliado(movimiento_id, fecha_conciliacion)
         return True
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CONCILIACION_REALIZAR")])
     async def crear_conciliacion_bancaria(self, info: strawberry.Info, data: CrearConciliacionBancariaInput) -> uuid.UUID:
         service = TesoreriaService(info.context.session)
         conciliacion = await service.crear_conciliacion_bancaria(
@@ -187,7 +188,7 @@ class FinancieroMutation:
         )
         return conciliacion.id
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CONCILIACION_REALIZAR")])
     async def confirmar_conciliacion(self, info: strawberry.Info, conciliacion_id: uuid.UUID) -> bool:
         service = TesoreriaService(info.context.session)
         await service.confirmar_conciliacion(conciliacion_id)
@@ -195,7 +196,7 @@ class FinancieroMutation:
 
     # ── Contabilidad ─────────────────────────────────────────────────────────
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ASIENTO_CREAR")])
     async def crear_cuenta_contable(self, info: strawberry.Info, data: CrearCuentaContableInput) -> uuid.UUID:
         service = ContabilidadService(info.context.session)
         cuenta = await service.crear_cuenta_contable(
@@ -209,7 +210,7 @@ class FinancieroMutation:
         )
         return cuenta.id
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ASIENTO_CREAR")])
     async def crear_asiento_contable(self, info: strawberry.Info, data: CrearAsientoContableInput) -> uuid.UUID:
         service = ContabilidadService(info.context.session)
         asiento = await service.crear_asiento(
@@ -222,7 +223,7 @@ class FinancieroMutation:
         )
         return asiento.id
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ASIENTO_CREAR")])
     async def crear_apunte_contable(self, info: strawberry.Info, data: CrearApunteContableInput) -> uuid.UUID:
         service = ContabilidadService(info.context.session)
         apunte = await service.crear_apunte(
@@ -236,19 +237,19 @@ class FinancieroMutation:
         )
         return apunte.id
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ASIENTO_APROBAR")])
     async def confirmar_asiento(self, info: strawberry.Info, asiento_id: uuid.UUID) -> bool:
         service = ContabilidadService(info.context.session)
         await service.confirmar_asiento(asiento_id)
         return True
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ASIENTO_APROBAR")])
     async def anular_asiento(self, info: strawberry.Info, asiento_id: uuid.UUID) -> bool:
         service = ContabilidadService(info.context.session)
         await service.anular_asiento(asiento_id)
         return True
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_BALANCE_CONSULTAR")])
     async def generar_balance(self, info: strawberry.Info, ejercicio: int, fecha_fin: date) -> uuid.UUID:
         service = ContabilidadService(info.context.session)
         balance = await service.generar_balance(ejercicio=ejercicio, fecha_fin=fecha_fin)

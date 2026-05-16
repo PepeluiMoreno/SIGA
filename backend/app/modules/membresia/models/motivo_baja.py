@@ -6,10 +6,10 @@ from typing import Optional
 from sqlalchemy import String, Uuid, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ....infrastructure.base_model import BaseModel
+from ....infrastructure.base_model import BaseModel, InmutableMixin
 
 
-class MotivoBaja(BaseModel):
+class MotivoBaja(InmutableMixin, BaseModel):
     """Motivos por los que un miembro puede causar baja.
 
     Códigos estándar:

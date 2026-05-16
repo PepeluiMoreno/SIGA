@@ -298,6 +298,142 @@
         </div>
       </div>
 
+      <!-- ── RECURSOS ── -->
+      <div v-show="activeTab === 'recursos'" class="space-y-4">
+        <div class="bg-white rounded-xl border border-slate-200">
+          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-slate-800">Bolsas de horas necesarias ({{ requisitos.length }})</h2>
+            <button @click="formRequisito.visible = !formRequisito.visible"
+              class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+              {{ formRequisito.visible ? '✕ Cancelar' : '+ Nueva bolsa' }}
+            </button>
+          </div>
+
+          <!-- Formulario nueva bolsa de horas -->
+          <div v-if="formRequisito.visible" class="border-b border-slate-100 bg-slate-50 px-5 py-4 space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Especialidad / Habilidad</label>
+                <select v-model="formRequisito.especialidadId" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                  <option value="">Seleccionar…</option>
+                  <option v-for="h in habilidades" :key="h.id" :value="h.id">{{ h.nombre }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Nivel</label>
+                <select v-model="formRequisito.nivelId" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                  <option value="">Sin especificar</option>
+                  <option v-for="n in nivelesHabilidad" :key="n.id" :value="n.id">{{ n.nombre }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Horas necesarias</label>
+                <input v-model.number="formRequisito.horasNecesarias" type="number" min="0.5" step="0.5"
+                  class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Descripción</label>
+                <input v-model="formRequisito.descripcion" type="text" placeholder="Ej: Diseño de carteles…"
+                  class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+              </div>
+            </div>
+            <p v-if="errorRequisito" class="text-xs text-red-600">{{ errorRequisito }}</p>
+            <button @click="crearRequisito" :disabled="!formRequisito.especialidadId || !formRequisito.horasNecesarias || formRequisito.guardando"
+              class="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+              {{ formRequisito.guardando ? 'Guardando…' : 'Crear bolsa de horas' }}
+            </button>
+          </div>
+
+          <!-- Lista de bolsas de horas -->
+          <div v-if="requisitos.length" class="divide-y divide-slate-100">
+            <div v-for="req in requisitos" :key="req.id" class="px-5 py-4">
+              <!-- Cabecera del requisito -->
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-3">
+                  <div>
+                    <span class="text-sm font-medium text-slate-900">{{ nombreHabilidad(req.especialidadId) }}</span>
+                    <span v-if="req.nivelId && req.nivelId !== req.especialidadId" class="ml-2 text-xs text-slate-500">· {{ nombreNivel(req.nivelId) }}</span>
+                    <span v-if="req.descripcion" class="ml-2 text-xs text-slate-400 italic">{{ req.descripcion }}</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-xs font-semibold" :class="pctCoverage(req) >= 100 ? 'text-emerald-600' : 'text-amber-600'">
+                    {{ horasCubiertas(req).toFixed(1) }} / {{ req.horasNecesarias }}h
+                  </span>
+                  <button @click="eliminarRequisito(req.id)" title="Eliminar bolsa"
+                    class="p-1 text-slate-300 hover:text-red-500 transition-colors rounded">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Barra de cobertura -->
+              <div class="w-full bg-slate-100 rounded-full h-1.5 mb-3">
+                <div class="h-1.5 rounded-full transition-all" :class="pctCoverage(req) >= 100 ? 'bg-emerald-500' : 'bg-indigo-500'"
+                  :style="{ width: pctCoverage(req) + '%' }" />
+              </div>
+
+              <!-- Aportaciones -->
+              <div v-if="req.aportaciones?.length" class="space-y-1 mb-2">
+                <div v-for="ap in req.aportaciones" :key="ap.id"
+                  class="flex items-center gap-3 text-xs text-slate-600 bg-slate-50 rounded-lg px-3 py-1.5">
+                  <button @click="toggleConfirmarAportacion(ap)" title="Confirmar/desconfirmar"
+                    class="flex-shrink-0" :class="ap.confirmado ? 'text-emerald-600' : 'text-slate-300 hover:text-emerald-500'">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                  </button>
+                  <span class="flex-1 font-medium">{{ ap.miembro ? `${ap.miembro.nombre} ${ap.miembro.apellido1}` : '—' }}</span>
+                  <span>{{ ap.horasComprometidas }}h comprometidas</span>
+                  <span v-if="ap.horasReales > 0" class="text-emerald-600">{{ ap.horasReales }}h reales</span>
+                  <span v-if="ap.fechaCompromiso" class="text-slate-400">{{ ap.fechaCompromiso }}</span>
+                  <button @click="eliminarAportacion(req.id, ap.id)" title="Eliminar aportación"
+                    class="text-slate-300 hover:text-red-500 transition-colors">✕</button>
+                </div>
+              </div>
+
+              <!-- Añadir aportación inline -->
+              <div v-if="formAportacion.requisitoId === req.id" class="flex flex-wrap gap-2 items-end bg-indigo-50 rounded-lg px-3 py-2.5 mb-1">
+                <div>
+                  <label class="block text-xs font-medium text-slate-700 mb-1">Miembro</label>
+                  <select v-model="formAportacion.miembroId" class="h-9 px-2 text-xs border border-slate-300 rounded-lg bg-white focus:ring-1 focus:ring-indigo-500">
+                    <option value="">Seleccionar…</option>
+                    <option v-for="mg in miembrosActivos" :key="mg.miembro?.id" :value="mg.miembro?.id">
+                      {{ mg.miembro?.nombre }} {{ mg.miembro?.apellido1 }}
+                    </option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-700 mb-1">Horas</label>
+                  <input v-model.number="formAportacion.horasComprometidas" type="number" min="0.5" step="0.5"
+                    class="h-9 w-20 px-2 text-xs border border-slate-300 rounded-lg bg-white focus:ring-1 focus:ring-indigo-500" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-700 mb-1">Fecha</label>
+                  <input v-model="formAportacion.fechaCompromiso" type="date"
+                    class="h-9 px-2 text-xs border border-slate-300 rounded-lg bg-white focus:ring-1 focus:ring-indigo-500" />
+                </div>
+                <button @click="crearAportacion(req.id)" :disabled="!formAportacion.miembroId || formAportacion.guardando"
+                  class="h-9 px-3 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 self-end">
+                  {{ formAportacion.guardando ? '…' : 'Registrar' }}
+                </button>
+                <button @click="formAportacion.requisitoId = null" class="h-9 px-2 text-xs text-slate-500 hover:text-slate-700 self-end">✕</button>
+                <p v-if="errorAportacion" class="w-full text-xs text-red-600">{{ errorAportacion }}</p>
+              </div>
+              <button v-else @click="formAportacion.requisitoId = req.id; formAportacion.miembroId = ''"
+                class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                + Añadir aportación
+              </button>
+            </div>
+          </div>
+          <div v-else class="px-5 py-8 text-center text-sm text-slate-400">
+            No hay bolsas de horas definidas. Crea una para gestionar los recursos necesarios del grupo.
+          </div>
+        </div>
+      </div>
+
       <!-- ── REUNIONES ── -->
       <div v-show="activeTab === 'reuniones'" class="space-y-3">
         <div class="bg-white rounded-xl border border-slate-200">
@@ -356,16 +492,19 @@ const loading = ref(true)
 const error = ref('')
 const grupo = ref(null)
 const habilidades = ref([])
+const nivelesHabilidad = ref([])
 const rolesGrupo = ref([])
 const estadosTarea = ref([])
+const requisitos = ref([])
 
 // ── Tabs ─────────────────────────────────────────────────────────────────────
 const activeTab = ref('info')
 const tabs = computed(() => [
-  { id: 'info',     name: 'Información',  count: null },
-  { id: 'miembros', name: 'Miembros',     count: miembrosActivos.value.length },
-  { id: 'tareas',   name: 'Tareas',       count: grupo.value?.tareas?.length ?? 0 },
-  { id: 'reuniones',name: 'Reuniones',    count: grupo.value?.reuniones?.length ?? 0 },
+  { id: 'info',      name: 'Información',  count: null },
+  { id: 'miembros',  name: 'Miembros',     count: miembrosActivos.value.length },
+  { id: 'tareas',    name: 'Tareas',       count: grupo.value?.tareas?.length ?? 0 },
+  { id: 'recursos',  name: 'Recursos',     count: requisitos.value.length },
+  { id: 'reuniones', name: 'Reuniones',    count: grupo.value?.reuniones?.length ?? 0 },
 ])
 
 const miembrosActivos = computed(() => (grupo.value?.miembros || []).filter(m => m.activo))
@@ -398,8 +537,59 @@ const GQL_GRUPO = `
 const GQL_CATALOGOS = `
   query CatalogosGrupo {
     habilidades { id nombre categoriaId }
+    nivelesHabilidad { id nombre }
     rolesGrupo { id nombre esCoordinador activo }
     estadosTarea { id nombre }
+  }
+`
+
+const GQL_REQUISITOS = `
+  query RequisitosGrupo($grupoId: UUID!) {
+    requisitosRecurso(filter: { grupoId: { eq: $grupoId } }) {
+      id grupoId especialidadId nivelId horasNecesarias descripcion
+      aportaciones {
+        id miembroId horasComprometidas horasReales confirmado fechaCompromiso observaciones
+        miembro { id nombre apellido1 }
+      }
+    }
+  }
+`
+
+const MUTATION_CREAR_REQUISITO = `
+  mutation CrearRequisitoRecurso($data: RequisitoRecursoCreateInput!) {
+    crearRequisitoRecurso(data: $data) {
+      id grupoId especialidadId nivelId horasNecesarias descripcion
+      aportaciones { id miembroId horasComprometidas horasReales confirmado miembro { id nombre apellido1 } }
+    }
+  }
+`
+
+const MUTATION_ELIMINAR_REQUISITO = `
+  mutation EliminarRequisitoRecurso($id: UUID!) {
+    eliminarRequisitosRecurso(filter: { id: { eq: $id } }) { id }
+  }
+`
+
+const MUTATION_CREAR_APORTACION = `
+  mutation CrearAportacionHoras($data: AportacionHorasCreateInput!) {
+    crearAportacionHoras(data: $data) {
+      id requisito { id } miembro { id nombre apellido1 }
+      horasComprometidas horasReales confirmado fechaCompromiso observaciones
+    }
+  }
+`
+
+const MUTATION_ACTUALIZAR_APORTACION = `
+  mutation ActualizarAportacionHoras($data: AportacionHorasUpdateInput!) {
+    actualizarAportacionHoras(data: $data) {
+      id horasComprometidas horasReales confirmado
+    }
+  }
+`
+
+const MUTATION_ELIMINAR_APORTACION = `
+  mutation EliminarAportacionHoras($id: UUID!) {
+    eliminarAportacionesHoras(filter: { id: { eq: $id } }) { id }
   }
 `
 
@@ -448,9 +638,14 @@ async function cargar() {
     ])
     grupo.value = dataGrupo.gruposTrabajo?.[0] || null
     habilidades.value = dataCat.habilidades || []
+    nivelesHabilidad.value = dataCat.nivelesHabilidad || []
     rolesGrupo.value = (dataCat.rolesGrupo || []).filter(r => r.activo)
     estadosTarea.value = dataCat.estadosTarea || []
     if (!grupo.value) error.value = 'Grupo no encontrado'
+    if (grupo.value) {
+      const dataReq = await graphqlClient.request(GQL_REQUISITOS, { grupoId: grupoId.value })
+      requisitos.value = dataReq.requisitosRecurso || []
+    }
   } catch (e) {
     error.value = e?.response?.errors?.[0]?.message || 'Error cargando el grupo'
   } finally {
@@ -572,6 +767,105 @@ async function crearTarea() {
     errorTarea.value = e?.response?.errors?.[0]?.message || 'Error creando tarea'
   } finally {
     formTarea.value.guardando = false
+  }
+}
+
+// ── Recursos (RequisitoRecurso / AportacionHoras) ────────────────────────────
+const formRequisito = ref({ visible: false, especialidadId: '', nivelId: '', horasNecesarias: 8, descripcion: '', guardando: false })
+const errorRequisito = ref('')
+const formAportacion = ref({ requisitoId: null, miembroId: '', horasComprometidas: 4, fechaCompromiso: '', observaciones: '', guardando: false })
+const errorAportacion = ref('')
+
+function nombreHabilidad(id) {
+  return habilidades.value.find(h => h.id === id)?.nombre || id?.slice(0, 8) || '—'
+}
+function nombreNivel(id) {
+  return nivelesHabilidad.value.find(n => n.id === id)?.nombre || id?.slice(0, 8) || '—'
+}
+function horasCubiertas(req) {
+  return (req.aportaciones || []).filter(a => a.confirmado).reduce((s, a) => s + Number(a.horasComprometidas || 0), 0)
+}
+function pctCoverage(req) {
+  const total = Number(req.horasNecesarias || 0)
+  return total > 0 ? Math.min(Math.round((horasCubiertas(req) / total) * 100), 100) : 0
+}
+
+async function crearRequisito() {
+  if (!formRequisito.value.especialidadId || !formRequisito.value.horasNecesarias) return
+  formRequisito.value.guardando = true
+  errorRequisito.value = ''
+  try {
+    const data = await graphqlClient.request(MUTATION_CREAR_REQUISITO, {
+      data: {
+        grupoId: grupoId.value,
+        especialidadId: formRequisito.value.especialidadId,
+        nivelId: formRequisito.value.nivelId || formRequisito.value.especialidadId,
+        horasNecesarias: formRequisito.value.horasNecesarias,
+        descripcion: formRequisito.value.descripcion || null,
+      }
+    })
+    requisitos.value = [...requisitos.value, data.crearRequisitoRecurso]
+    formRequisito.value = { visible: false, especialidadId: '', nivelId: '', horasNecesarias: 8, descripcion: '', guardando: false }
+  } catch (e) {
+    errorRequisito.value = e?.response?.errors?.[0]?.message || 'Error creando requisito'
+  } finally {
+    formRequisito.value.guardando = false
+  }
+}
+
+async function eliminarRequisito(reqId) {
+  try {
+    await graphqlClient.request(MUTATION_ELIMINAR_REQUISITO, { id: reqId })
+    requisitos.value = requisitos.value.filter(r => r.id !== reqId)
+  } catch (e) {
+    errorRequisito.value = e?.response?.errors?.[0]?.message || 'Error eliminando requisito'
+  }
+}
+
+async function crearAportacion(reqId) {
+  if (!formAportacion.value.miembroId || !formAportacion.value.horasComprometidas) return
+  formAportacion.value.guardando = true
+  errorAportacion.value = ''
+  try {
+    const data = await graphqlClient.request(MUTATION_CREAR_APORTACION, {
+      data: {
+        requisitoId: reqId,
+        miembroId: formAportacion.value.miembroId,
+        horasComprometidas: formAportacion.value.horasComprometidas,
+        horasReales: 0,
+        confirmado: false,
+        fechaCompromiso: formAportacion.value.fechaCompromiso || null,
+        observaciones: formAportacion.value.observaciones || null,
+      }
+    })
+    const req = requisitos.value.find(r => r.id === reqId)
+    if (req) req.aportaciones = [...(req.aportaciones || []), data.crearAportacionHoras]
+    formAportacion.value = { requisitoId: null, miembroId: '', horasComprometidas: 4, fechaCompromiso: '', observaciones: '', guardando: false }
+  } catch (e) {
+    errorAportacion.value = e?.response?.errors?.[0]?.message || 'Error registrando aportación'
+  } finally {
+    formAportacion.value.guardando = false
+  }
+}
+
+async function toggleConfirmarAportacion(ap) {
+  try {
+    await graphqlClient.request(MUTATION_ACTUALIZAR_APORTACION, {
+      data: { id: ap.id, confirmado: !ap.confirmado }
+    })
+    ap.confirmado = !ap.confirmado
+  } catch (e) {
+    error.value = e?.response?.errors?.[0]?.message || 'Error actualizando aportación'
+  }
+}
+
+async function eliminarAportacion(reqId, apId) {
+  try {
+    await graphqlClient.request(MUTATION_ELIMINAR_APORTACION, { id: apId })
+    const req = requisitos.value.find(r => r.id === reqId)
+    if (req) req.aportaciones = req.aportaciones.filter(a => a.id !== apId)
+  } catch (e) {
+    error.value = e?.response?.errors?.[0]?.message || 'Error eliminando aportación'
   }
 }
 

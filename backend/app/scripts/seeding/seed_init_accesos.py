@@ -47,7 +47,7 @@ _ROLES = [
             # Tareas y reuniones
             "TASK_CREATE", "TASK_UPDATE", "MEET_SCHEDULE",
             # Voluntariado / habilidades (para dotar de RR.HH. las actividades)
-            "VOL_LIST", "VOL_VIEW", "SKILL_LIST", "SKILL_ASSIGN",
+            "VOL_LIST", "VOL_VIEW", "HAB_LIST", "HAB_ASSIGN",
             # Consulta de miembros (necesaria para asignar participantes y responsables)
             "SOC_LIST", "SOC_VIEW",
             # Informes de actividad
@@ -69,7 +69,7 @@ _ROLES = [
             "TIPOSOC_MANAGE",
             "TRAS_REQUEST", "TRAS_LIST", "TRAS_APPROVE", "TRAS_REJECT",
             "TRAS_CANCEL", "TRAS_APPROVE_DEST", "TRAS_EXECUTE",
-            "SKILL_LIST", "SKILL_ASSIGN", "SKILL_VALIDATE",
+            "HAB_LIST", "HAB_ASSIGN", "HAB_VALIDATE",
             "AVAIL_VIEW", "AVAIL_EDIT",
             "MBR_HISTORY",
             "AGR_LIST", "AGR_VIEW",

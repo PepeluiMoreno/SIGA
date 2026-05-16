@@ -514,7 +514,7 @@ TRANSACCIONES_VOLUNTARIADO = {
         'tipo': 'aprobacion'
     },
     'competencias.gestionar': {
-        'codigo': 'SKILL_MANAGE',
+        'codigo': 'HAB_MANAGE',
         'nombre': 'Gestionar competencias',
         'descripcion': 'Añadir/validar habilidades',
         'modulo': 'voluntariado',

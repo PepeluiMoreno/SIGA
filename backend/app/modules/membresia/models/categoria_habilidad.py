@@ -6,10 +6,10 @@ from typing import Optional
 from sqlalchemy import String, Uuid, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ....infrastructure.base_model import BaseModel
+from ....infrastructure.base_model import BaseModel, InmutableMixin
 
 
-class CategoriaHabilidad(BaseModel):
+class CategoriaHabilidad(InmutableMixin, BaseModel):
     """Categoría que agrupa habilidades del voluntariado."""
     __tablename__ = 'categorias_habilidad'
 

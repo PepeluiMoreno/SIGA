@@ -18,14 +18,14 @@ from .financiero_resolvers import FinancieroMutation
 from .membresia_resolvers import MembresiaResolverMutation
 from .geografico_resolvers import GeograficoMutation
 from .campania_resolvers import CampaniaResolverMutation
-from .accion_resolvers import AccionResolverMutation
+from .actividad_resolvers import ActividadResolverMutation
 from .papelera_resolvers import PapeleraResolverMutation
 from .types_auto import *
 from .inputs_auto import *
 
 
 @strawberry.type
-class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, FinancieroMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, AccionResolverMutation, PapeleraResolverMutation):
+class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, FinancieroMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, ActividadResolverMutation, PapeleraResolverMutation):
     """Mutations GraphQL del sistema SIGA con generación automática."""
 
     # === ACCESO: roles y transacciones (CRUD) ===
@@ -48,6 +48,18 @@ class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, 
     crear_tipo_vinculacion: TipoVinculacionType = strawchemy.create(TipoVinculacionCreateInput)
     actualizar_tipo_vinculacion: TipoVinculacionType = strawchemy.update_by_ids(TipoVinculacionUpdateInput)
     eliminar_tipos_vinculacion: list[TipoVinculacionType] = strawchemy.delete(TipoVinculacionFilter)
+
+    # === CARGOS ORGÁNICOS ===
+    crear_cargo: CargoType = strawchemy.create(CargoCreateInput)
+    actualizar_cargo: CargoType = strawchemy.update_by_ids(CargoUpdateInput)
+    eliminar_cargos: list[CargoType] = strawchemy.delete(CargoFilter)
+    crear_cargo_rol: CargoRolType = strawchemy.create(CargoRolCreateInput)
+    eliminar_cargos_roles: list[CargoRolType] = strawchemy.delete(CargoRolFilter)
+
+    # === NOMBRAMIENTOS ===
+    crear_historial_nombramiento: HistorialNombramientoType = strawchemy.create(HistorialNombramientoCreateInput)
+    actualizar_historial_nombramiento: HistorialNombramientoType = strawchemy.update_by_ids(HistorialNombramientoUpdateInput)
+    eliminar_historial_nombramientos: list[HistorialNombramientoType] = strawchemy.delete(HistorialNombramientoFilter)
 
     # === CORE - Estados ===
     crear_estado_cuota: EstadoCuotaType = strawchemy.create(EstadoCuotaCreateInput)
@@ -88,9 +100,11 @@ class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, 
     eliminar_temas_ui: list[TemaUIType] = strawchemy.delete(TemaUIFilter)
 
     # === GEOGRÁFICO ===
-    # crear_tipo_unidad_organizativa → ConfiguracionOrganizacionMutation (custom, persiste padre_tipo_id)
-    actualizar_tipo_unidad_organizativa: TipoUnidadOrganizativaType = strawchemy.update_by_ids(TipoUnidadOrganizativaUpdateInput)
-    eliminar_tipos_unidades_organizativas: list[TipoUnidadOrganizativaType] = strawchemy.delete(TipoUnidadOrganizativaFilter)
+    # crear_nivel_organizativo → ConfiguracionOrganizacionMutation (custom, persiste padre_tipo_id)
+    actualizar_nivel_organizativo: NivelOrganizativoType = strawchemy.update_by_ids(NivelOrganizativoUpdateInput)
+    eliminar_niveles_organizativos: list[NivelOrganizativoType] = strawchemy.delete(NivelOrganizativoFilter)
+
+    eliminar_unidades_organizativas: list[UnidadOrganizativaType] = strawchemy.delete(UnidadOrganizativaFilter)
 
     crear_pais: PaisType = strawchemy.create(PaisCreateInput)
     actualizar_pais: PaisType = strawchemy.update_by_ids(PaisUpdateInput)
@@ -104,7 +118,7 @@ class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, 
     actualizar_municipio: MunicipioType = strawchemy.update_by_ids(MunicipioUpdateInput)
     eliminar_municipios: list[MunicipioType] = strawchemy.delete(MunicipioFilter)
 
-    # crear_agrupacion_territorial / actualizar_agrupacion_territorial / archivar_agrupacion_territorial
+    # crear_unidad_organizativa / actualizar_unidad_organizativa / archivar_unidad_organizativa
     # → GeograficoMutation (resolver custom con FK UUID explícitos)
 
     # === MIEMBROS ===
@@ -152,13 +166,49 @@ class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, 
     actualizar_solicitud_traslado: SolicitudTrasladoType = strawchemy.update_by_ids(SolicitudTrasladoUpdateInput)
     eliminar_solicitudes_traslado: list[SolicitudTrasladoType] = strawchemy.delete(SolicitudTrasladoFilter)
 
-    # === CAMPAÑAS ===
+    # === CAMPAÑAS: catálogos ===
+    crear_tipo_meta: TipoMetaType = strawchemy.create(TipoMetaCreateInput)
+    actualizar_tipo_meta: TipoMetaType = strawchemy.update_by_ids(TipoMetaUpdateInput)
+    eliminar_tipos_meta: list[TipoMetaType] = strawchemy.delete(TipoMetaFilter)
+
+    crear_tipo_canal_difusion: TipoCanalDifusionType = strawchemy.create(TipoCanalDifusionCreateInput)
+    actualizar_tipo_canal_difusion: TipoCanalDifusionType = strawchemy.update_by_ids(TipoCanalDifusionUpdateInput)
+    eliminar_tipos_canal_difusion: list[TipoCanalDifusionType] = strawchemy.delete(TipoCanalDifusionFilter)
+
     crear_tipo_campania: TipoCampaniaType = strawchemy.create(TipoCampaniaCreateInput)
     actualizar_tipo_campania: TipoCampaniaType = strawchemy.update_by_ids(TipoCampaniaUpdateInput)
     eliminar_tipos_campania: list[TipoCampaniaType] = strawchemy.delete(TipoCampaniaFilter)
 
+    # === CAMPAÑAS: instancias ===
     # crear_campania / actualizar_campania → CampaniaResolverMutation (custom)
     eliminar_campanias: list[CampaniaType] = strawchemy.delete(CampaniaFilter)
+
+    crear_meta_campania: MetaCampaniaType = strawchemy.create(MetaCampaniaCreateInput)
+    actualizar_meta_campania: MetaCampaniaType = strawchemy.update_by_ids(MetaCampaniaUpdateInput)
+
+    crear_canal_difusion_campania: CanalDifusionCampaniaType = strawchemy.create(CanalDifusionCampaniaCreateInput)
+
+    crear_partida_presupuesto_campania: PartidaPresupuestoCampaniaType = strawchemy.create(PartidaPresupuestoCampaniaCreateInput)
+    actualizar_partida_presupuesto_campania: PartidaPresupuestoCampaniaType = strawchemy.update_by_ids(PartidaPresupuestoCampaniaUpdateInput)
+
+    # === CAMPAÑAS: plantillas ===
+    crear_plantilla_campania: PlantillaCampaniaType = strawchemy.create(PlantillaCampaniaCreateInput)
+    actualizar_plantilla_campania: PlantillaCampaniaType = strawchemy.update_by_ids(PlantillaCampaniaUpdateInput)
+    eliminar_plantillas_campania: list[PlantillaCampaniaType] = strawchemy.delete(PlantillaCampaniaFilter)
+
+    crear_plantilla_meta: PlantillaMetaType = strawchemy.create(PlantillaMetaCreateInput)
+    actualizar_plantilla_meta: PlantillaMetaType = strawchemy.update_by_ids(PlantillaMetaUpdateInput)
+    eliminar_plantilla_metas: list[PlantillaMetaType] = strawchemy.delete(PlantillaMetaFilter)
+
+    crear_plantilla_partida: PlantillaPartidaType = strawchemy.create(PlantillaPartidaCreateInput)
+    actualizar_plantilla_partida: PlantillaPartidaType = strawchemy.update_by_ids(PlantillaPartidaUpdateInput)
+    eliminar_plantilla_partidas: list[PlantillaPartidaType] = strawchemy.delete(PlantillaPartidaFilter)
+
+    crear_plantilla_actividad: PlantillaActividadType = strawchemy.create(PlantillaActividadCreateInput)
+    actualizar_plantilla_actividad: PlantillaActividadType = strawchemy.update_by_ids(PlantillaActividadUpdateInput)
+
+    crear_plantilla_tarea: PlantillaTareaType = strawchemy.create(PlantillaTareaCreateInput)
+    actualizar_plantilla_tarea: PlantillaTareaType = strawchemy.update_by_ids(PlantillaTareaUpdateInput)
 
     crear_rol_participante: RolParticipanteType = strawchemy.create(RolParticipanteCreateInput)
     actualizar_rol_participante: RolParticipanteType = strawchemy.update_by_ids(RolParticipanteUpdateInput)
@@ -168,22 +218,26 @@ class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, 
     actualizar_participante_campania: ParticipanteCampaniaType = strawchemy.update_by_ids(ParticipanteCampaniaUpdateInput)
     eliminar_participantes_campania: list[ParticipanteCampaniaType] = strawchemy.delete(ParticipanteCampaniaFilter)
 
-    # === ACCIONES ===
+    # === ACTIVIDADES ===
     crear_estado_accion: EstadoAccionType = strawchemy.create(EstadoAccionCreateInput)
     actualizar_estado_accion: EstadoAccionType = strawchemy.update_by_ids(EstadoAccionUpdateInput)
     eliminar_estados_accion: list[EstadoAccionType] = strawchemy.delete(EstadoAccionFilter)
+    # Alias semántico
+    crear_estado_actividad: EstadoAccionType = strawchemy.create(EstadoAccionCreateInput)
+    actualizar_estado_actividad: EstadoAccionType = strawchemy.update_by_ids(EstadoAccionUpdateInput)
+    eliminar_estados_actividad: list[EstadoAccionType] = strawchemy.delete(EstadoAccionFilter)
 
-    crear_tipo_accion: TipoAccionType = strawchemy.create(TipoAccionCreateInput)
-    actualizar_tipo_accion: TipoAccionType = strawchemy.update_by_ids(TipoAccionUpdateInput)
-    eliminar_tipos_accion: list[TipoAccionType] = strawchemy.delete(TipoAccionFilter)
+    crear_tipo_actividad: TipoActividadType = strawchemy.create(TipoActividadCreateInput)
+    actualizar_tipo_actividad: TipoActividadType = strawchemy.update_by_ids(TipoActividadUpdateInput)
+    eliminar_tipos_actividad: list[TipoActividadType] = strawchemy.delete(TipoActividadFilter)
 
-    # crear_accion / actualizar_accion → AccionResolverMutation (custom, FK IDs)
-    eliminar_acciones: list[AccionType] = strawchemy.delete(AccionFilter)
+    # crear_actividad / actualizar_actividad → ActividadResolverMutation (custom, FK IDs)
+    eliminar_actividades: list[ActividadType] = strawchemy.delete(ActividadFilter)
 
-    # crear_tarea / actualizar_tarea → AccionResolverMutation (custom, FK IDs)
+    # crear_tarea / actualizar_tarea → ActividadResolverMutation (custom, FK IDs)
     eliminar_tareas: list[TareaType] = strawchemy.delete(TareaFilter)
 
-    # crear_participacion → AccionResolverMutation (custom, FK IDs)
+    # crear_participacion → ActividadResolverMutation (custom, FK IDs)
     actualizar_participacion: ParticipacionType = strawchemy.update_by_ids(ParticipacionUpdateInput)
     eliminar_participaciones: list[ParticipacionType] = strawchemy.delete(ParticipacionFilter)
 
@@ -207,6 +261,14 @@ class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, 
     crear_grupo_iniciativa: GrupoIniciativaType = strawchemy.create(GrupoIniciativaCreateInput)
     actualizar_grupo_iniciativa: GrupoIniciativaType = strawchemy.update_by_ids(GrupoIniciativaUpdateInput)
     eliminar_grupos_iniciativa: list[GrupoIniciativaType] = strawchemy.delete(GrupoIniciativaFilter)
+
+    crear_requisito_recurso: RequisitoRecursoType = strawchemy.create(RequisitoRecursoCreateInput)
+    actualizar_requisito_recurso: RequisitoRecursoType = strawchemy.update_by_ids(RequisitoRecursoUpdateInput)
+    eliminar_requisitos_recurso: list[RequisitoRecursoType] = strawchemy.delete(RequisitoRecursoFilter)
+
+    crear_aportacion_horas: AportacionHorasType = strawchemy.create(AportacionHorasCreateInput)
+    actualizar_aportacion_horas: AportacionHorasType = strawchemy.update_by_ids(AportacionHorasUpdateInput)
+    eliminar_aportaciones_horas: list[AportacionHorasType] = strawchemy.delete(AportacionHorasFilter)
 
     # === FINANCIERO ===
     crear_importe_cuota_anio: ImporteCuotaAnioType = strawchemy.create(ImporteCuotaAnioCreateInput)
@@ -268,6 +330,11 @@ class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, 
     actualizar_formacion_miembro: FormacionMiembroType = strawchemy.update_by_ids(FormacionMiembroUpdateInput)
     eliminar_formaciones_miembro: list[FormacionMiembroType] = strawchemy.delete(FormacionMiembroFilter)
 
+    # === PLANTILLAS EMAIL ===
+    crear_plantilla_email: PlantillaEmailType = strawchemy.create(PlantillaEmailCreateInput)
+    actualizar_plantilla_email: PlantillaEmailType = strawchemy.update_by_ids(PlantillaEmailUpdateInput)
+    eliminar_plantillas_email: list[PlantillaEmailType] = strawchemy.delete(PlantillaEmailFilter)
+
     # === NOTIFICACIONES ===
     crear_tipo_notificacion: TipoNotificacionType = strawchemy.create(TipoNotificacionCreateInput)
     actualizar_tipo_notificacion: TipoNotificacionType = strawchemy.update_by_ids(TipoNotificacionUpdateInput)
@@ -303,3 +370,8 @@ class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, 
     crear_forma_pago: FormaPagoType = strawchemy.create(FormaPagoCreateInput)
     actualizar_forma_pago: FormaPagoType = strawchemy.update_by_ids(FormaPagoUpdateInput)
     eliminar_formas_pago: list[FormaPagoType] = strawchemy.delete(FormaPagoFilter)
+
+    # === COMPROMISOS PRESUPUESTARIOS ===
+    crear_compromiso_presupuestario: CompromisoPresupuestarioType = strawchemy.create(CompromisoPresupuestarioCreateInput)
+    actualizar_compromiso_presupuestario: CompromisoPresupuestarioType = strawchemy.update_by_ids(CompromisoPresupuestarioUpdateInput)
+    eliminar_compromisos_presupuestarios: list[CompromisoPresupuestarioType] = strawchemy.delete(CompromisoPresupuestarioFilter)

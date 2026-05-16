@@ -23,7 +23,7 @@ class CoordinacionTerritorial(BaseModel):
         Uuid, ForeignKey('miembros.id', ondelete='RESTRICT'), nullable=False, index=True
     )
     agrupacion_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('agrupaciones_territoriales.id', ondelete='RESTRICT'), nullable=False, index=True
+        Uuid, ForeignKey('unidades_organizativas.id', ondelete='RESTRICT'), nullable=False, index=True
     )
 
     fecha_asignacion: Mapped[Optional[Date]] = mapped_column(Date, nullable=True)
@@ -31,7 +31,7 @@ class CoordinacionTerritorial(BaseModel):
 
     # Relaciones
     miembro = relationship('Miembro', lazy='selectin')
-    agrupacion = relationship('AgrupacionTerritorial', lazy='selectin')
+    agrupacion = relationship('UnidadOrganizativa', lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<CoordinacionTerritorial(miembro_id={self.miembro_id}, agrupacion_id={self.agrupacion_id})>"

@@ -1,8 +1,8 @@
-// Queries GraphQL para el módulo de Acciones
+// Queries GraphQL para el módulo de Actividades
 
 export const GET_TIPOS_ACCION = `
-  query TiposAccion {
-    tiposAccion {
+  query TiposActividad {
+    tiposActividad {
       id
       nombre
       descripcion
@@ -28,8 +28,8 @@ export const GET_ESTADOS_ACCION = `
 `
 
 export const GET_ACCIONES = `
-  query Acciones {
-    acciones(filter: { eliminado: { eq: false } }) {
+  query Actividades {
+    actividades(filter: { eliminado: { eq: false } }) {
       id
       nombre
       descripcion
@@ -41,7 +41,7 @@ export const GET_ACCIONES = `
       esOnline
       urlOnline
       aforo
-      tipoAccion {
+      tipoActividad {
         id
         nombre
         tieneLugar
@@ -57,7 +57,7 @@ export const GET_ACCIONES = `
         nombre
         apellido1
       }
-      iniciativa {
+      campania {
         id
         nombre
       }
@@ -67,8 +67,8 @@ export const GET_ACCIONES = `
 `
 
 export const GET_ACCION_BY_ID = `
-  query Accion($id: UUID!) {
-    acciones(filter: { id: { eq: $id } }) {
+  query Actividad($id: UUID!) {
+    actividades(filter: { id: { eq: $id } }) {
       id
       nombre
       descripcion
@@ -83,7 +83,13 @@ export const GET_ACCION_BY_ID = `
       urlOnline
       presupuestoEstimado
       presupuestoEjecutado
-      tipoAccion {
+      valoracion
+      objetivosCumplidos
+      asistenciaReal
+      notasAprobacion
+      aprobadoPorId
+      fechaAprobacion
+      tipoActividad {
         id
         nombre
         tieneLugar
@@ -92,8 +98,6 @@ export const GET_ACCION_BY_ID = `
       estado {
         id
         nombre
-        color
-        esFinal
       }
       responsable {
         id
@@ -101,7 +105,7 @@ export const GET_ACCION_BY_ID = `
         apellido1
         email
       }
-      iniciativa {
+      campania {
         id
         nombre
       }
@@ -137,8 +141,8 @@ export const GET_ACCION_BY_ID = `
 `
 
 export const CREAR_ACCION = `
-  mutation CrearAccion($data: AccionCreateData!) {
-    crearAccion(data: $data) {
+  mutation CrearActividad($data: ActividadCreateData!) {
+    crearActividad(data: $data) {
       id
       nombre
     }
@@ -146,8 +150,8 @@ export const CREAR_ACCION = `
 `
 
 export const ACTUALIZAR_ACCION = `
-  mutation ActualizarAccion($data: AccionUpdateData!) {
-    actualizarAccion(data: $data) {
+  mutation ActualizarActividad($data: ActividadUpdateData!) {
+    actualizarActividad(data: $data) {
       id
       nombre
     }
@@ -194,14 +198,14 @@ export const ELIMINAR_TAREA = `
 `
 
 export const SOFT_DELETE_ACCION = `
-  mutation SoftDeleteAccion($id: UUID!) {
-    actualizarAccion(data: { id: $id, eliminado: true }) { id }
+  mutation SoftDeleteActividad($id: UUID!) {
+    actualizarActividad(data: { id: $id, eliminado: true }) { id }
   }
 `
 
 export const ELIMINAR_ACCION = `
-  mutation EliminarAccion($id: UUID!) {
-    eliminarAcciones(filter: { id: { eq: $id } }) { id }
+  mutation EliminarActividad($id: UUID!) {
+    eliminarActividades(filter: { id: { eq: $id } }) { id }
   }
 `
 
@@ -209,6 +213,54 @@ export const CREAR_TAREA = `
   mutation CrearTarea($data: TareaCreateData!) {
     crearTarea(data: $data) {
       id titulo
+    }
+  }
+`
+
+export const TRANSICIONAR_ACTIVIDAD = `
+  mutation TransicionarActividad($id: UUID!, $estadoId: UUID!, $notas: String) {
+    transicionarActividad(id: $id, estadoId: $estadoId, notas: $notas) {
+      id estado { id nombre } aprobadoPorId fechaAprobacion notasAprobacion
+    }
+  }
+`
+
+export const APROBAR_ACTIVIDAD = `
+  mutation AprobarActividad($id: UUID!, $estadoId: UUID!, $notas: String) {
+    aprobarActividad(id: $id, estadoId: $estadoId, notas: $notas) {
+      id estado { id nombre } aprobadoPorId fechaAprobacion notasAprobacion
+    }
+  }
+`
+
+export const CERRAR_ACTIVIDAD = `
+  mutation CerrarActividad($id: UUID!, $estadoId: UUID!, $valoracion: String, $objetivosCumplidos: Boolean, $asistenciaReal: Int, $presupuestoEjecutado: Decimal) {
+    cerrarActividad(id: $id, estadoId: $estadoId, valoracion: $valoracion, objetivosCumplidos: $objetivosCumplidos, asistenciaReal: $asistenciaReal, presupuestoEjecutado: $presupuestoEjecutado) {
+      id estado { id nombre } valoracion objetivosCumplidos asistenciaReal presupuestoEjecutado
+    }
+  }
+`
+
+export const TRANSICIONAR_CAMPANIA = `
+  mutation TransicionarCampania($id: UUID!, $estadoId: UUID!, $notas: String) {
+    transicionarCampania(id: $id, estadoId: $estadoId, notas: $notas) {
+      id estado { id nombre }
+    }
+  }
+`
+
+export const APROBAR_CAMPANIA = `
+  mutation AprobarCampania($id: UUID!, $estadoId: UUID!, $notas: String) {
+    aprobarCampania(id: $id, estadoId: $estadoId, notas: $notas) {
+      id estado { id nombre } aprobadoPorId fechaAprobacion
+    }
+  }
+`
+
+export const CERRAR_CAMPANIA = `
+  mutation CerrarCampania($id: UUID!, $estadoId: UUID!, $valoracion: String, $objetivosCumplidos: Boolean, $presupuestoEjecutado: Decimal) {
+    cerrarCampania(id: $id, estadoId: $estadoId, valoracion: $valoracion, objetivosCumplidos: $objetivosCumplidos, presupuestoEjecutado: $presupuestoEjecutado) {
+      id estado { id nombre } valoracion objetivosCumplidos
     }
   }
 `

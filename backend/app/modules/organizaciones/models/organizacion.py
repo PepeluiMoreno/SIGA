@@ -14,7 +14,7 @@ from typing import Optional, List
 from sqlalchemy import String, Integer, Uuid, ForeignKey, Date, Numeric, Text, Boolean, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ....infrastructure.base_model import BaseModel
+from ....infrastructure.base_model import BaseModel, InmutableMixin
 from ....infrastructure.mixins import ContactoCompletoMixin
 from ....infrastructure.mixins.sistema_mixin import CatalogoMixin
 
@@ -178,7 +178,7 @@ class Organizacion(BaseModel, ContactoCompletoMixin):
         return any(conv.esta_vigente for conv in self.convenios)
 
 
-class EstadoConvenio(BaseModel):
+class EstadoConvenio(InmutableMixin, BaseModel):
     """Estados de convenios de colaboración."""
     __tablename__ = 'estados_convenio'
 

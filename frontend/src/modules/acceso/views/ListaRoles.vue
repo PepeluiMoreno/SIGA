@@ -25,7 +25,7 @@
       :fields="filterFields"
       :lazy="true"
       :loading="loading"
-      create-label="Nuevo rol"
+      :create-label="tienePermiso('ROL_CREATE') ? 'Nuevo rol' : ''"
       create-route="/roles/nuevo"
       class="mb-4"
       @apply="aplicarFiltros"
@@ -153,11 +153,13 @@ import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import { graphqlClient } from '@/graphql/client.js'
+import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_ROLES, ACTUALIZAR_ROL, ELIMINAR_ROL } from '@/graphql/queries/administracion.js'
 import { PencilIcon, TrashIcon, KeyIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
 
+const { tienePermiso } = usePermisos()
 const loading       = ref(false)
 const error         = ref('')
 const roles         = ref([])

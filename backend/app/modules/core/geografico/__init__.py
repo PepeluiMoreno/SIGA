@@ -1,15 +1,16 @@
 """Modelos del dominio geográfico."""
 
-from .tipo_unidad_organizativa import TipoUnidadOrganizativa, NaturalezaUnidad, VinculoUnidad
-from .direccion import Pais, Provincia, Municipio, Direccion, AgrupacionTerritorial
+from .nivel_organizativo import NivelOrganizativo, NaturalezaUnidad, VinculoUnidad
+from .direccion import Pais, Provincia, Municipio, Direccion, UnidadOrganizativa
+from .unidad_organizativa_view import UnidadOrganizativaVista
 
 __all__ = [
-    'TipoUnidadOrganizativa',
+    'NivelOrganizativo',
     'NaturalezaUnidad',
     'VinculoUnidad',
     'Pais',
     'Provincia',
     'Municipio',
     'Direccion',
-    'AgrupacionTerritorial',
+    'UnidadOrganizativa',
 ]

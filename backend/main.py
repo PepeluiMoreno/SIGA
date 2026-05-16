@@ -53,6 +53,11 @@ async def lifespan(app: FastAPI):
         await sync.sync()
         logger.info("Catálogos sincronizados")
 
+        # 1b. Enlazar SUPERADMIN con las transacciones añadidas por catalog.py
+        from app.scripts.bootstrap import sync_superadmin_all_transactions
+        await sync_superadmin_all_transactions(session)
+        await session.commit()
+
         # 2. Construir la PermissionMatrix en memoria
         from app.modules.acceso.services.matrix import matrix_cache
         await matrix_cache.rebuild(session)
@@ -201,8 +206,30 @@ async def root():
 
 @app.get("/health")
 async def health():
+    from sqlalchemy import text
     from app.modules.acceso.services.matrix import matrix_cache
+    from app.core.email_service import _load_smtp_config, ping_smtp
+
+    db_status   = "ok"
+    smtp_status = "not_configured"
+
+    try:
+        async with async_session() as session:
+            await session.execute(text("SELECT 1"))
+            try:
+                cfg = await _load_smtp_config(session)
+                if cfg.configured:
+                    smtp_status = await ping_smtp(cfg, timeout=5.0)
+                # else: smtp_status queda "not_configured"
+            except Exception:
+                smtp_status = "not_configured"
+    except Exception:
+        db_status = "error"
+
+    overall = "ok" if db_status == "ok" and smtp_status in ("ok", "not_configured") else "degraded"
     return {
-        "status": "ok",
+        "status": overall,
         "permission_matrix": "ready" if matrix_cache.is_ready() else "not_ready",
+        "database": db_status,
+        "smtp": smtp_status,
     }

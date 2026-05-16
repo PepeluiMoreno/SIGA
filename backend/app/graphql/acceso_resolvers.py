@@ -17,6 +17,7 @@ from app.modules.acceso.models.rol import Rol, TipoRol
 from app.modules.acceso.models.funcionalidad import RolFuncionalidad
 from app.modules.acceso.models.rol_transaccion import RolTransaccion
 from app.modules.acceso.models.usuario import UsuarioRol
+from app.graphql.permissions import RequireTransaction
 
 
 # ---------------------------------------------------------------------------
@@ -61,7 +62,7 @@ class AccesoMutation:
 
     # ── Roles ────────────────────────────────────────────────────────────────
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACCESO_ROL_CREAR")])
     async def crear_rol(
         self,
         info: strawberry.Info,
@@ -97,7 +98,7 @@ class AccesoMutation:
         await session.commit()
         return rol.id
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACCESO_ROL_EDITAR")])
     async def actualizar_rol(
         self,
         info: strawberry.Info,
@@ -176,7 +177,7 @@ class AccesoMutation:
 
     # ── Rol ↔ Transacción (usadas en PermisosRol) ───────────────────────────
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACCESO_FUNC_ASIGNAR")])
     async def asignar_transaccion_rol(
         self,
         info: strawberry.Info,
@@ -197,7 +198,7 @@ class AccesoMutation:
         await session.commit()
         return rt.id
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACCESO_FUNC_REVOCAR")])
     async def revocar_transaccion_rol(
         self,
         info: strawberry.Info,
@@ -219,7 +220,7 @@ class AccesoMutation:
 
     # ── Usuario ↔ Rol ────────────────────────────────────────────────────────
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACCESO_ROL_ASIGNAR")])
     async def asignar_rol_usuario(
         self,
         info: strawberry.Info,
@@ -247,7 +248,7 @@ class AccesoMutation:
         await session.commit()
         return ur.id
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACCESO_ROL_REVOCAR")])
     async def revocar_rol_usuario(
         self,
         info: strawberry.Info,

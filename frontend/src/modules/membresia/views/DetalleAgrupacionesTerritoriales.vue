@@ -431,6 +431,8 @@ const cargarGeo = async () => {
 
 onMounted(async () => {
   await Promise.all([cargarTipos(), cargarGeo()])
+  await cargarArbol()
+  filtersApplied.value = true
 })
 
 onActivated(async () => {

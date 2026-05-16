@@ -18,6 +18,7 @@ def get_audit_fields() -> List[str]:
         "eliminado",
         "creado_por_id",
         "modificado_por_id",
+        "es_inmutable",
     ]
 
 
@@ -75,6 +76,32 @@ from ..modules.acceso.models import (
     UsuarioRol,
     TipoVinculacion,
 )
+from ..modules.acceso.models.cargo import Cargo, CargoRol
+
+
+@strawchemy.input(Cargo, mode="create_input", include="all", exclude=get_exclude_fields(Cargo))
+class CargoCreateInput:
+    pass
+
+
+@strawchemy.input(Cargo, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Cargo))
+class CargoUpdateInput:
+    pass
+
+
+@strawchemy.filter(Cargo, include="all")
+class CargoFilter:
+    pass
+
+
+@strawchemy.input(CargoRol, mode="create_input", include="all", exclude=get_exclude_fields(CargoRol))
+class CargoRolCreateInput:
+    pass
+
+
+@strawchemy.filter(CargoRol, include="all")
+class CargoRolFilter:
+    pass
 
 
 @strawchemy.input(Rol, mode="create_input", include="all", exclude=get_exclude_fields(Rol))
@@ -292,6 +319,11 @@ class EstadoAccionUpdateInput:
 class EstadoAccionFilter:
     pass
 
+# Aliases semánticos para el frontend
+EstadoActividadCreateInput = EstadoAccionCreateInput
+EstadoActividadUpdateInput = EstadoAccionUpdateInput
+EstadoActividadFilter = EstadoAccionFilter
+
 
 @strawchemy.input(EstadoTarea, mode="create_input", include="all", exclude=get_exclude_fields(EstadoTarea))
 class EstadoTareaCreateInput:
@@ -387,7 +419,7 @@ class EstadoNotificacionFilter:
 # GEOGRÁFICO
 # ============================================================================
 
-from ..modules.core.geografico import Pais, Provincia, Municipio, AgrupacionTerritorial, TipoUnidadOrganizativa
+from ..modules.core.geografico import Pais, Provincia, Municipio, UnidadOrganizativa, NivelOrganizativo
 
 
 @strawchemy.input(Pais, mode="create_input", include="all", exclude=get_exclude_fields(Pais))
@@ -435,25 +467,25 @@ class MunicipioFilter:
     pass
 
 
-@strawchemy.filter(AgrupacionTerritorial)
-class AgrupacionTerritorialFilter:
+@strawchemy.filter(UnidadOrganizativa)
+class UnidadOrganizativaFilter:
     pass
 
 
-@strawchemy.input(TipoUnidadOrganizativa, mode="create_input", include="all",
-                  exclude=get_exclude_fields(TipoUnidadOrganizativa))
-class TipoUnidadOrganizativaCreateInput:
+@strawchemy.input(NivelOrganizativo, mode="create_input", include="all",
+                  exclude=get_exclude_fields(NivelOrganizativo))
+class NivelOrganizativoCreateInput:
     padre_tipo_id: Optional[uuid.UUID] = None
 
 
-@strawchemy.input(TipoUnidadOrganizativa, mode="update_by_pk_input", include="all",
-                  exclude=get_exclude_fields(TipoUnidadOrganizativa))
-class TipoUnidadOrganizativaUpdateInput:
+@strawchemy.input(NivelOrganizativo, mode="update_by_pk_input", include="all",
+                  exclude=get_exclude_fields(NivelOrganizativo))
+class NivelOrganizativoUpdateInput:
     padre_tipo_id: Optional[uuid.UUID] = None
 
 
-@strawchemy.filter(TipoUnidadOrganizativa)
-class TipoUnidadOrganizativaFilter:
+@strawchemy.filter(NivelOrganizativo)
+class NivelOrganizativoFilter:
     pass
 
 
@@ -660,7 +692,42 @@ class SolicitudTrasladoFilter:
 # CAMPAÑAS
 # ============================================================================
 
-from ..modules.actividades.models import TipoCampania, Campania, RolParticipante, ParticipanteCampania
+from ..modules.actividades.models import (
+    TipoCampania, TipoMeta, TipoCanalDifusion,
+    Campania, MetaCampania, CanalDifusionCampania, PartidaPresupuestoCampania,
+    PlantillaCampania, PlantillaMeta, PlantillaPartida, PlantillaActividad, PlantillaTarea,
+    RolParticipante, ParticipanteCampania,
+)
+
+
+@strawchemy.input(TipoMeta, mode="create_input", include="all", exclude=get_exclude_fields(TipoMeta))
+class TipoMetaCreateInput:
+    pass
+
+
+@strawchemy.input(TipoMeta, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TipoMeta))
+class TipoMetaUpdateInput:
+    pass
+
+
+@strawchemy.filter(TipoMeta, include="all")
+class TipoMetaFilter:
+    pass
+
+
+@strawchemy.input(TipoCanalDifusion, mode="create_input", include="all", exclude=get_exclude_fields(TipoCanalDifusion))
+class TipoCanalDifusionCreateInput:
+    pass
+
+
+@strawchemy.input(TipoCanalDifusion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TipoCanalDifusion))
+class TipoCanalDifusionUpdateInput:
+    pass
+
+
+@strawchemy.filter(TipoCanalDifusion, include="all")
+class TipoCanalDifusionFilter:
+    pass
 
 
 @strawchemy.input(TipoCampania, mode="create_input", include="all", exclude=get_exclude_fields(TipoCampania))
@@ -690,6 +757,96 @@ class CampaniaUpdateInput:
 
 @strawchemy.filter(Campania, include="all")
 class CampaniaFilter:
+    pass
+
+
+@strawchemy.input(MetaCampania, mode="create_input", include="all", exclude=get_exclude_fields(MetaCampania))
+class MetaCampaniaCreateInput:
+    pass
+
+
+@strawchemy.input(MetaCampania, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(MetaCampania))
+class MetaCampaniaUpdateInput:
+    pass
+
+
+@strawchemy.input(CanalDifusionCampania, mode="create_input", include="all", exclude=get_exclude_fields(CanalDifusionCampania))
+class CanalDifusionCampaniaCreateInput:
+    pass
+
+
+@strawchemy.input(PartidaPresupuestoCampania, mode="create_input", include="all", exclude=get_exclude_fields(PartidaPresupuestoCampania))
+class PartidaPresupuestoCampaniaCreateInput:
+    pass
+
+
+@strawchemy.input(PartidaPresupuestoCampania, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(PartidaPresupuestoCampania))
+class PartidaPresupuestoCampaniaUpdateInput:
+    pass
+
+
+@strawchemy.input(PlantillaCampania, mode="create_input", include="all", exclude=get_exclude_fields(PlantillaCampania))
+class PlantillaCampaniaCreateInput:
+    pass
+
+
+@strawchemy.input(PlantillaCampania, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(PlantillaCampania))
+class PlantillaCampaniaUpdateInput:
+    pass
+
+
+@strawchemy.filter(PlantillaCampania, include="all")
+class PlantillaCampaniaFilter:
+    pass
+
+
+@strawchemy.filter(PlantillaMeta, include="all")
+class PlantillaMetaFilter:
+    pass
+
+
+@strawchemy.input(PlantillaMeta, mode="create_input", include="all", exclude=get_exclude_fields(PlantillaMeta))
+class PlantillaMetaCreateInput:
+    pass
+
+
+@strawchemy.input(PlantillaMeta, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(PlantillaMeta))
+class PlantillaMetaUpdateInput:
+    pass
+
+
+@strawchemy.filter(PlantillaPartida, include="all")
+class PlantillaPartidaFilter:
+    pass
+
+
+@strawchemy.input(PlantillaPartida, mode="create_input", include="all", exclude=get_exclude_fields(PlantillaPartida))
+class PlantillaPartidaCreateInput:
+    pass
+
+
+@strawchemy.input(PlantillaPartida, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(PlantillaPartida))
+class PlantillaPartidaUpdateInput:
+    pass
+
+
+@strawchemy.input(PlantillaActividad, mode="create_input", include="all", exclude=get_exclude_fields(PlantillaActividad))
+class PlantillaActividadCreateInput:
+    pass
+
+
+@strawchemy.input(PlantillaActividad, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(PlantillaActividad))
+class PlantillaActividadUpdateInput:
+    pass
+
+
+@strawchemy.input(PlantillaTarea, mode="create_input", include="all", exclude=get_exclude_fields(PlantillaTarea))
+class PlantillaTareaCreateInput:
+    pass
+
+
+@strawchemy.input(PlantillaTarea, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(PlantillaTarea))
+class PlantillaTareaUpdateInput:
     pass
 
 
@@ -727,37 +884,47 @@ class ParticipanteCampaniaFilter:
 # ACCIONES (unifica Evento + Actividad)
 # ============================================================================
 
-from ..modules.actividades.models import TipoAccion, Accion, Tarea, Participacion
+from ..modules.actividades.models import TipoActividad, TipoAccion, Actividad, Accion, Tarea, Participacion
 
 
-@strawchemy.input(TipoAccion, mode="create_input", include="all", exclude=get_exclude_fields(TipoAccion))
-class TipoAccionCreateInput:
+@strawchemy.input(TipoActividad, mode="create_input", include="all", exclude=get_exclude_fields(TipoActividad))
+class TipoActividadCreateInput:
     pass
 
 
-@strawchemy.input(TipoAccion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TipoAccion))
-class TipoAccionUpdateInput:
+@strawchemy.input(TipoActividad, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TipoActividad))
+class TipoActividadUpdateInput:
     pass
 
 
-@strawchemy.filter(TipoAccion, include="all")
-class TipoAccionFilter:
+@strawchemy.filter(TipoActividad, include="all")
+class TipoActividadFilter:
+    pass
+
+# Alias de compatibilidad
+TipoAccionCreateInput = TipoActividadCreateInput
+TipoAccionUpdateInput = TipoActividadUpdateInput
+TipoAccionFilter = TipoActividadFilter
+
+
+@strawchemy.input(Actividad, mode="create_input", include="all", exclude=get_exclude_fields(Actividad))
+class ActividadCreateInput:
     pass
 
 
-@strawchemy.input(Accion, mode="create_input", include="all", exclude=get_exclude_fields(Accion))
-class AccionCreateInput:
+@strawchemy.input(Actividad, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Actividad))
+class ActividadUpdateInput:
     pass
 
 
-@strawchemy.input(Accion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Accion))
-class AccionUpdateInput:
+@strawchemy.filter(Actividad, include="all")
+class ActividadFilter:
     pass
 
-
-@strawchemy.filter(Accion, include="all")
-class AccionFilter:
-    pass
+# Alias de compatibilidad
+AccionCreateInput = ActividadCreateInput
+AccionUpdateInput = ActividadUpdateInput
+AccionFilter = ActividadFilter
 
 
 @strawchemy.input(Tarea, mode="create_input", include="all", exclude=get_exclude_fields(Tarea))
@@ -794,7 +961,7 @@ class ParticipacionFilter:
 # GRUPOS
 # ============================================================================
 
-from ..modules.actividades.models import TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo, GrupoIniciativa
+from ..modules.actividades.models import TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo, GrupoIniciativa, RequisitoRecurso, AportacionHoras
 
 
 @strawchemy.input(TipoGrupo, mode="create_input", include="all", exclude=get_exclude_fields(TipoGrupo))
@@ -829,12 +996,17 @@ class RolGrupoFilter:
 
 @strawchemy.input(GrupoTrabajo, mode="create_input", include="all", exclude=get_exclude_fields(GrupoTrabajo))
 class GrupoTrabajoCreateInput:
-    pass
+    # FK IDs eliminados por strawchemy al detectar relationships — los reponemos explícitamente
+    tipo_grupo_id: uuid.UUID = strawberry.UNSET
+    coordinador_id: Optional[uuid.UUID] = strawberry.UNSET
+    agrupacion_id: Optional[uuid.UUID] = strawberry.UNSET
 
 
 @strawchemy.input(GrupoTrabajo, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(GrupoTrabajo))
 class GrupoTrabajoUpdateInput:
-    pass
+    tipo_grupo_id: Optional[uuid.UUID] = strawberry.UNSET
+    coordinador_id: Optional[uuid.UUID] = strawberry.UNSET
+    agrupacion_id: Optional[uuid.UUID] = strawberry.UNSET
 
 
 @strawchemy.filter(GrupoTrabajo)
@@ -844,12 +1016,16 @@ class GrupoTrabajoFilter:
 
 @strawchemy.input(MiembroGrupo, mode="create_input", include="all", exclude=get_exclude_fields(MiembroGrupo))
 class MiembroGrupoCreateInput:
-    pass
+    grupo_id: uuid.UUID = strawberry.UNSET
+    miembro_id: uuid.UUID = strawberry.UNSET
+    rol_grupo_id: uuid.UUID = strawberry.UNSET
 
 
 @strawchemy.input(MiembroGrupo, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(MiembroGrupo))
 class MiembroGrupoUpdateInput:
-    pass
+    grupo_id: Optional[uuid.UUID] = strawberry.UNSET
+    miembro_id: Optional[uuid.UUID] = strawberry.UNSET
+    rol_grupo_id: Optional[uuid.UUID] = strawberry.UNSET
 
 
 @strawchemy.filter(MiembroGrupo)
@@ -872,6 +1048,36 @@ class GrupoIniciativaFilter:
     pass
 
 
+@strawchemy.input(RequisitoRecurso, mode="create_input", include="all", exclude=get_exclude_fields(RequisitoRecurso))
+class RequisitoRecursoCreateInput:
+    pass
+
+
+@strawchemy.input(RequisitoRecurso, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(RequisitoRecurso))
+class RequisitoRecursoUpdateInput:
+    pass
+
+
+@strawchemy.filter(RequisitoRecurso, include="all")
+class RequisitoRecursoFilter:
+    pass
+
+
+@strawchemy.input(AportacionHoras, mode="create_input", include="all", exclude=get_exclude_fields(AportacionHoras))
+class AportacionHorasCreateInput:
+    pass
+
+
+@strawchemy.input(AportacionHoras, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(AportacionHoras))
+class AportacionHorasUpdateInput:
+    pass
+
+
+@strawchemy.filter(AportacionHoras, include="all")
+class AportacionHorasFilter:
+    pass
+
+
 # ============================================================================
 # FINANCIERO
 # ============================================================================
@@ -880,6 +1086,7 @@ from ..modules.economico.models import (
     ImporteCuotaAnio, CuotaAnual, DonacionConcepto, Donacion, Remesa, OrdenCobro, FormaPago,
     CuentaBancaria, MovimientoTesoreria, ConciliacionBancaria,
     CuentaContable, AsientoContable, ApunteContable, BalanceContable,
+    CompromisoPresupuestario,
 )
 
 
@@ -1018,6 +1225,21 @@ class ApunteContableFilter:
     pass
 
 
+@strawchemy.input(CompromisoPresupuestario, mode="create_input", include="all", exclude=get_exclude_fields(CompromisoPresupuestario))
+class CompromisoPresupuestarioCreateInput:
+    pass
+
+
+@strawchemy.input(CompromisoPresupuestario, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(CompromisoPresupuestario))
+class CompromisoPresupuestarioUpdateInput:
+    pass
+
+
+@strawchemy.filter(CompromisoPresupuestario, include="all")
+class CompromisoPresupuestarioFilter:
+    pass
+
+
 # ============================================================================
 # VOLUNTARIADO
 # ============================================================================
@@ -1152,7 +1374,7 @@ class FormacionMiembroFilter:
 # NOTIFICACIONES
 # ============================================================================
 
-from ..modules.core.comunicacion import TipoNotificacion, Notificacion, PreferenciaNotificacion
+from ..modules.core.comunicacion import TipoNotificacion, Notificacion, PreferenciaNotificacion, PlantillaEmail
 
 
 @strawchemy.input(TipoNotificacion, mode="create_input", include="all", exclude=get_exclude_fields(TipoNotificacion))
@@ -1201,6 +1423,24 @@ class PreferenciaNotificacionUpdateInput:
 
 @strawchemy.filter(PreferenciaNotificacion)
 class PreferenciaNotificacionFilter:
+    pass
+
+
+_plantilla_exclude = get_exclude_fields(PlantillaEmail) + ["variables_disponibles"]
+
+
+@strawchemy.input(PlantillaEmail, mode="create_input", include="all", exclude=_plantilla_exclude)
+class PlantillaEmailCreateInput:
+    pass
+
+
+@strawchemy.input(PlantillaEmail, mode="update_by_pk_input", include="all", exclude=_plantilla_exclude)
+class PlantillaEmailUpdateInput:
+    pass
+
+
+@strawchemy.filter(PlantillaEmail)
+class PlantillaEmailFilter:
     pass
 
 

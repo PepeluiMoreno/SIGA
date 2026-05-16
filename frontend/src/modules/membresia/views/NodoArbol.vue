@@ -24,7 +24,7 @@
         </div>
       </div>
       <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-        <router-link :to="`/agrupaciones/${nodo.id}/junta`" title="Ver detalle"
+        <router-link :to="`/agrupaciones/${nodo.id}`" title="Ver detalle"
           class="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
           <EyeIcon class="w-4 h-4 text-white" />
         </router-link>
@@ -93,7 +93,7 @@
 
       <!-- Botones de acción -->
       <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-        <router-link :to="`/agrupaciones/${nodo.id}/junta`" title="Ver detalle"
+        <router-link :to="`/agrupaciones/${nodo.id}`" title="Ver detalle"
           class="p-1.5 rounded-md text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
           <EyeIcon class="w-4 h-4" />
         </router-link>

@@ -162,7 +162,7 @@ const orgConfig = useOrgConfigStore()
 
 const QUERY = gql`
   query Agrupaciones {
-    agrupacionesTerritoriales {
+    unidadesOrganizativas {
       id
       nombre
       nombreCorto
@@ -298,7 +298,7 @@ async function cargar() {
   error.value = ''
   try {
     const data = await graphqlClient.request(QUERY)
-    agrupaciones.value = data.agrupacionesTerritoriales || []
+    agrupaciones.value = data.unidadesOrganizativas || []
     miembros.value = data.miembros || []
   } catch (e) {
     error.value = e?.response?.errors?.[0]?.message || 'Error cargando agrupaciones'

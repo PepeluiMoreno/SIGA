@@ -5,11 +5,18 @@
       <!-- ── Panel izquierdo: navegación ─────────────────────────────── -->
       <nav class="w-max min-w-[10rem] flex-shrink-0 border-r border-gray-200 bg-gray-50 overflow-y-auto py-3 px-2">
         <div v-for="(grupo, i) in CATALOGOS" :key="grupo.grupo"
-          :class="['mb-3', i > 0 && 'border-t border-gray-200 pt-3']">
-          <p class="text-[11px] font-bold text-gray-700 uppercase tracking-widest px-2 mb-1.5 whitespace-nowrap">
-            {{ grupo.grupo }}
-          </p>
-          <ul class="space-y-0.5">
+          :class="['mb-1', i > 0 && 'border-t border-gray-200 mt-1 pt-1']">
+          <!-- Cabecera acordeón -->
+          <button @click="toggleGrupo(grupo.grupo)"
+            class="w-full flex items-center justify-between px-2 py-1 rounded hover:bg-gray-100 transition-colors">
+            <span class="text-[11px] font-bold text-gray-700 uppercase tracking-widest whitespace-nowrap">
+              {{ grupo.grupo }}
+            </span>
+            <ChevronDownIcon class="w-3 h-3 text-gray-400 flex-shrink-0 transition-transform duration-150"
+              :class="grupoAbierto(grupo.grupo) ? '' : '-rotate-90'" />
+          </button>
+          <!-- Items del grupo -->
+          <ul v-show="grupoAbierto(grupo.grupo)" class="space-y-0.5 mt-0.5 mb-1.5">
             <li v-for="cat in grupo.items" :key="cat.key">
               <button @click="seleccionar(cat)"
                 :class="[
@@ -19,8 +26,9 @@
                     : 'text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-sm'
                 ]">
                 <span class="whitespace-nowrap">{{ cat.label }}</span>
-                <span v-if="catalogoActivo?.key === cat.key && !cargando"
-                  class="text-[10px] bg-purple-200 text-purple-700 rounded-full px-1.5 py-0.5 font-medium">
+                <ChevronRightIcon v-if="cat.tipo === 'link'" class="w-3 h-3 text-gray-300 flex-shrink-0" />
+                <span v-else-if="catalogoActivo?.key === cat.key && !cargando"
+                  class="text-[10px] bg-purple-200 text-purple-700 rounded-full px-1.5 py-0.5 font-medium flex-shrink-0">
                   {{ items.length }}
                 </span>
               </button>
@@ -164,11 +172,14 @@
                         title="Editar">
                         <PencilIcon class="w-3.5 h-3.5" />
                       </button>
-                      <button @click="confirmarEliminar(item)"
+                      <button v-if="!item.esInmutable" @click="confirmarEliminar(item)"
                         class="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                         title="Eliminar">
                         <TrashIcon class="w-3.5 h-3.5" />
                       </button>
+                      <span v-else class="p-1.5 text-gray-300" title="Registro del sistema — no eliminable">
+                        <LockClosedIcon class="w-3.5 h-3.5" />
+                      </span>
                     </div>
                   </td>
                 </tr>
@@ -187,8 +198,12 @@
 
           <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <h3 class="font-semibold text-gray-900">
-              {{ itemEditando ? (catalogoActivo?.editPrefix ?? 'Editar') : (catalogoActivo?.createPrefix ?? 'Nuevo') }}
-              {{ catalogoActivo?.labelSingular }}
+              <template v-if="itemEditando">
+                {{ itemEditando.nombre ?? itemEditando.codigo ?? (catalogoActivo?.editPrefix ?? 'Editar') + ' ' + catalogoActivo?.labelSingular }}
+              </template>
+              <template v-else>
+                {{ (catalogoActivo?.createPrefix ?? 'Nuevo') }} {{ catalogoActivo?.labelSingular }}
+              </template>
             </h3>
             <button @click="cerrarDrawer"
               class="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
@@ -370,13 +385,17 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { useOrgConfigStore } from '@/stores/orgConfig'
 import {
   PlusIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon, CheckIcon, XMarkIcon,
+  ChevronDownIcon, ChevronRightIcon, LockClosedIcon,
 } from '@heroicons/vue/24/outline'
 import * as Q from '@/graphql/queries/catalogos.js'
+
+const router = useRouter()
 
 const sortItems = items => [...items].sort((a, b) => a.label.localeCompare(b.label, 'es'))
 
@@ -387,6 +406,11 @@ const COLORES_PRESET = [
 ]
 
 const orgConfig = useOrgConfigStore()
+
+// ── Acordeón del sidebar ──────────────────────────────────────────────────────
+const gruposColapsados = ref({})
+function grupoAbierto(nombre) { return !gruposColapsados.value[nombre] }
+function toggleGrupo(nombre) { gruposColapsados.value[nombre] = !gruposColapsados.value[nombre] }
 
 // ── Definición de catálogos ───────────────────────────────────────────────────
 const CATALOGOS = computed(() => [
@@ -661,6 +685,45 @@ const CATALOGOS = computed(() => [
           { name: 'activo',      label: 'En uso',            type: 'checkbox', default: true },
         ],
       },
+      {
+        key: 'tiposMetaCampania', label: 'Tipos de meta', labelSingular: 'Tipo de meta',
+        descripcion: 'Recaudación (€), Participantes, Firmas…',
+        queryName: 'tiposMetaCampania', query: Q.GET_TIPOS_META_CAMPANIA,
+        mutations: { create: Q.CREATE_TIPO_META_CAMPANIA, update: Q.UPDATE_TIPO_META_CAMPANIA, delete: Q.DELETE_TIPO_META_CAMPANIA },
+        columnas: [
+          { key: 'nombre',       label: 'Nombre' },
+          { key: 'descripcion',  label: 'Descripción' },
+          { key: 'unidadMedida', label: 'Unidad' },
+          { key: 'activo',       label: 'Activo', type: 'toggle' },
+        ],
+        campos: [
+          { name: 'nombre',       label: 'Nombre',          type: 'text',     required: true },
+          { name: 'descripcion',  label: 'Descripción',     type: 'textarea' },
+          { name: 'unidadMedida', label: 'Unidad de medida', type: 'text',    required: true, placeholder: 'ej: €, personas, firmas' },
+          { name: 'activo',       label: 'En uso',          type: 'checkbox', default: true },
+        ],
+      },
+      {
+        key: 'tiposCanalDifusion', label: 'Canales de difusión', labelSingular: 'Canal de difusión',
+        descripcion: 'Email, Redes sociales, Prensa…',
+        queryName: 'tiposCanalDifusion', query: Q.GET_TIPOS_CANAL_DIFUSION,
+        mutations: { create: Q.CREATE_TIPO_CANAL_DIFUSION, update: Q.UPDATE_TIPO_CANAL_DIFUSION, delete: Q.DELETE_TIPO_CANAL_DIFUSION },
+        columnas: [
+          { key: 'nombre',      label: 'Nombre' },
+          { key: 'descripcion', label: 'Descripción' },
+          { key: 'activo',      label: 'Activo', type: 'toggle' },
+        ],
+        campos: [
+          { name: 'nombre',      label: 'Nombre',      type: 'text',     required: true },
+          { name: 'descripcion', label: 'Descripción', type: 'textarea' },
+          { name: 'activo',      label: 'En uso',      type: 'checkbox', default: true },
+        ],
+      },
+      {
+        key: 'plantillasCampania', label: 'Plantillas de campaña', labelSingular: 'Plantilla',
+        tipo: 'link', ruta: '/parametrizacion/plantillas-campania',
+        descripcion: '1 por tipo de campaña — metas, partidas, actividades y tareas predefinidas',
+      },
     ],
   },
   {
@@ -701,22 +764,6 @@ const CATALOGOS = computed(() => [
           { name: 'orden',       label: 'Orden',             type: 'number',   default: 0 },
           { name: 'esInicial', label: 'Es estado inicial', type: 'checkbox', default: false },
           { name: 'activo',      label: 'En uso',            type: 'checkbox', default: true },
-        ],
-      },
-      {
-        key: 'tiposRecurso', label: 'Tipos de recurso', labelSingular: 'Tipo de recurso',
-        descripcion: 'Material, Humano, Económico…',
-        queryName: 'tiposRecurso', query: Q.GET_TIPOS_RECURSO,
-        mutations: { create: Q.CREATE_TIPO_RECURSO, update: Q.UPDATE_TIPO_RECURSO, delete: Q.DELETE_TIPO_RECURSO },
-        columnas: [
-          { key: 'nombre',      label: 'Nombre' },
-          { key: 'descripcion', label: 'Descripción' },
-          { key: 'activo',      label: 'Activo', type: 'toggle' },
-        ],
-        campos: [
-          { name: 'nombre',      label: 'Nombre',      type: 'text',     required: true },
-          { name: 'descripcion', label: 'Descripción', type: 'textarea' },
-          { name: 'activo',      label: 'En uso',      type: 'checkbox', default: true },
         ],
       },
     ],
@@ -838,6 +885,10 @@ async function cargarDatos() {
 }
 
 function seleccionar(cat) {
+  if (cat.tipo === 'link') {
+    router.push(cat.ruta)
+    return
+  }
   if (catalogoActivo.value?.key === cat.key) return
   catalogoActivo.value = cat
   items.value = []

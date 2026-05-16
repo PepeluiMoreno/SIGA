@@ -1,12 +1,28 @@
 <template>
-  <AppLayout :title="accion?.nombre || 'Acción'" :subtitle="accion?.tipoAccion?.nombre || ''">
+  <AppLayout :title="accion?.nombre || 'Actividad'" :subtitle="accion?.tipoActividad?.nombre || ''">
     <div class="max-w-5xl">
 
-    <div v-if="accion" class="space-y-4">
-      <!-- Panel: Información -->
-      <AccordionPanel title="Información">
+    <div v-if="loading" class="flex items-center justify-center py-20">
+      <LoadSpinner />
+    </div>
+
+    <div v-else-if="!accion" class="py-20 text-center text-slate-400">Actividad no encontrada.</div>
+
+    <div v-else class="space-y-4">
+
+      <!-- WorkflowBar -->
+      <WorkflowBar
+        :estado-nombre="accion.estado?.nombre || ''"
+        :transiciones-disponibles="transicionesDisponibles"
+        :cargando="cargandoTransicion"
+        :es-final="esFinal"
+        @transicion="ejecutarTransicion"
+      />
+
+      <!-- Panel 1: Diseño y propuesta -->
+      <AccordionPanel title="Diseño y propuesta">
         <template #actions>
-          <template v-if="!editandoAccion">
+          <template v-if="!editandoAccion && faseEditable">
             <button @click="abrirEditAccion"
               class="inline-flex items-center gap-1 h-8 px-3 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 text-xs font-medium rounded-lg transition-colors">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,16 +52,17 @@
             </div>
             <div>
               <label class="block text-xs font-medium text-slate-700 mb-1">Tipo</label>
-              <select v-model="formAccionEdit.tipoAccionId"
+              <select v-model="formAccionEdit.tipoActividadId"
                 class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option v-for="t in tiposAccion" :key="t.id" :value="t.id">{{ t.nombre }}</option>
+                <option v-for="t in tiposActividad" :key="t.id" :value="t.id">{{ t.nombre }}</option>
               </select>
             </div>
             <div>
-              <label class="block text-xs font-medium text-slate-700 mb-1">Estado</label>
-              <select v-model="formAccionEdit.estadoId"
+              <label class="block text-xs font-medium text-slate-700 mb-1">Responsable</label>
+              <select v-model="formAccionEdit.responsableId"
                 class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option v-for="e in estadosAccion" :key="e.id" :value="e.id">{{ e.nombre }}</option>
+                <option value="">— Sin asignar —</option>
+                <option v-for="m in miembros" :key="m.id" :value="m.id">{{ m.nombre }} {{ m.apellido1 }}</option>
               </select>
             </div>
             <div class="sm:col-span-2">
@@ -138,317 +155,409 @@
               <dt class="text-slate-500 mb-0.5">Responsable</dt>
               <dd class="text-slate-900 font-medium">{{ accion.responsable.nombre }} {{ accion.responsable.apellido1 }}</dd>
             </div>
-            <div v-if="accion.iniciativa">
+            <div v-if="accion.campania">
               <dt class="text-slate-500 mb-0.5">Campaña</dt>
-              <dd class="text-slate-900 font-medium">{{ accion.iniciativa.nombre }}</dd>
+              <dd class="text-indigo-700 font-medium">{{ accion.campania.nombre }}</dd>
             </div>
             <div v-if="accion.presupuestoEstimado">
               <dt class="text-slate-500 mb-0.5">Presupuesto estimado</dt>
-              <dd class="text-slate-900 font-medium">{{ accion.presupuestoEstimado }} €</dd>
+              <dd class="text-slate-900 font-medium">{{ Number(accion.presupuestoEstimado).toFixed(2) }} €</dd>
             </div>
           </dl>
         </div>
       </AccordionPanel>
 
-      <!-- Panel: Tareas -->
-      <AccordionPanel title="Tareas" :count="accion.tareas?.length || 0">
+      <!-- Panel 2: Preparación (tareas) -->
+      <AccordionPanel title="Preparación" :count="accion.tareas?.length || 0">
         <template #actions>
-          <button
-            v-if="!formTareaNew.visible"
+          <button v-if="!formTareaNew.visible && faseActual !== 'diseno'"
             @click="formTareaNew.visible = true"
-            class="inline-flex items-center gap-1 h-8 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-colors"
-          >
+            class="inline-flex items-center gap-1 h-8 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-colors">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
-            Nueva
+            Nueva tarea
           </button>
         </template>
 
-        <!-- Formulario nueva tarea -->
-        <div v-if="formTareaNew.visible" class="border-b border-slate-100 bg-slate-50 px-5 py-4 space-y-3">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div class="sm:col-span-2">
-              <label class="block text-xs font-medium text-slate-700 mb-1">Título *</label>
-              <input v-model="formTareaNew.titulo" type="text"
-                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+        <div v-if="faseActual === 'diseno'" class="px-5 py-6 text-center text-sm text-slate-400">
+          Las tareas se gestionan una vez aprobada la actividad.
+        </div>
+        <template v-else>
+          <!-- Formulario nueva tarea -->
+          <div v-if="formTareaNew.visible" class="border-b border-slate-100 bg-slate-50 px-5 py-4 space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-medium text-slate-700 mb-1">Título *</label>
+                <input v-model="formTareaNew.titulo" type="text"
+                  class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Estado</label>
+                <select v-model="formTareaNew.estadoId"
+                  class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option v-for="e in estadosTarea" :key="e.id" :value="e.id">{{ e.nombre }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Fecha límite</label>
+                <input v-model="formTareaNew.fechaLimite" type="date"
+                  class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
             </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-700 mb-1">Estado</label>
-              <select v-model="formTareaNew.estadoId"
-                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option v-for="e in estadosTarea" :key="e.id" :value="e.id">{{ e.nombre }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-700 mb-1">Fecha límite</label>
-              <input v-model="formTareaNew.fechaLimite" type="date"
-                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button type="button" @click="formTareaNew = { visible: false, titulo: '', estadoId: '', fechaLimite: '', guardando: false }"
+                class="h-9 px-3 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
+              <button type="button" @click="crearTarea"
+                :disabled="!formTareaNew.titulo || formTareaNew.guardando"
+                class="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg">
+                {{ formTareaNew.guardando ? 'Guardando…' : 'Crear tarea' }}
+              </button>
             </div>
           </div>
-          <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-            <button type="button" @click="formTareaNew = { visible: false, titulo: '', estadoId: '', fechaLimite: '' }"
-              class="h-9 px-3 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
-            <button type="button" @click="crearTarea"
-              :disabled="!formTareaNew.titulo || formTareaNew.guardando"
-              class="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg">
-              {{ formTareaNew.guardando ? 'Guardando…' : 'Crear tarea' }}
-            </button>
+          <div v-if="!accion.tareas?.length && !formTareaNew.visible" class="py-8 text-center text-sm text-slate-400">No hay tareas.</div>
+          <div v-else-if="accion.tareas?.length" class="divide-y divide-slate-100">
+            <template v-for="tarea in accion.tareas" :key="tarea.id">
+              <div v-if="editTareaId !== tarea.id" class="px-5 py-3 flex items-center gap-4">
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-900 truncate">{{ tarea.titulo }}</p>
+                  <p v-if="tarea.descripcion" class="text-xs text-slate-500 truncate">{{ tarea.descripcion }}</p>
+                </div>
+                <span class="text-xs text-slate-500 shrink-0">{{ tarea.estado?.nombre }}</span>
+                <span v-if="tarea.fechaLimite" class="text-xs text-slate-400 shrink-0">{{ tarea.fechaLimite }}</span>
+                <RowActions @edit="abrirEditTarea(tarea)" @delete="eliminarTarea(tarea.id)"
+                  confirm-title="¿Eliminar esta tarea?" :confirm-text="`«${tarea.titulo}» será eliminada.`" />
+              </div>
+              <div v-else class="px-5 py-3 bg-slate-50 space-y-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div class="sm:col-span-2">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Título</label>
+                    <input v-model="formTareaEdit.titulo" type="text"
+                      class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Estado</label>
+                    <select v-model="formTareaEdit.estadoId" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white">
+                      <option v-for="e in estadosTarea" :key="e.id" :value="e.id">{{ e.nombre }}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Fecha límite</label>
+                    <input v-model="formTareaEdit.fechaLimite" type="date"
+                      class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white" />
+                  </div>
+                </div>
+                <div class="flex justify-end gap-2">
+                  <button type="button" @click="editTareaId = null"
+                    class="h-9 px-3 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
+                  <button type="button" @click="guardarEditTarea(tarea.id)"
+                    class="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Guardar</button>
+                </div>
+              </div>
+            </template>
           </div>
-        </div>
-
-        <div v-if="!accion.tareas?.length && !formTareaNew.visible" class="py-8 text-center text-sm text-slate-400">
-          No hay tareas registradas.
-        </div>
-        <div v-else-if="accion.tareas?.length" class="divide-y divide-slate-100">
-          <template v-for="tarea in accion.tareas" :key="tarea.id">
-            <!-- Vista normal -->
-            <div v-if="editTareaId !== tarea.id" class="px-5 py-3 flex items-center gap-4">
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-slate-900 truncate">{{ tarea.titulo }}</p>
-                <p v-if="tarea.descripcion" class="text-xs text-slate-500 truncate">{{ tarea.descripcion }}</p>
-              </div>
-              <span class="text-xs text-slate-500 shrink-0">{{ tarea.estado?.nombre }}</span>
-              <span v-if="tarea.fechaLimite" class="text-xs text-slate-400 shrink-0">{{ tarea.fechaLimite }}</span>
-              <RowActions
-                @edit="abrirEditTarea(tarea)"
-                @delete="eliminarTarea(tarea.id)"
-                confirm-title="¿Eliminar esta tarea?"
-                :confirm-text="`«${tarea.titulo}» será eliminada permanentemente.`"
-              />
-            </div>
-            <!-- Edit inline -->
-            <div v-else class="px-5 py-3 bg-slate-50 space-y-3">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div class="sm:col-span-2">
-                  <label class="block text-xs font-medium text-slate-700 mb-1">Título</label>
-                  <input v-model="formTareaEdit.titulo" type="text"
-                    class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
-                </div>
-                <div>
-                  <label class="block text-xs font-medium text-slate-700 mb-1">Estado</label>
-                  <select v-model="formTareaEdit.estadoId" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white">
-                    <option v-for="e in estadosTarea" :key="e.id" :value="e.id">{{ e.nombre }}</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-xs font-medium text-slate-700 mb-1">Fecha límite</label>
-                  <input v-model="formTareaEdit.fechaLimite" type="date"
-                    class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white" />
-                </div>
-              </div>
-              <div class="flex justify-end gap-2">
-                <button type="button" @click="editTareaId = null"
-                  class="h-9 px-3 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
-                <button type="button" @click="guardarEditTarea(tarea.id)"
-                  class="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Guardar</button>
-              </div>
-            </div>
-          </template>
-        </div>
+        </template>
       </AccordionPanel>
 
-      <!-- Panel: Participantes -->
-      <AccordionPanel title="Participantes" :count="accion.participaciones?.length || 0">
+      <!-- Panel 3: Seguimiento (participantes + asistencia) -->
+      <AccordionPanel title="Seguimiento" :count="accion.participaciones?.length || 0">
         <template #actions>
-          <button
-            v-if="!formParticipacion.visible"
+          <button v-if="!formParticipacion.visible && faseActual === 'seguimiento'"
             @click="formParticipacion.visible = true"
-            class="inline-flex items-center gap-1 h-8 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-colors"
-          >
+            class="inline-flex items-center gap-1 h-8 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-colors">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
-            Añadir
+            Añadir participante
           </button>
         </template>
 
-        <!-- Formulario añadir -->
-        <div v-if="formParticipacion.visible" class="border-b border-slate-100 bg-slate-50 px-5 py-4 space-y-4">
-          <!-- Tipo: socio o externo -->
-          <div class="flex gap-4 text-sm">
-            <label class="flex items-center gap-2">
-              <input type="radio" v-model="formParticipacion.tipo" value="socio" class="text-indigo-600" />
-              <span>Socio / miembro</span>
-            </label>
-            <label class="flex items-center gap-2">
-              <input type="radio" v-model="formParticipacion.tipo" value="externo" class="text-indigo-600" />
-              <span>Participante externo</span>
-            </label>
-          </div>
-
-          <!-- Socio: selector -->
-          <div v-if="formParticipacion.tipo === 'socio'">
-            <label class="block text-sm font-medium text-slate-700 mb-1">Miembro *</label>
-            <input
-              v-model="formParticipacion.buscar"
-              type="text"
-              placeholder="Buscar por nombre…"
-              class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-            <div v-if="miembrosFiltrados.length" class="mt-1 border border-slate-200 rounded-lg max-h-48 overflow-auto bg-white">
-              <button
-                v-for="m in miembrosFiltrados"
-                :key="m.id"
-                type="button"
-                @click="seleccionarMiembro(m)"
-                class="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 border-b border-slate-100 last:border-b-0"
-                :class="formParticipacion.miembroId === m.id ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700'"
-              >
-                {{ m.nombre }} {{ m.apellido1 }}
-                <span class="text-xs text-slate-400 ml-2">{{ m.email }}</span>
+        <div v-if="['diseno', 'aprobacion'].includes(faseActual)" class="px-5 py-6 text-center text-sm text-slate-400">
+          El seguimiento de participantes se inicia cuando la actividad está en curso.
+        </div>
+        <template v-else>
+          <!-- Formulario añadir participante -->
+          <div v-if="formParticipacion.visible" class="border-b border-slate-100 bg-slate-50 px-5 py-4 space-y-4">
+            <div class="flex gap-4 text-sm">
+              <label class="flex items-center gap-2">
+                <input type="radio" v-model="formParticipacion.tipo" value="socio" class="text-indigo-600" />
+                <span>Socio / miembro</span>
+              </label>
+              <label class="flex items-center gap-2">
+                <input type="radio" v-model="formParticipacion.tipo" value="externo" class="text-indigo-600" />
+                <span>Participante externo</span>
+              </label>
+            </div>
+            <div v-if="formParticipacion.tipo === 'socio'">
+              <label class="block text-sm font-medium text-slate-700 mb-1">Miembro *</label>
+              <input v-model="formParticipacion.buscar" type="text" placeholder="Buscar por nombre…"
+                class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <div v-if="miembrosFiltrados.length" class="mt-1 border border-slate-200 rounded-lg max-h-48 overflow-auto bg-white">
+                <button v-for="m in miembrosFiltrados" :key="m.id" type="button" @click="seleccionarMiembro(m)"
+                  class="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 border-b border-slate-100 last:border-b-0"
+                  :class="formParticipacion.miembroId === m.id ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700'">
+                  {{ m.nombre }} {{ m.apellido1 }}
+                  <span class="text-xs text-slate-400 ml-2">{{ m.email }}</span>
+                </button>
+              </div>
+            </div>
+            <div v-else class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Nombre *</label>
+                <input v-model="formParticipacion.nombreExterno" type="text"
+                  class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                <input v-model="formParticipacion.emailExterno" type="email"
+                  class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Rol</label>
+                <select v-model="formParticipacion.rol"
+                  class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="asistente">Asistente</option>
+                  <option value="ponente">Ponente</option>
+                  <option value="organizador">Organizador</option>
+                  <option value="voluntario">Voluntario</option>
+                </select>
+              </div>
+              <div class="flex items-end pb-1">
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" v-model="formParticipacion.confirmado" class="rounded border-slate-300 text-indigo-600" />
+                  <span>Confirmado</span>
+                </label>
+              </div>
+            </div>
+            <div v-if="errorParticipacion" class="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{{ errorParticipacion }}</div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button type="button" @click="cancelarParticipacion"
+                class="h-10 px-4 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
+              <button type="button" @click="registrarParticipacion"
+                :disabled="!puedeGuardarParticipacion || formParticipacion.guardando"
+                class="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg">
+                {{ formParticipacion.guardando ? 'Guardando…' : 'Añadir' }}
               </button>
             </div>
           </div>
 
-          <!-- Externo: nombre + email -->
-          <div v-else class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">Nombre *</label>
-              <input
-                v-model="formParticipacion.nombreExterno"
-                type="text"
-                class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
-              <input
-                v-model="formParticipacion.emailExterno"
-                type="email"
-                class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
+          <div v-if="!accion.participaciones?.length && !formParticipacion.visible" class="py-8 text-center text-sm text-slate-400">
+            No hay participantes registrados.
           </div>
-
-          <!-- Rol y confirmado -->
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">Rol</label>
-              <select
-                v-model="formParticipacion.rol"
-                class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="asistente">Asistente</option>
-                <option value="ponente">Ponente</option>
-                <option value="organizador">Organizador</option>
-                <option value="voluntario">Voluntario</option>
-              </select>
-            </div>
-            <div class="flex items-end pb-1">
-              <label class="flex items-center gap-2 text-sm">
-                <input type="checkbox" v-model="formParticipacion.confirmado" class="rounded border-slate-300 text-indigo-600" />
-                <span>Confirmado</span>
-              </label>
-            </div>
+          <div v-else-if="accion.participaciones?.length" class="divide-y divide-slate-100">
+            <template v-for="p in accion.participaciones" :key="p.id">
+              <div v-if="editParticipacionId !== p.id" class="px-5 py-3 flex items-center gap-3">
+                <AvatarImg :src="p.miembro?.fotoUrl" :nombre="p.miembro?.nombre || p.nombreExterno" :apellido="p.miembro?.apellido1" size="sm" />
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-900">{{ p.miembro ? `${p.miembro.nombre} ${p.miembro.apellido1}` : p.nombreExterno || '—' }}</p>
+                  <p class="text-xs text-slate-500">{{ p.miembro?.email || p.emailExterno }}</p>
+                </div>
+                <span class="text-xs text-slate-500 shrink-0">{{ p.rol }}</span>
+                <span v-if="p.confirmado" class="text-xs text-green-600 shrink-0">✓ Confirmado</span>
+                <span v-if="p.asistio !== null && p.asistio !== undefined" class="text-xs shrink-0"
+                  :class="p.asistio ? 'text-green-600' : 'text-red-400'">
+                  {{ p.asistio ? 'Asistió' : 'No asistió' }}
+                </span>
+                <RowActions @edit="abrirEditParticipacion(p)" @delete="eliminarParticipacion(p.id)"
+                  confirm-title="¿Eliminar participante?" :confirm-text="`«${nombreParticipacion(p)}» será eliminado.`" />
+              </div>
+              <div v-else class="px-5 py-3 bg-slate-50 space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Rol</label>
+                    <select v-model="formParticipacionEdit.rol" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white">
+                      <option value="asistente">Asistente</option>
+                      <option value="ponente">Ponente</option>
+                      <option value="organizador">Organizador</option>
+                      <option value="voluntario">Voluntario</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Horas aportadas</label>
+                    <input v-model.number="formParticipacionEdit.horasAportadas" type="number" min="0" step="0.5"
+                      class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white" />
+                  </div>
+                  <label class="flex items-center gap-2 text-sm">
+                    <input type="checkbox" v-model="formParticipacionEdit.confirmado" class="rounded border-slate-300 text-indigo-600" />
+                    <span>Confirmado</span>
+                  </label>
+                  <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Asistió</label>
+                    <select v-model="formParticipacionEdit.asistio" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white">
+                      <option :value="null">— pendiente —</option>
+                      <option :value="true">Sí</option>
+                      <option :value="false">No</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="flex justify-end gap-2">
+                  <button type="button" @click="editParticipacionId = null"
+                    class="h-9 px-3 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
+                  <button type="button" @click="guardarEditParticipacion(p.id)"
+                    class="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Guardar</button>
+                </div>
+              </div>
+            </template>
           </div>
+        </template>
+      </AccordionPanel>
 
-          <div v-if="errorParticipacion" class="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{{ errorParticipacion }}</div>
-
-          <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-            <button
-              type="button"
-              @click="cancelarParticipacion"
-              class="h-10 px-4 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              @click="registrarParticipacion"
-              :disabled="!puedeGuardarParticipacion || formParticipacion.guardando"
-              class="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              {{ formParticipacion.guardando ? 'Guardando…' : 'Añadir' }}
-            </button>
-          </div>
+      <!-- Panel 4: Valoración y cierre -->
+      <AccordionPanel title="Valoración y cierre">
+        <div v-if="!['valoracion'].includes(faseActual)" class="px-5 py-6 text-center text-sm text-slate-400">
+          La valoración se registra al cerrar la actividad.
         </div>
-
-        <!-- Lista -->
-        <div v-if="!accion.participaciones?.length && !formParticipacion.visible" class="py-8 text-center text-sm text-slate-400">
-          No hay participantes registrados.
-        </div>
-        <div v-else-if="accion.participaciones?.length" class="divide-y divide-slate-100">
-          <template v-for="p in accion.participaciones" :key="p.id">
-            <!-- Vista normal -->
-            <div v-if="editParticipacionId !== p.id" class="px-5 py-3 flex items-center gap-3">
-              <AvatarImg
-                :src="p.miembro?.fotoUrl"
-                :nombre="p.miembro?.nombre || p.nombreExterno"
-                :apellido="p.miembro?.apellido1"
-                size="sm"
-              />
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-slate-900">
-                  {{ p.miembro ? `${p.miembro.nombre} ${p.miembro.apellido1}` : p.nombreExterno || '—' }}
-                </p>
-                <p class="text-xs text-slate-500">{{ p.miembro?.email || p.emailExterno }}</p>
+        <div v-else class="px-5 py-4 space-y-4">
+          <!-- Vista valoración si ya está cerrada -->
+          <div v-if="!editandoValoracion" class="space-y-3">
+            <dl class="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+              <div v-if="accion.presupuestoEjecutado">
+                <dt class="text-slate-500 mb-0.5">Presupuesto ejecutado</dt>
+                <dd class="text-slate-900 font-medium">{{ Number(accion.presupuestoEjecutado).toFixed(2) }} €</dd>
               </div>
-              <span class="text-xs text-slate-500 shrink-0">{{ p.rol }}</span>
-              <span v-if="p.confirmado" class="text-xs text-green-600 shrink-0">✓ Confirmado</span>
-              <span v-if="p.asistio !== null" class="text-xs shrink-0" :class="p.asistio ? 'text-green-600' : 'text-red-400'">
-                {{ p.asistio ? 'Asistió' : 'No asistió' }}
-              </span>
-              <RowActions
-                @edit="abrirEditParticipacion(p)"
-                @delete="eliminarParticipacion(p.id)"
-                confirm-title="¿Eliminar participante?"
-                :confirm-text="`«${nombreParticipacion(p)}» será eliminado de la acción.`"
-              />
+              <div v-if="accion.asistenciaReal !== null && accion.asistenciaReal !== undefined">
+                <dt class="text-slate-500 mb-0.5">Asistencia real</dt>
+                <dd class="text-slate-900 font-medium">{{ accion.asistenciaReal }}</dd>
+              </div>
+              <div v-if="accion.objetivosCumplidos !== null && accion.objetivosCumplidos !== undefined">
+                <dt class="text-slate-500 mb-0.5">Objetivos cumplidos</dt>
+                <dd :class="accion.objetivosCumplidos ? 'text-green-600' : 'text-red-500'" class="font-medium">
+                  {{ accion.objetivosCumplidos ? 'Sí' : 'No' }}
+                </dd>
+              </div>
+            </dl>
+            <div v-if="accion.valoracion" class="bg-slate-50 rounded-lg px-4 py-3">
+              <p class="text-xs font-medium text-slate-500 mb-1">Valoración</p>
+              <p class="text-sm text-slate-800">{{ accion.valoracion }}</p>
             </div>
-            <!-- Edit inline -->
-            <div v-else class="px-5 py-3 bg-slate-50 space-y-3">
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-medium text-slate-700 mb-1">Rol</label>
-                  <select v-model="formParticipacionEdit.rol"
-                    class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white">
-                    <option value="asistente">Asistente</option>
-                    <option value="ponente">Ponente</option>
-                    <option value="organizador">Organizador</option>
-                    <option value="voluntario">Voluntario</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-xs font-medium text-slate-700 mb-1">Horas aportadas</label>
-                  <input v-model.number="formParticipacionEdit.horasAportadas" type="number" min="0" step="0.5"
-                    class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white" />
-                </div>
-                <label class="flex items-center gap-2 text-sm">
-                  <input type="checkbox" v-model="formParticipacionEdit.confirmado" class="rounded border-slate-300 text-indigo-600" />
-                  <span>Confirmado</span>
-                </label>
-                <div>
-                  <label class="block text-xs font-medium text-slate-700 mb-1">Asistió</label>
-                  <select v-model="formParticipacionEdit.asistio"
-                    class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white">
-                    <option :value="null">— pendiente —</option>
-                    <option :value="true">Sí</option>
-                    <option :value="false">No</option>
-                  </select>
+            <div v-if="accion.notasAprobacion" class="bg-amber-50 rounded-lg px-4 py-3">
+              <p class="text-xs font-medium text-amber-600 mb-1">Notas de aprobación</p>
+              <p class="text-sm text-amber-900">{{ accion.notasAprobacion }}</p>
+            </div>
+            <div class="flex gap-2 pt-2">
+              <button @click="abrirEditValoracion"
+                class="h-8 px-3 text-xs font-medium text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                Editar valoración
+              </button>
+            </div>
+          </div>
+          <!-- Formulario de valoración -->
+          <div v-else class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Presupuesto ejecutado (€)</label>
+                <input v-model.number="formValoracion.presupuestoEjecutado" type="number" min="0" step="0.01"
+                  class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Asistencia real</label>
+                <input v-model.number="formValoracion.asistenciaReal" type="number" min="0"
+                  class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div class="col-span-2">
+                <label class="block text-xs font-medium text-slate-700 mb-1">Objetivos cumplidos</label>
+                <div class="flex gap-4 mt-1">
+                  <label class="flex items-center gap-2 text-sm">
+                    <input type="radio" :value="true" v-model="formValoracion.objetivosCumplidos" class="text-indigo-600" /> Sí
+                  </label>
+                  <label class="flex items-center gap-2 text-sm">
+                    <input type="radio" :value="false" v-model="formValoracion.objetivosCumplidos" class="text-indigo-600" /> No
+                  </label>
                 </div>
               </div>
-              <div class="flex justify-end gap-2">
-                <button type="button" @click="editParticipacionId = null"
-                  class="h-9 px-3 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
-                <button type="button" @click="guardarEditParticipacion(p.id)"
-                  class="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Guardar</button>
+              <div class="col-span-2">
+                <label class="block text-xs font-medium text-slate-700 mb-1">Valoración</label>
+                <textarea v-model="formValoracion.valoracion" rows="4"
+                  class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  placeholder="Resumen de resultados, aprendizajes, incidencias…"></textarea>
               </div>
             </div>
-          </template>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button type="button" @click="editandoValoracion = false"
+                class="h-9 px-3 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
+              <button type="button" @click="guardarValoracion"
+                class="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Guardar</button>
+            </div>
+          </div>
         </div>
       </AccordionPanel>
+
     </div>
     </div>
   </AppLayout>
 
+  <!-- Modal confirmación eliminar -->
   <ConfirmModal
     v-model="showConfirmEliminarAccion"
     title="¿Eliminar permanentemente?"
     title-soft="¿Mover a la papelera?"
-    :message="accion ? `«${accion.nombre}» será eliminada permanentemente.` : ''"
+    :message="accion ? `«${accion.nombre}» será eliminada.` : ''"
     @confirm="eliminarAccion"
   />
+
+  <!-- Modal de aprobación / rechazo -->
+  <div v-if="modalAprobacion.visible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
+      <h3 class="text-lg font-semibold text-slate-900">{{ modalAprobacion.titulo }}</h3>
+      <div>
+        <label class="block text-xs font-medium text-slate-700 mb-1">Notas (opcional)</label>
+        <textarea v-model="modalAprobacion.notas" rows="3"
+          class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          :placeholder="modalAprobacion.placeholder"></textarea>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button @click="modalAprobacion.visible = false"
+          class="h-9 px-4 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
+        <button @click="confirmarAprobacion" :disabled="cargandoTransicion"
+          class="h-9 px-5 text-sm font-medium rounded-lg text-white transition-colors disabled:opacity-50"
+          :class="modalAprobacion.esRechazo ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'">
+          {{ cargandoTransicion ? '…' : modalAprobacion.btnLabel }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de cierre -->
+  <div v-if="modalCierre.visible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 space-y-4">
+      <h3 class="text-lg font-semibold text-slate-900">Cerrar actividad</h3>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Presupuesto ejecutado (€)</label>
+          <input v-model.number="modalCierre.presupuestoEjecutado" type="number" min="0" step="0.01"
+            class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Asistencia real</label>
+          <input v-model.number="modalCierre.asistenciaReal" type="number" min="0"
+            class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs font-medium text-slate-700 mb-2">Objetivos cumplidos</label>
+          <div class="flex gap-4">
+            <label class="flex items-center gap-2 text-sm"><input type="radio" :value="true" v-model="modalCierre.objetivosCumplidos" class="text-indigo-600" /> Sí</label>
+            <label class="flex items-center gap-2 text-sm"><input type="radio" :value="false" v-model="modalCierre.objetivosCumplidos" class="text-indigo-600" /> No</label>
+          </div>
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs font-medium text-slate-700 mb-1">Valoración</label>
+          <textarea v-model="modalCierre.valoracion" rows="3"
+            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="Resumen de resultados…"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button @click="modalCierre.visible = false"
+          class="h-9 px-4 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
+        <button @click="confirmarCierre" :disabled="cargandoTransicion"
+          class="h-9 px-5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg">
+          {{ cargandoTransicion ? '…' : 'Cerrar actividad' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -456,24 +565,34 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
+import WorkflowBar from '@/components/common/WorkflowBar.vue'
 import RowActions from '@/components/common/RowActions.vue'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
+import LoadSpinner from '@/components/common/LoadSpinner.vue'
 import { graphqlClient } from '@/graphql/client'
 import {
   GET_ACCION_BY_ID, ACTUALIZAR_ACCION, ELIMINAR_ACCION, SOFT_DELETE_ACCION,
   REGISTRAR_PARTICIPACION, ACTUALIZAR_PARTICIPACION, ELIMINAR_PARTICIPACION,
   CREAR_TAREA, ACTUALIZAR_TAREA, ELIMINAR_TAREA,
+  TRANSICIONAR_ACTIVIDAD, APROBAR_ACTIVIDAD, CERRAR_ACTIVIDAD,
 } from '../graphql/queries.js'
 
 const GET_CATALOGOS = `
-  query CatalogosDetalleAccion {
+  query CatalogosDetalleActividad {
     miembros { id nombre apellido1 email }
     estadosTarea { id nombre }
-    tiposAccion { id nombre tieneLugar }
+    tiposActividad { id nombre tieneLugar }
     estadosAccion { id nombre }
   }
 `
+
+const FASES = [
+  { key: 'diseno', label: 'Diseño' },
+  { key: 'aprobacion', label: 'Aprobación' },
+  { key: 'seguimiento', label: 'Seguimiento' },
+  { key: 'valoracion', label: 'Valoración' },
+]
 
 const route = useRoute()
 const router = useRouter()
@@ -483,9 +602,160 @@ const accion = ref(null)
 const showConfirmEliminarAccion = ref(false)
 const miembros = ref([])
 const estadosTarea = ref([])
-const tiposAccion = ref([])
+const tiposActividad = ref([])
 const estadosAccion = ref([])
 const errorParticipacion = ref('')
+const cargandoTransicion = ref(false)
+
+// Mapeo estado → fase
+function estadoAFase(nombre) {
+  const n = (nombre || '').toLowerCase()
+  if (n.includes('propuest')) return 'diseno'
+  if (n.includes('pendiente') || n.includes('aprobad')) return 'aprobacion'
+  if (n.includes('preparac') || n.includes('curso')) return 'seguimiento'
+  if (n.includes('finaliz') || n.includes('cancelad')) return 'valoracion'
+  return 'diseno'
+}
+
+const faseActual = computed(() => estadoAFase(accion.value?.estado?.nombre))
+const faseEditable = computed(() => ['diseno', 'aprobacion'].includes(faseActual.value))
+const esFinal = computed(() => {
+  const n = (accion.value?.estado?.nombre || '').toLowerCase()
+  return n.includes('finaliz') || n.includes('cancelad')
+})
+
+// Transitions disponibles según estado actual
+const transicionesDisponibles = computed(() => {
+  if (!accion.value || !estadosAccion.value.length) return []
+  const n = (accion.value.estado?.nombre || '').toLowerCase()
+  const find = (nombre) => estadosAccion.value.find(e => e.nombre.toLowerCase().includes(nombre))
+
+  if (n.includes('propuest')) {
+    const pendiente = find('pendiente')
+    return pendiente ? [{ label: 'Enviar para aprobación', estado: pendiente, icono: 'send', tipo: 'transicion' }] : []
+  }
+  if (n.includes('pendiente')) {
+    const aprobada = find('aprobad')
+    return [
+      aprobada ? { label: 'Aprobar', estado: aprobada, icono: 'check', tipo: 'aprobar', estilo: 'bg-green-50 text-green-700 hover:bg-green-100' } : null,
+      { label: 'Devolver', estado: estadosAccion.value.find(e => e.nombre.toLowerCase().includes('propuest')), icono: 'reject', tipo: 'transicion', estilo: 'bg-red-50 text-red-700 hover:bg-red-100' },
+    ].filter(Boolean)
+  }
+  if (n.includes('aprobad')) {
+    const prep = find('preparac')
+    return prep ? [{ label: 'Iniciar preparación', estado: prep, icono: 'play', tipo: 'transicion' }] : []
+  }
+  if (n.includes('preparac')) {
+    const curso = find('curso')
+    return curso ? [{ label: 'Iniciar actividad', estado: curso, icono: 'play', tipo: 'transicion' }] : []
+  }
+  if (n.includes('curso')) {
+    const final = find('finaliz')
+    return final ? [{ label: 'Cerrar actividad', estado: final, icono: 'close', tipo: 'cerrar' }] : []
+  }
+  return []
+})
+
+// Modales
+const modalAprobacion = ref({ visible: false, titulo: '', notas: '', placeholder: '', btnLabel: '', esRechazo: false, estadoId: null, tipo: '' })
+const modalCierre = ref({ visible: false, valoracion: '', objetivosCumplidos: null, presupuestoEjecutado: null, asistenciaReal: null, estadoId: null })
+
+async function ejecutarTransicion(t) {
+  if (t.tipo === 'aprobar') {
+    modalAprobacion.value = {
+      visible: true, titulo: 'Aprobar actividad', notas: '',
+      placeholder: 'Observaciones de la aprobación…', btnLabel: 'Aprobar',
+      esRechazo: false, estadoId: t.estado.id, tipo: 'aprobar'
+    }
+  } else if (t.tipo === 'cerrar') {
+    modalCierre.value = { visible: true, valoracion: '', objetivosCumplidos: null, presupuestoEjecutado: null, asistenciaReal: null, estadoId: t.estado.id }
+  } else if (t.tipo === 'transicion' && t.icono === 'reject') {
+    modalAprobacion.value = {
+      visible: true, titulo: 'Devolver a diseño', notas: '',
+      placeholder: 'Indicar motivo de devolución…', btnLabel: 'Devolver',
+      esRechazo: true, estadoId: t.estado.id, tipo: 'transicion'
+    }
+  } else {
+    cargandoTransicion.value = true
+    try {
+      await graphqlClient.request(TRANSICIONAR_ACTIVIDAD, { id: accion.value.id, estadoId: t.estado.id })
+      await recargarAccion()
+    } catch (e) {
+      alert(e?.response?.errors?.[0]?.message || 'Error en la transición')
+    } finally {
+      cargandoTransicion.value = false
+    }
+  }
+}
+
+async function confirmarAprobacion() {
+  cargandoTransicion.value = true
+  try {
+    const mut = modalAprobacion.value.tipo === 'aprobar' ? APROBAR_ACTIVIDAD : TRANSICIONAR_ACTIVIDAD
+    await graphqlClient.request(mut, {
+      id: accion.value.id,
+      estadoId: modalAprobacion.value.estadoId,
+      notas: modalAprobacion.value.notas || null,
+    })
+    modalAprobacion.value.visible = false
+    await recargarAccion()
+  } catch (e) {
+    alert(e?.response?.errors?.[0]?.message || 'Error en la operación')
+  } finally {
+    cargandoTransicion.value = false
+  }
+}
+
+async function confirmarCierre() {
+  cargandoTransicion.value = true
+  try {
+    await graphqlClient.request(CERRAR_ACTIVIDAD, {
+      id: accion.value.id,
+      estadoId: modalCierre.value.estadoId,
+      valoracion: modalCierre.value.valoracion || null,
+      objetivosCumplidos: modalCierre.value.objetivosCumplidos,
+      asistenciaReal: modalCierre.value.asistenciaReal || null,
+      presupuestoEjecutado: modalCierre.value.presupuestoEjecutado || null,
+    })
+    modalCierre.value.visible = false
+    await recargarAccion()
+  } catch (e) {
+    alert(e?.response?.errors?.[0]?.message || 'Error al cerrar')
+  } finally {
+    cargandoTransicion.value = false
+  }
+}
+
+// Valoración inline
+const editandoValoracion = ref(false)
+const formValoracion = ref({ valoracion: '', objetivosCumplidos: null, presupuestoEjecutado: null, asistenciaReal: null })
+
+function abrirEditValoracion() {
+  formValoracion.value = {
+    valoracion: accion.value.valoracion || '',
+    objetivosCumplidos: accion.value.objetivosCumplidos,
+    presupuestoEjecutado: accion.value.presupuestoEjecutado || null,
+    asistenciaReal: accion.value.asistenciaReal || null,
+  }
+  editandoValoracion.value = true
+}
+
+async function guardarValoracion() {
+  try {
+    await graphqlClient.request(CERRAR_ACTIVIDAD, {
+      id: accion.value.id,
+      estadoId: accion.value.estado.id,
+      valoracion: formValoracion.value.valoracion || null,
+      objetivosCumplidos: formValoracion.value.objetivosCumplidos,
+      asistenciaReal: formValoracion.value.asistenciaReal || null,
+      presupuestoEjecutado: formValoracion.value.presupuestoEjecutado || null,
+    })
+    await recargarAccion()
+    editandoValoracion.value = false
+  } catch (e) {
+    alert(e?.response?.errors?.[0]?.message || 'Error guardando valoración')
+  }
+}
 
 // edición acción
 const editandoAccion = ref(false)
@@ -494,8 +764,8 @@ const formAccionEdit = ref({})
 function abrirEditAccion() {
   formAccionEdit.value = {
     nombre: accion.value.nombre,
-    tipoAccionId: accion.value.tipoAccion?.id || '',
-    estadoId: accion.value.estado?.id || '',
+    tipoActividadId: accion.value.tipoActividad?.id || '',
+    responsableId: accion.value.responsable?.id || '',
     descripcion: accion.value.descripcion || '',
     fechaInicio: accion.value.fechaInicio || '',
     horaInicio: accion.value.horaInicio || '',
@@ -512,13 +782,11 @@ function abrirEditAccion() {
 
 async function guardarEditAccion() {
   try {
-    await graphqlClient.request(ACTUALIZAR_ACCION, {
-      data: { id: accion.value.id, ...formAccionEdit.value },
-    })
+    await graphqlClient.request(ACTUALIZAR_ACCION, { data: { id: accion.value.id, ...formAccionEdit.value } })
     await recargarAccion()
     editandoAccion.value = false
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error guardando acción')
+    alert(e?.response?.errors?.[0]?.message || 'Error guardando actividad')
   }
 }
 
@@ -529,13 +797,13 @@ async function eliminarAccion({ hardDelete } = {}) {
     } else {
       await graphqlClient.request(SOFT_DELETE_ACCION, { id: accion.value.id })
     }
-    router.push('/acciones')
+    router.push('/actividades')
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error eliminando acción')
+    alert(e?.response?.errors?.[0]?.message || 'Error eliminando actividad')
   }
 }
 
-// edición inline tareas
+// Tareas
 const editTareaId = ref(null)
 const formTareaEdit = ref({ titulo: '', estadoId: '', fechaLimite: '' })
 const formTareaNew = ref({ visible: false, titulo: '', estadoId: '', fechaLimite: '', guardando: false })
@@ -549,7 +817,7 @@ async function crearTarea() {
         titulo: formTareaNew.value.titulo,
         estadoId: formTareaNew.value.estadoId || null,
         fechaLimite: formTareaNew.value.fechaLimite || null,
-        accionId: accion.value.id,
+        actividadId: accion.value.id,
       },
     })
     await recargarAccion()
@@ -561,32 +829,15 @@ async function crearTarea() {
   }
 }
 
-// edición inline participaciones
-const editParticipacionId = ref(null)
-const formParticipacionEdit = ref({ rol: 'asistente', confirmado: false, asistio: null, horasAportadas: 0 })
-
-function nombreParticipacion(p) {
-  return p.miembro ? `${p.miembro.nombre} ${p.miembro.apellido1}` : (p.nombreExterno || '—')
-}
-
 function abrirEditTarea(t) {
-  formTareaEdit.value = {
-    titulo: t.titulo,
-    estadoId: t.estado?.id || '',
-    fechaLimite: t.fechaLimite || '',
-  }
+  formTareaEdit.value = { titulo: t.titulo, estadoId: t.estado?.id || '', fechaLimite: t.fechaLimite || '' }
   editTareaId.value = t.id
 }
 
 async function guardarEditTarea(id) {
   try {
     await graphqlClient.request(ACTUALIZAR_TAREA, {
-      data: {
-        id,
-        titulo: formTareaEdit.value.titulo,
-        estadoId: formTareaEdit.value.estadoId,
-        fechaLimite: formTareaEdit.value.fechaLimite || null,
-      },
+      data: { id, titulo: formTareaEdit.value.titulo, estadoId: formTareaEdit.value.estadoId, fechaLimite: formTareaEdit.value.fechaLimite || null },
     })
     await recargarAccion()
     editTareaId.value = null
@@ -604,26 +855,27 @@ async function eliminarTarea(id) {
   }
 }
 
+// Participaciones
+const editParticipacionId = ref(null)
+const formParticipacionEdit = ref({ rol: 'asistente', confirmado: false, asistio: null, horasAportadas: 0 })
+const formParticipacion = ref({
+  visible: false, tipo: 'socio', buscar: '', miembroId: '',
+  nombreExterno: '', emailExterno: '', rol: 'asistente', confirmado: false, guardando: false,
+})
+
+function nombreParticipacion(p) {
+  return p.miembro ? `${p.miembro.nombre} ${p.miembro.apellido1}` : (p.nombreExterno || '—')
+}
+
 function abrirEditParticipacion(p) {
-  formParticipacionEdit.value = {
-    rol: p.rol,
-    confirmado: p.confirmado,
-    asistio: p.asistio,
-    horasAportadas: Number(p.horasAportadas || 0),
-  }
+  formParticipacionEdit.value = { rol: p.rol, confirmado: p.confirmado, asistio: p.asistio, horasAportadas: Number(p.horasAportadas || 0) }
   editParticipacionId.value = p.id
 }
 
 async function guardarEditParticipacion(id) {
   try {
     await graphqlClient.request(ACTUALIZAR_PARTICIPACION, {
-      data: {
-        id,
-        rol: formParticipacionEdit.value.rol,
-        confirmado: formParticipacionEdit.value.confirmado,
-        asistio: formParticipacionEdit.value.asistio,
-        horasAportadas: formParticipacionEdit.value.horasAportadas,
-      },
+      data: { id, rol: formParticipacionEdit.value.rol, confirmado: formParticipacionEdit.value.confirmado, asistio: formParticipacionEdit.value.asistio, horasAportadas: formParticipacionEdit.value.horasAportadas },
     })
     await recargarAccion()
     editParticipacionId.value = null
@@ -641,35 +893,15 @@ async function eliminarParticipacion(id) {
   }
 }
 
-async function recargarAccion() {
-  const res = await graphqlClient.request(GET_ACCION_BY_ID, { id: route.params.id })
-  accion.value = res.acciones?.[0] || null
-}
-
-const formParticipacion = ref({
-  visible: false,
-  tipo: 'socio',
-  buscar: '',
-  miembroId: '',
-  nombreExterno: '',
-  emailExterno: '',
-  rol: 'asistente',
-  confirmado: false,
-  guardando: false,
-})
-
 const miembrosFiltrados = computed(() => {
   const q = formParticipacion.value.buscar.trim().toLowerCase()
   if (!q) return miembros.value.slice(0, 10)
-  return miembros.value
-    .filter(m => `${m.nombre} ${m.apellido1} ${m.email || ''}`.toLowerCase().includes(q))
-    .slice(0, 10)
+  return miembros.value.filter(m => `${m.nombre} ${m.apellido1} ${m.email || ''}`.toLowerCase().includes(q)).slice(0, 10)
 })
 
 const puedeGuardarParticipacion = computed(() => {
   const f = formParticipacion.value
-  if (f.tipo === 'socio') return !!f.miembroId
-  return !!f.nombreExterno
+  return f.tipo === 'socio' ? !!f.miembroId : !!f.nombreExterno
 })
 
 function seleccionarMiembro(m) {
@@ -678,10 +910,7 @@ function seleccionarMiembro(m) {
 }
 
 function cancelarParticipacion() {
-  formParticipacion.value = {
-    visible: false, tipo: 'socio', buscar: '', miembroId: '',
-    nombreExterno: '', emailExterno: '', rol: 'asistente', confirmado: false, guardando: false,
-  }
+  formParticipacion.value = { visible: false, tipo: 'socio', buscar: '', miembroId: '', nombreExterno: '', emailExterno: '', rol: 'asistente', confirmado: false, guardando: false }
   errorParticipacion.value = ''
 }
 
@@ -690,15 +919,16 @@ async function registrarParticipacion() {
   f.guardando = true
   errorParticipacion.value = ''
   try {
-    const data = {
-      accionId: accion.value.id,
-      rol: f.rol,
-      confirmado: f.confirmado,
-      miembroId: f.tipo === 'socio' ? f.miembroId : null,
-      nombreExterno: f.tipo === 'externo' ? f.nombreExterno : null,
-      emailExterno: f.tipo === 'externo' ? (f.emailExterno || null) : null,
-    }
-    await graphqlClient.request(REGISTRAR_PARTICIPACION, { data })
+    await graphqlClient.request(REGISTRAR_PARTICIPACION, {
+      data: {
+        actividadId: accion.value.id,
+        rol: f.rol,
+        confirmado: f.confirmado,
+        miembroId: f.tipo === 'socio' ? f.miembroId : null,
+        nombreExterno: f.tipo === 'externo' ? f.nombreExterno : null,
+        emailExterno: f.tipo === 'externo' ? (f.emailExterno || null) : null,
+      },
+    })
     await recargarAccion()
     cancelarParticipacion()
   } catch (e) {
@@ -708,16 +938,21 @@ async function registrarParticipacion() {
   }
 }
 
+async function recargarAccion() {
+  const res = await graphqlClient.request(GET_ACCION_BY_ID, { id: route.params.id })
+  accion.value = res.actividades?.[0] || null
+}
+
 onMounted(async () => {
   try {
     const [resAccion, resCat] = await Promise.all([
       graphqlClient.request(GET_ACCION_BY_ID, { id: route.params.id }),
       graphqlClient.request(GET_CATALOGOS),
     ])
-    accion.value = resAccion.acciones?.[0] || null
+    accion.value = resAccion.actividades?.[0] || null
     miembros.value = resCat.miembros || []
     estadosTarea.value = resCat.estadosTarea || []
-    tiposAccion.value = resCat.tiposAccion || []
+    tiposActividad.value = resCat.tiposActividad || []
     estadosAccion.value = resCat.estadosAccion || []
   } finally {
     loading.value = false

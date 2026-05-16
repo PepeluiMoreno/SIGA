@@ -482,42 +482,6 @@ export const DELETE_ESTADO_ACTIVIDAD = `
   }
 `
 
-export const GET_TIPOS_RECURSO = `
-  query TiposRecurso {
-    tiposRecurso {
-      id
-      nombre
-      descripcion
-      activo
-    }
-  }
-`
-
-export const CREATE_TIPO_RECURSO = `
-  mutation CrearTipoRecurso($data: TipoRecursoCreateInput!) {
-    crearTipoRecurso(data: $data) {
-      id
-      nombre
-    }
-  }
-`
-
-export const UPDATE_TIPO_RECURSO = `
-  mutation ActualizarTipoRecurso($data: TipoRecursoUpdateInput!) {
-    actualizarTipoRecurso(data: $data) {
-      id
-      nombre
-    }
-  }
-`
-
-export const DELETE_TIPO_RECURSO = `
-  mutation EliminarTipoRecurso($filter: TipoRecursoFilter!) {
-    eliminarTiposRecurso(filter: $filter) {
-      id
-    }
-  }
-`
 
 export const GET_TIPOS_KPI = `
   query TiposKPI {
@@ -716,7 +680,7 @@ export const DELETE_PROVINCIA = `
 
 export const GET_AGRUPACIONES_TERRITORIALES = `
   query AgrupacionesTerritoriales {
-    agrupacionesTerritoriales {
+    unidadesOrganizativas {
       id
       nombre
       nombreCorto
@@ -732,8 +696,8 @@ export const GET_AGRUPACIONES_TERRITORIALES = `
 `
 
 export const CREATE_AGRUPACION_TERRITORIAL = `
-  mutation CrearAgrupacionTerritorial($data: AgrupacionTerritorialCreateInput!) {
-    crearAgrupacionTerritorial(data: $data) {
+  mutation CrearUnidadOrganizativa($data: UnidadOrganizativaCreateInput!) {
+    crearUnidadOrganizativa(data: $data) {
       id
       nombre
     }
@@ -741,8 +705,8 @@ export const CREATE_AGRUPACION_TERRITORIAL = `
 `
 
 export const UPDATE_AGRUPACION_TERRITORIAL = `
-  mutation ActualizarAgrupacionTerritorial($data: AgrupacionTerritorialUpdateInput!) {
-    actualizarAgrupacionTerritorial(data: $data) {
+  mutation ActualizarUnidadOrganizativa($data: UnidadOrganizativaUpdateInput!) {
+    actualizarUnidadOrganizativa(data: $data) {
       id
       nombre
     }
@@ -750,8 +714,8 @@ export const UPDATE_AGRUPACION_TERRITORIAL = `
 `
 
 export const DELETE_AGRUPACION_TERRITORIAL = `
-  mutation EliminarAgrupacionTerritorial($filter: AgrupacionTerritorialFilter!) {
-    eliminarAgrupacionesTerritoriales(filter: $filter) {
+  mutation EliminarUnidadOrganizativa($filter: UnidadOrganizativaFilter!) {
+    eliminarUnidadesOrganizativas(filter: $filter) {
       id
     }
   }

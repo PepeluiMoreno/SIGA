@@ -54,7 +54,14 @@
     </div>
 
     <!-- ── Fila 2: Filtros en píldoras (hacen wrap libremente) ─────────── -->
-    <div v-if="visibleFields.length" class="flex flex-wrap items-center gap-2 mt-2">
+    <div v-if="visibleFields.length || $slots['filters-prefix']" class="flex flex-wrap items-center gap-2 mt-2">
+
+      <!-- Slot para filtros especiales (p.ej. AgrupacionCascada) — antes de las píldoras estándar -->
+      <slot name="filters-prefix" />
+
+      <!-- Separador visual si hay contenido en el slot y también hay píldoras -->
+      <span v-if="$slots['filters-prefix'] && visibleFields.length"
+        class="h-5 w-px bg-gray-200 shrink-0 self-center" />
 
       <template v-for="field in visibleFields" :key="field.key">
 

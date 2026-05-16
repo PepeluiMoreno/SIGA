@@ -1155,11 +1155,12 @@ function badgeColorStyle(estado) {
   return { background: `rgba(${r},${g},${b},0.15)`, color: estado.color, border: `1px solid rgba(${r},${g},${b},0.3)` }
 }
 
-async function cargarCuotas() {
-  if (!miembro.value.id) return
+async function cargarCuotas(id = null) {
+  const miembroId = id || miembro.value.id
+  if (!miembroId) return
   loadingCuotas.value = true
   try {
-    const r = await graphqlClient.request(QUERY_CUOTAS_MIEMBRO, { miembroId: miembro.value.id })
+    const r = await graphqlClient.request(QUERY_CUOTAS_MIEMBRO, { miembroId })
     cuotas.value = r.cuotasPorMiembro || []
   } finally {
     loadingCuotas.value = false
@@ -1207,12 +1208,13 @@ const MUTATION_DELETE_HABILIDAD = gql`
   }
 `
 
-async function cargarHabilidades() {
-  if (!miembro.value.id) return
+async function cargarHabilidades(id = null) {
+  const miembroId = id || miembro.value.id
+  if (!miembroId) return
   loadingHabilidades.value = true
   try {
     const [r1, r2] = await Promise.all([
-      graphqlClient.request(QUERY_HABILIDADES_MIEMBRO, { miembroId: miembro.value.id }),
+      graphqlClient.request(QUERY_HABILIDADES_MIEMBRO, { miembroId }),
       graphqlClient.request(QUERY_HABILIDADES_CATALOGO),
     ])
     miembroHabilidades.value = r1.miembrosHabilidades || []
@@ -1276,11 +1278,12 @@ const MUTATION_DELETE_FRANJA = gql`
   }
 `
 
-async function cargarFranjas() {
-  if (!miembro.value.id) return
+async function cargarFranjas(id = null) {
+  const miembroId = id || miembro.value.id
+  if (!miembroId) return
   loadingFranjas.value = true
   try {
-    const r = await graphqlClient.request(QUERY_FRANJAS, { miembroId: miembro.value.id })
+    const r = await graphqlClient.request(QUERY_FRANJAS, { miembroId })
     franjas.value = (r.franjasDisponibilidad || []).sort(
       (a, b) => a.diaSemana - b.diaSemana || a.horaInicio.localeCompare(b.horaInicio)
     )
@@ -1426,18 +1429,19 @@ const loadingNombramientos = ref(false)
 const QUERY_NOMBRAMIENTOS = gql`
   query NombramientosMiembro($miembroId: UUID!) {
     historialNombramientos(filter: { miembroId: { eq: $miembroId } }) {
-      id fechaInicio fechaFin tipoOrigen motivo
+      id fechaInicio fechaFin estado tipoOrigen motivo observaciones
       rol { id nombre tipo }
       agrupacion { id nombre }
     }
   }
 `
 
-async function cargarNombramientos() {
-  if (!miembro.value.id) return
+async function cargarNombramientos(id = null) {
+  const miembroId = id || miembro.value.id
+  if (!miembroId) return
   loadingNombramientos.value = true
   try {
-    const r = await graphqlClient.request(QUERY_NOMBRAMIENTOS, { miembroId: miembro.value.id })
+    const r = await graphqlClient.request(QUERY_NOMBRAMIENTOS, { miembroId })
     nombramientos.value = (r.historialNombramientos || []).sort(
       (a, b) => (b.fechaInicio || '').localeCompare(a.fechaInicio || '')
     )
@@ -1551,7 +1555,7 @@ onMounted(async () => {
   }
   const resolvedId = props.miembroIdProp || route.params.id
   if (resolvedId) {
-    await Promise.all([fetchMiembro(resolvedId), cargarHabilidades(), cargarFranjas(), cargarNombramientos(), cargarCuotas()])
+    await Promise.all([fetchMiembro(resolvedId), cargarHabilidades(resolvedId), cargarFranjas(resolvedId), cargarNombramientos(resolvedId), cargarCuotas(resolvedId)])
     if (!props.modoPropio) await cargarRolesDisponibles()
     if (route.query.modo === 'editar') editMode.value = true
   }

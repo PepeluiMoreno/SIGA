@@ -25,8 +25,10 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, FinancieroQuery):
     Strawberry convierte automáticamente los campos de los tipos a camelCase.
     """
 
-    # === ACCESO: roles, transacciones, funcionalidades ===
+    # === ACCESO: roles, transacciones, funcionalidades, cargos ===
     roles: list[RolType] = strawchemy.field(filter_input=RolFilter)
+    cargos: list[CargoType] = strawchemy.field(filter_input=CargoFilter)
+    cargos_roles: list[CargoRolType] = strawchemy.field(filter_input=CargoRolFilter)
     transacciones: list[TransaccionType] = strawchemy.field(filter_input=TransaccionFilter)
     rolesTransacciones: list[RolTransaccionType] = strawchemy.field(filter_input=RolTransaccionFilter)
     logsAuditoria: list[LogAuditoriaType] = strawchemy.field()
@@ -47,6 +49,7 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, FinancieroQuery):
     estadosCuota: list[EstadoCuotaType] = strawchemy.field(filter_input=EstadoCuotaFilter)
     estadosCampania: list[EstadoCampaniaType] = strawchemy.field(filter_input=EstadoCampaniaFilter)
     estadosAccion: list[EstadoAccionType] = strawchemy.field(filter_input=EstadoAccionFilter)
+    estadosActividad: list[EstadoAccionType] = strawchemy.field(filter_input=EstadoAccionFilter)
     estadosTarea: list[EstadoTareaType] = strawchemy.field(filter_input=EstadoTareaFilter)
     estadosParticipante: list[EstadoParticipanteType] = strawchemy.field(filter_input=EstadoParticipanteFilter)
     estadosOrdenCobro: list[EstadoOrdenCobroType] = strawchemy.field(filter_input=EstadoOrdenCobroFilter)
@@ -63,17 +66,18 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, FinancieroQuery):
     temasUi: list[TemaUIType] = strawchemy.field()
 
     # === GEOGRÁFICO ===
-    tiposUnidadesOrganizativas: list[TipoUnidadOrganizativaType] = strawchemy.field(filter_input=TipoUnidadOrganizativaFilter)
+    nivelesOrganizativos: list[NivelOrganizativoType] = strawchemy.field(filter_input=NivelOrganizativoFilter)
     paises: list[PaisType] = strawchemy.field(filter_input=PaisFilter)
     provincias: list[ProvinciaType] = strawchemy.field(filter_input=ProvinciaFilter)
     municipios: list[MunicipioType] = strawchemy.field(filter_input=MunicipioFilter)
     direcciones: list[DireccionType] = strawchemy.field()
-    agrupacionesTerritoriales: list[AgrupacionTerritorialType] = strawchemy.field(filter_input=AgrupacionTerritorialFilter)
+    unidadesOrganizativas: list[UnidadOrganizativaType] = strawchemy.field(filter_input=UnidadOrganizativaFilter)
 
     # === NOTIFICACIONES ===
     tiposNotificacion: list[TipoNotificacionType] = strawchemy.field(filter_input=TipoNotificacionFilter)
     notificaciones: list[NotificacionType] = strawchemy.field(filter_input=NotificacionFilter)
     preferenciasNotificacion: list[PreferenciaNotificacionType] = strawchemy.field(filter_input=PreferenciaNotificacionFilter)
+    plantillasEmail: list[PlantillaEmailType] = strawchemy.field(filter_input=PlantillaEmailFilter)
 
     # === FINANCIERO - Tesorería ===
     cuentasBancarias: list[CuentaBancariaType] = strawchemy.field(filter_input=CuentaBancariaFilter)
@@ -97,6 +101,7 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, FinancieroQuery):
     estadosPlanificacion: list[EstadoPlanificacionType] = strawchemy.field()
     categoriasPartida: list[CategoriaPartidaType] = strawchemy.field()
     partidasPresupuestarias: list[PartidaPresupuestariaType] = strawchemy.field()
+    compromisos_presupuestarios: list[CompromisoPresupuestarioType] = strawchemy.field(filter_input=CompromisoPresupuestarioFilter)
     planificacionesAnuales: list[PlanificacionAnualType] = strawchemy.field()
 
     # === COLABORACIONES ===
@@ -135,10 +140,13 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, FinancieroQuery):
     campanias: list[CampaniaType] = strawchemy.field(filter_input=CampaniaFilter)
     rolesParticipante: list[RolParticipanteType] = strawchemy.field(filter_input=RolParticipanteFilter)
     participantesCampania: list[ParticipanteCampaniaType] = strawchemy.field(filter_input=ParticipanteCampaniaFilter)
+    tiposMetaCampania: list[TipoMetaType] = strawchemy.field(filter_input=TipoMetaFilter)
+    tiposCanalDifusion: list[TipoCanalDifusionType] = strawchemy.field(filter_input=TipoCanalDifusionFilter)
+    plantillasCampania: list[PlantillaCampaniaType] = strawchemy.field(filter_input=PlantillaCampaniaFilter)
 
-    # === ACCIONES (unifica Evento + Actividad) ===
-    tiposAccion: list[TipoAccionType] = strawchemy.field(filter_input=TipoAccionFilter)
-    acciones: list[AccionType] = strawchemy.field(filter_input=AccionFilter)
+    # === ACTIVIDADES ===
+    tiposActividad: list[TipoActividadType] = strawchemy.field(filter_input=TipoActividadFilter)
+    actividades: list[ActividadType] = strawchemy.field(filter_input=ActividadFilter)
     tareas: list[TareaType] = strawchemy.field(filter_input=TareaFilter)
     participaciones: list[ParticipacionType] = strawchemy.field(filter_input=ParticipacionFilter)
 
@@ -150,6 +158,8 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, FinancieroQuery):
     gruposIniciativa: list[GrupoIniciativaType] = strawchemy.field(filter_input=GrupoIniciativaFilter)
     reunionesGrupo: list[ReunionGrupoType] = strawchemy.field()
     asistentesReunion: list[AsistenteReunionType] = strawchemy.field()
+    requisitosRecurso: list[RequisitoRecursoType] = strawchemy.field(filter_input=RequisitoRecursoFilter)
+    aportacionesHoras: list[AportacionHorasType] = strawchemy.field(filter_input=AportacionHorasFilter)
 
     # === VOLUNTARIADO ===
     categoriasCompetencia: list[CategoriaCompetenciaType] = strawchemy.field(filter_input=CategoriaCompetenciaFilter)

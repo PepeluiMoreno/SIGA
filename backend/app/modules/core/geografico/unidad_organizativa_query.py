@@ -1,5 +1,5 @@
 """
-Vista alternativa: AgrupacionTerritorial como query wrapper.
+Vista alternativa: UnidadOrganizativa como query wrapper.
 
 Esta opción no crea una vista materializada real,
 sino que usa un modelo que mapea a una subquery.
@@ -11,7 +11,7 @@ from sqlalchemy.orm import aliased
 from app.modules.organizaciones.models import Organizacion, TipoOrganizacion
 
 
-class AgrupacionTerritorialQuery:
+class UnidadOrganizativaQuery:
     """
     Helper para queries de agrupaciones territoriales.
 
@@ -47,7 +47,7 @@ class AgrupacionTerritorialQuery:
             Query filtrado
         """
         return (
-            AgrupacionTerritorialQuery.get_base_query()
+            UnidadOrganizativaQuery.get_base_query()
             .where(Organizacion.ambito == tipo)
         )
 
@@ -55,7 +55,7 @@ class AgrupacionTerritorialQuery:
     def get_activas():
         """Devuelve query de agrupaciones activas."""
         return (
-            AgrupacionTerritorialQuery.get_base_query()
+            UnidadOrganizativaQuery.get_base_query()
             .where(Organizacion.activo == True)
         )
 
@@ -63,7 +63,7 @@ class AgrupacionTerritorialQuery:
     def get_por_provincia(provincia_id):
         """Filtra agrupaciones de una provincia."""
         return (
-            AgrupacionTerritorialQuery.get_base_query()
+            UnidadOrganizativaQuery.get_base_query()
             .where(Organizacion.provincia_id == provincia_id)
         )
 
@@ -75,7 +75,7 @@ class AgrupacionTerritorialQuery:
         Primero estatales, luego autonómicas, provinciales y locales.
         """
         return (
-            AgrupacionTerritorialQuery.get_base_query()
+            UnidadOrganizativaQuery.get_base_query()
             .order_by(
                 Organizacion.nivel,
                 Organizacion.nombre
@@ -84,12 +84,12 @@ class AgrupacionTerritorialQuery:
 
 # Uso en código:
 #
-# from app.modules.geografico.models.agrupacion_territorial_query import AgrupacionTerritorialQuery
+# from app.modules.geografico.models.agrupacion_territorial_query import UnidadOrganizativaQuery
 #
 # # Obtener todas las agrupaciones activas
-# result = await session.execute(AgrupacionTerritorialQuery.get_activas())
+# result = await session.execute(UnidadOrganizativaQuery.get_activas())
 # agrupaciones = result.scalars().all()
 #
 # # Obtener agrupaciones autonómicas
-# result = await session.execute(AgrupacionTerritorialQuery.get_by_tipo('AUTONOMICA'))
+# result = await session.execute(UnidadOrganizativaQuery.get_by_tipo('AUTONOMICA'))
 # autonomicas = result.scalars().all()

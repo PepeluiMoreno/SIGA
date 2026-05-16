@@ -17,7 +17,7 @@ from typing import Optional
 from sqlalchemy import select
 
 from app.core.database import async_session
-from app.modules.core.geografico.direccion import AgrupacionTerritorial, Pais, Provincia
+from app.modules.core.geografico.direccion import UnidadOrganizativa, Pais, Provincia
 from app.modules.membresia.models.estado_miembro import EstadoMiembro
 from app.modules.membresia.models.miembro import Miembro, TipoMiembro
 from app.modules.economico.models.cobro.forma_pago import FormaPago
@@ -172,7 +172,7 @@ async def seed():
         for p in prov_result.scalars():
             prov_by_codigo[p.codigo.zfill(2)] = p.id
 
-        agr_result = await session.execute(select(AgrupacionTerritorial))
+        agr_result = await session.execute(select(UnidadOrganizativa))
         agr_by_codigo: dict[str, uuid.UUID] = {}
         for a in agr_result.scalars():
             agr_by_codigo[a.nombre_corto] = a.id

@@ -13,6 +13,7 @@ from .funcionalidad import (
 from .auditoria import LogAuditoria, TipoAccion
 from .usuario import TipoVinculacion, Usuario, UsuarioRol
 from .seguridad import Sesion, HistorialSeguridad, IPBloqueada, IntentoAcceso
+from .cargo import Cargo, CargoRol
 
 __all__ = [
     'Transaccion',
@@ -33,4 +34,6 @@ __all__ = [
     'HistorialSeguridad',
     'IPBloqueada',
     'IntentoAcceso',
+    'Cargo',
+    'CargoRol',
 ]

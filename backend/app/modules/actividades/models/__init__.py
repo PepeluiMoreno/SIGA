@@ -4,15 +4,27 @@ from app.modules.configuracion.models.estados import (
     EstadoAccion,
     EstadoTarea,
 )
-from .accion import (
-    TipoAccion,
-    Accion,
+from .actividad import (
+    TipoActividad,
+    TipoAccion,  # alias de compatibilidad
+    Actividad,
+    Accion,      # alias de compatibilidad
     Participacion,
 )
 from .tarea import Tarea
 from .campana import (
     TipoCampania,
+    TipoMeta,
+    TipoCanalDifusion,
     Campania,
+    MetaCampania,
+    CanalDifusionCampania,
+    PartidaPresupuestoCampania,
+    PlantillaCampania,
+    PlantillaMeta,
+    PlantillaPartida,
+    PlantillaActividad,
+    PlantillaTarea,
     RolParticipante,
     ParticipanteCampania,
     Firmante,
@@ -26,20 +38,34 @@ from .grupo import (
     GrupoIniciativa,
     ReunionGrupo,
     AsistenteReunion,
+    RequisitoRecurso,
+    AportacionHoras,
 )
 
 __all__ = [
     # Estados (re-exportados desde configuracion)
     'EstadoAccion',
     'EstadoTarea',
-    # Acciones
+    # Actividades
+    'TipoActividad',
     'TipoAccion',
+    'Actividad',
     'Accion',
     'Participacion',
     'Tarea',
-    # Campañas (iniciativas estratégicas)
+    # Campañas
     'TipoCampania',
+    'TipoMeta',
+    'TipoCanalDifusion',
     'Campania',
+    'MetaCampania',
+    'CanalDifusionCampania',
+    'PartidaPresupuestoCampania',
+    'PlantillaCampania',
+    'PlantillaMeta',
+    'PlantillaPartida',
+    'PlantillaActividad',
+    'PlantillaTarea',
     'RolParticipante',
     'ParticipanteCampania',
     'Firmante',
@@ -52,4 +78,6 @@ __all__ = [
     'GrupoIniciativa',
     'ReunionGrupo',
     'AsistenteReunion',
+    'RequisitoRecurso',
+    'AportacionHoras',
 ]

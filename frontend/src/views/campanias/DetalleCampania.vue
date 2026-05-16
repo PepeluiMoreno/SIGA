@@ -1,128 +1,216 @@
 <template>
-  <AppLayout :title="titulo" :subtitle="subtitulo">
-    <!-- Estados de carga/error -->
-    <div v-if="cargando">
-      <div class="text-center py-12">
+  <AppLayout :title="campania?.nombre || 'Campaña'" :subtitle="campania ? `${campania.tipoCampania?.nombre || ''} · ${campania.estado?.nombre || ''}` : ''">
+    <div class="max-w-4xl mx-auto">
+
+      <!-- Breadcrumb -->
+      <nav class="flex mb-6" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+          <li class="inline-flex items-center">
+            <router-link to="/campanias" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-purple-600">
+              <span>🚩</span>
+              <span class="ml-2">Campañas</span>
+            </router-link>
+          </li>
+          <li>
+            <div class="flex items-center">
+              <span class="text-gray-400 mx-2">›</span>
+              <span class="text-sm font-medium text-gray-500">{{ campania?.nombre || '…' }}</span>
+            </div>
+          </li>
+        </ol>
+      </nav>
+
+      <!-- Carga / error -->
+      <div v-if="cargando" class="bg-white rounded-lg shadow border border-gray-200 p-8 text-center">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-        <p class="mt-2 text-gray-600">Cargando detalles de la campaña...</p>
+        <p class="mt-2 text-gray-600">Cargando campaña...</p>
       </div>
-    </div>
 
-    <div v-else-if="error">
-      <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <span class="text-red-400">⚠️</span>
-          </div>
-          <div class="ml-3">
-            <h3 class="text-sm font-medium text-red-800">Error al cargar la campaña</h3>
-            <p class="text-sm text-red-700 mt-1">{{ error.message }}</p>
-            <button @click="cargarCampania" class="mt-2 text-sm text-red-600 hover:text-red-500">
-              Intentar de nuevo
-            </button>
-          </div>
-        </div>
+      <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <h3 class="text-sm font-medium text-red-800">Error al cargar la campaña</h3>
+        <p class="text-sm text-red-700 mt-1">{{ error.message }}</p>
+        <button @click="cargarCampania" class="mt-2 text-sm text-red-600 hover:text-red-500">Intentar de nuevo</button>
       </div>
-    </div>
 
-    <!-- Contenido principal -->
-    <div v-else-if="campania" class="bg-white rounded-lg shadow">
-      <!-- Encabezado -->
-      <div class="px-6 py-4 border-b border-gray-200">
-        <div class="flex justify-between items-start">
-          <div>
-            <div class="flex items-center space-x-3">
-              <h2 class="text-2xl font-bold text-gray-900">{{ campania.nombre }}</h2>
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border"
-                :style="badgeStyle(campania.estado?.color)">
-                {{ campania.estado?.nombre || 'Sin estado' }}
-              </span>
+      <!-- Ficha -->
+      <div v-else-if="campania" class="bg-white rounded-lg shadow border border-gray-200">
+        <div class="p-6">
+
+          <!-- Información básica -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-medium text-gray-900">Información básica</h3>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+              <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-900">
+                {{ campania.nombre || '—' }}
+              </div>
             </div>
-            <div class="mt-2 flex items-center space-x-4 text-sm text-gray-600">
-              <span v-if="campania.lema" class="text-gray-700">Lema: "{{ campania.lema }}"</span>
-              <span v-if="campania.tipoCampania" class="text-purple-600 bg-purple-100 px-2 py-0.5 rounded">
-                {{ campania.tipoCampania.nombre }}
-              </span>
-              <span v-if="campania.fechaInicioPlan || campania.fechaFinPlan">
-                📅 {{ formatearFecha(campania.fechaInicioPlan) }} - {{ formatearFecha(campania.fechaFinPlan) }}
-              </span>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Lema</label>
+              <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-900">
+                {{ campania.lema || '—' }}
+              </div>
             </div>
-            <p v-if="campania.descripcionCorta" class="mt-2 text-gray-700">
-              {{ campania.descripcionCorta }}
-            </p>
-            <a
-              v-if="campania.urlExterna"
-              :href="campania.urlExterna"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="mt-2 inline-flex items-center text-sm text-purple-600 hover:text-purple-800"
-            >
-              🔗 Ver en laicismo.org
-            </a>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Descripción corta</label>
+              <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-900">
+                {{ campania.descripcionCorta || '—' }}
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Descripción larga</label>
+              <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-900 min-h-[96px] whitespace-pre-line">
+                {{ campania.descripcionLarga || '—' }}
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">URL externa</label>
+              <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                <a
+                  v-if="campania.urlExterna"
+                  :href="campania.urlExterna"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-purple-600 hover:text-purple-800"
+                >{{ campania.urlExterna }}</a>
+                <span v-else class="text-gray-900">—</span>
+              </div>
+            </div>
           </div>
 
-          <div class="flex space-x-3">
+          <!-- Clasificación -->
+          <div class="space-y-4 pt-6 border-t border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Clasificación</h3>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de campaña</label>
+              <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-900">
+                {{ campania.tipoCampania?.nombre || '—' }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Fechas + Estado -->
+          <div class="pt-6 border-t border-gray-200">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              <!-- Panel planificación temporal -->
+              <div class="space-y-4">
+                <h3 class="text-lg font-medium text-gray-900">Fechas</h3>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Fecha inicio planificada</label>
+                  <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-900">
+                    {{ formatearFecha(campania.fechaInicioPlan) || '—' }}
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Fecha fin planificada</label>
+                  <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-900">
+                    {{ formatearFecha(campania.fechaFinPlan) || '—' }}
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Fecha inicio real</label>
+                  <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-900">
+                    {{ formatearFecha(campania.fechaInicioReal) || '—' }}
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Fecha fin real</label>
+                  <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-900">
+                    {{ formatearFecha(campania.fechaFinReal) || '—' }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Panel estado -->
+              <div class="space-y-4">
+                <h3 class="text-lg font-medium text-gray-900">Estado</h3>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Estado actual</label>
+                  <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                    <span
+                      v-if="campania.estado"
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
+                      :style="badgeStyle(campania.estado.color)"
+                    >{{ campania.estado.nombre }}</span>
+                    <span v-else class="text-gray-900">—</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Objetivos -->
+          <div class="space-y-4 pt-6 border-t border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Objetivos</h3>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Objetivo principal</label>
+              <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-900 min-h-[72px] whitespace-pre-line">
+                {{ campania.objetivoPrincipal || '—' }}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Meta de recaudación (€)</label>
+                <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-900">
+                  {{ campania.metaRecaudacion != null ? formatearMoneda(campania.metaRecaudacion) : '—' }}
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Meta de participantes</label>
+                <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-900">
+                  {{ campania.metaParticipantes ?? '—' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Responsable -->
+          <div class="space-y-4 pt-6 border-t border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Responsable</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Responsable</label>
+                <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-900">
+                  {{ nombreCompletoResponsable || '—' }}
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Agrupación</label>
+                <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-900">
+                  {{ campania.agrupacion?.nombre || '—' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botones -->
+          <div class="pt-6 border-t border-gray-200 flex justify-end space-x-3">
             <router-link
               to="/campanias"
               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
             >
               Volver
             </router-link>
+            <router-link
+              :to="`/campanias/${campania.id}/editar`"
+              class="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700"
+            >
+              Editar campaña
+            </router-link>
           </div>
+
         </div>
-      </div>
-
-      <!-- Pestañas -->
-      <div class="border-b border-gray-200">
-        <nav class="flex space-x-8 px-6" aria-label="Tabs">
-          <button
-            v-for="pestania in pestañas"
-            :key="pestania.id"
-            @click="pestañaActiva = pestania.id"
-            :class="[
-              pestañaActiva === pestania.id
-                ? 'border-purple-500 text-purple-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-              'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center'
-            ]"
-          >
-            <span class="mr-2">{{ pestania.icono }}</span>
-            {{ pestania.nombre }}
-            <span v-if="pestania.contador" class="ml-2 bg-gray-100 text-gray-900 text-xs font-medium px-2 py-0.5 rounded-full">
-              {{ pestania.contador }}
-            </span>
-          </button>
-        </nav>
-      </div>
-
-      <!-- Contenido de pestañas -->
-      <div class="p-6">
-        <InformacionGeneralTab 
-          v-if="pestañaActiva === 'informacion'" 
-          :campania="campania" 
-        />
-        
-        <ObjetivosTab 
-          v-else-if="pestañaActiva === 'objetivos'" 
-          :objetivos="objetivos" 
-        />
-        
-        <ActividadesTab 
-          v-else-if="pestañaActiva === 'actividades'" 
-          :actividades="actividades" 
-        />
-        
-        <RecursosTab 
-          v-else-if="pestañaActiva === 'recursos'" 
-          :campania="campania"
-          :recursos-humanos="recursosHumanos"
-          :recursos-materiales="recursosMateriales"
-        />
-        
-        <ResultadosTab 
-          v-else-if="pestañaActiva === 'resultados'" 
-          :campania="campania" 
-        />
       </div>
     </div>
   </AppLayout>
@@ -136,73 +224,26 @@ import { executeQuery } from '@/graphql/client'
 import { GET_CAMPANIA } from '@/graphql/queries/campanias'
 import { badgeStyle } from '@/utils/badge'
 
-// Importar componentes de pestañas
-import InformacionGeneralTab from '@/components/campanias/tabs/InformacionGeneralTab.vue'
-import ObjetivosTab from '@/components/campanias/tabs/ObjetivosTab.vue'
-import ActividadesTab from '@/components/campanias/tabs/ActividadesTab.vue'
-import RecursosTab from '@/components/campanias/tabs/RecursosTab.vue'
-import ResultadosTab from '@/components/campanias/tabs/ResultadosTab.vue'
-
 const route = useRoute()
 const cargando = ref(true)
 const error = ref(null)
 const campania = ref(null)
-const pestañaActiva = ref('informacion')
 
-// Datos relacionados
-const objetivos = ref([])
-const actividades = ref([])
-const recursosHumanos = ref([])
-const recursosMateriales = ref([])
-
-const titulo = computed(() => '')
-const subtitulo = computed(() => '')
-
-const pestañas = computed(() => [
-  { 
-    id: 'informacion', 
-    nombre: 'Información', 
-    icono: '📋' 
-  },
-  { 
-    id: 'objetivos', 
-    nombre: 'Objetivos', 
-    icono: '🎯', 
-    contador: objetivos.value.length 
-  },
-  { 
-    id: 'actividades', 
-    nombre: 'Actividades', 
-    icono: '📅', 
-    contador: actividades.value.length 
-  },
-  { 
-    id: 'recursos', 
-    nombre: 'Recursos', 
-    icono: '💰' 
-  },
-  { 
-    id: 'resultados', 
-    nombre: 'Resultados', 
-    icono: '📊' 
-  }
-])
-
-onMounted(() => {
-  cargarCampania()
+const nombreCompletoResponsable = computed(() => {
+  if (!campania.value?.responsable) return ''
+  const { nombre, apellido1, apellido2 } = campania.value.responsable
+  return [nombre, apellido1, apellido2].filter(Boolean).join(' ')
 })
+
+onMounted(() => cargarCampania())
 
 const cargarCampania = async () => {
   cargando.value = true
   error.value = null
-
   try {
-    const campaniaId = route.params.id
-    const data = await executeQuery(GET_CAMPANIA, { id: campaniaId })
-
-    if (data.campanias && data.campanias.length > 0) {
+    const data = await executeQuery(GET_CAMPANIA, { id: route.params.id })
+    if (data.campanias?.length > 0) {
       campania.value = data.campanias[0]
-      actividades.value = campania.value.actividades || []
     } else {
       throw new Error('Campaña no encontrada')
     }
@@ -214,17 +255,12 @@ const cargarCampania = async () => {
   }
 }
 
-
 const formatearFecha = (fecha) => {
-  if (!fecha) return 'No especificada'
-  try {
-    return new Date(fecha).toLocaleDateString('es-ES', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    })
-  } catch {
-    return fecha
-  }
+  if (!fecha) return ''
+  return new Date(fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+const formatearMoneda = (cantidad) => {
+  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cantidad)
 }
 </script>
