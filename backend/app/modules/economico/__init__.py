@@ -1,4 +1,4 @@
-"""Modelos del dominio financiero."""
+"""Módulo económico: cuotas, donaciones, tesorería, contabilidad, remesas."""
 
 from .models import (
     TipoMovimientoTesoreria,

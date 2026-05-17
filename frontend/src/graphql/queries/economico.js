@@ -69,6 +69,7 @@ export const GET_DONACIONES = `
       estado {
         id
         nombre
+        color
       }
       campania {
         id
@@ -109,6 +110,7 @@ export const GET_REMESAS = `
       estado {
         id
         nombre
+        color
       }
       archivoSepa
       observaciones
@@ -162,7 +164,7 @@ export const GET_IMPORTES_CUOTA = `
   }
 `
 
-// Query para estados financieros (catálogos)
+// Query para estados económicos (catálogos)
 export const GET_ESTADOS_CUOTA = `
   query EstadosCuota {
     estadosCuota {

@@ -248,7 +248,7 @@ const routes = [
   },
 
   // ─── ECONOMICO ────────────────────────────────────────────────────────────
-  { path: '/financiero', redirect: '/economico/cuotas' },
+  { path: '/financiero', redirect: '/economico' },
   {
     path: '/economico/tesoreria',
     component: Tesoreria,

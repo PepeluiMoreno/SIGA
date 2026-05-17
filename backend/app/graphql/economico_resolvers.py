@@ -91,7 +91,7 @@ class CrearApunteContableInput:
 # ---------------------------------------------------------------------------
 
 @strawberry.type
-class FinancieroQuery:
+class EconomicoQuery:
 
     @strawberry.field
     async def cuenta_por_codigo(self, info: strawberry.Info, codigo: str) -> Optional[uuid.UUID]:
@@ -135,7 +135,7 @@ class FinancieroQuery:
 # ---------------------------------------------------------------------------
 
 @strawberry.type
-class FinancieroMutation:
+class EconomicoMutation:
 
     # ── Tesorería ────────────────────────────────────────────────────────────
 

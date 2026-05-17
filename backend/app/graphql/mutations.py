@@ -14,7 +14,7 @@ from . import strawchemy
 from .auth import AuthMutation
 from .configuracion_resolvers import ConfiguracionOrganizacionMutation
 from .acceso_resolvers import AccesoMutation
-from .financiero_resolvers import FinancieroMutation
+from .economico_resolvers import EconomicoMutation
 from .membresia_resolvers import MembresiaResolverMutation
 from .geografico_resolvers import GeograficoMutation
 from .campania_resolvers import CampaniaResolverMutation, CampaniaClonarMutation
@@ -25,7 +25,7 @@ from .inputs_auto import *
 
 
 @strawberry.type
-class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, FinancieroMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, CampaniaClonarMutation, ActividadResolverMutation, PapeleraResolverMutation):
+class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, EconomicoMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, CampaniaClonarMutation, ActividadResolverMutation, PapeleraResolverMutation):
     """Mutations GraphQL del sistema SIGA con generación automática."""
 
     # === ACCESO: roles y transacciones (CRUD) ===

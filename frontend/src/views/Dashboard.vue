@@ -71,7 +71,7 @@
     <div class="bg-gray-50 rounded-lg shadow p-6 border border-gray-200 mb-8">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold text-gray-900">Ejecución Presupuestaria 2025</h3>
-        <router-link to="/financiero" class="text-sm text-purple-600 hover:text-purple-800">
+        <router-link to="/economico" class="text-sm text-purple-600 hover:text-purple-800">
           Ver detalle →
         </router-link>
       </div>

@@ -71,7 +71,7 @@ const categoriaActiva = ref('Miembros')
 
 const categorias = [
   { id: 'Miembros', nombre: 'Miembros' },
-  { id: 'financiero', nombre: 'Financiero' },
+  { id: 'economico', nombre: 'Económico' },
   { id: 'campanias', nombre: 'Campañas' },
   { id: 'actividades', nombre: 'Actividades' },
   { id: 'grupos', nombre: 'Grupos' },
@@ -102,30 +102,30 @@ const catalogos = [
     ruta: '/parametrizacion/motivos-baja'
   },
 
-  // Financiero
+  // Económico
   {
-    categoria: 'financiero',
+    categoria: 'economico',
     nombre: 'Estados de Cuota',
     descripcion: 'Pendiente, Pagada, Vencida, etc.',
     icono: '💰',
     ruta: '/parametrizacion/estados-cuota'
   },
   {
-    categoria: 'financiero',
+    categoria: 'economico',
     nombre: 'Estados de Donación',
     descripcion: 'Pendiente, Recibida, Certificada, etc.',
     icono: '🎁',
     ruta: '/parametrizacion/estados-donacion'
   },
   {
-    categoria: 'financiero',
+    categoria: 'economico',
     nombre: 'Estados de Remesa',
     descripcion: 'Borrador, Enviada, Procesada, etc.',
     icono: '🏦',
     ruta: '/parametrizacion/estados-remesa'
   },
   {
-    categoria: 'financiero',
+    categoria: 'economico',
     nombre: 'Conceptos de Donación',
     descripcion: 'Tipos de conceptos para donaciones',
     icono: '📋',

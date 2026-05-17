@@ -420,7 +420,7 @@
 import { ref, onMounted, computed } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { executeQuery } from '@/graphql/client'
-import { GET_CUOTAS_ANUALES, GET_DONACIONES, GET_REMESAS } from '@/graphql/queries/financiero.js'
+import { GET_CUOTAS_ANUALES, GET_DONACIONES, GET_REMESAS } from '@/graphql/queries/economico.js'
 import { badgeStyle } from '@/utils/badge'
 import { useOrgConfigStore } from '@/stores/orgConfig'
 

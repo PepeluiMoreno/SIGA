@@ -569,7 +569,7 @@ const CATALOGOS = computed(() => [
     ],
   },
   {
-    grupo: 'Financiero',
+    grupo: 'Económico',
     items: [
       {
         key: 'formasPago', label: 'Formas de pago', labelSingular: 'Forma de pago',
