@@ -1,7 +1,7 @@
 import strawberry
 from datetime import date
 
-from .tipos_base import TipoMiembro, Pais, Provincia, AgrupacionTerritorial
+from .tipos_base import TipoMiembro, Pais, Provincia, UnidadOrganizativa
 
 
 @strawberry.type
@@ -25,7 +25,7 @@ class Miembro:
     fecha_baja: date | None
 
     tipo_miembro: TipoMiembro
-    agrupacion: AgrupacionTerritorial | None
+    agrupacion: UnidadOrganizativa | None
     provincia: Provincia | None
     pais_domicilio: Pais | None
 

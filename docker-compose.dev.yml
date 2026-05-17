@@ -4,9 +4,11 @@ services:
     container_name: siga_dev_backend
     restart: unless-stopped
     volumes:
-      - ./backend/app:/app/app       # hot-reload del código fuente
+      - ./backend/app:/app/app           # hot-reload del código fuente
       - ./backend/main.py:/app/main.py
       - ./backend/alembic:/app/alembic
+      - ./backend/initial_data:/app/initial_data  # datos semilla actualizados
+      - uploads_dev:/app/uploads         # documentos subidos (persistentes)
     command: >
       sh -c "python -m app.scripts.wait_for_db &&
              alembic upgrade head &&
@@ -84,3 +86,4 @@ networks:
 volumes:
   pgdata_dev:
   frontend_modules:
+  uploads_dev:

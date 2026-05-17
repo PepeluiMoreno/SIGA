@@ -1,13 +1,13 @@
 import strawberry
 from datetime import datetime
 
-from .tipos_base import Rol, AgrupacionTerritorial
+from .tipos_base import Rol, UnidadOrganizativa
 
 
 @strawberry.type
 class UsuarioRol:
     rol: Rol
-    agrupacion: AgrupacionTerritorial | None
+    agrupacion: UnidadOrganizativa | None
 
 
 @strawberry.type

@@ -10,6 +10,19 @@
 
     <div v-else class="space-y-4">
 
+      <!-- Breadcrumb campaña -->
+      <div v-if="accion.campania" class="flex items-center gap-1.5 text-xs text-slate-500">
+        <router-link :to="`/campanias/${accion.campania.id}`"
+          class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 hover:underline font-medium">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+          {{ accion.campania.nombre }}
+        </router-link>
+        <span class="text-slate-300">/</span>
+        <span class="text-slate-400">{{ accion.nombre }}</span>
+      </div>
+
       <!-- WorkflowBar -->
       <WorkflowBar
         :estado-nombre="accion.estado?.nombre || ''"
@@ -18,6 +31,8 @@
         :es-final="esFinal"
         @transicion="ejecutarTransicion"
       />
+
+      <AccordionGroup class="space-y-4">
 
       <!-- Panel 1: Diseño y propuesta -->
       <AccordionPanel title="Diseño y propuesta">
@@ -70,34 +85,56 @@
               <textarea v-model="formAccionEdit.descripcion" rows="3"
                 class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"></textarea>
             </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-700 mb-1">Fecha inicio</label>
-              <input v-model="formAccionEdit.fechaInicio" type="date"
-                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <!-- Fechas en una línea -->
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-slate-700 mb-1">Inicio / Fin</label>
+              <div class="flex flex-wrap gap-2 items-center">
+                <input v-model="formAccionEdit.fechaInicio" type="date"
+                  class="h-10 px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <input v-model="formAccionEdit.horaInicio" type="time"
+                  class="h-10 px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <span class="text-slate-300">–</span>
+                <input v-model="formAccionEdit.fechaFin" type="date"
+                  class="h-10 px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <input v-model="formAccionEdit.horaFin" type="time"
+                  class="h-10 px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
             </div>
+            <!-- Duración estimada -->
             <div>
-              <label class="block text-xs font-medium text-slate-700 mb-1">Hora inicio</label>
-              <input v-model="formAccionEdit.horaInicio" type="time"
-                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-700 mb-1">Fecha fin</label>
-              <input v-model="formAccionEdit.fechaFin" type="date"
-                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-700 mb-1">Hora fin</label>
-              <input v-model="formAccionEdit.horaFin" type="time"
-                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-700 mb-1">Lugar</label>
-              <input v-model="formAccionEdit.lugar" type="text"
-                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <label class="block text-xs font-medium text-slate-700 mb-1">Duración est. (días / horas)</label>
+              <div class="flex gap-2 items-center">
+                <input v-model.number="formAccionEdit.duracionDias" type="number" min="0" placeholder="d"
+                  class="h-10 w-20 px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <span class="text-slate-400 text-xs">d</span>
+                <input v-model.number="formAccionEdit.duracionHoras" type="number" min="0" step="0.5" placeholder="h"
+                  class="h-10 w-20 px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <span class="text-slate-400 text-xs">h</span>
+              </div>
             </div>
             <div>
               <label class="block text-xs font-medium text-slate-700 mb-1">Aforo</label>
               <input v-model.number="formAccionEdit.aforo" type="number" min="0"
+                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Lugar (nombre)</label>
+              <input v-model="formAccionEdit.lugar" type="text"
+                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-slate-700 mb-1">Dirección postal</label>
+              <input v-model="formAccionEdit.direccion" type="text"
+                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Localidad</label>
+              <input v-model="formAccionEdit.localidad" type="text"
+                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Provincia</label>
+              <input v-model="formAccionEdit.provincia" type="text"
                 class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
             <div>
@@ -139,9 +176,22 @@
               <dt class="text-slate-500 mb-0.5">Fecha fin</dt>
               <dd class="text-slate-900 font-medium">{{ accion.fechaFin }}<span v-if="accion.horaFin" class="ml-1 text-slate-500">{{ accion.horaFin }}</span></dd>
             </div>
+            <div v-if="accion.duracionDias || accion.duracionHoras">
+              <dt class="text-slate-500 mb-0.5">Duración estimada</dt>
+              <dd class="text-slate-900 font-medium">
+                <template v-if="accion.duracionDias">{{ accion.duracionDias }}d </template>
+                <template v-if="accion.duracionHoras">{{ accion.duracionHoras }}h</template>
+              </dd>
+            </div>
             <div v-if="accion.lugar">
               <dt class="text-slate-500 mb-0.5">Lugar</dt>
               <dd class="text-slate-900 font-medium">{{ accion.lugar }}</dd>
+            </div>
+            <div v-if="accion.direccion || accion.localidad || accion.provincia" class="col-span-2">
+              <dt class="text-slate-500 mb-0.5">Dirección</dt>
+              <dd class="text-slate-900 font-medium">
+                {{ [accion.direccion, accion.localidad, accion.provincia].filter(Boolean).join(', ') }}
+              </dd>
             </div>
             <div v-if="accion.aforo">
               <dt class="text-slate-500 mb-0.5">Aforo</dt>
@@ -186,27 +236,67 @@
         <template v-else>
           <!-- Formulario nueva tarea -->
           <div v-if="formTareaNew.visible" class="border-b border-slate-100 bg-slate-50 px-5 py-4 space-y-3">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div class="sm:col-span-2">
+            <div class="grid grid-cols-12 gap-3">
+              <div class="col-span-12">
                 <label class="block text-xs font-medium text-slate-700 mb-1">Título *</label>
                 <input v-model="formTareaNew.titulo" type="text"
                   class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
               </div>
-              <div>
+              <div class="col-span-12">
+                <label class="block text-xs font-medium text-slate-700 mb-1">Descripción</label>
+                <textarea v-model="formTareaNew.descripcion" rows="2"
+                  class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"></textarea>
+              </div>
+              <div class="col-span-3">
                 <label class="block text-xs font-medium text-slate-700 mb-1">Estado</label>
-                <select v-model="formTareaNew.estadoId"
-                  class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <select v-model="formTareaNew.estadoId" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="">—</option>
                   <option v-for="e in estadosTarea" :key="e.id" :value="e.id">{{ e.nombre }}</option>
                 </select>
               </div>
-              <div>
+              <div class="col-span-3">
+                <label class="block text-xs font-medium text-slate-700 mb-1">Prioridad</label>
+                <select v-model.number="formTareaNew.prioridad" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option :value="1">Alta</option>
+                  <option :value="2">Media</option>
+                  <option :value="3">Baja</option>
+                </select>
+              </div>
+              <div class="col-span-3">
+                <label class="block text-xs font-medium text-slate-700 mb-1">Horas estimadas</label>
+                <input v-model.number="formTareaNew.horasEstimadas" type="number" min="0" step="0.5"
+                  class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div class="col-span-3">
                 <label class="block text-xs font-medium text-slate-700 mb-1">Fecha límite</label>
                 <input v-model="formTareaNew.fechaLimite" type="date"
                   class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
+              <div class="col-span-4">
+                <label class="block text-xs font-medium text-slate-700 mb-1">Responsable</label>
+                <select v-model="formTareaNew.responsableId" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="">— Sin asignar —</option>
+                  <option v-for="m in miembros" :key="m.id" :value="m.id">{{ m.nombre }} {{ m.apellido1 }}</option>
+                </select>
+              </div>
+              <div class="col-span-4">
+                <label class="block text-xs font-medium text-slate-700 mb-1">Habilidad requerida</label>
+                <select v-model="formTareaNew.habilidadId" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="">— Ninguna —</option>
+                  <option v-for="h in habilidades" :key="h.id" :value="h.id">{{ h.nombre }}</option>
+                </select>
+              </div>
+              <div class="col-span-4">
+                <label class="block text-xs font-medium text-slate-700 mb-1">Nivel requerido</label>
+                <select v-model="formTareaNew.nivelHabilidadId" :disabled="!formTareaNew.habilidadId"
+                  class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50">
+                  <option value="">— Cualquiera —</option>
+                  <option v-for="n in nivelesHabilidad" :key="n.id" :value="n.id">{{ n.nombre }}</option>
+                </select>
+              </div>
             </div>
             <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <button type="button" @click="formTareaNew = { visible: false, titulo: '', estadoId: '', fechaLimite: '', guardando: false }"
+              <button type="button" @click="formTareaNew = { ...emptyTareaForm(), visible: false, guardando: false }"
                 class="h-9 px-3 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
               <button type="button" @click="crearTarea"
                 :disabled="!formTareaNew.titulo || formTareaNew.guardando"
@@ -218,30 +308,81 @@
           <div v-if="!accion.tareas?.length && !formTareaNew.visible" class="py-8 text-center text-sm text-slate-400">No hay tareas.</div>
           <div v-else-if="accion.tareas?.length" class="divide-y divide-slate-100">
             <template v-for="tarea in accion.tareas" :key="tarea.id">
-              <div v-if="editTareaId !== tarea.id" class="px-5 py-3 flex items-center gap-4">
+              <div v-if="editTareaId !== tarea.id" class="px-5 py-3 flex items-center gap-3">
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-slate-900 truncate">{{ tarea.titulo }}</p>
                   <p v-if="tarea.descripcion" class="text-xs text-slate-500 truncate">{{ tarea.descripcion }}</p>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <span v-if="tarea.habilidad" class="text-xs text-violet-600">{{ tarea.habilidad.nombre }}<template v-if="tarea.nivelHabilidad"> · {{ tarea.nivelHabilidad.nombre }}</template></span>
+                    <span v-if="tarea.responsable" class="text-xs text-slate-400">{{ tarea.responsable.nombre }} {{ tarea.responsable.apellido1 }}</span>
+                  </div>
                 </div>
                 <span class="text-xs text-slate-500 shrink-0">{{ tarea.estado?.nombre }}</span>
+                <span v-if="tarea.horasEstimadas" class="text-xs font-semibold text-amber-600 shrink-0 tabular-nums">{{ tarea.horasEstimadas }}h</span>
                 <span v-if="tarea.fechaLimite" class="text-xs text-slate-400 shrink-0">{{ tarea.fechaLimite }}</span>
                 <RowActions @edit="abrirEditTarea(tarea)" @delete="eliminarTarea(tarea.id)"
                   confirm-title="¿Eliminar esta tarea?" :confirm-text="`«${tarea.titulo}» será eliminada.`" />
               </div>
-              <div v-else class="px-5 py-3 bg-slate-50 space-y-3">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div class="sm:col-span-2">
+              <div v-else class="px-5 py-4 bg-slate-50 space-y-3">
+                <div class="grid grid-cols-12 gap-3">
+                  <div class="col-span-12">
                     <label class="block text-xs font-medium text-slate-700 mb-1">Título</label>
                     <input v-model="formTareaEdit.titulo" type="text"
                       class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
                   </div>
-                  <div>
+                  <div class="col-span-12">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Descripción</label>
+                    <textarea v-model="formTareaEdit.descripcion" rows="2"
+                      class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"></textarea>
+                  </div>
+                  <div class="col-span-3">
                     <label class="block text-xs font-medium text-slate-700 mb-1">Estado</label>
                     <select v-model="formTareaEdit.estadoId" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white">
+                      <option value="">—</option>
                       <option v-for="e in estadosTarea" :key="e.id" :value="e.id">{{ e.nombre }}</option>
                     </select>
                   </div>
-                  <div>
+                  <div class="col-span-3">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Prioridad</label>
+                    <select v-model.number="formTareaEdit.prioridad" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white">
+                      <option :value="1">Alta</option>
+                      <option :value="2">Media</option>
+                      <option :value="3">Baja</option>
+                    </select>
+                  </div>
+                  <div class="col-span-3">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Horas estimadas</label>
+                    <input v-model.number="formTareaEdit.horasEstimadas" type="number" min="0" step="0.5"
+                      class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white" />
+                  </div>
+                  <div class="col-span-3">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Horas reales</label>
+                    <input v-model.number="formTareaEdit.horasReales" type="number" min="0" step="0.5"
+                      class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white" />
+                  </div>
+                  <div class="col-span-4">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Responsable</label>
+                    <select v-model="formTareaEdit.responsableId" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white">
+                      <option value="">— Sin asignar —</option>
+                      <option v-for="m in miembros" :key="m.id" :value="m.id">{{ m.nombre }} {{ m.apellido1 }}</option>
+                    </select>
+                  </div>
+                  <div class="col-span-4">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Habilidad requerida</label>
+                    <select v-model="formTareaEdit.habilidadId" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white">
+                      <option value="">— Ninguna —</option>
+                      <option v-for="h in habilidades" :key="h.id" :value="h.id">{{ h.nombre }}</option>
+                    </select>
+                  </div>
+                  <div class="col-span-4">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Nivel requerido</label>
+                    <select v-model="formTareaEdit.nivelHabilidadId" :disabled="!formTareaEdit.habilidadId"
+                      class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white disabled:opacity-50">
+                      <option value="">— Cualquiera —</option>
+                      <option v-for="n in nivelesHabilidad" :key="n.id" :value="n.id">{{ n.nombre }}</option>
+                    </select>
+                  </div>
+                  <div class="col-span-4">
                     <label class="block text-xs font-medium text-slate-700 mb-1">Fecha límite</label>
                     <input v-model="formTareaEdit.fechaLimite" type="date"
                       class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white" />
@@ -484,6 +625,8 @@
         </div>
       </AccordionPanel>
 
+      </AccordionGroup>
+
     </div>
     </div>
   </AppLayout>
@@ -565,6 +708,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
+import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import WorkflowBar from '@/components/common/WorkflowBar.vue'
 import RowActions from '@/components/common/RowActions.vue'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
@@ -584,6 +728,8 @@ const GET_CATALOGOS = `
     estadosTarea { id nombre }
     tiposActividad { id nombre tieneLugar }
     estadosAccion { id nombre }
+    habilidades(filter: { activo: { eq: true } }) { id nombre }
+    nivelesHabilidad(filter: { activo: { eq: true } }) { id nombre orden }
   }
 `
 
@@ -604,6 +750,8 @@ const miembros = ref([])
 const estadosTarea = ref([])
 const tiposActividad = ref([])
 const estadosAccion = ref([])
+const habilidades = ref([])
+const nivelesHabilidad = ref([])
 const errorParticipacion = ref('')
 const cargandoTransicion = ref(false)
 
@@ -771,7 +919,12 @@ function abrirEditAccion() {
     horaInicio: accion.value.horaInicio || '',
     fechaFin: accion.value.fechaFin || '',
     horaFin: accion.value.horaFin || '',
+    duracionHoras: accion.value.duracionHoras ?? null,
+    duracionDias: accion.value.duracionDias ?? null,
     lugar: accion.value.lugar || '',
+    direccion: accion.value.direccion || '',
+    localidad: accion.value.localidad || '',
+    provincia: accion.value.provincia || '',
     aforo: accion.value.aforo || null,
     esOnline: accion.value.esOnline || false,
     urlOnline: accion.value.urlOnline || '',
@@ -805,23 +958,38 @@ async function eliminarAccion({ hardDelete } = {}) {
 
 // Tareas
 const editTareaId = ref(null)
-const formTareaEdit = ref({ titulo: '', estadoId: '', fechaLimite: '' })
-const formTareaNew = ref({ visible: false, titulo: '', estadoId: '', fechaLimite: '', guardando: false })
+const emptyTareaForm = () => ({
+  titulo: '', descripcion: '', estadoId: '', prioridad: 2,
+  responsableId: '', habilidadId: '', nivelHabilidadId: '',
+  horasEstimadas: null, horasReales: null, fechaLimite: '',
+})
+const formTareaEdit = ref(emptyTareaForm())
+const formTareaNew = ref({ ...emptyTareaForm(), visible: false, guardando: false })
+
+function tareaToData(f) {
+  return {
+    titulo: f.titulo,
+    descripcion: f.descripcion || null,
+    estadoId: f.estadoId || null,
+    prioridad: f.prioridad || 2,
+    responsableId: f.responsableId || null,
+    habilidadId: f.habilidadId || null,
+    nivelHabilidadId: f.nivelHabilidadId || null,
+    horasEstimadas: f.horasEstimadas || null,
+    horasReales: f.horasReales || null,
+    fechaLimite: f.fechaLimite || null,
+  }
+}
 
 async function crearTarea() {
   if (!formTareaNew.value.titulo) return
   formTareaNew.value.guardando = true
   try {
     await graphqlClient.request(CREAR_TAREA, {
-      data: {
-        titulo: formTareaNew.value.titulo,
-        estadoId: formTareaNew.value.estadoId || null,
-        fechaLimite: formTareaNew.value.fechaLimite || null,
-        actividadId: accion.value.id,
-      },
+      data: { ...tareaToData(formTareaNew.value), actividadId: accion.value.id },
     })
     await recargarAccion()
-    formTareaNew.value = { visible: false, titulo: '', estadoId: '', fechaLimite: '', guardando: false }
+    formTareaNew.value = { ...emptyTareaForm(), visible: false, guardando: false }
   } catch (e) {
     alert(e?.response?.errors?.[0]?.message || 'Error creando tarea')
   } finally {
@@ -830,14 +998,25 @@ async function crearTarea() {
 }
 
 function abrirEditTarea(t) {
-  formTareaEdit.value = { titulo: t.titulo, estadoId: t.estado?.id || '', fechaLimite: t.fechaLimite || '' }
+  formTareaEdit.value = {
+    titulo: t.titulo,
+    descripcion: t.descripcion || '',
+    estadoId: t.estado?.id || '',
+    prioridad: t.prioridad ?? 2,
+    responsableId: t.responsable?.id || '',
+    habilidadId: t.habilidad?.id || '',
+    nivelHabilidadId: t.nivelHabilidad?.id || '',
+    horasEstimadas: t.horasEstimadas ?? null,
+    horasReales: t.horasReales ?? null,
+    fechaLimite: t.fechaLimite || '',
+  }
   editTareaId.value = t.id
 }
 
 async function guardarEditTarea(id) {
   try {
     await graphqlClient.request(ACTUALIZAR_TAREA, {
-      data: { id, titulo: formTareaEdit.value.titulo, estadoId: formTareaEdit.value.estadoId, fechaLimite: formTareaEdit.value.fechaLimite || null },
+      data: { id, ...tareaToData(formTareaEdit.value) },
     })
     await recargarAccion()
     editTareaId.value = null
@@ -954,6 +1133,8 @@ onMounted(async () => {
     estadosTarea.value = resCat.estadosTarea || []
     tiposActividad.value = resCat.tiposActividad || []
     estadosAccion.value = resCat.estadosAccion || []
+    habilidades.value = resCat.habilidades || []
+    nivelesHabilidad.value = (resCat.nivelesHabilidad || []).sort((a, b) => a.orden - b.orden)
   } finally {
     loading.value = false
   }

@@ -13,6 +13,8 @@ from typing import List, Optional
 import strawberry
 from sqlalchemy import select
 
+from sqlalchemy import delete as sa_delete
+
 from app.modules.acceso.models.rol import Rol, TipoRol
 from app.modules.acceso.models.funcionalidad import RolFuncionalidad
 from app.modules.acceso.models.rol_transaccion import RolTransaccion
@@ -112,6 +114,8 @@ class AccesoMutation:
         rol = res.scalar_one_or_none()
         if rol is None:
             raise ValueError("Rol no encontrado")
+        if rol.sistema:
+            raise ValueError("Los roles del sistema no se pueden modificar")
 
         if data.codigo is not None and data.codigo != rol.codigo:
             dup = await session.execute(
@@ -247,6 +251,25 @@ class AccesoMutation:
         session.add(ur)
         await session.commit()
         return ur.id
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACCESO_ROL_ELIMINAR")])
+    async def eliminar_rol(
+        self,
+        info: strawberry.Info,
+        id: uuid.UUID,
+    ) -> bool:
+        """Elimina un rol, rechazando roles de sistema."""
+        session = info.context.session
+        res = await session.execute(select(Rol).where(Rol.id == id, Rol.eliminado == False))
+        rol = res.scalar_one_or_none()
+        if rol is None:
+            raise ValueError("Rol no encontrado")
+        if rol.sistema:
+            raise ValueError(f"El rol «{rol.nombre}» es de sistema y no se puede eliminar")
+
+        await session.execute(sa_delete(Rol).where(Rol.id == id))
+        await session.commit()
+        return True
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ACCESO_ROL_REVOCAR")])
     async def revocar_rol_usuario(

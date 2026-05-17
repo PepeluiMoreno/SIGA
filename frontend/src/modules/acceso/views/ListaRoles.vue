@@ -256,7 +256,7 @@ async function eliminar() {
   eliminando.value = true
   try {
     await graphqlClient.request(ELIMINAR_ROL, {
-      filter: { id: { eq: rolAEliminar.value.id } },
+      id: rolAEliminar.value.id,
     })
     roles.value = roles.value.filter(r => r.id !== rolAEliminar.value.id)
     modalEliminar.value = false

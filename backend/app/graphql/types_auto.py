@@ -492,7 +492,7 @@ class PlantillaTareaType:
 
 @strawchemy.type(PlantillaActividad, include="all", override=True)
 class PlantillaActividadType:
-    pass
+    tipo_actividad: Optional['TipoActividadType'] = None
 
 @strawchemy.type(PlantillaCampania, include="all", override=True)
 class PlantillaCampaniaType:
@@ -521,7 +521,10 @@ class FirmaCampaniaType:
 
 
 # === ACTIVIDADES ===
-from ..modules.actividades.models import TipoActividad, TipoAccion, Actividad, Accion, Tarea, Participacion
+from ..modules.actividades.models import (
+    TipoActividad, TipoAccion, Actividad, Accion, Tarea, Participacion,
+    PartidaPresupuestoActividad, RegistroTrabajoActividad, DocumentoActividad, DocumentoPartida,
+)
 
 
 @strawchemy.type(TipoActividad, include="all", override=True)
@@ -545,10 +548,28 @@ AccionType = ActividadType
 class TareaType:
     estado: Optional['EstadoTareaType'] = None
     responsable: Optional['MiembroType'] = None
+    habilidad: Optional['HabilidadType'] = None
+    nivel_habilidad: Optional['NivelHabilidadType'] = None
 
 @strawchemy.type(Participacion, include="all", override=True)
 class ParticipacionType:
     miembro: Optional['MiembroType'] = None
+
+@strawchemy.type(PartidaPresupuestoActividad, include="all", override=True)
+class PartidaPresupuestoActividadType:
+    pass
+
+@strawchemy.type(RegistroTrabajoActividad, include="all", override=True)
+class RegistroTrabajoActividadType:
+    miembro: Optional['MiembroType'] = None
+
+@strawchemy.type(DocumentoActividad, include="all", override=True)
+class DocumentoActividadType:
+    subido_por: Optional['UsuarioType'] = None
+
+@strawchemy.type(DocumentoPartida, include="all", override=True)
+class DocumentoPartidaType:
+    subido_por: Optional['UsuarioType'] = None
 
 
 # === GRUPOS ===

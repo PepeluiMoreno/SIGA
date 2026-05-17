@@ -158,20 +158,6 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Meta de recaudación (€)</label>
-                <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-900">
-                  {{ campania.metaRecaudacion != null ? formatearMoneda(campania.metaRecaudacion) : '—' }}
-                </div>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Meta de participantes</label>
-                <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-900">
-                  {{ campania.metaParticipantes ?? '—' }}
-                </div>
-              </div>
-            </div>
           </div>
 
           <!-- Responsable -->

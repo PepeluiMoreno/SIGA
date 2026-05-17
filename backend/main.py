@@ -195,6 +195,198 @@ async def upload_foto_campania(
         return {"fotoUrl": foto_url}
 
 
+UPLOADS_DIR = Path("uploads")
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+MAX_DOC_SIZE = 30 * 1024 * 1024  # 30 MB
+
+
+@app.post("/upload/actividades/{actividad_id}/documentos")
+async def upload_documento_actividad(
+    actividad_id: str,
+    file: UploadFile = File(...),
+    nombre: str = "",
+    tipo_doc: str = "otro",
+    authorization: Optional[str] = Header(None),
+):
+    """Sube un documento adjunto a una actividad."""
+    from app.core.security import extract_bearer_token, load_user_from_token
+    from app.core.database import async_session
+    from app.modules.actividades.models.actividad import DocumentoActividad
+
+    token = extract_bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="No autenticado")
+
+    async with async_session() as session:
+        user = await load_user_from_token(session, token)
+        if not user:
+            raise HTTPException(status_code=401, detail="Token inválido")
+
+        content = await file.read()
+        if len(content) > MAX_DOC_SIZE:
+            raise HTTPException(status_code=400, detail="El archivo no puede superar 30 MB")
+
+        act_dir = UPLOADS_DIR / "actividades" / actividad_id
+        act_dir.mkdir(parents=True, exist_ok=True)
+        nombre_archivo = file.filename or "documento"
+        ruta = act_dir / nombre_archivo
+        # Evitar colisiones
+        if ruta.exists():
+            stem, suffix = Path(nombre_archivo).stem, Path(nombre_archivo).suffix
+            nombre_archivo = f"{stem}_{uuid_lib.uuid4().hex[:6]}{suffix}"
+            ruta = act_dir / nombre_archivo
+        ruta.write_bytes(content)
+
+        ruta_relativa = f"actividades/{actividad_id}/{nombre_archivo}"
+        doc = DocumentoActividad(
+            actividad_id=uuid_lib.UUID(actividad_id),
+            nombre=nombre or nombre_archivo,
+            nombre_archivo=nombre_archivo,
+            ruta=ruta_relativa,
+            tipo_mime=file.content_type,
+            tamanyo=len(content),
+            tipo_doc=tipo_doc,
+            subido_por_id=user.id,
+        )
+        session.add(doc)
+        await session.commit()
+        await session.refresh(doc)
+
+        return {
+            "id": str(doc.id),
+            "nombre": doc.nombre,
+            "ruta": doc.ruta,
+            "tipo_mime": doc.tipo_mime,
+            "tamanyo": doc.tamanyo,
+            "url": f"/api/uploads/{ruta_relativa}",
+        }
+
+
+@app.post("/upload/partidas-actividad/{partida_id}/documentos")
+async def upload_documento_partida_actividad(
+    partida_id: str,
+    file: UploadFile = File(...),
+    nombre: str = "",
+    tipo_doc: str = "otro",
+    authorization: Optional[str] = Header(None),
+):
+    """Sube un justificante contable adjunto a una partida de actividad."""
+    from app.core.security import extract_bearer_token, load_user_from_token
+    from app.core.database import async_session
+    from app.modules.actividades.models.actividad import DocumentoPartida, PartidaPresupuestoActividad
+    from sqlalchemy import select as sa_select
+
+    token = extract_bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="No autenticado")
+
+    async with async_session() as session:
+        user = await load_user_from_token(session, token)
+        if not user:
+            raise HTTPException(status_code=401, detail="Token inválido")
+
+        content = await file.read()
+        if len(content) > MAX_DOC_SIZE:
+            raise HTTPException(status_code=400, detail="El archivo no puede superar 30 MB")
+
+        doc_dir = UPLOADS_DIR / "justificantes" / "actividad" / partida_id
+        doc_dir.mkdir(parents=True, exist_ok=True)
+        nombre_archivo = file.filename or "justificante"
+        ruta = doc_dir / nombre_archivo
+        if ruta.exists():
+            stem, suffix = Path(nombre_archivo).stem, Path(nombre_archivo).suffix
+            nombre_archivo = f"{stem}_{uuid_lib.uuid4().hex[:6]}{suffix}"
+            ruta = doc_dir / nombre_archivo
+        ruta.write_bytes(content)
+
+        ruta_relativa = f"justificantes/actividad/{partida_id}/{nombre_archivo}"
+        doc = DocumentoPartida(
+            partida_actividad_id=uuid_lib.UUID(partida_id),
+            nombre=nombre or nombre_archivo,
+            nombre_archivo=nombre_archivo,
+            ruta=ruta_relativa,
+            tipo_mime=file.content_type,
+            tamanyo=len(content),
+            tipo_doc=tipo_doc,
+            subido_por_id=user.id,
+        )
+        session.add(doc)
+        await session.commit()
+        await session.refresh(doc)
+
+        return {
+            "id": str(doc.id),
+            "nombre": doc.nombre,
+            "ruta": doc.ruta,
+            "tipo_mime": doc.tipo_mime,
+            "tamanyo": doc.tamanyo,
+            "url": f"/api/uploads/{ruta_relativa}",
+        }
+
+
+@app.post("/upload/partidas-campania/{partida_id}/documentos")
+async def upload_documento_partida_campania(
+    partida_id: str,
+    file: UploadFile = File(...),
+    nombre: str = "",
+    tipo_doc: str = "otro",
+    authorization: Optional[str] = Header(None),
+):
+    """Sube un justificante contable adjunto a una partida de campaña."""
+    from app.core.security import extract_bearer_token, load_user_from_token
+    from app.core.database import async_session
+    from app.modules.actividades.models.actividad import DocumentoPartida
+
+    token = extract_bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="No autenticado")
+
+    async with async_session() as session:
+        user = await load_user_from_token(session, token)
+        if not user:
+            raise HTTPException(status_code=401, detail="Token inválido")
+
+        content = await file.read()
+        if len(content) > MAX_DOC_SIZE:
+            raise HTTPException(status_code=400, detail="El archivo no puede superar 30 MB")
+
+        doc_dir = UPLOADS_DIR / "justificantes" / "campania" / partida_id
+        doc_dir.mkdir(parents=True, exist_ok=True)
+        nombre_archivo = file.filename or "justificante"
+        ruta = doc_dir / nombre_archivo
+        if ruta.exists():
+            stem, suffix = Path(nombre_archivo).stem, Path(nombre_archivo).suffix
+            nombre_archivo = f"{stem}_{uuid_lib.uuid4().hex[:6]}{suffix}"
+            ruta = doc_dir / nombre_archivo
+        ruta.write_bytes(content)
+
+        ruta_relativa = f"justificantes/campania/{partida_id}/{nombre_archivo}"
+        doc = DocumentoPartida(
+            partida_campania_id=uuid_lib.UUID(partida_id),
+            nombre=nombre or nombre_archivo,
+            nombre_archivo=nombre_archivo,
+            ruta=ruta_relativa,
+            tipo_mime=file.content_type,
+            tamanyo=len(content),
+            tipo_doc=tipo_doc,
+            subido_por_id=user.id,
+        )
+        session.add(doc)
+        await session.commit()
+        await session.refresh(doc)
+
+        return {
+            "id": str(doc.id),
+            "nombre": doc.nombre,
+            "ruta": doc.ruta,
+            "tipo_mime": doc.tipo_mime,
+            "tamanyo": doc.tamanyo,
+            "url": f"/api/uploads/{ruta_relativa}",
+        }
+
+
 @app.get("/")
 async def root():
     return {

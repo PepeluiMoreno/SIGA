@@ -210,6 +210,37 @@ Toda acción de borrado en la UI abre un modal que cumple:
 
 ---
 
+## Configuración SMTP — patrón híbrido (.env + BD)
+
+El servicio de email (`app/core/email_service.py`) usa un patrón híbrido con la siguiente prioridad:
+
+1. **Variables de entorno / secreto del orquestador** (`SMTP_HOST` presente → usa .env)
+2. **Tabla `configuracion` en BD** (fallback cuando no hay variables de entorno)
+
+### Variables de entorno reconocidas
+
+```
+SMTP_HOST=panel.europalaica.com
+SMTP_PORT=587
+SMTP_USERNAME=laicismo.org
+SMTP_PASSWORD=...
+SMTP_FROM=                    # opcional; si vacío usa SMTP_USERNAME
+SMTP_ENCRYPTION=tls           # tls | ssl | none
+```
+
+Añadir al `.env.staging` (secret `SIGA_ENV_STAGING` en GitHub) y al `.env.dev` local si se quiere usar SMTP en desarrollo.
+
+### Por qué este patrón
+
+- En **producción/staging**: las credenciales van en el secreto del orquestador (Docker secret, GitHub secret), nunca en BD ni en código. El cambio de credenciales requiere actualizar el secret y reiniciar el contenedor.
+- En **desarrollo**: si no hay variables de entorno, el backend cae a la configuración guardada en BD, editable desde la UI en *Parámetros Generales → Autenticación y Email*. Útil para pruebas sin tocar el servidor.
+
+### Validación en envío
+
+`EmailService.enviar()` comprueba que `host`, `usuario` y `password` estén rellenos antes de intentar la conexión. Si faltan, lanza `ValueError` con el detalle de qué campos faltan. El error llega al frontend como mensaje GraphQL legible.
+
+---
+
 ## DNS y certificados TLS locales (Optiplex-790)
 
 El Optiplex corre **dnsmasq** con wildcard `address=/optiplex-790/192.168.1.141`. Cualquier subdominio `*.optiplex-790` resuelve a la IP del Optiplex sin configuración adicional.

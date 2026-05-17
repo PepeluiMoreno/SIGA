@@ -112,6 +112,75 @@ export const GET_CAMPANIA = `
         tipoPartida
         orden
       }
+      actividades {
+        id
+        nombre
+        descripcion
+        tipoActividad { id nombre }
+        estado { id nombre color }
+        responsable { id nombre apellido1 apellido2 }
+        fechaInicio
+        fechaFin
+        horaInicio
+        horaFin
+        lugar
+        direccion
+        aforo
+        esOnline
+        urlOnline
+        presupuestoEstimado
+        presupuestoEjecutado
+        esRecurrente
+        participaciones {
+          id
+          miembro { id nombre apellido1 apellido2 fotoUrl }
+          nombreExterno
+          emailExterno
+          rol
+          confirmado
+          asistio
+          horasAportadas
+        }
+        partidas {
+          id
+          concepto
+          importeEstimado
+          importeReal
+          tipoPartida
+          orden
+        }
+        registrosTrabajo {
+          id
+          miembro { id nombre apellido1 apellido2 }
+          fecha
+          horas
+          descripcion
+          tipo
+          creadoEn
+        }
+        documentos {
+          id
+          nombre
+          nombreArchivo
+          ruta
+          tipoMime
+          tamanyo
+          tipoDoc
+          creadoEn
+        }
+        tareas {
+          id
+          titulo
+          descripcion
+          estado { id nombre color }
+          prioridad
+          horasEstimadas
+          horasReales
+          responsable { id nombre apellido1 }
+          fechaLimite
+          orden
+        }
+      }
     }
   }
 `
@@ -264,9 +333,7 @@ export const GET_PLANTILLA_POR_TIPO = `
         tareas {
           id
           titulo
-          descripcion
           horasEstimadas
-          orden
         }
       }
     }
@@ -334,6 +401,7 @@ export const GET_PLANTILLA = `
         descripcion
         duracionDias
         orden
+        tipoActividad { id nombre }
         tareas {
           id
           titulo
@@ -467,6 +535,10 @@ export const APLICAR_PLANTILLA = `
       id
       metas { id tipoMeta { id nombre unidadMedida } valorPlanificado }
       partidasPresupuesto { id concepto importeEstimado tipoPartida }
+      actividades {
+        id nombre fechaInicio horaInicio fechaFin horaFin
+        tareas { id titulo orden }
+      }
     }
   }
 `
@@ -546,6 +618,61 @@ export const ENVIAR_NOTIFICACION_CAMPANIA = `
   mutation EnviarNotificacionCampania($campaniaId: UUID!, $asunto: String!, $cuerpoHtml: String!) {
     enviarNotificacionCampania(campaniaId: $campaniaId, asunto: $asunto, cuerpoHtml: $cuerpoHtml) {
       enviados fallidos sinEmail total simulado mensaje
+    }
+  }
+`
+
+export const GUARDAR_PARTIDAS_ACTIVIDAD = `
+  mutation GuardarPartidasActividad($actividadId: UUID!, $partidas: [PartidaPresupuestoActividadCreateInput!]!) {
+    eliminarPartidasPresupuestoActividad(filter: { actividadId: { eq: $actividadId } }) { id }
+    crearPartidaPresupuestoActividad(data: $partidas) { id concepto importeEstimado importeReal tipoPartida orden }
+  }
+`
+
+export const CREAR_REGISTRO_TRABAJO = `
+  mutation CrearRegistroTrabajo($data: RegistroTrabajoActividadCreateInput!) {
+    crearRegistroTrabajoActividad(data: $data) {
+      id miembro { id nombre apellido1 apellido2 } fecha horas descripcion tipo creadoEn
+    }
+  }
+`
+
+export const ACTUALIZAR_REGISTRO_TRABAJO = `
+  mutation ActualizarRegistroTrabajo($data: RegistroTrabajoActividadUpdateInput!) {
+    actualizarRegistroTrabajoActividad(data: $data) { id fecha horas descripcion tipo }
+  }
+`
+
+export const ELIMINAR_REGISTROS_TRABAJO = `
+  mutation EliminarRegistrosTrabajo($filter: RegistroTrabajoActividadFilter!) {
+    eliminarRegistrosTrabajoActividad(filter: $filter) { id }
+  }
+`
+
+export const ELIMINAR_DOCUMENTO_ACTIVIDAD = `
+  mutation EliminarDocumentoActividad($filter: DocumentoActividadFilter!) {
+    eliminarDocumentosActividad(filter: $filter) { id }
+  }
+`
+
+export const ELIMINAR_DOCUMENTO_PARTIDA = `
+  mutation EliminarDocumentoPartida($filter: DocumentoPartidaFilter!) {
+    eliminarDocumentosPartida(filter: $filter) { id }
+  }
+`
+
+export const CLONAR_CAMPANIA = `
+  mutation ClonarCampania($data: ClonarCampaniaInput!) {
+    clonarCampania(data: $data) {
+      id nombre estado { id nombre color }
+    }
+  }
+`
+
+export const PROPAGAR_A_SUBCAMPANIAS = `
+  mutation PropagarASubcampanias($data: PropagarACampaniasInput!) {
+    propagarASubcampanias(data: $data) {
+      id nombre
     }
   }
 `

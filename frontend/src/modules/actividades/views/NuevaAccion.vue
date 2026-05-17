@@ -1,6 +1,19 @@
 <template>
-  <AppLayout title="Nueva actividad" subtitle="Crear una nueva actividad">
+  <AppLayout title="Nueva actividad" :subtitle="campaniaNombre ? `Campaña: ${campaniaNombre}` : 'Crear una nueva actividad'">
     <div class="max-w-3xl">
+
+    <!-- Contexto campaña -->
+    <div v-if="campaniaId" class="mb-4 flex items-center gap-2 text-xs text-slate-500">
+      <router-link :to="`/campanias/${campaniaId}`"
+        class="inline-flex items-center gap-1 text-indigo-600 hover:underline font-medium">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+        {{ campaniaNombre || 'Campaña' }}
+      </router-link>
+      <span class="text-slate-300">/</span>
+      <span>Nueva actividad</span>
+    </div>
 
     <form @submit.prevent="guardar" class="space-y-5 bg-white rounded-xl border border-slate-200 p-6">
       <!-- Nombre -->
@@ -86,15 +99,31 @@
         </div>
       </div>
 
-      <!-- Lugar (condicional según tipo) -->
-      <div v-if="tipoSeleccionado?.tieneLugar">
-        <label class="block text-sm font-medium text-slate-700 mb-1">Lugar</label>
-        <input
-          v-model="form.lugar"
-          type="text"
-          class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-      </div>
+      <!-- Lugar y ubicación (condicional según tipo) -->
+      <template v-if="tipoSeleccionado?.tieneLugar">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Lugar (nombre del espacio)</label>
+          <input v-model="form.lugar" type="text"
+            class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div class="grid grid-cols-6 gap-2">
+          <div class="col-span-3">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Dirección postal</label>
+            <input v-model="form.direccion" type="text"
+              class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Localidad</label>
+            <input v-model="form.localidad" type="text"
+              class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Provincia</label>
+            <input v-model="form.provincia" type="text"
+              class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+        </div>
+      </template>
 
       <!-- Online -->
       <div class="flex items-center gap-2">
@@ -137,12 +166,16 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { graphqlClient } from '@/graphql/client'
 import { GET_TIPOS_ACCION, GET_ESTADOS_ACCION, CREAR_ACCION } from '../graphql/queries.js'
 
 const router = useRouter()
+const route  = useRoute()
+
+const campaniaId     = route.query.campaniaId || null
+const campaniaNombre = ref(route.query.campaniaNombre || null)
 
 const tiposActividad = ref([])
 const estadosAccion = ref([])
@@ -159,6 +192,11 @@ const form = ref({
   fechaFin: '',
   horaFin: '',
   lugar: '',
+  direccion: '',
+  localidad: '',
+  provincia: '',
+  duracionHoras: null,
+  duracionDias: null,
   esOnline: false,
   urlOnline: '',
 })
@@ -192,12 +230,20 @@ async function guardar() {
       fechaFin: form.value.fechaFin || null,
       horaFin: form.value.horaFin || null,
       lugar: form.value.lugar || null,
+      direccion: form.value.direccion || null,
+      localidad: form.value.localidad || null,
+      provincia: form.value.provincia || null,
+      duracionHoras: form.value.duracionHoras || null,
+      duracionDias: form.value.duracionDias || null,
       esOnline: form.value.esOnline,
       urlOnline: form.value.urlOnline || null,
+      ...(campaniaId ? { campaniaId } : {}),
     }
     const res = await graphqlClient.request(CREAR_ACCION, { data })
     const id = res.crearActividad?.id
-    router.push(`/actividades/${id}`)
+    // Volver a la campaña si venimos de una
+    if (campaniaId) router.push(`/campanias/${campaniaId}`)
+    else router.push(`/actividades/${id}`)
   } catch (e) {
     error.value = e.message || 'Error al crear la actividad'
   } finally {

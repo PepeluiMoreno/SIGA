@@ -3,7 +3,7 @@ from datetime import date
 from decimal import Decimal
 from enum import Enum
 
-from .tipos_base import AgrupacionTerritorial
+from .tipos_base import UnidadOrganizativa
 from .miembro import Miembro
 
 
@@ -42,7 +42,7 @@ class CuotaAnio:
     fecha_pago: date | None
     observaciones: str | None
     miembro: Miembro
-    agrupacion: AgrupacionTerritorial
+    agrupacion: UnidadOrganizativa
 
 
 @strawberry.type

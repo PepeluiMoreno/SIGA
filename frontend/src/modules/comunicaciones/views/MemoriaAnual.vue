@@ -41,12 +41,13 @@
         </div>
       </div>
 
+      <AccordionGroup class="space-y-3">
+
       <!-- Campañas del ejercicio -->
       <AccordionPanel
         title="Campañas"
         :count="campaniasFiltradas.length"
         :default-open="true"
-        class="mb-3"
       >
         <div v-if="!campaniasFiltradas.length" class="px-5 py-8 text-center text-slate-400 text-sm">
           Sin campañas en {{ anio }}
@@ -121,8 +122,7 @@
       <AccordionPanel
         title="Actividades internas"
         :count="actividadesIndependientes.length"
-        :default-open="true"
-        class="mb-3"
+        :default-open="false"
       >
         <div v-if="!actividadesIndependientes.length" class="px-5 py-8 text-center text-slate-400 text-sm">
           Sin actividades independientes en {{ anio }}
@@ -153,6 +153,8 @@
         </div>
       </AccordionPanel>
 
+      </AccordionGroup>
+
     </template>
   </AppLayout>
 </template>
@@ -162,6 +164,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
+import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'

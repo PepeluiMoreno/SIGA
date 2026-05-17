@@ -1,14 +1,5 @@
 <template>
-  <!-- ── Cabecera ──────────────────────────────────────────────────── -->
-  <DetailHeader v-if="!modoPropio" fallback="/miembros">
-    <button v-if="!isCreateMode && miembro.id" @click="toggleEditMode"
-      :class="editMode ? 'text-gray-500 hover:text-gray-700' : 'text-purple-600 hover:text-purple-800'"
-      class="text-sm font-medium transition-colors">
-      {{ editMode ? 'Cancelar edición' : 'Editar' }}
-    </button>
-  </DetailHeader>
-
-  <!-- ── Modal: sugerencia de agrupación ─────────────────────────── -->
+  <!-- Modal: sugerencia de agrupación -->
   <div v-if="mostrarModalAgrupacion"
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
     @click.self="mostrarModalAgrupacion = false">
@@ -40,817 +31,829 @@
     </div>
   </div>
 
-  <!-- ── Tarjeta de contenido ─────────────────────────────────────── -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+  <!-- Layout wrapper: AppLayout para vista independiente, div para modoPropio -->
+  <component :is="layoutComponent" v-bind="layoutBindings">
 
-    <div v-if="loading" class="p-12 text-center">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-purple-600 border-t-transparent mb-3"></div>
-      <p class="text-gray-500 text-sm">{{ isCreateMode ? 'Preparando formulario...' : `Cargando datos del ${orgConfig.miembro}...` }}</p>
+    <!-- Botón Editar en cabecera de página (AppLayout #actions) -->
+    <template v-if="!modoPropio" #actions>
+      <button v-if="!isCreateMode && miembro.id" @click="toggleEditMode"
+        :class="editMode ? 'text-slate-500 hover:text-slate-700' : 'text-indigo-600 hover:text-indigo-800'"
+        class="h-8 px-3 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+        {{ editMode ? 'Cancelar edición' : 'Editar' }}
+      </button>
+    </template>
+
+    <!-- Barra de guardado en footer de AppLayout -->
+    <template v-if="!modoPropio && (editMode || isCreateMode)" #footer>
+      <button @click="handleCancel"
+        class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
+        {{ isCreateMode ? 'Cancelar' : 'Cancelar cambios' }}
+      </button>
+      <button @click="handleSave" :disabled="loading || !formValido"
+        class="px-5 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50">
+        {{ isCreateMode ? 'Crear miembro' : 'Guardar cambios' }}
+      </button>
+    </template>
+
+    <!-- Cargando -->
+    <div v-if="loading" class="py-20 text-center">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent mb-3"></div>
+      <p class="text-slate-500 text-sm">{{ isCreateMode ? 'Preparando formulario...' : `Cargando datos del ${orgConfig.miembro}...` }}</p>
     </div>
 
-    <div v-else-if="error" class="p-8 text-center">
+    <!-- Error -->
+    <div v-else-if="error" class="py-8 text-center">
       <p class="text-red-600 font-medium">{{ error }}</p>
-      <DetailHeader fallback="/miembros" />
     </div>
 
+    <!-- Contenido -->
     <div v-else>
-      <!-- Banner de guardado -->
+
+      <!-- Banner de guardado correcto -->
       <div v-if="saveMessage"
-        class="mx-6 mt-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800 flex items-center gap-2">
+        class="mb-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800 flex items-center gap-2">
         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
         </svg>
         {{ saveMessage }}
       </div>
 
-      <!-- Tabs -->
-      <div class="border-b border-gray-200 px-6">
-        <nav class="-mb-px flex overflow-x-auto">
-          <button
-            v-for="tab in availableTabs"
-            :key="tab.id"
-            @click="activeTab = tab.id"
-            :class="[
-              'whitespace-nowrap pb-3 pt-4 px-4 border-b-2 text-sm font-medium transition-colors',
-              activeTab === tab.id
-                ? 'border-purple-500 text-purple-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            ]">
-            {{ tab.name }}
-          </button>
-        </nav>
-      </div>
+      <AccordionGroup class="space-y-3">
 
-      <!-- Contenido de tabs -->
-      <div class="p-6">
+        <!-- ── 1. DATOS PERSONALES ── -->
+        <AccordionPanel :defaultOpen="true">
+          <template #title>
+            <span class="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>
+            <h2 class="text-sm font-semibold text-slate-800">Datos personales</h2>
+          </template>
+          <div class="p-5 space-y-5">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-        <!-- ── DATOS PERSONALES ── -->
-        <div v-show="activeTab === 'personal'" class="space-y-5">
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <section class="space-y-4 rounded-xl border border-gray-200 p-5">
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Identificación</h3>
 
-            <section class="space-y-4 rounded-xl border border-gray-200 p-5">
-              <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Identificación</h3>
-
-              <!-- Foto de perfil -->
-              <div class="flex items-center gap-4 mb-2">
-                <AvatarImg
-                  :src="miembro.fotoUrl"
-                  :nombre="miembro.nombre"
-                  :apellido="miembro.apellido1"
-                  size="xl"
-                />
-                <div v-if="puedeEditarFoto" class="flex flex-col gap-1">
-                  <label class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg cursor-pointer hover:bg-indigo-100 transition-colors">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-                    </svg>
-                    Cambiar foto
-                    <input type="file" accept="image/*" class="hidden" @change="subirFoto" />
-                  </label>
-                  <p class="text-xs text-slate-400">JPG, PNG, WebP · máx. 5 MB</p>
+                <div class="flex items-center gap-4 mb-2">
+                  <AvatarImg
+                    :src="miembro.fotoUrl"
+                    :nombre="miembro.nombre"
+                    :apellido="miembro.apellido1"
+                    size="xl"
+                  />
+                  <div v-if="puedeEditarFoto" class="flex flex-col gap-1">
+                    <label class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg cursor-pointer hover:bg-indigo-100 transition-colors">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                      </svg>
+                      Cambiar foto
+                      <input type="file" accept="image/*" class="hidden" @change="subirFoto" />
+                    </label>
+                    <p class="text-xs text-slate-400">JPG, PNG, WebP · máx. 5 MB</p>
+                  </div>
                 </div>
-              </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <FieldText v-model="miembro.nombre" label="Nombre *" :edit-mode="editMode || isCreateMode" />
-                <FieldText v-model="miembro.apellido1" label="Primer apellido *" :edit-mode="editMode || isCreateMode" />
-                <FieldText v-model="miembro.apellido2" label="Segundo apellido" :edit-mode="editMode || isCreateMode" />
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <FieldSelect v-model="miembro.sexo" label="Sexo" :edit-mode="editMode || isCreateMode" :options="sexoOptions" />
-                <FieldText v-model="miembro.fechaNacimiento" label="Fecha de nacimiento" type="date" :edit-mode="editMode || isCreateMode" />
-                <FieldSelect v-model="miembro.paisNacimientoId" label="País de nacimiento" :edit-mode="editMode || isCreateMode"
-                  :options="catalogos.paises" option-label="nombre" option-value="id" empty-label="Sin especificar" />
-              </div>
-              <div class="grid grid-cols-12 gap-4">
-                <div class="col-span-3">
-                  <FieldSelect v-model="miembro.tipoDocumento" label="Tipo doc." :edit-mode="editMode || isCreateMode" :options="tipoDocumentoOptions" />
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <FieldText v-model="miembro.nombre" label="Nombre *" :edit-mode="editMode || isCreateMode" />
+                  <FieldText v-model="miembro.apellido1" label="Primer apellido *" :edit-mode="editMode || isCreateMode" />
+                  <FieldText v-model="miembro.apellido2" label="Segundo apellido" :edit-mode="editMode || isCreateMode" />
                 </div>
-                <div class="col-span-4">
-                  <FieldText v-model="miembro.numeroDocumento" label="Número" :edit-mode="editMode || isCreateMode" />
-                </div>
-                <div class="col-span-5">
-                  <FieldSelect v-model="miembro.paisDocumentoId" label="País expedición" :edit-mode="editMode || isCreateMode"
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <FieldSelect v-model="miembro.sexo" label="Sexo" :edit-mode="editMode || isCreateMode" :options="sexoOptions" />
+                  <FieldText v-model="miembro.fechaNacimiento" label="Fecha de nacimiento" type="date" :edit-mode="editMode || isCreateMode" />
+                  <FieldSelect v-model="miembro.paisNacimientoId" label="País de nacimiento" :edit-mode="editMode || isCreateMode"
                     :options="catalogos.paises" option-label="nombre" option-value="id" empty-label="Sin especificar" />
                 </div>
-              </div>
-            </section>
-
-            <section class="space-y-4 rounded-xl border border-gray-200 p-5">
-              <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Contacto</h3>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <FieldText v-model="miembro.email" label="Email" type="email" :edit-mode="editMode || isCreateMode" />
-                <FieldText v-model="miembro.telefono" label="Teléfono" :edit-mode="editMode || isCreateMode" />
-                <FieldText v-model="miembro.telefono2" label="Tel. alternativo" :edit-mode="editMode || isCreateMode" />
-              </div>
-              <FieldText v-model="miembro.direccion" label="Dirección" :edit-mode="editMode || isCreateMode" />
-              <div class="grid grid-cols-12 gap-4">
-                <div class="col-span-2">
-                  <FieldSelect v-model="miembro.paisDomicilioId" label="País" :edit-mode="editMode || isCreateMode"
-                    :options="catalogos.paises" option-label="nombre" option-value="id" empty-label="—" />
-                </div>
-                <div class="col-span-4">
-                  <FieldSelect v-model="miembro.provinciaId" label="Provincia" :edit-mode="editMode || isCreateMode"
-                    :options="catalogos.provincias" option-label="nombre" option-value="id" empty-label="Sin especificar" />
-                </div>
-                <div class="col-span-4">
-                  <FieldText v-model="miembro.localidad" label="Localidad" :edit-mode="editMode || isCreateMode" />
-                </div>
-                <div class="col-span-2">
-                  <FieldText v-model="miembro.codigoPostal" label="CP" :edit-mode="editMode || isCreateMode" />
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <section class="rounded-xl border border-gray-200 p-5">
-            <FieldTextarea v-model="miembro.observaciones" label="Observaciones" :edit-mode="editMode || isCreateMode" rows="4" />
-          </section>
-        </div>
-
-        <!-- ── MEMBRESÍA ── -->
-        <div v-show="activeTab === 'membresia'" class="space-y-5">
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-            <section class="space-y-4 rounded-xl border border-gray-200 p-5">
-              <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Situación</h3>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FieldSelect v-model="miembro.tipoMiembroId" :label="`Tipo de ${orgConfig.miembro} *`" :edit-mode="editMode || isCreateMode"
-                  :options="catalogos.tiposMiembro" option-label="nombre" option-value="id" />
-                <FieldSelect v-model="miembro.estadoId" label="Estado *" :edit-mode="editMode || isCreateMode"
-                  :options="catalogos.estadosMiembro" option-label="nombre" option-value="id" />
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FieldText v-model="miembro.fechaAlta" label="Fecha de alta *" type="date" :edit-mode="editMode || isCreateMode" />
-                <FieldSelect v-model="miembro.agrupacionId" label="Agrupación territorial" :edit-mode="editMode || isCreateMode"
-                  :options="catalogos.agrupaciones" option-label="nombre" option-value="id" empty-label="Sin asignar" />
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-gray-100">
-                <FieldCheckbox v-model="miembro.esVoluntario" label="Dispuesto/a a participar en actividades de la asociación" :edit-mode="editMode || isCreateMode" />
-              </div>
-
-              <!-- Crear cuenta (sólo en alta) -->
-              <div v-if="isCreateMode" class="pt-3 border-t border-indigo-100">
-                <label class="flex items-start gap-3 cursor-pointer group">
-                  <input type="checkbox" v-model="crearCuenta"
-                    class="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-                  <div>
-                    <span class="text-sm font-medium text-gray-900 group-hover:text-indigo-700">
-                      Crear cuenta de acceso a la aplicación
-                    </span>
-                    <p class="text-xs text-gray-500 mt-0.5">
-                      La cuenta se creará inactiva. El socio recibirá un email con un enlace para establecer su contraseña (requiere SMTP configurado en Parámetros Generales).
-                    </p>
+                <div class="grid grid-cols-12 gap-4">
+                  <div class="col-span-3">
+                    <FieldSelect v-model="miembro.tipoDocumento" label="Tipo doc." :edit-mode="editMode || isCreateMode" :options="tipoDocumentoOptions" />
                   </div>
-                </label>
-                <p v-if="crearCuenta && !miembro.email" class="mt-2 text-xs text-amber-600">
-                  Se requiere email para crear la cuenta de acceso.
-                </p>
-              </div>
-
-              <!-- Sección de baja: visible solo cuando el estado contiene "baja" -->
-              <template v-if="estadoEsBaja">
-                <div class="pt-3 border-t border-red-100 space-y-4">
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FieldText v-model="miembro.fechaBaja" label="Fecha de baja" type="date" :edit-mode="editMode || isCreateMode" />
-                    <FieldSelect v-model="miembro.motivoBajaId" label="Motivo de baja" :edit-mode="editMode || isCreateMode"
-                      :options="catalogos.motivosBaja" option-label="nombre" option-value="id" empty-label="Sin especificar" />
+                  <div class="col-span-4">
+                    <FieldText v-model="miembro.numeroDocumento" label="Número" :edit-mode="editMode || isCreateMode" />
                   </div>
-                  <FieldText v-model="miembro.motivoBajaTexto" label="Observaciones de baja" :edit-mode="editMode || isCreateMode" />
+                  <div class="col-span-5">
+                    <FieldSelect v-model="miembro.paisDocumentoId" label="País expedición" :edit-mode="editMode || isCreateMode"
+                      :options="catalogos.paises" option-label="nombre" option-value="id" empty-label="Sin especificar" />
+                  </div>
                 </div>
-              </template>
+              </section>
+
+              <section class="space-y-4 rounded-xl border border-gray-200 p-5">
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Contacto</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <FieldText v-model="miembro.email" label="Email" type="email" :edit-mode="editMode || isCreateMode" />
+                  <FieldText v-model="miembro.telefono" label="Teléfono" :edit-mode="editMode || isCreateMode" />
+                  <FieldText v-model="miembro.telefono2" label="Tel. alternativo" :edit-mode="editMode || isCreateMode" />
+                </div>
+                <FieldText v-model="miembro.direccion" label="Dirección" :edit-mode="editMode || isCreateMode" />
+                <div class="grid grid-cols-12 gap-4">
+                  <div class="col-span-2">
+                    <FieldSelect v-model="miembro.paisDomicilioId" label="País" :edit-mode="editMode || isCreateMode"
+                      :options="catalogos.paises" option-label="nombre" option-value="id" empty-label="—" />
+                  </div>
+                  <div class="col-span-4">
+                    <FieldSelect v-model="miembro.provinciaId" label="Provincia" :edit-mode="editMode || isCreateMode"
+                      :options="catalogos.provincias" option-label="nombre" option-value="id" empty-label="Sin especificar" />
+                  </div>
+                  <div class="col-span-4">
+                    <FieldText v-model="miembro.localidad" label="Localidad" :edit-mode="editMode || isCreateMode" />
+                  </div>
+                  <div class="col-span-2">
+                    <FieldText v-model="miembro.codigoPostal" label="CP" :edit-mode="editMode || isCreateMode" />
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <section class="rounded-xl border border-gray-200 p-5">
+              <FieldTextarea v-model="miembro.observaciones" label="Observaciones" :edit-mode="editMode || isCreateMode" rows="4" />
             </section>
-
-            <section class="space-y-4 rounded-xl border border-gray-200 p-5">
-              <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">RGPD y privacidad</h3>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FieldCheckbox v-model="miembro.solicitaSupresionDatos" label="Solicita supresión de datos" :edit-mode="editMode || isCreateMode" />
-                <FieldCheckbox v-model="miembro.datosAnonimizados" label="Datos anonimizados" :edit-mode="editMode || isCreateMode" />
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <FieldText v-model="miembro.fechaSolicitudSupresion" label="Solicitud RGPD" type="date" :edit-mode="editMode || isCreateMode" />
-                <FieldText v-model="miembro.fechaLimiteRetencion" label="Límite retención" type="date" :edit-mode="editMode || isCreateMode" />
-                <FieldText v-model="miembro.fechaAnonimizacion" label="Anonimización" type="date" :edit-mode="editMode || isCreateMode" />
-              </div>
-            </section>
           </div>
-        </div>
+        </AccordionPanel>
 
-        <!-- ── PAGO DE CUOTAS ── -->
-        <div v-show="activeTab === 'pagoCuotas'">
-          <div class="flex gap-5 items-start">
+        <!-- ── 2. MEMBRESÍA ── -->
+        <AccordionPanel :defaultOpen="false">
+          <template #title>
+            <span class="w-2 h-2 rounded-full bg-violet-500 shrink-0"></span>
+            <h2 class="text-sm font-semibold text-slate-800">Membresía</h2>
+          </template>
+          <div class="p-5 space-y-5">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-            <!-- Izquierda: selector de forma de pago -->
-            <section class="space-y-3 rounded-xl border border-gray-200 p-5 flex-shrink-0 w-80">
-              <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Procedimiento pago cuotas</h3>
-              <div v-if="editMode || isCreateMode" class="grid grid-cols-3 gap-2">
-                <button
-                  v-for="fp in catalogos.formasPago"
-                  :key="fp.id"
-                  type="button"
-                  @click="miembro.formaPagoId = miembro.formaPagoId === fp.id ? null : fp.id"
-                  :class="[
-                    'relative flex flex-col items-center gap-2 rounded-xl border-2 px-2 py-4 text-center text-xs font-medium transition-all duration-150',
-                    miembro.formaPagoId === fp.id
-                      ? 'border-purple-500 bg-purple-50 text-purple-700 shadow-sm'
-                      : 'border-gray-100 bg-gray-50 text-gray-500 hover:border-purple-200 hover:bg-purple-50 hover:text-purple-600'
-                  ]"
-                >
-                  <span class="leading-none" v-html="formaPagoIcono(fp.nombre)"></span>
-                  <span class="leading-tight">{{ fp.nombre }}</span>
-                  <span v-if="miembro.formaPagoId === fp.id"
-                    class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-purple-500 text-white text-[9px]">✓</span>
-                </button>
-              </div>
-              <div v-else-if="miembro.formaPagoId" class="flex items-center gap-2 text-sm text-gray-900">
-                <span class="text-lg" v-html="formaPagoIcono(formaPagoSeleccionada?.nombre)"></span>
-                {{ formaPagoSeleccionada?.nombre }}
-              </div>
-              <div v-else class="text-sm text-gray-400 italic">Sin especificar</div>
-            </section>
+              <section class="space-y-4 rounded-xl border border-gray-200 p-5">
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Situación</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FieldSelect v-model="miembro.tipoMiembroId" :label="`Tipo de ${orgConfig.miembro} *`" :edit-mode="editMode || isCreateMode"
+                    :options="catalogos.tiposMiembro" option-label="nombre" option-value="id" />
+                  <FieldSelect v-model="miembro.estadoId" label="Estado *" :edit-mode="editMode || isCreateMode"
+                    :options="catalogos.estadosMiembro" option-label="nombre" option-value="id" />
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FieldText v-model="miembro.fechaAlta" label="Fecha de alta *" type="date" :edit-mode="editMode || isCreateMode" />
+                  <FieldSelect v-model="miembro.agrupacionId" label="Agrupación territorial" :edit-mode="editMode || isCreateMode"
+                    :options="catalogos.agrupaciones" option-label="nombre" option-value="id" empty-label="Sin asignar" />
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-gray-100">
+                  <FieldCheckbox v-model="miembro.esVoluntario" label="Dispuesto/a a participar en actividades de la asociación" :edit-mode="editMode || isCreateMode" />
+                </div>
 
-            <!-- Derecha: panel contextual según forma de pago -->
-            <Transition
-              enter-active-class="transition-all duration-200 ease-out"
-              enter-from-class="opacity-0 translate-x-2"
-              enter-to-class="opacity-100 translate-x-0"
-              leave-active-class="transition-all duration-150 ease-in"
-              leave-from-class="opacity-100 translate-x-0"
-              leave-to-class="opacity-0 translate-x-2"
-              mode="out-in"
-            >
-              <!-- Transferencia nacional -->
-              <section v-if="esTransferencia && !esInternacional" key="transf" class="flex-1 space-y-4 rounded-xl border border-purple-100 bg-purple-50/40 p-5">
-                <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Datos bancarios</h3>
-                <div class="space-y-1">
-                  <label class="block text-xs font-medium text-gray-600">IBAN</label>
-                  <template v-if="editMode || isCreateMode">
-                    <input
-                      :value="ibanDisplay"
-                      @input="onIbanInput"
-                      @blur="ibanTouched = true"
-                      type="text"
-                      maxlength="40"
-                      placeholder="ES91 2100 0418 4502 0005 1332"
-                      autocomplete="off"
-                      :class="[
-                        'w-full border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2',
-                        ibanTouched && miembro.iban && ibanValidar(miembro.iban) === false
-                          ? 'border-red-400 focus:ring-red-300 bg-white'
-                          : ibanTouched && miembro.iban && ibanValidar(miembro.iban) === true
-                            ? 'border-green-400 focus:ring-green-300 bg-white'
-                            : 'border-gray-300 focus:ring-purple-300 bg-white'
-                      ]"
-                    />
-                    <p v-if="ibanTouched && miembro.iban && ibanValidar(miembro.iban) === false" class="text-xs text-red-600 mt-1">IBAN no válido — comprueba el número</p>
-                    <p v-else-if="ibanTouched && miembro.iban && ibanValidar(miembro.iban) === true" class="text-xs text-green-600 mt-1">✓ IBAN correcto</p>
-                  </template>
-                  <p v-else class="text-sm font-mono text-gray-900">{{ ibanFormatear(miembro.iban) || '—' }}</p>
+                <!-- Crear cuenta (sólo en alta) -->
+                <div v-if="isCreateMode" class="pt-3 border-t border-indigo-100">
+                  <label class="flex items-start gap-3 cursor-pointer group">
+                    <input type="checkbox" v-model="crearCuenta"
+                      class="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                    <div>
+                      <span class="text-sm font-medium text-gray-900 group-hover:text-indigo-700">
+                        Crear cuenta de acceso a la aplicación
+                      </span>
+                      <p class="text-xs text-gray-500 mt-0.5">
+                        La cuenta se creará inactiva. El socio recibirá un email con un enlace para establecer su contraseña (requiere SMTP configurado en Parámetros Generales).
+                      </p>
+                    </div>
+                  </label>
+                  <p v-if="crearCuenta && !miembro.email" class="mt-2 text-xs text-amber-600">
+                    Se requiere email para crear la cuenta de acceso.
+                  </p>
+                </div>
+
+                <!-- Sección de baja -->
+                <template v-if="estadoEsBaja">
+                  <div class="pt-3 border-t border-red-100 space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FieldText v-model="miembro.fechaBaja" label="Fecha de baja" type="date" :edit-mode="editMode || isCreateMode" />
+                      <FieldSelect v-model="miembro.motivoBajaId" label="Motivo de baja" :edit-mode="editMode || isCreateMode"
+                        :options="catalogos.motivosBaja" option-label="nombre" option-value="id" empty-label="Sin especificar" />
+                    </div>
+                    <FieldText v-model="miembro.motivoBajaTexto" label="Observaciones de baja" :edit-mode="editMode || isCreateMode" />
+                  </div>
+                </template>
+              </section>
+
+              <section class="space-y-4 rounded-xl border border-gray-200 p-5">
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">RGPD y privacidad</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FieldCheckbox v-model="miembro.solicitaSupresionDatos" label="Solicita supresión de datos" :edit-mode="editMode || isCreateMode" />
+                  <FieldCheckbox v-model="miembro.datosAnonimizados" label="Datos anonimizados" :edit-mode="editMode || isCreateMode" />
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <FieldText v-model="miembro.fechaSolicitudSupresion" label="Solicitud RGPD" type="date" :edit-mode="editMode || isCreateMode" />
+                  <FieldText v-model="miembro.fechaLimiteRetencion" label="Límite retención" type="date" :edit-mode="editMode || isCreateMode" />
+                  <FieldText v-model="miembro.fechaAnonimizacion" label="Anonimización" type="date" :edit-mode="editMode || isCreateMode" />
                 </div>
               </section>
-
-              <!-- Transferencia internacional -->
-              <section v-else-if="esInternacional" key="transf-int" class="flex-1 space-y-4 rounded-xl border border-purple-100 bg-purple-50/40 p-5">
-                <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Datos bancarios internacionales</h3>
-                <div class="space-y-1">
-                  <label class="block text-xs font-medium text-gray-600">IBAN</label>
-                  <template v-if="editMode || isCreateMode">
-                    <input
-                      :value="ibanDisplay"
-                      @input="onIbanInput"
-                      @blur="ibanTouched = true"
-                      type="text"
-                      maxlength="40"
-                      placeholder="ES91 2100 0418 4502 0005 1332"
-                      autocomplete="off"
-                      :class="[
-                        'w-full border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2',
-                        ibanTouched && miembro.iban && ibanValidar(miembro.iban) === false
-                          ? 'border-red-400 focus:ring-red-300 bg-white'
-                          : ibanTouched && miembro.iban && ibanValidar(miembro.iban) === true
-                            ? 'border-green-400 focus:ring-green-300 bg-white'
-                            : 'border-gray-300 focus:ring-purple-300 bg-white'
-                      ]"
-                    />
-                    <p v-if="ibanTouched && miembro.iban && ibanValidar(miembro.iban) === false" class="text-xs text-red-600 mt-1">IBAN no válido — comprueba el número</p>
-                    <p v-else-if="ibanTouched && miembro.iban && ibanValidar(miembro.iban) === true" class="text-xs text-green-600 mt-1">✓ IBAN correcto</p>
-                  </template>
-                  <p v-else class="text-sm font-mono text-gray-900">{{ ibanFormatear(miembro.iban) || '—' }}</p>
-                </div>
-                <FieldText v-model="miembro.swiftBic" label="SWIFT / BIC" :edit-mode="editMode || isCreateMode" />
-              </section>
-
-              <!-- Domiciliación SEPA -->
-              <section v-else-if="esDomiciliacion" key="sepa" class="flex-1 space-y-4 rounded-xl border border-purple-100 bg-purple-50/40 p-5">
-                <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Domiciliación bancaria</h3>
-                <div class="space-y-1">
-                  <label class="block text-xs font-medium text-gray-600">IBAN de la cuenta a cargar</label>
-                  <template v-if="editMode || isCreateMode">
-                    <input
-                      :value="ibanDisplay"
-                      @input="onIbanInput"
-                      @blur="ibanTouched = true"
-                      type="text"
-                      maxlength="40"
-                      placeholder="ES91 2100 0418 4502 0005 1332"
-                      autocomplete="off"
-                      :class="[
-                        'w-full border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2',
-                        ibanTouched && miembro.iban && ibanValidar(miembro.iban) === false
-                          ? 'border-red-400 focus:ring-red-300 bg-white'
-                          : ibanTouched && miembro.iban && ibanValidar(miembro.iban) === true
-                            ? 'border-green-400 focus:ring-green-300 bg-white'
-                            : 'border-gray-300 focus:ring-purple-300 bg-white'
-                      ]"
-                    />
-                    <p v-if="ibanTouched && miembro.iban && ibanValidar(miembro.iban) === false" class="text-xs text-red-600 mt-1">IBAN no válido — comprueba el número</p>
-                    <p v-else-if="ibanTouched && miembro.iban && ibanValidar(miembro.iban) === true" class="text-xs text-green-600 mt-1">✓ IBAN correcto</p>
-                  </template>
-                  <p v-else class="text-sm font-mono text-gray-900">{{ ibanFormatear(miembro.iban) || '—' }}</p>
-                </div>
-                <p class="text-xs text-gray-400">El cargo se realizará mediante mandato SEPA en la fecha de vencimiento de cada cuota.</p>
-              </section>
-
-              <!-- PayPal -->
-              <section v-else-if="esPaypal" key="paypal" class="flex-1 space-y-4 rounded-xl border border-blue-100 bg-blue-50/40 p-5">
-                <h3 class="text-xs font-semibold uppercase tracking-widest text-blue-600">Cuenta PayPal</h3>
-                <FieldText v-model="miembro.referenciaPago" label="Email / cuenta PayPal" :edit-mode="editMode || isCreateMode" />
-                <p class="text-xs text-gray-400">Se enviará el cobro de la cuota a esta dirección PayPal.</p>
-              </section>
-
-              <!-- Tarjeta -->
-              <section v-else-if="esTarjeta" key="tarjeta" class="flex-1 space-y-4 rounded-xl border border-gray-100 bg-gray-50/60 p-5">
-                <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-600">Tarjeta de pago</h3>
-                <FieldText v-model="miembro.referenciaPago" label="Referencia / últimos 4 dígitos" :edit-mode="editMode || isCreateMode" />
-                <p class="text-xs text-gray-400">Solo para referencia interna. No almacenamos datos completos de tarjeta.</p>
-              </section>
-
-              <!-- Sin datos adicionales (Efectivo, Otro, sin selección) -->
-              <section v-else key="empty" class="flex-1 flex items-center justify-center rounded-xl border border-dashed border-gray-200 p-8 text-center">
-                <div class="text-gray-400">
-                  <p class="text-2xl mb-2" v-html="miembro.formaPagoId ? formaPagoIcono(formaPagoSeleccionada?.nombre) : '👆'"></p>
-                  <p class="text-sm">{{ miembro.formaPagoId ? 'No se requieren datos adicionales' : 'Selecciona un procedimiento de cobro' }}</p>
-                </div>
-              </section>
-            </Transition>
-
-          </div>
-        </div>
-
-        <!-- ── CUOTAS (sección inferior del tab económico) ── -->
-        <div v-show="activeTab === 'pagoCuotas'" v-if="!isCreateMode" class="mt-6">
-          <div class="rounded-xl border border-gray-200 overflow-hidden">
-            <div class="flex items-center gap-3 px-5 py-3 border-b border-gray-100 bg-gray-50">
-              <span class="w-1.5 h-5 rounded-full bg-sky-500 shrink-0"></span>
-              <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-600">Historial de cuotas</h3>
-            </div>
-            <div v-if="loadingCuotas" class="px-5 py-6 text-center text-gray-400 text-sm">Cargando…</div>
-            <div v-else-if="!cuotas.length" class="px-5 py-6 text-center text-gray-400 text-sm italic">Sin cuotas registradas</div>
-            <table v-else class="min-w-full divide-y divide-gray-100 text-sm">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="px-5 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ejercicio</th>
-                  <th class="px-5 py-2 text-right text-xs font-medium text-gray-500 uppercase">Importe</th>
-                  <th class="px-5 py-2 text-right text-xs font-medium text-gray-500 uppercase">Pagado</th>
-                  <th class="px-5 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fecha pago</th>
-                  <th class="px-5 py-2 text-left text-xs font-medium text-gray-500 uppercase">Modo</th>
-                  <th class="px-5 py-2 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-50">
-                <tr v-for="c in cuotasOrdenadas" :key="c.id" class="hover:bg-gray-50">
-                  <td class="px-5 py-2.5 font-semibold text-gray-900">{{ c.ejercicio }}</td>
-                  <td class="px-5 py-2.5 text-right text-gray-700">{{ formatEuros(c.importe) }}</td>
-                  <td class="px-5 py-2.5 text-right"
-                    :class="Number(c.importePagado) >= Number(c.importe) ? 'text-green-700 font-medium' : 'text-amber-600'">
-                    {{ formatEuros(c.importePagado) }}
-                  </td>
-                  <td class="px-5 py-2.5 text-gray-500">{{ c.fechaPago ?? '—' }}</td>
-                  <td class="px-5 py-2.5 text-gray-500 text-xs">{{ c.modoIngreso ?? '—' }}</td>
-                  <td class="px-5 py-2.5">
-                    <span class="px-2 py-0.5 text-xs font-medium rounded-full"
-                      :style="badgeColorStyle(c.estado)">
-                      {{ c.estado?.nombre ?? '—' }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- ── DISPONIBILIDAD Y PERFIL ── -->
-        <!-- ── VOLUNTARIADO ── -->
-        <div v-show="activeTab === 'voluntariado'" class="flex gap-5" style="height: calc(100vh - 320px)">
-
-          <!-- Panel izquierdo: perfil -->
-          <div class="flex-1 min-w-0 overflow-y-auto space-y-4 pr-1">
-            <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Perfil voluntario</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FieldText v-model="miembro.profesion" label="Profesión" :edit-mode="editMode || isCreateMode" />
-              <FieldSelect v-model="miembro.nivelEstudiosId" label="Nivel de estudios"
-                :options="catalogos.nivelesEstudios" option-label="nombre" option-value="id"
-                empty-label="Sin especificar" :edit-mode="editMode || isCreateMode" />
-            </div>
-            <FieldTextarea v-model="miembro.intereses" label="Intereses" :edit-mode="editMode || isCreateMode" rows="3" />
-            <FieldTextarea v-model="miembro.experienciaVoluntariado" label="Experiencia en voluntariado" :edit-mode="editMode || isCreateMode" rows="3" />
-            <FieldTextarea v-model="miembro.observacionesVoluntariado" label="Observaciones de voluntariado" :edit-mode="editMode || isCreateMode" rows="3" />
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
-              <FieldCheckbox v-model="miembro.puedeConducir" label="Puede conducir" :edit-mode="editMode || isCreateMode" />
-              <FieldCheckbox v-model="miembro.vehiculoPropio" label="Vehículo propio" :edit-mode="editMode || isCreateMode" />
-              <FieldCheckbox v-model="miembro.disponibilidadViajar" label="Disponibilidad para viajar" :edit-mode="editMode || isCreateMode" />
             </div>
           </div>
+        </AccordionPanel>
 
-          <div class="w-px bg-gray-200 flex-shrink-0"></div>
+        <!-- ── 3. DATOS ECONÓMICOS ── -->
+        <AccordionPanel v-if="modoPropio || tienePermiso('CUOT_LIST')" :defaultOpen="false">
+          <template #title>
+            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+            <h2 class="text-sm font-semibold text-slate-800">Datos económicos</h2>
+          </template>
+          <div class="p-5 space-y-5">
 
-          <!-- Panel derecho: habilidades -->
-          <div class="flex-1 min-w-0 overflow-y-auto space-y-3 pl-1">
-            <div class="flex items-center justify-between">
-              <h3 class="text-xs font-semibold uppercase tracking-widest text-indigo-600">Habilidades</h3>
-              <button @click="mostrarFormHabilidad = !mostrarFormHabilidad"
-                class="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
-                + Añadir
-              </button>
-            </div>
+            <div class="flex gap-5 items-start">
+              <!-- Selector de forma de pago -->
+              <section class="space-y-3 rounded-xl border border-gray-200 p-5 flex-shrink-0 w-80">
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Procedimiento pago cuotas</h3>
+                <div v-if="editMode || isCreateMode" class="grid grid-cols-3 gap-2">
+                  <button
+                    v-for="fp in catalogos.formasPago"
+                    :key="fp.id"
+                    type="button"
+                    @click="miembro.formaPagoId = miembro.formaPagoId === fp.id ? null : fp.id"
+                    :class="[
+                      'relative flex flex-col items-center gap-2 rounded-xl border-2 px-2 py-4 text-center text-xs font-medium transition-all duration-150',
+                      miembro.formaPagoId === fp.id
+                        ? 'border-purple-500 bg-purple-50 text-purple-700 shadow-sm'
+                        : 'border-gray-100 bg-gray-50 text-gray-500 hover:border-purple-200 hover:bg-purple-50 hover:text-purple-600'
+                    ]"
+                  >
+                    <span class="leading-none" v-html="formaPagoIcono(fp.nombre)"></span>
+                    <span class="leading-tight">{{ fp.nombre }}</span>
+                    <span v-if="miembro.formaPagoId === fp.id"
+                      class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-purple-500 text-white text-[9px]">✓</span>
+                  </button>
+                </div>
+                <div v-else-if="miembro.formaPagoId" class="flex items-center gap-2 text-sm text-gray-900">
+                  <span class="text-lg" v-html="formaPagoIcono(formaPagoSeleccionada?.nombre)"></span>
+                  {{ formaPagoSeleccionada?.nombre }}
+                </div>
+                <div v-else class="text-sm text-gray-400 italic">Sin especificar</div>
+              </section>
 
-            <div v-if="mostrarFormHabilidad" class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 space-y-3">
-              <div class="space-y-3">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Habilidad del catálogo</label>
-                  <select v-model="nuevaHabilidad.habilidadId"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500">
-                    <option value="">Seleccionar...</option>
-                    <template v-for="grupo in habilidadesAgrupadas" :key="grupo.categoriaId">
-                      <optgroup :label="grupo.categoriaNombre">
-                        <option v-for="h in grupo.habilidades" :key="h.id" :value="h.id">{{ h.nombre }}</option>
-                      </optgroup>
+              <!-- Panel contextual según forma de pago -->
+              <Transition
+                enter-active-class="transition-all duration-200 ease-out"
+                enter-from-class="opacity-0 translate-x-2"
+                enter-to-class="opacity-100 translate-x-0"
+                leave-active-class="transition-all duration-150 ease-in"
+                leave-from-class="opacity-100 translate-x-0"
+                leave-to-class="opacity-0 translate-x-2"
+                mode="out-in"
+              >
+                <section v-if="esTransferencia && !esInternacional" key="transf" class="flex-1 space-y-4 rounded-xl border border-purple-100 bg-purple-50/40 p-5">
+                  <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Datos bancarios</h3>
+                  <div class="space-y-1">
+                    <label class="block text-xs font-medium text-gray-600">IBAN</label>
+                    <template v-if="editMode || isCreateMode">
+                      <input
+                        :value="ibanDisplay"
+                        @input="onIbanInput"
+                        @blur="ibanTouched = true"
+                        type="text" maxlength="40"
+                        placeholder="ES91 2100 0418 4502 0005 1332"
+                        autocomplete="off"
+                        :class="[
+                          'w-full border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2',
+                          ibanTouched && miembro.iban && ibanValidar(miembro.iban) === false
+                            ? 'border-red-400 focus:ring-red-300 bg-white'
+                            : ibanTouched && miembro.iban && ibanValidar(miembro.iban) === true
+                              ? 'border-green-400 focus:ring-green-300 bg-white'
+                              : 'border-gray-300 focus:ring-purple-300 bg-white'
+                        ]"
+                      />
+                      <p v-if="ibanTouched && miembro.iban && ibanValidar(miembro.iban) === false" class="text-xs text-red-600 mt-1">IBAN no válido — comprueba el número</p>
+                      <p v-else-if="ibanTouched && miembro.iban && ibanValidar(miembro.iban) === true" class="text-xs text-green-600 mt-1">✓ IBAN correcto</p>
                     </template>
+                    <p v-else class="text-sm font-mono text-gray-900">{{ ibanFormatear(miembro.iban) || '—' }}</p>
+                  </div>
+                </section>
+
+                <section v-else-if="esInternacional" key="transf-int" class="flex-1 space-y-4 rounded-xl border border-purple-100 bg-purple-50/40 p-5">
+                  <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Datos bancarios internacionales</h3>
+                  <div class="space-y-1">
+                    <label class="block text-xs font-medium text-gray-600">IBAN</label>
+                    <template v-if="editMode || isCreateMode">
+                      <input
+                        :value="ibanDisplay"
+                        @input="onIbanInput"
+                        @blur="ibanTouched = true"
+                        type="text" maxlength="40"
+                        placeholder="ES91 2100 0418 4502 0005 1332"
+                        autocomplete="off"
+                        :class="[
+                          'w-full border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2',
+                          ibanTouched && miembro.iban && ibanValidar(miembro.iban) === false
+                            ? 'border-red-400 focus:ring-red-300 bg-white'
+                            : ibanTouched && miembro.iban && ibanValidar(miembro.iban) === true
+                              ? 'border-green-400 focus:ring-green-300 bg-white'
+                              : 'border-gray-300 focus:ring-purple-300 bg-white'
+                        ]"
+                      />
+                      <p v-if="ibanTouched && miembro.iban && ibanValidar(miembro.iban) === false" class="text-xs text-red-600 mt-1">IBAN no válido — comprueba el número</p>
+                      <p v-else-if="ibanTouched && miembro.iban && ibanValidar(miembro.iban) === true" class="text-xs text-green-600 mt-1">✓ IBAN correcto</p>
+                    </template>
+                    <p v-else class="text-sm font-mono text-gray-900">{{ ibanFormatear(miembro.iban) || '—' }}</p>
+                  </div>
+                  <FieldText v-model="miembro.swiftBic" label="SWIFT / BIC" :edit-mode="editMode || isCreateMode" />
+                </section>
+
+                <section v-else-if="esDomiciliacion" key="sepa" class="flex-1 space-y-4 rounded-xl border border-purple-100 bg-purple-50/40 p-5">
+                  <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Domiciliación bancaria</h3>
+                  <div class="space-y-1">
+                    <label class="block text-xs font-medium text-gray-600">IBAN de la cuenta a cargar</label>
+                    <template v-if="editMode || isCreateMode">
+                      <input
+                        :value="ibanDisplay"
+                        @input="onIbanInput"
+                        @blur="ibanTouched = true"
+                        type="text" maxlength="40"
+                        placeholder="ES91 2100 0418 4502 0005 1332"
+                        autocomplete="off"
+                        :class="[
+                          'w-full border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2',
+                          ibanTouched && miembro.iban && ibanValidar(miembro.iban) === false
+                            ? 'border-red-400 focus:ring-red-300 bg-white'
+                            : ibanTouched && miembro.iban && ibanValidar(miembro.iban) === true
+                              ? 'border-green-400 focus:ring-green-300 bg-white'
+                              : 'border-gray-300 focus:ring-purple-300 bg-white'
+                        ]"
+                      />
+                      <p v-if="ibanTouched && miembro.iban && ibanValidar(miembro.iban) === false" class="text-xs text-red-600 mt-1">IBAN no válido — comprueba el número</p>
+                      <p v-else-if="ibanTouched && miembro.iban && ibanValidar(miembro.iban) === true" class="text-xs text-green-600 mt-1">✓ IBAN correcto</p>
+                    </template>
+                    <p v-else class="text-sm font-mono text-gray-900">{{ ibanFormatear(miembro.iban) || '—' }}</p>
+                  </div>
+                  <p class="text-xs text-gray-400">El cargo se realizará mediante mandato SEPA en la fecha de vencimiento de cada cuota.</p>
+                </section>
+
+                <section v-else-if="esPaypal" key="paypal" class="flex-1 space-y-4 rounded-xl border border-blue-100 bg-blue-50/40 p-5">
+                  <h3 class="text-xs font-semibold uppercase tracking-widest text-blue-600">Cuenta PayPal</h3>
+                  <FieldText v-model="miembro.referenciaPago" label="Email / cuenta PayPal" :edit-mode="editMode || isCreateMode" />
+                  <p class="text-xs text-gray-400">Se enviará el cobro de la cuota a esta dirección PayPal.</p>
+                </section>
+
+                <section v-else-if="esTarjeta" key="tarjeta" class="flex-1 space-y-4 rounded-xl border border-gray-100 bg-gray-50/60 p-5">
+                  <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-600">Tarjeta de pago</h3>
+                  <FieldText v-model="miembro.referenciaPago" label="Referencia / últimos 4 dígitos" :edit-mode="editMode || isCreateMode" />
+                  <p class="text-xs text-gray-400">Solo para referencia interna. No almacenamos datos completos de tarjeta.</p>
+                </section>
+
+                <section v-else key="empty" class="flex-1 flex items-center justify-center rounded-xl border border-dashed border-gray-200 p-8 text-center">
+                  <div class="text-gray-400">
+                    <p class="text-2xl mb-2" v-html="miembro.formaPagoId ? formaPagoIcono(formaPagoSeleccionada?.nombre) : '👆'"></p>
+                    <p class="text-sm">{{ miembro.formaPagoId ? 'No se requieren datos adicionales' : 'Selecciona un procedimiento de cobro' }}</p>
+                  </div>
+                </section>
+              </Transition>
+            </div>
+
+            <!-- Historial de cuotas (solo vista existente) -->
+            <div v-if="!isCreateMode" class="rounded-xl border border-gray-200 overflow-hidden">
+              <div class="flex items-center gap-3 px-5 py-3 border-b border-gray-100 bg-gray-50">
+                <span class="w-1.5 h-5 rounded-full bg-sky-500 shrink-0"></span>
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-600">Historial de cuotas</h3>
+              </div>
+              <div v-if="loadingCuotas" class="px-5 py-6 text-center text-gray-400 text-sm">Cargando…</div>
+              <div v-else-if="!cuotas.length" class="px-5 py-6 text-center text-gray-400 text-sm italic">Sin cuotas registradas</div>
+              <table v-else class="min-w-full divide-y divide-gray-100 text-sm">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-5 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ejercicio</th>
+                    <th class="px-5 py-2 text-right text-xs font-medium text-gray-500 uppercase">Importe</th>
+                    <th class="px-5 py-2 text-right text-xs font-medium text-gray-500 uppercase">Pagado</th>
+                    <th class="px-5 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fecha pago</th>
+                    <th class="px-5 py-2 text-left text-xs font-medium text-gray-500 uppercase">Modo</th>
+                    <th class="px-5 py-2 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                  <tr v-for="c in cuotasOrdenadas" :key="c.id" class="hover:bg-gray-50">
+                    <td class="px-5 py-2.5 font-semibold text-gray-900">{{ c.ejercicio }}</td>
+                    <td class="px-5 py-2.5 text-right text-gray-700">{{ formatEuros(c.importe) }}</td>
+                    <td class="px-5 py-2.5 text-right"
+                      :class="Number(c.importePagado) >= Number(c.importe) ? 'text-green-700 font-medium' : 'text-amber-600'">
+                      {{ formatEuros(c.importePagado) }}
+                    </td>
+                    <td class="px-5 py-2.5 text-gray-500">{{ c.fechaPago ?? '—' }}</td>
+                    <td class="px-5 py-2.5 text-gray-500 text-xs">{{ c.modoIngreso ?? '—' }}</td>
+                    <td class="px-5 py-2.5">
+                      <span class="px-2 py-0.5 text-xs font-medium rounded-full" :style="badgeColorStyle(c.estado)">
+                        {{ c.estado?.nombre ?? '—' }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </AccordionPanel>
+
+        <!-- ── 4. VOLUNTARIADO ── -->
+        <AccordionPanel v-if="miembro.esVoluntario" :defaultOpen="false">
+          <template #title>
+            <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+            <h2 class="text-sm font-semibold text-slate-800">Voluntariado</h2>
+          </template>
+          <div class="p-5">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+              <!-- Perfil voluntario -->
+              <div class="space-y-4">
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Perfil voluntario</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FieldText v-model="miembro.profesion" label="Profesión" :edit-mode="editMode || isCreateMode" />
+                  <FieldSelect v-model="miembro.nivelEstudiosId" label="Nivel de estudios"
+                    :options="catalogos.nivelesEstudios" option-label="nombre" option-value="id"
+                    empty-label="Sin especificar" :edit-mode="editMode || isCreateMode" />
+                </div>
+                <FieldTextarea v-model="miembro.intereses" label="Intereses" :edit-mode="editMode || isCreateMode" rows="3" />
+                <FieldTextarea v-model="miembro.experienciaVoluntariado" label="Experiencia en voluntariado" :edit-mode="editMode || isCreateMode" rows="3" />
+                <FieldTextarea v-model="miembro.observacionesVoluntariado" label="Observaciones de voluntariado" :edit-mode="editMode || isCreateMode" rows="3" />
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                  <FieldCheckbox v-model="miembro.puedeConducir" label="Puede conducir" :edit-mode="editMode || isCreateMode" />
+                  <FieldCheckbox v-model="miembro.vehiculoPropio" label="Vehículo propio" :edit-mode="editMode || isCreateMode" />
+                  <FieldCheckbox v-model="miembro.disponibilidadViajar" label="Disponibilidad para viajar" :edit-mode="editMode || isCreateMode" />
+                </div>
+              </div>
+
+              <!-- Habilidades -->
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-xs font-semibold uppercase tracking-widest text-indigo-600">Habilidades</h3>
+                  <button @click="mostrarFormHabilidad = !mostrarFormHabilidad"
+                    class="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+                    + Añadir
+                  </button>
+                </div>
+
+                <div v-if="mostrarFormHabilidad" class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 space-y-3">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Habilidad del catálogo</label>
+                    <select v-model="nuevaHabilidad.habilidadId"
+                      class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500">
+                      <option value="">Seleccionar...</option>
+                      <template v-for="grupo in habilidadesAgrupadas" :key="grupo.categoriaId">
+                        <optgroup :label="grupo.categoriaNombre">
+                          <option v-for="h in grupo.habilidades" :key="h.id" :value="h.id">{{ h.nombre }}</option>
+                        </optgroup>
+                      </template>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nivel</label>
+                    <select v-model="nuevaHabilidad.nivelId"
+                      class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500">
+                      <option value="">Sin especificar</option>
+                      <option v-for="n in catalogos.nivelesHabilidad" :key="n.id" :value="n.id">{{ n.nombre }}</option>
+                    </select>
+                  </div>
+                  <div class="flex gap-2 justify-end">
+                    <button @click="mostrarFormHabilidad = false; nuevaHabilidad = { habilidadId: '', nivelId: '' }"
+                      class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+                    <button @click="guardarHabilidad" :disabled="!nuevaHabilidad.habilidadId"
+                      class="px-3 py-1.5 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50">Guardar</button>
+                  </div>
+                </div>
+
+                <div v-if="loadingHabilidades" class="text-center py-6 text-gray-400 text-sm">Cargando...</div>
+                <div v-else-if="miembroHabilidades.length === 0" class="text-center py-10 text-gray-400 text-sm">
+                  Sin habilidades registradas.
+                </div>
+                <div v-else class="space-y-2">
+                  <div v-for="mh in miembroHabilidades" :key="mh.id"
+                    class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+                    <div>
+                      <p class="text-sm font-medium text-gray-900">{{ mh.habilidad?.nombre }}</p>
+                      <div class="flex items-center gap-2 mt-0.5">
+                        <span v-if="mh.habilidad?.categoria?.nombre" class="text-xs text-indigo-500">{{ mh.habilidad.categoria.nombre }}</span>
+                        <span v-if="mh.nivelHabilidad?.nombre" class="text-xs text-gray-500">{{ mh.nivelHabilidad.nombre }}</span>
+                        <span v-if="mh.validado" class="text-xs text-green-600 font-medium">Validado</span>
+                      </div>
+                    </div>
+                    <button @click="eliminarHabilidad(mh.id)" class="text-xs text-red-400 hover:text-red-600 ml-3">Eliminar</button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </AccordionPanel>
+
+        <!-- ── 5. DISPONIBILIDAD ── -->
+        <AccordionPanel v-if="!isCreateMode && miembro.esVoluntario" :defaultOpen="false">
+          <template #title>
+            <span class="w-2 h-2 rounded-full bg-sky-500 shrink-0"></span>
+            <h2 class="text-sm font-semibold text-slate-800">Disponibilidad</h2>
+          </template>
+          <div class="p-5 space-y-5">
+
+            <section class="space-y-4 rounded-xl border border-gray-200 p-5">
+              <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Resumen de disponibilidad</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FieldText v-model="miembro.disponibilidad" label="Disponibilidad" :edit-mode="editMode || isCreateMode" />
+                <FieldText v-model="miembro.horasDisponiblesSemana" label="Horas/semana" type="number" :edit-mode="editMode || isCreateMode" />
+              </div>
+            </section>
+
+            <div v-if="loadingFranjas" class="text-center py-6 text-gray-400 text-sm">Cargando...</div>
+            <div v-else class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+              <div v-for="(dia, i) in diasSemana" :key="i"
+                class="rounded-xl border flex flex-col min-h-[140px] overflow-hidden"
+                :class="franjasPorDia[i]?.length ? 'border-purple-200' : 'border-gray-200'">
+                <div class="px-3 py-2 flex items-center justify-between"
+                  :class="franjasPorDia[i]?.length ? 'bg-purple-100' : 'bg-gray-100'">
+                  <span class="text-xs font-semibold"
+                    :class="franjasPorDia[i]?.length ? 'text-purple-800' : 'text-gray-500'">{{ dia }}</span>
+                  <button @click="abrirFormFranja(i)"
+                    class="w-5 h-5 flex items-center justify-center rounded-full text-sm font-bold leading-none"
+                    :class="franjasPorDia[i]?.length ? 'text-purple-500 hover:bg-purple-200' : 'text-gray-400 hover:bg-gray-200'">
+                    +
+                  </button>
+                </div>
+                <div class="flex-1 px-2 py-2 flex flex-col gap-1">
+                  <template v-if="franjasPorDia[i]?.length">
+                    <div v-for="f in franjasPorDia[i]" :key="f.id"
+                      class="flex items-center justify-between bg-white rounded-lg px-2 py-1 border border-purple-100 text-xs">
+                      <span class="text-purple-700 font-medium">{{ f.horaInicio.slice(0,5) }}–{{ f.horaFin.slice(0,5) }}</span>
+                      <button @click="eliminarFranja(f.id)" class="text-gray-300 hover:text-red-400 font-bold ml-1 leading-none">×</button>
+                    </div>
+                  </template>
+                  <div v-else class="flex-1 flex items-center justify-center">
+                    <span class="text-xs text-gray-400 italic">No disponible</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="mostrarFormFranja" class="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-3">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Día</label>
+                  <select v-model="nuevaFranja.diaSemana"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500">
+                    <option v-for="(dia, i) in diasSemana" :key="i" :value="i">{{ dia }}</option>
                   </select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Nivel</label>
-                  <select v-model="nuevaHabilidad.nivelId"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500">
-                    <option value="">Sin especificar</option>
-                    <option v-for="n in catalogos.nivelesHabilidad" :key="n.id" :value="n.id">{{ n.nombre }}</option>
-                  </select>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Hora inicio</label>
+                  <input v-model="nuevaFranja.horaInicio" type="time"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Hora fin</label>
+                  <input v-model="nuevaFranja.horaFin" type="time"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
                 </div>
               </div>
               <div class="flex gap-2 justify-end">
-                <button @click="mostrarFormHabilidad = false; nuevaHabilidad = { habilidadId: '', nivelId: '' }"
+                <button @click="mostrarFormFranja = false; nuevaFranja = { diaSemana: 0, horaInicio: '', horaFin: '' }"
                   class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
-                <button @click="guardarHabilidad" :disabled="!nuevaHabilidad.habilidadId"
+                <button @click="guardarFranja" :disabled="!nuevaFranja.horaInicio || !nuevaFranja.horaFin"
                   class="px-3 py-1.5 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50">Guardar</button>
               </div>
             </div>
 
-            <div v-if="loadingHabilidades" class="text-center py-6 text-gray-400 text-sm">Cargando...</div>
-            <div v-else-if="miembroHabilidades.length === 0" class="text-center py-10 text-gray-400 text-sm">
-              Sin habilidades registradas.
-            </div>
-            <div v-else class="space-y-2">
-              <div v-for="mh in miembroHabilidades" :key="mh.id"
-                class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
-                <div>
-                  <p class="text-sm font-medium text-gray-900">{{ mh.habilidad?.nombre }}</p>
-                  <div class="flex items-center gap-2 mt-0.5">
-                    <span v-if="mh.habilidad?.categoria?.nombre" class="text-xs text-indigo-500">{{ mh.habilidad.categoria.nombre }}</span>
-                    <span v-if="mh.nivelHabilidad?.nombre" class="text-xs text-gray-500">{{ mh.nivelHabilidad.nombre }}</span>
-                    <span v-if="mh.validado" class="text-xs text-green-600 font-medium">Validado</span>
-                  </div>
-                </div>
-                <button @click="eliminarHabilidad(mh.id)" class="text-xs text-red-400 hover:text-red-600 ml-3">Eliminar</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── ACCESO Y ROLES ── -->
-        <div v-show="activeTab === 'acceso'" class="space-y-5">
-
-          <!-- Sin cuenta de usuario -->
-          <div v-if="!miembro.usuario">
-            <div v-if="!modalCuenta.abierto" class="rounded-xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400">
-              <p class="text-3xl mb-3">🔒</p>
-              <p class="font-medium text-gray-500">Este miembro no tiene cuenta de acceso a la aplicación.</p>
-              <button v-if="!modoPropio" type="button" @click="abrirModalCuenta"
-                class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition-colors">
-                Crear cuenta de acceso
+            <div v-if="!mostrarFormFranja" class="flex justify-end">
+              <button @click="abrirFormFranja(0)"
+                class="px-3 py-1.5 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700">
+                + Añadir franja
               </button>
             </div>
+          </div>
+        </AccordionPanel>
 
-            <!-- Modal inline de creación de cuenta -->
-            <div v-else class="rounded-xl border border-indigo-200 bg-indigo-50 p-6 space-y-4">
-              <div class="flex items-center justify-between">
-                <h3 class="text-sm font-semibold text-indigo-800">Crear cuenta de acceso</h3>
-                <button type="button" @click="modalCuenta.abierto = false" class="text-gray-400 hover:text-gray-600 text-lg leading-none">&times;</button>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-medium text-gray-700 mb-1">Email de acceso</label>
-                  <input v-model="modalCuenta.email" type="email"
-                    class="h-10 w-full px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
-                </div>
-                <div class="flex flex-col justify-end">
-                  <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                    <input v-model="modalCuenta.enviarEmail" type="checkbox" class="rounded text-indigo-600" />
-                    Enviar email de bienvenida con enlace de activación
-                  </label>
-                </div>
-              </div>
-              <p v-if="!modalCuenta.enviarEmail" class="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
-                Sin email de bienvenida, el miembro no podrá acceder hasta que se le asigne una contraseña manualmente.
-              </p>
-              <p v-if="modalCuenta.error" class="text-xs text-red-600">{{ modalCuenta.error }}</p>
-              <div class="flex gap-2 pt-1">
-                <button type="button" @click="crearCuentaDesdeTab"
-                  :disabled="!modalCuenta.email || modalCuenta.cargando"
-                  class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors">
-                  {{ modalCuenta.cargando ? 'Creando...' : 'Crear cuenta' }}
-                </button>
-                <button type="button" @click="modalCuenta.abierto = false"
-                  class="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                  Cancelar
-                </button>
-              </div>
+        <!-- ── 6. CARGOS ── -->
+        <AccordionPanel v-if="!isCreateMode" :defaultOpen="false">
+          <template #title>
+            <span class="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
+            <h2 class="text-sm font-semibold text-slate-800">Cargos y nombramientos</h2>
+          </template>
+          <div class="p-5">
+            <div v-if="loadingNombramientos" class="text-center py-6 text-gray-400 text-sm">Cargando…</div>
+            <div v-else-if="!nombramientos.length"
+              class="rounded-xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400">
+              Sin nombramientos registrados.
+            </div>
+            <div v-else class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <table class="min-w-full divide-y divide-gray-100 text-sm">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cargo / Rol</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ámbito</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Desde</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Hasta</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                  <tr v-for="n in nombramientos" :key="n.id" class="hover:bg-gray-50">
+                    <td class="px-4 py-2.5 font-medium text-gray-900">{{ n.rol?.nombre || '—' }}</td>
+                    <td class="px-4 py-2.5 text-gray-600">{{ n.agrupacion?.nombre || 'Toda la organización' }}</td>
+                    <td class="px-4 py-2.5 text-gray-600">{{ n.fechaInicio ? formatDate(n.fechaInicio) : '—' }}</td>
+                    <td class="px-4 py-2.5 text-gray-600">{{ n.fechaFin ? formatDate(n.fechaFin) : '—' }}</td>
+                    <td class="px-4 py-2.5">
+                      <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+                        !n.fechaFin ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500']">
+                        {{ !n.fechaFin ? 'Vigente' : 'Finalizado' }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
+        </AccordionPanel>
 
-          <template v-else>
-            <!-- Datos de la cuenta -->
-            <section class="rounded-xl border border-gray-200 p-5 space-y-3">
-              <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Cuenta de acceso</h3>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <p class="text-xs text-gray-500 mb-0.5">Email de acceso</p>
-                  <p class="font-medium text-gray-900">{{ miembro.usuario.email }}</p>
-                </div>
-                <div>
-                  <p class="text-xs text-gray-500 mb-0.5">Estado</p>
-                  <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
-                    miembro.usuario.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-600']">
-                    {{ miembro.usuario.activo ? 'Activa' : 'Bloqueada' }}
-                  </span>
-                </div>
-                <div>
-                  <p class="text-xs text-gray-500 mb-0.5">Último acceso</p>
-                  <p class="text-gray-700">{{ miembro.usuario.ultimoAcceso ? formatDate(miembro.usuario.ultimoAcceso) : 'Nunca' }}</p>
-                </div>
+        <!-- ── 7. ACCESO Y ROLES ── -->
+        <AccordionPanel v-if="!isCreateMode" :defaultOpen="false">
+          <template #title>
+            <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+            <h2 class="text-sm font-semibold text-slate-800">Acceso y roles</h2>
+          </template>
+          <div class="p-5 space-y-5">
+
+            <!-- Sin cuenta de usuario -->
+            <div v-if="!miembro.usuario">
+              <div v-if="!modalCuenta.abierto" class="rounded-xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400">
+                <p class="text-3xl mb-3">🔒</p>
+                <p class="font-medium text-gray-500">Este miembro no tiene cuenta de acceso a la aplicación.</p>
+                <button v-if="!modoPropio" type="button" @click="abrirModalCuenta"
+                  class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition-colors">
+                  Crear cuenta de acceso
+                </button>
               </div>
 
-              <!-- Cambiar contraseña (solo en modo propio) -->
-              <div v-if="modoPropio" class="pt-3 border-t border-gray-100">
-                <div class="rounded-lg border border-dashed border-gray-300">
-                  <button type="button" @click="cambioPass.activo = !cambioPass.activo"
-                    class="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-                    <span>Cambiar contraseña</span>
-                    <span class="text-xs px-2 py-0.5 rounded-full"
-                      :class="cambioPass.activo ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-500'">
-                      {{ cambioPass.activo ? 'Cancelar' : 'Cambiar' }}
-                    </span>
+              <div v-else class="rounded-xl border border-indigo-200 bg-indigo-50 p-6 space-y-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-sm font-semibold text-indigo-800">Crear cuenta de acceso</h3>
+                  <button type="button" @click="modalCuenta.abierto = false" class="text-gray-400 hover:text-gray-600 text-lg leading-none">&times;</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Email de acceso</label>
+                    <input v-model="modalCuenta.email" type="email"
+                      class="h-10 w-full px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+                  </div>
+                  <div class="flex flex-col justify-end">
+                    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                      <input v-model="modalCuenta.enviarEmail" type="checkbox" class="rounded text-indigo-600" />
+                      Enviar email de bienvenida con enlace de activación
+                    </label>
+                  </div>
+                </div>
+                <p v-if="!modalCuenta.enviarEmail" class="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+                  Sin email de bienvenida, el miembro no podrá acceder hasta que se le asigne una contraseña manualmente.
+                </p>
+                <p v-if="modalCuenta.error" class="text-xs text-red-600">{{ modalCuenta.error }}</p>
+                <div class="flex gap-2 pt-1">
+                  <button type="button" @click="crearCuentaDesdeTab"
+                    :disabled="!modalCuenta.email || modalCuenta.cargando"
+                    class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+                    {{ modalCuenta.cargando ? 'Creando...' : 'Crear cuenta' }}
                   </button>
-                  <div v-if="cambioPass.activo" class="px-4 pb-4 border-t border-gray-100 pt-3 space-y-3">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Contraseña actual</label>
-                        <input v-model="cambioPass.actual" type="password"
-                          class="h-9 w-full px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white" />
+                  <button type="button" @click="modalCuenta.abierto = false"
+                    class="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <template v-else>
+              <!-- Datos de la cuenta -->
+              <section class="rounded-xl border border-gray-200 p-5 space-y-3">
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Cuenta de acceso</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p class="text-xs text-gray-500 mb-0.5">Email de acceso</p>
+                    <p class="font-medium text-gray-900">{{ miembro.usuario.email }}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-gray-500 mb-0.5">Estado</p>
+                    <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+                      miembro.usuario.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-600']">
+                      {{ miembro.usuario.activo ? 'Activa' : 'Bloqueada' }}
+                    </span>
+                  </div>
+                  <div>
+                    <p class="text-xs text-gray-500 mb-0.5">Último acceso</p>
+                    <p class="text-gray-700">{{ miembro.usuario.ultimoAcceso ? formatDate(miembro.usuario.ultimoAcceso) : 'Nunca' }}</p>
+                  </div>
+                </div>
+
+                <!-- Cambiar contraseña (solo en modo propio) -->
+                <div v-if="modoPropio" class="pt-3 border-t border-gray-100">
+                  <div class="rounded-lg border border-dashed border-gray-300">
+                    <button type="button" @click="cambioPass.activo = !cambioPass.activo"
+                      class="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                      <span>Cambiar contraseña</span>
+                      <span class="text-xs px-2 py-0.5 rounded-full"
+                        :class="cambioPass.activo ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-500'">
+                        {{ cambioPass.activo ? 'Cancelar' : 'Cambiar' }}
+                      </span>
+                    </button>
+                    <div v-if="cambioPass.activo" class="px-4 pb-4 border-t border-gray-100 pt-3 space-y-3">
+                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <label class="block text-xs font-medium text-gray-700 mb-1">Contraseña actual</label>
+                          <input v-model="cambioPass.actual" type="password"
+                            class="h-9 w-full px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white" />
+                        </div>
+                        <div>
+                          <label class="block text-xs font-medium text-gray-700 mb-1">Nueva contraseña</label>
+                          <input v-model="cambioPass.nueva" type="password"
+                            class="h-9 w-full px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white" />
+                        </div>
+                        <div>
+                          <label class="block text-xs font-medium text-gray-700 mb-1">Repetir nueva</label>
+                          <input v-model="cambioPass.repetir" type="password"
+                            class="h-9 w-full px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white" />
+                        </div>
                       </div>
-                      <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Nueva contraseña</label>
-                        <input v-model="cambioPass.nueva" type="password"
-                          class="h-9 w-full px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white" />
-                      </div>
-                      <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Repetir nueva</label>
-                        <input v-model="cambioPass.repetir" type="password"
-                          class="h-9 w-full px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white" />
+                      <p v-if="cambioPass.error" class="text-xs text-red-600">{{ cambioPass.error }}</p>
+                      <p v-if="cambioPass.ok" class="text-xs text-green-600">{{ cambioPass.ok }}</p>
+                      <div class="flex justify-end gap-2">
+                        <button type="button" @click="cambioPass.activo = false; cambioPass.error = ''; cambioPass.ok = ''"
+                          class="px-4 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">
+                          Cancelar
+                        </button>
+                        <button type="button" @click="guardarPassword" :disabled="guardandoPass"
+                          class="px-4 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
+                          {{ guardandoPass ? 'Guardando…' : 'Actualizar contraseña' }}
+                        </button>
                       </div>
                     </div>
-                    <p v-if="cambioPass.error" class="text-xs text-red-600">{{ cambioPass.error }}</p>
-                    <p v-if="cambioPass.ok" class="text-xs text-green-600">{{ cambioPass.ok }}</p>
-                    <div class="flex justify-end gap-2">
-                      <button type="button" @click="cambioPass.activo = false; cambioPass.error = ''; cambioPass.ok = ''"
-                        class="px-4 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">
-                        Cancelar
-                      </button>
-                      <button type="button" @click="guardarPassword" :disabled="guardandoPass"
-                        class="px-4 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
-                        {{ guardandoPass ? 'Guardando…' : 'Actualizar contraseña' }}
+                  </div>
+                </div>
+              </section>
+
+              <!-- Roles -->
+              <section class="rounded-xl border border-gray-200 p-5 space-y-3">
+                <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Roles asignados</h3>
+
+                <div v-if="!rolesAsignados.length" class="text-sm text-gray-400 italic py-2">
+                  Sin roles asignados.
+                </div>
+                <div v-else class="divide-y divide-gray-100">
+                  <div v-for="ur in rolesAsignados" :key="ur.id"
+                    :class="['flex items-center justify-between py-2.5', !ur.activo && 'opacity-40']">
+                    <div class="flex items-center gap-3">
+                      <span :class="['w-1.5 h-1.5 rounded-full shrink-0', ur.activo ? 'bg-green-500' : 'bg-gray-300']" />
+                      <div>
+                        <p class="text-sm font-medium text-gray-900">{{ ur.rol.nombre }}</p>
+                        <p v-if="agrupacionNombre(ur.agrupacionId)" class="text-xs text-gray-500">
+                          Ámbito: {{ agrupacionNombre(ur.agrupacionId) }}
+                        </p>
+                        <p v-else class="text-xs text-gray-500">Ámbito: toda la organización</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span :class="['text-xs px-2 py-0.5 rounded-full font-medium', tipoRolClass(ur.rol.tipo)]">
+                        {{ ur.rol.tipo }}
+                      </span>
+                      <button v-if="!modoPropio" @click="revocarRol(ur.rol.id)"
+                        class="text-xs text-red-500 hover:text-red-700 px-1.5 py-0.5 rounded hover:bg-red-50"
+                        title="Revocar rol">
+                        Revocar
                       </button>
                     </div>
                   </div>
                 </div>
-              </div>
-            </section>
 
-            <!-- Roles -->
-            <section class="rounded-xl border border-gray-200 p-5 space-y-3">
-              <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Roles asignados</h3>
-
-              <div v-if="!rolesAsignados.length" class="text-sm text-gray-400 italic py-2">
-                Sin roles asignados.
-              </div>
-
-              <div v-else class="divide-y divide-gray-100">
-                <div v-for="ur in rolesAsignados" :key="ur.id"
-                  :class="['flex items-center justify-between py-2.5', !ur.activo && 'opacity-40']">
-                  <div class="flex items-center gap-3">
-                    <span :class="['w-1.5 h-1.5 rounded-full shrink-0', ur.activo ? 'bg-green-500' : 'bg-gray-300']" />
-                    <div>
-                      <p class="text-sm font-medium text-gray-900">{{ ur.rol.nombre }}</p>
-                      <p v-if="agrupacionNombre(ur.agrupacionId)" class="text-xs text-gray-500">
-                        Ámbito: {{ agrupacionNombre(ur.agrupacionId) }}
-                      </p>
-                      <p v-else class="text-xs text-gray-500">Ámbito: toda la organización</p>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span :class="['text-xs px-2 py-0.5 rounded-full font-medium',
-                      tipoRolClass(ur.rol.tipo)]">
-                      {{ ur.rol.tipo }}
-                    </span>
-                    <button v-if="!modoPropio" @click="revocarRol(ur.rol.id)"
-                      class="text-xs text-red-500 hover:text-red-700 px-1.5 py-0.5 rounded hover:bg-red-50"
-                      title="Revocar rol">
-                      Revocar
+                <!-- Asignar nuevo rol (solo admin) -->
+                <div v-if="!modoPropio" class="pt-2 border-t border-gray-100 space-y-2">
+                  <p class="text-xs font-medium text-gray-600">Asignar rol</p>
+                  <div class="flex flex-wrap gap-2">
+                    <select v-model="nuevoRolId"
+                      class="flex-1 min-w-40 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
+                      <option value="">Seleccionar rol…</option>
+                      <optgroup v-for="tipo in ['FUNCIONAL','ORGANIZACION','SISTEMA','PERSONALIZADO']" :key="tipo" :label="tipo">
+                        <option v-for="r in rolesDisponibles.filter(r => r.tipo === tipo)"
+                          :key="r.id" :value="r.id">{{ r.nombre }}</option>
+                      </optgroup>
+                    </select>
+                    <select v-model="nuevoRolAgrupacionId"
+                      class="flex-1 min-w-40 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
+                      <option value="">Toda la organización</option>
+                      <option v-for="a in catalogos.agrupaciones" :key="a.id" :value="a.id">{{ a.nombre }}</option>
+                    </select>
+                    <button @click="asignarRol" :disabled="!nuevoRolId || guardandoRol"
+                      class="px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 disabled:opacity-50">
+                      Asignar
                     </button>
                   </div>
+                  <p v-if="errorRol" class="text-xs text-red-600">{{ errorRol }}</p>
                 </div>
-              </div>
+              </section>
+            </template>
 
-              <!-- Asignar nuevo rol (solo admin) -->
-              <div v-if="!modoPropio" class="pt-2 border-t border-gray-100 space-y-2">
-                <p class="text-xs font-medium text-gray-600">Asignar rol</p>
-                <div class="flex flex-wrap gap-2">
-                  <select v-model="nuevoRolId"
-                    class="flex-1 min-w-40 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
-                    <option value="">Seleccionar rol…</option>
-                    <optgroup v-for="tipo in ['FUNCIONAL','ORGANIZACION','SISTEMA','PERSONALIZADO']" :key="tipo"
-                      :label="tipo">
-                      <option v-for="r in rolesDisponibles.filter(r => r.tipo === tipo)"
-                        :key="r.id" :value="r.id">{{ r.nombre }}</option>
-                    </optgroup>
-                  </select>
-                  <select v-model="nuevoRolAgrupacionId"
-                    class="flex-1 min-w-40 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
-                    <option value="">Toda la organización</option>
-                    <option v-for="a in catalogos.agrupaciones" :key="a.id" :value="a.id">{{ a.nombre }}</option>
-                  </select>
-                  <button @click="asignarRol" :disabled="!nuevoRolId || guardandoRol"
-                    class="px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 disabled:opacity-50">
-                    Asignar
-                  </button>
-                </div>
-                <p v-if="errorRol" class="text-xs text-red-600">{{ errorRol }}</p>
-              </div>
-            </section>
-          </template>
-        </div>
-
-        <!-- ── CARGOS / HISTORIAL DE NOMBRAMIENTOS ── -->
-        <div v-show="activeTab === 'cargos'" class="space-y-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-sm font-semibold text-gray-900">Historial de cargos y nombramientos</h3>
           </div>
+        </AccordionPanel>
 
-          <div v-if="loadingNombramientos" class="text-center py-6 text-gray-400 text-sm">Cargando…</div>
-
-          <div v-else-if="!nombramientos.length"
-            class="rounded-xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400">
-            Sin nombramientos registrados.
-          </div>
-
-          <div v-else class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-100 text-sm">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cargo / Rol</th>
-                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ámbito</th>
-                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Desde</th>
-                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Hasta</th>
-                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-50">
-                <tr v-for="n in nombramientos" :key="n.id" class="hover:bg-gray-50">
-                  <td class="px-4 py-2.5 font-medium text-gray-900">{{ n.rol?.nombre || '—' }}</td>
-                  <td class="px-4 py-2.5 text-gray-600">{{ n.agrupacion?.nombre || 'Toda la organización' }}</td>
-                  <td class="px-4 py-2.5 text-gray-600">{{ n.fechaInicio ? formatDate(n.fechaInicio) : '—' }}</td>
-                  <td class="px-4 py-2.5 text-gray-600">{{ n.fechaFin ? formatDate(n.fechaFin) : '—' }}</td>
-                  <td class="px-4 py-2.5">
-                    <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
-                      !n.fechaFin ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500']">
-                      {{ !n.fechaFin ? 'Vigente' : 'Finalizado' }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- ── FRANJAS HORARIAS ── -->
-        <!-- ── DISPONIBILIDAD ── -->
-        <!-- ── DISPONIBILIDAD ── -->
-        <div v-show="activeTab === 'franjas'" class="space-y-5">
-          <section class="space-y-4 rounded-xl border border-gray-200 p-5">
-            <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Resumen de disponibilidad</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FieldText v-model="miembro.disponibilidad" label="Disponibilidad" :edit-mode="editMode || isCreateMode" />
-              <FieldText v-model="miembro.horasDisponiblesSemana" label="Horas/semana" type="number" :edit-mode="editMode || isCreateMode" />
-            </div>
-          </section>
-
-          <div v-if="loadingFranjas" class="text-center py-6 text-gray-400 text-sm">Cargando...</div>
-          <div v-else class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-            <div v-for="(dia, i) in diasSemana" :key="i"
-              class="rounded-xl border flex flex-col min-h-[140px] overflow-hidden"
-              :class="franjasPorDia[i]?.length ? 'border-purple-200' : 'border-gray-200'">
-              <div class="px-3 py-2 flex items-center justify-between"
-                :class="franjasPorDia[i]?.length ? 'bg-purple-100' : 'bg-gray-100'">
-                <span class="text-xs font-semibold"
-                  :class="franjasPorDia[i]?.length ? 'text-purple-800' : 'text-gray-500'">{{ dia }}</span>
-                <button @click="abrirFormFranja(i)"
-                  class="w-5 h-5 flex items-center justify-center rounded-full text-sm font-bold leading-none"
-                  :class="franjasPorDia[i]?.length ? 'text-purple-500 hover:bg-purple-200' : 'text-gray-400 hover:bg-gray-200'">
-                  +
-                </button>
-              </div>
-              <div class="flex-1 px-2 py-2 flex flex-col gap-1">
-                <template v-if="franjasPorDia[i]?.length">
-                  <div v-for="f in franjasPorDia[i]" :key="f.id"
-                    class="flex items-center justify-between bg-white rounded-lg px-2 py-1 border border-purple-100 text-xs">
-                    <span class="text-purple-700 font-medium">{{ f.horaInicio.slice(0,5) }}–{{ f.horaFin.slice(0,5) }}</span>
-                    <button @click="eliminarFranja(f.id)" class="text-gray-300 hover:text-red-400 font-bold ml-1 leading-none">×</button>
-                  </div>
-                </template>
-                <div v-else class="flex-1 flex items-center justify-center">
-                  <span class="text-xs text-gray-400 italic">No disponible</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="mostrarFormFranja" class="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-3">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Día</label>
-                <select v-model="nuevaFranja.diaSemana"
-                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500">
-                  <option v-for="(dia, i) in diasSemana" :key="i" :value="i">{{ dia }}</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Hora inicio</label>
-                <input v-model="nuevaFranja.horaInicio" type="time"
-                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Hora fin</label>
-                <input v-model="nuevaFranja.horaFin" type="time"
-                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
-              </div>
-            </div>
-            <div class="flex gap-2 justify-end">
-              <button @click="mostrarFormFranja = false; nuevaFranja = { diaSemana: 0, horaInicio: '', horaFin: '' }"
-                class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
-              <button @click="guardarFranja" :disabled="!nuevaFranja.horaInicio || !nuevaFranja.horaFin"
-                class="px-3 py-1.5 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50">Guardar</button>
-            </div>
-          </div>
-
-          <div v-if="!mostrarFormFranja" class="flex justify-end">
-            <button @click="abrirFormFranja(0)"
-              class="px-3 py-1.5 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700">
-              + Añadir franja
-            </button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- ── Barra de guardado ─────────────────────────────────────── -->
-      <div v-if="editMode || isCreateMode"
-        class="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl flex justify-end gap-3">
-        <button @click="handleCancel"
-          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-          {{ isCreateMode ? 'Cancelar' : 'Cancelar cambios' }}
-        </button>
-        <button @click="handleSave" :disabled="loading || !formValido"
-          class="px-5 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50">
-          {{ isCreateMode ? 'Crear miembro' : 'Guardar cambios' }}
-        </button>
-      </div>
+      </AccordionGroup>
     </div>
-  </div>
+
+  </component>
 </template>
 
 <script setup>
 import { computed, defineComponent, h, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import DetailHeader from '@/components/common/DetailHeader.vue'
+import AppLayout from '@/components/common/AppLayout.vue'
+import AccordionGroup from '@/components/common/AccordionGroup.vue'
+import AccordionPanel from '@/components/common/AccordionPanel.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
 import { gql } from 'graphql-request'
 import { graphqlClient } from '@/graphql/client.js'
@@ -870,7 +873,6 @@ const router = useRouter()
 const orgConfig = useOrgConfigStore()
 const { tienePermiso } = usePermisos()
 const editMode = ref(false)
-const activeTab = ref('personal')
 const saveMessage = ref('')
 const crearCuenta = ref(false)
 
@@ -895,36 +897,24 @@ if (detectCreateMode) {
   editMode.value = true
 }
 
-const tabsAdmin = [
-  { id: 'personal',    name: 'Datos personales' },
-  { id: 'membresia',   name: 'Membresía' },
-  { id: 'pagoCuotas',  name: 'Datos económicos' },
-  { id: 'voluntariado', name: 'Voluntariado' },
-  { id: 'franjas',     name: 'Disponibilidad' },
-  { id: 'cargos',      name: 'Cargos' },
-  { id: 'acceso',      name: 'Acceso y roles' },
-]
+// ── Layout dinámico ───────────────────────────────────────────────────────────
 
-const tabsPropio = [
-  { id: 'personal',    name: 'Datos personales' },
-  { id: 'acceso',      name: 'Acceso y roles' },
-  { id: 'membresia',   name: 'Membresía' },
-  { id: 'pagoCuotas',  name: 'Datos económicos' },
-  { id: 'voluntariado', name: 'Voluntariado' },
-  { id: 'franjas',     name: 'Disponibilidad' },
-  { id: 'cargos',      name: 'Cargos' },
-]
+const tituloPage = computed(() => {
+  if (isCreateMode.value) return `Nuevo ${orgConfig.miembro || 'miembro'}`
+  return nombreCompleto.value || orgConfig.Miembro || 'Miembro'
+})
 
-const availableTabs = computed(() => {
-  const tabs = props.modoPropio ? tabsPropio : tabsAdmin
-  const excluirSiNuevo = ['franjas', 'cargos', 'acceso']
-  const excluirSiNoVoluntario = ['voluntariado', 'franjas']
-  return tabs.filter(t => {
-    if (isCreateMode.value && excluirSiNuevo.includes(t.id)) return false
-    if (!miembro.value.esVoluntario && excluirSiNoVoluntario.includes(t.id)) return false
-    if (t.id === 'pagoCuotas' && !props.modoPropio && !tienePermiso('CUOT_LIST')) return false
-    return true
-  })
+const subtituloPage = computed(() => {
+  if (loading.value || !miembro.value.id) return ''
+  const tipoNombre = catalogos.value.tiposMiembro?.find(t => t.id === miembro.value.tipoMiembroId)?.nombre
+  const estadoNombre = catalogos.value.estadosMiembro?.find(e => e.id === miembro.value.estadoId)?.nombre
+  return [tipoNombre, estadoNombre].filter(Boolean).join(' · ')
+})
+
+const layoutComponent = computed(() => props.modoPropio ? 'div' : AppLayout)
+const layoutBindings = computed(() => props.modoPropio ? {} : {
+  title: tituloPage.value,
+  subtitle: subtituloPage.value,
 })
 
 // ── Forma de pago ─────────────────────────────────────────────────────────────
@@ -978,7 +968,6 @@ function onIbanInput(event) {
   if (event.target.value !== formatted) {
     const pos = event.target.selectionStart
     event.target.value = formatted
-    // Reposicionar cursor ajustando por los espacios insertados
     const spaces = (formatted.slice(0, pos).match(/ /g) || []).length
     const rawPos = pos - spaces
     let newPos = 0
@@ -1042,16 +1031,9 @@ const estadoEsBaja = computed(() => {
   return norm.includes('baja')
 })
 
-// ── Estilos de estado desde catálogo ─────────────────────────────────────
 const estadoColor      = computed(() => miembro.value.estado?.color)
 const estadoBadgeStyle = computed(() => badgeStyle(estadoColor.value))
 const estadoBandaStyle = computed(() => bandStyle(estadoColor.value))
-
-const initials = computed(() => {
-  const n = miembro.value.nombre?.[0] || ''
-  const a = miembro.value.apellido1?.[0] || ''
-  return (n + a).toUpperCase() || '?'
-})
 
 const puedeEditarFoto = computed(() =>
   !isCreateMode.value && (editMode.value || props.modoPropio)
@@ -1094,7 +1076,7 @@ const tipoDocumentoOptions = [
   { value: 'OTRO',      label: 'Otro documento' },
 ]
 
-// ── Cambiar contraseña (modo propio) ─────────────────────────────────────
+// ── Cambiar contraseña ────────────────────────────────────────────────────────
 const cambioPass = ref({ activo: false, actual: '', nueva: '', repetir: '', error: '', ok: '' })
 const guardandoPass = ref(false)
 
@@ -1126,7 +1108,7 @@ async function guardarPassword() {
   }
 }
 
-// ── Cuotas ───────────────────────────────────────────────────────────────
+// ── Cuotas ────────────────────────────────────────────────────────────────────
 const cuotas = ref([])
 const loadingCuotas = ref(false)
 
@@ -1167,7 +1149,7 @@ async function cargarCuotas(id = null) {
   }
 }
 
-// ── Habilidades ───────────────────────────────────────────────────────────
+// ── Habilidades ───────────────────────────────────────────────────────────────
 const miembroHabilidades = ref([])
 const habilidadesCatalogo = ref([])
 const loadingHabilidades = ref(false)
@@ -1244,7 +1226,7 @@ async function eliminarHabilidad(id) {
   await cargarHabilidades()
 }
 
-// ── Franjas de disponibilidad ──────────────────────────────────────────────
+// ── Franjas de disponibilidad ─────────────────────────────────────────────────
 const franjas = ref([])
 const loadingFranjas = ref(false)
 const mostrarFormFranja = ref(false)
@@ -1318,7 +1300,7 @@ async function eliminarFranja(id) {
   await cargarFranjas()
 }
 
-// ── Acceso y roles ────────────────────────────────────────────────────────
+// ── Acceso y roles ────────────────────────────────────────────────────────────
 const rolesDisponibles = ref([])
 const loadingRoles = ref(false)
 const nuevoRolId = ref('')
@@ -1390,7 +1372,7 @@ async function revocarRol(rolId) {
 
 const rolesAsignados = computed(() => miembro.value.usuario?.roles || [])
 
-// ── Modal crear cuenta desde tab Acceso ──────────────────────────────────
+// ── Modal crear cuenta desde acceso ──────────────────────────────────────────
 const modalCuenta = ref({ abierto: false, email: '', enviarEmail: true, cargando: false, error: '' })
 
 function abrirModalCuenta() {
@@ -1422,7 +1404,7 @@ async function crearCuentaDesdeTab() {
   }
 }
 
-// ── Historial de nombramientos ────────────────────────────────────────────
+// ── Historial de nombramientos ────────────────────────────────────────────────
 const nombramientos = ref([])
 const loadingNombramientos = ref(false)
 
@@ -1450,7 +1432,7 @@ async function cargarNombramientos(id = null) {
   }
 }
 
-// ── Sugerencia de agrupación por provincia ────────────────────────────────
+// ── Sugerencia de agrupación por provincia ────────────────────────────────────
 const mostrarModalAgrupacion = ref(false)
 
 const agrupacionesSugeridas = computed(() => {
@@ -1561,7 +1543,7 @@ onMounted(async () => {
   }
 })
 
-// ── Componentes de campo inline ───────────────────────────────────────────
+// ── Componentes de campo inline ───────────────────────────────────────────────
 
 const FieldText = defineComponent({
   props: {

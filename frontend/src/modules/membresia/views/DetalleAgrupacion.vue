@@ -228,7 +228,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   ChevronDownIcon, ChevronLeftIcon,
@@ -261,13 +261,9 @@ const chevronCls = (isOpen) =>
 const open = reactive({ info: true, cargos: true })
 
 function togglePanel(key) {
-  if (open[key]) { open[key] = false; return }
-  const prevOpen = Object.keys(open).filter(k => open[k])
-  open[key] = true
-  nextTick(() => {
-    if (document.documentElement.scrollHeight > window.innerHeight && prevOpen.length)
-      open[prevOpen[prevOpen.length - 1]] = false
-  })
+  const wasOpen = open[key]
+  Object.keys(open).forEach(k => { open[k] = false })
+  if (!wasOpen) open[key] = true
 }
 
 // ── Estado ───────────────────────────────────────────────────────────────────

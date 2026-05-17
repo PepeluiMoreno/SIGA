@@ -2,7 +2,7 @@ import strawberry
 from datetime import date, datetime
 from decimal import Decimal
 
-from .tipos_base import AgrupacionTerritorial
+from .tipos_base import UnidadOrganizativa
 from .miembro import Miembro
 from .usuario import Usuario
 from .campania import Campania
@@ -114,7 +114,7 @@ class GrupoTrabajo:
     presupuesto_ejecutado: Decimal
 
     activo: bool
-    agrupacion: AgrupacionTerritorial | None
+    agrupacion: UnidadOrganizativa | None
 
     created_at: datetime
     creador: Usuario

@@ -16,7 +16,7 @@ export default defineConfig({
       ? { clientPort: parseInt(process.env.VITE_HMR_CLIENT_PORT) }
       : {},
     proxy: {
-      '/api/graphql': {
+      '/api': {
         target: process.env.VITE_BACKEND_URL || 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),

@@ -1,378 +1,373 @@
 <template>
   <AppLayout title="Campañas" subtitle="Gestión de campañas y actividades">
+
+    <!-- KPI strip -->
+    <section v-if="allCampanias.length" class="mb-4 bg-white border border-slate-200 rounded-xl px-5 py-3 grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-2 text-sm">
+      <div class="flex flex-col gap-0.5">
+        <span class="text-xs text-slate-400 font-medium uppercase tracking-wide">Total</span>
+        <span class="text-2xl font-bold text-slate-800 tabular-nums">{{ allCampanias.length }}</span>
+      </div>
+      <div class="flex flex-col gap-0.5">
+        <span class="text-xs text-slate-400 font-medium uppercase tracking-wide">En curso</span>
+        <span class="text-2xl font-bold text-indigo-600 tabular-nums">{{ kpiEnCurso }}</span>
+      </div>
+      <div class="flex flex-col gap-0.5">
+        <span class="text-xs text-slate-400 font-medium uppercase tracking-wide">Borradores</span>
+        <span class="text-2xl font-bold text-amber-500 tabular-nums">{{ kpiBorradores }}</span>
+      </div>
+      <div class="flex flex-col gap-0.5">
+        <span class="text-xs text-slate-400 font-medium uppercase tracking-wide">Este año ({{ anioActual }})</span>
+        <span class="text-2xl font-bold text-emerald-600 tabular-nums">{{ kpiEsteAnio }}</span>
+      </div>
+    </section>
+
+    <!-- FilterBar -->
     <FilterBar
       v-model="filters"
       v-model:search="searchQuery"
       search-placeholder="Buscar por nombre o lema…"
-      :create-label="tienePermiso('CAMP_CREATE') ? 'Nueva Campaña' : ''"
+      :create-label="tienePermiso('CAMP_CREATE') ? 'Nueva campaña' : ''"
       create-route="/campanias/nueva"
       :fields="filterFields"
-      :lazy="true"
+      :lazy="false"
       :loading="loading"
-      :description="filtersApplied ? tituloDescriptivo : ''"
       class="mb-4"
-      @apply="aplicarFiltros"
-      @clear="limpiarFiltros"
     />
 
-    <!-- Estado de carga -->
-    <EstadoCarga v-if="loading" mensaje="Cargando campañas..." />
-
-    <!-- Error -->
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-6">
-      <p class="text-red-700 font-medium">Error al cargar datos</p>
-      <p class="text-red-600 text-sm mt-1">{{ error.message || error }}</p>
-      <button @click="aplicarFiltros" class="mt-3 text-red-600 hover:text-red-800 text-sm font-medium">
-        Reintentar
-      </button>
+    <!-- Carga -->
+    <div v-if="loading" class="flex items-center justify-center py-20">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
     </div>
 
-    <!-- Resultados -->
-    <div v-else class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-      <!-- Mensaje inicial -->
-      <EstadoPendiente v-if="!filtersApplied" />
+    <!-- Error -->
+    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-xl p-6">
+      <p class="text-red-700 font-medium">Error al cargar campañas</p>
+      <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+      <button @click="cargar" class="mt-3 text-red-600 hover:text-red-800 text-sm font-medium">Reintentar</button>
+    </div>
 
+    <template v-else>
       <!-- Sin resultados -->
-      <div v-else-if="campaniasFiltradas.length === 0" class="p-12 text-center text-gray-500">
-        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <p class="text-lg">No se encontraron campañas</p>
-        <p class="text-sm mt-1">Prueba con otros filtros</p>
+      <div v-if="campaniasFiltradas.length === 0 && allCampanias.length > 0"
+        class="py-12 text-center text-slate-400">
+        <MagnifyingGlassIcon class="w-12 h-12 mx-auto mb-3 text-slate-300" />
+        <p class="text-base font-medium text-slate-600">Sin campañas con esos filtros</p>
+        <button @click="limpiarFiltros" class="mt-2 text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+          Limpiar filtros
+        </button>
       </div>
 
-      <!-- Grid de campañas -->
-      <template v-else>
-        <!-- Barra de resultados -->
-        <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-          <span class="text-sm text-gray-600">
-            <strong>{{ campaniasFiltradas.length }}</strong> {{ tituloDescriptivo }}
+      <!-- Sin datos en absoluto -->
+      <div v-else-if="allCampanias.length === 0"
+        class="py-16 text-center text-slate-400">
+        <RectangleStackIcon class="w-12 h-12 mx-auto mb-3 text-slate-300" />
+        <p class="text-base font-medium text-slate-600">No hay campañas todavía</p>
+        <router-link v-if="tienePermiso('CAMP_CREATE')" to="/campanias/nueva"
+          class="mt-3 inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+          <PlusIcon class="w-4 h-4" /> Crear primera campaña
+        </router-link>
+      </div>
+
+      <!-- Cabecera de resultados -->
+      <div v-else class="space-y-4">
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-slate-500">
+            <strong class="text-slate-800">{{ campaniasFiltradas.length }}</strong>
+            {{ campaniasFiltradas.length === 1 ? 'campaña' : 'campañas' }}
+            <template v-if="hasFiltros"> · filtradas</template>
           </span>
-          <button @click="limpiarFiltros" class="text-sm text-purple-600 hover:text-purple-800">
+          <button v-if="hasFiltros" @click="limpiarFiltros"
+            class="text-indigo-600 hover:text-indigo-800 font-medium">
             Limpiar filtros
           </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+        <!-- Grid de tarjetas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           <div
-            v-for="campania in campaniasFiltradas"
-            :key="campania.id"
-            class="bg-purple-50 rounded-lg shadow hover:shadow-md transition-shadow border border-purple-100 hover:border-purple-200 group cursor-pointer"
-            @click="verDetalles(campania)"
-          >
-            <div class="p-6">
-              <div class="flex justify-between items-start mb-3">
-                <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full border"
-                  :style="badgeStyle(campania.estado?.color)">
-                  {{ campania.estado?.nombre || 'Sin estado' }}
-                </span>
-                <span v-if="campania.tipoCampania" class="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded">
-                  {{ campania.tipoCampania.nombre }}
-                </span>
-              </div>
+            v-for="c in campaniasFiltradas"
+            :key="c.id"
+            class="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer flex flex-col"
+            @click="router.push(`/campanias/${c.id}`)">
 
-              <h3 class="text-lg font-semibold text-gray-900 mb-1 group-hover:text-purple-700 transition-colors">
-                {{ campania.nombre }}
-              </h3>
-              <p v-if="campania.lema" class="text-sm text-gray-500 mb-2">Lema: "{{ campania.lema }}"</p>
-              <p class="text-sm text-gray-600 mb-4 line-clamp-2">{{ campania.descripcionCorta }}</p>
+            <!-- Cabecera de tarjeta -->
+            <div class="px-5 pt-4 pb-3 flex items-start justify-between gap-2">
+              <span
+                class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full border"
+                :style="estadoBadgeStyle(c.estado)">
+                {{ c.estado?.nombre ?? '—' }}
+              </span>
+              <span v-if="c.tipoCampania"
+                class="shrink-0 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full">
+                {{ c.tipoCampania.nombre }}
+              </span>
+            </div>
 
-              <div class="space-y-2 text-sm text-gray-500">
-                <div v-if="campania.responsable" class="flex items-center">
-                  <span class="mr-2">👤</span>
-                  <span>Coordinador: {{ campania.responsable.nombre }} {{ campania.responsable.apellido1 }}</span>
-                </div>
-                <div v-if="campania.fechaInicioPlan || campania.fechaFinPlan" class="flex items-center">
-                  <span class="mr-2">📅</span>
-                  <span>{{ formatDate(campania.fechaInicioPlan) }} - {{ formatDate(campania.fechaFinPlan) }}</span>
-                </div>
-                <div v-if="campania.metaRecaudacion" class="flex items-center">
-                  <span class="mr-2">🎯</span>
-                  <span>Meta: {{ formatCurrency(campania.metaRecaudacion) }}</span>
-                </div>
-                <div v-if="campania.metaFirmas" class="flex items-center">
-                  <span class="mr-2">✍️</span>
-                  <span>Objetivo: {{ campania.metaFirmas.toLocaleString() }} firmas</span>
-                </div>
-              </div>
+            <!-- Cuerpo de tarjeta -->
+            <div class="px-5 pb-4 flex-1 flex flex-col gap-1.5">
+              <h3 class="text-sm font-semibold text-slate-900 leading-snug">{{ c.nombre }}</h3>
+              <p v-if="c.lema" class="text-xs text-slate-400 italic">"{{ c.lema }}"</p>
+              <p v-if="c.descripcionCorta" class="text-xs text-slate-500 line-clamp-2 mt-0.5">{{ c.descripcionCorta }}</p>
 
-              <!-- URL externa -->
-              <div v-if="campania.urlExterna" class="mt-3">
-                <a
-                  :href="campania.urlExterna"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-xs text-purple-600 hover:text-purple-800 flex items-center gap-1"
-                  @click.stop
-                >
-                  <span>🔗</span>
-                  <span>Ver en la Web</span>
-                </a>
+              <!-- Meta-info -->
+              <div class="mt-auto pt-3 space-y-1 text-xs text-slate-500">
+                <div v-if="c.responsable" class="flex items-center gap-1.5">
+                  <UserIcon class="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                  {{ c.responsable.nombre }} {{ c.responsable.apellido1 }}
+                </div>
+                <div v-if="c.fechaInicioPlan" class="flex items-center gap-1.5">
+                  <CalendarIcon class="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                  {{ fmtDate(c.fechaInicioPlan) }}
+                  <template v-if="c.fechaFinPlan"> – {{ fmtDate(c.fechaFinPlan) }}</template>
+                  <template v-else-if="c.periodicidad === 'permanente'">
+                    <span class="text-sky-600 font-medium">· Permanente</span>
+                  </template>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span v-if="c.agrupacion" class="flex items-center gap-1">
+                    <MapPinIcon class="w-3.5 h-3.5 text-slate-400" />
+                    {{ c.agrupacion.nombre }}
+                  </span>
+                  <span v-if="c.actividades?.length" class="flex items-center gap-1">
+                    <BoltIcon class="w-3.5 h-3.5 text-slate-400" />
+                    {{ c.actividades.length }} {{ c.actividades.length === 1 ? 'actividad' : 'actividades' }}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div class="px-6 py-3 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
-              <div class="text-xs text-gray-500">
-                <span v-if="campania.metaParticipantes">🎯 {{ campania.metaParticipantes }} participantes</span>
+            <!-- Pie de tarjeta -->
+            <div class="px-4 py-2.5 border-t border-slate-100 flex items-center justify-between">
+              <div class="flex items-center gap-1">
+                <button v-if="esEliminable(c) && tienePermiso('CAMP_DELETE')"
+                  @click.stop="campanaAEliminar = c"
+                  class="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                  title="Eliminar">
+                  <TrashIcon class="w-4 h-4" />
+                </button>
+                <router-link v-if="esEditable(c)"
+                  :to="`/campanias/${c.id}/editar`"
+                  class="p-1.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                  title="Editar"
+                  @click.stop>
+                  <PencilSquareIcon class="w-4 h-4" />
+                </router-link>
               </div>
-              <router-link :to="`/campanias/${campania.id}`"
-                class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
-                title="Ver detalles"
+              <router-link :to="`/campanias/${c.id}`"
+                class="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
                 @click.stop>
-                <EyeIcon class="w-4 h-4" />
+                Ver ficha <ArrowRightIcon class="w-3.5 h-3.5" />
               </router-link>
             </div>
           </div>
         </div>
-      </template>
-    </div>
+      </div>
+    </template>
+
   </AppLayout>
+
+  <!-- Modal confirmar eliminación -->
+  <div v-if="campanaAEliminar" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
+      <h3 class="text-base font-semibold text-slate-900">¿Eliminar campaña?</h3>
+      <p class="text-sm text-slate-600">
+        Se eliminará «<strong>{{ campanaAEliminar.nombre }}</strong>». Esta acción no se puede deshacer.
+      </p>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button @click="campanaAEliminar = null"
+          class="h-9 px-4 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
+        <button @click="eliminarCampania" :disabled="eliminando"
+          class="h-9 px-5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg">
+          {{ eliminando ? '…' : 'Eliminar' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import {
+  TrashIcon, PencilSquareIcon, PlusIcon, ArrowRightIcon,
+  MagnifyingGlassIcon, RectangleStackIcon, UserIcon, CalendarIcon, MapPinIcon, BoltIcon,
+} from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
-import { EyeIcon } from '@heroicons/vue/24/outline'
-import { executeQuery } from '@/graphql/client'
+import { executeQuery, executeMutation } from '@/graphql/client'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_CAMPANIAS, GET_TIPOS_CAMPANIA, GET_ESTADOS_CAMPANIA } from '@/graphql/queries/campanias'
-import { badgeStyle } from '@/utils/badge'
-import EstadoCarga from '@/components/common/EstadoCarga.vue'
-import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
 
 const router = useRouter()
 const { tienePermiso } = usePermisos()
 
-// Datos
-const allCampanias = ref([])
-const tiposCampania = ref([])
-const estadosCampania = ref([])
-const searchQuery = ref('')
-const loading = ref(false)
-const error = ref(null)
-const filtersApplied = ref(false)
-
-// Filtros
-const filters = ref({
-  estados: [],
-  tipos: [],
-  anios: []
-})
-
-// Computed: años disponibles (año actual y 5 años hacia atrás)
-const aniosDisponibles = computed(() => {
-  const currentYear = new Date().getFullYear()
-  const years = []
-  for (let y = currentYear; y >= currentYear - 5; y--) {
-    years.push(y)
+const ELIMINAR_CAMPANIA = `
+  mutation EliminarCampania($id: UUID!) {
+    eliminarCampanias(filter: { id: { eq: $id } }) { id }
   }
-  return years
+`
+
+// ── Estado ────────────────────────────────────────────────────────────────────
+const allCampanias    = ref([])
+const tiposCampania   = ref([])
+const estadosCampania = ref([])
+const loading         = ref(false)
+const error           = ref(null)
+const campanaAEliminar = ref(null)
+const eliminando       = ref(false)
+
+const searchQuery = ref('')
+const filters = ref({ estados: [], tipos: [], anios: [] })
+
+// ── KPIs globales ─────────────────────────────────────────────────────────────
+const anioActual = new Date().getFullYear()
+
+const kpiEnCurso = computed(() =>
+  allCampanias.value.filter(c => {
+    const n = c.estado?.nombre?.toLowerCase() ?? ''
+    return n.includes('curso') || n.includes('ejecuc') || n.includes('activ')
+  }).length
+)
+const kpiBorradores = computed(() =>
+  allCampanias.value.filter(c => c.estado?.nombre?.toLowerCase().includes('borrador')).length
+)
+const kpiEsteAnio = computed(() =>
+  allCampanias.value.filter(c => {
+    if (!c.fechaInicioPlan) return false
+    return new Date(c.fechaInicioPlan).getFullYear() === anioActual
+  }).length
+)
+
+// ── Catálogos para filtros ─────────────────────────────────────────────────────
+const aniosDisponibles = computed(() => {
+  const years = new Set()
+  allCampanias.value.forEach(c => {
+    if (c.fechaInicioPlan) years.add(new Date(c.fechaInicioPlan).getFullYear())
+    if (c.fechaFinPlan)    years.add(new Date(c.fechaFinPlan).getFullYear())
+  })
+  if (!years.size) years.add(anioActual)
+  return [...years].sort((a, b) => b - a)
 })
 
-// Computed: ordenar estados por orden
-const estadosCampaniaOrdenados = computed(() =>
-  [...estadosCampania.value].sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999))
-)
-
-// Computed: ordenar tipos alfabéticamente
-const tiposCampaniaOrdenados = computed(() =>
-  [...tiposCampania.value].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-)
-
-// Campos del FilterBar
 const filterFields = computed(() => [
   {
-    key: 'estados',
-    label: 'Estado',
-    type: 'multiselect',
-    allLabel: 'Todos los estados',
-    options: estadosCampaniaOrdenados.value.map(e => ({ value: e.id, label: e.nombre })),
+    key: 'estados', label: 'Estado', type: 'multiselect', allLabel: 'Todos los estados',
+    options: [...estadosCampania.value]
+      .sort((a, b) => (a.orden ?? 99) - (b.orden ?? 99))
+      .map(e => ({ value: e.id, label: e.nombre })),
   },
   {
-    key: 'tipos',
-    label: 'Tipo',
-    type: 'multiselect',
-    allLabel: 'Todos los tipos',
-    options: tiposCampaniaOrdenados.value.map(t => ({ value: t.id, label: t.nombre })),
+    key: 'tipos', label: 'Tipo', type: 'multiselect', allLabel: 'Todos los tipos',
+    options: [...tiposCampania.value]
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+      .map(t => ({ value: t.id, label: t.nombre })),
   },
   {
-    key: 'anios',
-    label: 'Año',
-    type: 'multiselect',
-    allLabel: 'Todos los años',
+    key: 'anios', label: 'Año', type: 'multiselect', allLabel: 'Todos los años',
     options: aniosDisponibles.value.map(y => ({ value: y, label: String(y) })),
   },
 ])
 
-// Computed: campañas filtradas
+// ── Filtrado ──────────────────────────────────────────────────────────────────
+const hasFiltros = computed(() =>
+  searchQuery.value.trim() ||
+  filters.value.estados.length ||
+  filters.value.tipos.length ||
+  filters.value.anios.length
+)
+
 const campaniasFiltradas = computed(() => {
-  if (!filtersApplied.value) return []
+  let list = allCampanias.value
 
-  let filtered = [...allCampanias.value]
+  const q = searchQuery.value.trim().toLowerCase()
+  if (q) list = list.filter(c =>
+    c.nombre?.toLowerCase().includes(q) ||
+    c.lema?.toLowerCase().includes(q) ||
+    c.descripcionCorta?.toLowerCase().includes(q)
+  )
 
-  // Búsqueda por texto
-  if (searchQuery.value.trim()) {
-    const search = searchQuery.value.toLowerCase().trim()
-    filtered = filtered.filter(c =>
-      c.nombre?.toLowerCase().includes(search) ||
-      c.lema?.toLowerCase().includes(search) ||
-      c.descripcionCorta?.toLowerCase().includes(search)
-    )
-  }
+  if (filters.value.estados.length)
+    list = list.filter(c => c.estado && filters.value.estados.includes(c.estado.id))
 
-  // Filtro por estados (OR)
-  if (filters.value.estados.length > 0) {
-    filtered = filtered.filter(c =>
-      c.estado && filters.value.estados.includes(c.estado.id)
-    )
-  }
+  if (filters.value.tipos.length)
+    list = list.filter(c => c.tipoCampania && filters.value.tipos.includes(c.tipoCampania.id))
 
-  // Filtro por tipos (OR)
-  if (filters.value.tipos.length > 0) {
-    filtered = filtered.filter(c =>
-      c.tipoCampania && filters.value.tipos.includes(c.tipoCampania.id)
-    )
-  }
-
-  // Filtro por años (OR entre años seleccionados)
-  if (filters.value.anios.length > 0) {
-    filtered = filtered.filter(c => {
-      const fechaInicio = c.fechaInicioPlan ? new Date(c.fechaInicioPlan).getFullYear() : null
-      const fechaFin = c.fechaFinPlan ? new Date(c.fechaFinPlan).getFullYear() : null
-      // La campaña coincide si su rango de fechas incluye alguno de los años seleccionados
-      return filters.value.anios.some(anio => {
-        if (fechaInicio && fechaFin) {
-          return fechaInicio <= anio && fechaFin >= anio
-        }
-        if (fechaInicio) return fechaInicio === anio
-        if (fechaFin) return fechaFin === anio
+  if (filters.value.anios.length) {
+    list = list.filter(c => {
+      const ini = c.fechaInicioPlan ? new Date(c.fechaInicioPlan).getFullYear() : null
+      const fin = c.fechaFinPlan    ? new Date(c.fechaFinPlan).getFullYear()    : null
+      return filters.value.anios.some(y => {
+        if (ini && fin) return ini <= y && fin >= y
+        if (ini) return ini === y
+        if (fin) return fin === y
         return false
       })
     })
   }
 
-  return filtered
+  return list
 })
 
-// Computed: título descriptivo
-const tituloDescriptivo = computed(() => {
-  const total = campaniasFiltradas.value.length
-  const base = total === 1 ? 'campaña' : 'campañas'
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const esEditable   = (c) => !['finaliz', 'cancelad'].some(k => c.estado?.nombre?.toLowerCase().includes(k))
+const esEliminable = (c) =>  c.estado?.nombre?.toLowerCase().includes('borrador')
 
-  // Tipos
-  let tiposStr = ''
-  if (filters.value.tipos.length > 0 && filters.value.tipos.length < tiposCampania.value.length) {
-    const nombres = filters.value.tipos.map(id => {
-      const tipo = tiposCampania.value.find(t => t.id === id)
-      return tipo ? tipo.nombre.toLowerCase() : ''
-    }).filter(Boolean)
-    if (nombres.length > 0) {
-      tiposStr = ` de ${nombres.join(', ')}`
-    }
-  }
-
-  // Estados
-  let estadosStr = ''
-  if (filters.value.estados.length > 0 && filters.value.estados.length < estadosCampania.value.length) {
-    const nombres = filters.value.estados.map(id => {
-      const estado = estadosCampania.value.find(e => e.id === id)
-      return estado ? estado.nombre.toLowerCase() : ''
-    }).filter(Boolean)
-    if (nombres.length > 0) {
-      estadosStr = ` ${nombres.join(', ')}`
-    }
-  }
-
-  // Años
-  let anioStr = ''
-  if (filters.value.anios.length > 0 && filters.value.anios.length < aniosDisponibles.value.length) {
-    if (filters.value.anios.length <= 2) {
-      anioStr = ` en ${filters.value.anios.join(', ')}`
-    } else {
-      anioStr = ` (${filters.value.anios.length} años)`
-    }
-  }
-
-  return `${base}${tiposStr}${estadosStr}${anioStr}`
-})
-
-// Cargar catálogos al montar
-const loadCatalogos = async () => {
-  try {
-    const [tiposData, estadosData] = await Promise.all([
-      executeQuery(GET_TIPOS_CAMPANIA),
-      executeQuery(GET_ESTADOS_CAMPANIA),
-    ])
-    tiposCampania.value = tiposData?.tiposCampania || []
-    estadosCampania.value = estadosData?.estadosCampania || []
-  } catch (err) {
-    console.error('Error al cargar catálogos:', err)
+function estadoBadgeStyle(estado) {
+  if (!estado?.color) return {}
+  const hex = estado.color.replace('#', '')
+  const r = parseInt(hex.slice(0, 2), 16)
+  const g = parseInt(hex.slice(2, 4), 16)
+  const b = parseInt(hex.slice(4, 6), 16)
+  return {
+    backgroundColor: `rgba(${r},${g},${b},0.12)`,
+    borderColor:     `rgba(${r},${g},${b},0.35)`,
+    color:           estado.color,
   }
 }
 
-// Aplicar filtros y buscar
-const aplicarFiltros = async () => {
-  filtersApplied.value = true
+function fmtDate(d) {
+  if (!d) return ''
+  return new Date(d).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function limpiarFiltros() {
+  searchQuery.value = ''
+  filters.value = { estados: [], tipos: [], anios: [] }
+}
+
+// ── Carga ─────────────────────────────────────────────────────────────────────
+async function cargar() {
   loading.value = true
   error.value = null
-
   try {
-    const data = await executeQuery(GET_CAMPANIAS)
-    allCampanias.value = data.campanias || []
-  } catch (err) {
-    error.value = err
-    console.error('Error cargando campañas:', err)
+    const [rCamp, rTipos, rEstados] = await Promise.allSettled([
+      executeQuery(GET_CAMPANIAS),
+      executeQuery(GET_TIPOS_CAMPANIA),
+      executeQuery(GET_ESTADOS_CAMPANIA),
+    ])
+    if (rCamp.status === 'fulfilled')    allCampanias.value    = rCamp.value.campanias || []
+    if (rTipos.status === 'fulfilled')   tiposCampania.value   = (rTipos.value.tiposCampania || []).filter(t => t.activo)
+    if (rEstados.status === 'fulfilled') estadosCampania.value = (rEstados.value.estadosCampania || []).filter(e => e.activo)
+  } catch (e) {
+    error.value = e?.message || 'Error al cargar'
   } finally {
     loading.value = false
   }
 }
 
-// Limpiar filtros
-const limpiarFiltros = () => {
-  filters.value = {
-    estados: [],
-    tipos: [],
-    anios: []
+async function eliminarCampania() {
+  if (!campanaAEliminar.value) return
+  eliminando.value = true
+  try {
+    await executeMutation(ELIMINAR_CAMPANIA, { id: campanaAEliminar.value.id })
+    allCampanias.value = allCampanias.value.filter(c => c.id !== campanaAEliminar.value.id)
+    campanaAEliminar.value = null
+  } catch (e) {
+    console.error('Error eliminando campaña:', e)
+  } finally {
+    eliminando.value = false
   }
-  searchQuery.value = ''
-  filtersApplied.value = false
-  allCampanias.value = []
 }
 
-
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  return new Date(dateString).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
-}
-
-const formatCurrency = (amount) => {
-  if (!amount) return '0,00 €'
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount)
-}
-
-const verDetalles = (campania) => {
-  router.push(`/campanias/${campania.id}`)
-}
-
-// Montar
-onMounted(() => loadCatalogos())
+onMounted(cargar)
 </script>
-
-<style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.group {
-  transition: all 0.2s ease;
-}
-
-.group:hover {
-  transform: translateY(-2px);
-}
-</style>

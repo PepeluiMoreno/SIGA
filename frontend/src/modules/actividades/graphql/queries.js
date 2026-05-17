@@ -78,6 +78,10 @@ export const GET_ACCION_BY_ID = `
       horaFin
       lugar
       direccion
+      localidad
+      provincia
+      duracionHoras
+      duracionDias
       aforo
       esOnline
       urlOnline
@@ -114,11 +118,14 @@ export const GET_ACCION_BY_ID = `
         titulo
         descripcion
         prioridad
+        orden
         fechaLimite
         horasEstimadas
         horasReales
         estado { id nombre }
         responsable { id nombre apellido1 }
+        habilidad { id nombre }
+        nivelHabilidad { id nombre orden }
       }
       participaciones {
         id
@@ -187,6 +194,9 @@ export const ACTUALIZAR_TAREA = `
     actualizarTarea(data: $data) {
       id titulo descripcion prioridad fechaLimite horasEstimadas horasReales
       estado { id nombre }
+      responsable { id nombre apellido1 }
+      habilidad { id nombre }
+      nivelHabilidad { id nombre }
     }
   }
 `

@@ -212,3 +212,173 @@ no duplica información
 No implementar estados por mensaje → obligatorio
 No separar “foro” y “mensajería” → obligatorio
 No usar librerías externas completas → obligatorio
+
+---
+
+## 12. Plantillas de comunicación (correo)
+
+> Las plantillas de correo son un **componente transversal** del módulo de comunicación.
+> Las usan otros módulos (campañas, tesorería, asambleas…) para enviar mensajes
+> personalizados a los miembros sin duplicar lógica de renderizado o envío.
+
+### 12.1 Modelo `PlantillaEmail`
+
+Tabla: `plantillas_email` en `backend/app/modules/core/comunicacion/plantilla_email.py`.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `id` | UUID | PK |
+| `codigo` | String(50) unique | Identificador único (`CAMP_APROBACION`, `TESO_RECORDATORIO_CUOTA`…) |
+| `nombre` | String(200) | Nombre legible para el selector de UI |
+| `descripcion` | Text nullable | Cuándo usar la plantilla |
+| `modulo` | String(50) indexed | Filtro funcional: `campanias`, `tesoreria`, `asambleas`… |
+| `asunto` | String(300) | Plantilla del asunto (acepta variables) |
+| `cuerpo_html` | Text | Plantilla del cuerpo HTML (acepta variables y bloques `{% if %}`) |
+| `variables_disponibles` | JSON nullable | Lista documentada de variables aceptadas, p.e.:<br>`[{"clave": "nombre_miembro", "descripcion": "Nombre del destinatario"}]` |
+| `activo` | Boolean | Si está disponible para selección |
+
+Campos de auditoría heredados de `BaseModel`: `fecha_creacion`, `fecha_modificacion`, `eliminado`, `creado_por_id`, `modificado_por_id`.
+
+### 12.2 Campos pendientes — clasificación por rol emisor
+
+Para que cada rol de la organización pueda mantener su catálogo de plantillas, añadir:
+
+```python
+rol_emisor: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+contexto:   Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+```
+
+**SQL pendiente** (acumular en próxima migración del módulo):
+```sql
+ALTER TABLE plantillas_email ADD COLUMN rol_emisor VARCHAR(50);
+ALTER TABLE plantillas_email ADD COLUMN contexto TEXT;
+CREATE INDEX ix_plantillas_email_rol_emisor ON plantillas_email (rol_emisor);
+```
+
+Valores previstos de `rol_emisor`: `TESORERO`, `COORDINADOR_CAMPANIA`, `PRESIDENTE`, `null` (general/sin emisor específico).
+
+### 12.3 Sistema de renderizado
+
+Función `_renderizar_plantilla()` en `campania_resolvers.py` (se debe extraer a `core/comunicacion/render.py` cuando lo use más de un módulo).
+
+- Sustitución simple: `{{ variable }}` → valor de `variables[clave]`
+- Bloques condicionales: `{% if variable %}…{% endif %}` — se elimina todo el bloque si `variable` es falsy o no existe
+- Sin loops, sin filtros, sin includes — “Jinja2-lite”
+
+Variables comunes ya inyectadas en notificaciones de campaña:
+`nombre_miembro`, `nombre_campania`, `lema`, `objetivo_principal`, `presupuesto_estimado`,
+`requisitos_recursos` (lista), `url_campanias`, `nombre_organizacion`.
+
+### 12.4 Catálogo de plantillas
+
+| Código | Módulo | Rol emisor | Estado | Descripción |
+|---|---|---|---|---|
+| `CAMP_APROBACION` | `campanias` | — | ✅ Sembrada | Convocatoria pública de campaña aprobada |
+| `TESO_RECORDATORIO_CUOTA` | `tesoreria` | `TESORERO` | ⬜ Pendiente | Recordatorio de cuota pendiente |
+| `COORD_CAMP_BIENVENIDA` | `campanias` | `COORDINADOR_CAMPANIA` | ⬜ Pendiente | Bienvenida al equipo de campaña |
+| `PRES_CONVOCATORIA_ASAMBLEA` | `asambleas` | `PRESIDENTE` | ⬜ Pendiente | Convocatoria de asamblea |
+
+Las plantillas se siembran de forma idempotente desde `backend/app/scripts/bootstrap.py`
+en la lista `_PLANTILLAS_EMAIL`. La función `ensure_plantillas_email()` las crea o
+actualiza por `codigo` en cada arranque.
+
+### 12.5 API GraphQL
+
+**Queries**
+- `plantillasEmail(filter, orderBy, ...)` — listado con filtros (strawchemy auto-generado)
+
+**Mutations CRUD** (strawchemy auto-generado, requieren transacción `COMUNICACION_*`):
+- `crearPlantillaEmail(data)`
+- `actualizarPlantillaEmail(data)`
+- `eliminarPlantillaEmail(id)` (soft delete)
+
+**Mutations específicas de notificación** (en `campania_resolvers.py`, requieren `CAMP_EDIT`):
+
+```graphql
+mutation Previsualizar($campaniaId: UUID!, $plantillaCodigo: String) {
+  previsualizarNotificacionCampania(campaniaId: $campaniaId, plantillaCodigo: $plantillaCodigo) {
+    asunto cuerpoHtml totalDestinatarios
+  }
+}
+
+mutation Enviar($campaniaId: UUID!, $asunto: String!, $cuerpoHtml: String!) {
+  enviarNotificacionCampania(campaniaId: $campaniaId, asunto: $asunto, cuerpoHtml: $cuerpoHtml) {
+    enviados fallidos sinEmail total simulado mensaje
+  }
+}
+```
+
+Cuando el patrón se generalice, extraer mutations genéricas a `core/comunicacion/`:
+`previsualizarNotificacion(entidadTipo, entidadId, plantillaCodigo)` y
+`enviarNotificacion(entidadTipo, entidadId, asunto, cuerpoHtml)`.
+
+### 12.6 Comportamiento del envío
+
+`enviar_notificacion_campania` (extensible al resto de entidades):
+
+1. Si la entidad consumidora tiene flag `notificacion_enviada = true` → rechaza con `ValueError`
+2. Si SMTP **no está configurado** (`_load_smtp_config(session).configured == False`):
+   - Cuenta destinatarios potenciales y sin-email
+   - Marca `notificacion_enviada = true`
+   - Devuelve `ResultadoEnvioNotificacion { simulado: true, mensaje: "Envío simulado: SMTP no configurado…" }`
+3. Si SMTP está configurado:
+   - Itera miembros, intenta enviar uno por uno con `EmailService.enviar(...)`
+   - Personaliza `[nombre destinatario]` y `{{ nombre_miembro }}` por destinatario
+   - Cuenta `enviados`, `fallidos`, `sinEmail`
+   - Marca `notificacion_enviada = true` aunque haya fallos parciales
+
+**Regla one-shot**: cada entidad consumidora (campaña, asamblea, llamamiento de cuota…)
+mantiene su propio flag `notificacion_enviada` que **no se puede revertir**. Una vez
+notificada, el botón queda deshabilitado (verde "Notificación enviada"). Esto evita
+duplicar comunicaciones por error.
+
+### 12.7 Integración en UI — selector de plantilla
+
+Patrón implementado en `frontend/src/modules/comunicaciones/views/DetalleCampania.vue`
+(pestaña Aprobación → botón "Notificar a la membresía"):
+
+1. Cargar plantillas filtradas por `modulo` (y futuramente por `rol_emisor` según el rol del usuario)
+2. Seleccionar la primera por defecto → previsualizar con datos reales
+3. Modal con:
+   - `<select>` de plantillas (cambio dispara nueva previsualización)
+   - Badge "X destinatarios"
+   - `<input>` editable de asunto
+   - `<textarea>` editable de cuerpo HTML (font-mono, bg-slate-50, `rows=14`)
+   - Aviso de variables sustituidas en runtime: `{{ nombre_miembro }}` y `[nombre destinatario]`
+   - Botón "Enviar a N miembros"
+4. Pantalla de resultado con estadísticas (Total / Enviados / Fallidos / Sin email)
+   y badge "Envío simulado" si el backend devuelve `simulado: true`
+
+Replicar el mismo componente modal para tesorería (recordatorio de cuota) y junta
+(convocatoria asamblea) cuando se implementen.
+
+### 12.8 Pendiente: UI de gestión de plantillas
+
+Sección nueva en el módulo de Comunicación (ruta sugerida: `/comunicacion/plantillas`).
+
+Funcionalidad:
+- Tabla con columnas: `codigo`, `nombre`, `modulo`, `rol_emisor`, `activo`
+- Filtros por `modulo` y `rol_emisor`
+- Botón "Editar" → modal con editor HTML inline (textarea por ahora; valorar `vue-quill` o similar más adelante)
+- Botón "Nueva plantilla" → mismo modal en modo creación
+- Vista previa con variables de ejemplo antes de guardar
+
+Permisos requeridos: nueva transacción `COMUNICACION_PLANTILLA_EDIT` (asignar al rol
+`ADMIN` y a coordinadores con responsabilidad de comunicación).
+
+### 12.9 Variables disponibles por módulo (catálogo)
+
+Documentar en `variables_disponibles` (JSON del modelo) qué claves acepta cada plantilla.
+Convención:
+
+```json
+[
+  {"clave": "nombre_miembro",       "descripcion": "Nombre del destinatario"},
+  {"clave": "nombre_campania",      "descripcion": "Título de la campaña"},
+  {"clave": "url_campanias",        "descripcion": "URL pública del listado de campañas"},
+  {"clave": "nombre_organizacion",  "descripcion": "Nombre legal de la organización"}
+]
+```
+
+Esta lista la consumirá la futura UI de edición para ofrecer un picker de variables
+("Insertar {{ nombre_miembro }}").

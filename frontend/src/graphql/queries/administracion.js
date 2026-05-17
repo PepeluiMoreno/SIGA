@@ -319,8 +319,8 @@ export const REVOCAR_ROL_USUARIO = `
 `
 
 export const ELIMINAR_ROL = `
-  mutation EliminarRol($filter: RolFilter!) {
-    eliminarRoles(filter: $filter) { id }
+  mutation EliminarRol($id: UUID!) {
+    eliminarRol(id: $id)
   }
 `
 

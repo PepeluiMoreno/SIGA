@@ -12,9 +12,9 @@
     </div>
 
     <template v-else-if="campania">
-
       <div class="space-y-3">
 
+        <!-- WorkflowBar -->
         <WorkflowBar
           :estado-nombre="campania.estado?.nombre || ''"
           :transiciones-disponibles="transicionesDisponibles"
@@ -23,406 +23,422 @@
           @transicion="ejecutarTransicion"
         />
 
-        <!-- ══ 1 · DATOS GENERALES ════════════════════════════════════════════ -->
-        <section :class="cardCls">
-          <div :class="fixedHeader">
-            <span class="shrink-0 w-1.5 h-5 rounded-full bg-purple-500"></span>
-            <h2 :class="titleCls">Datos generales</h2>
-            <div class="ml-auto">
-              <router-link v-if="esEditable" :to="`/campanias/${campania.id}/editar`"
-                class="inline-flex items-center gap-1.5 h-8 px-3 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 text-xs font-medium rounded-lg transition-colors">
-                <PencilSquareIcon class="w-3.5 h-3.5" /> Editar
-              </router-link>
-              <span v-else class="inline-flex items-center gap-1.5 h-8 px-3 text-slate-400 text-xs font-medium">
-                <LockClosedIcon class="w-3.5 h-3.5" />
-                {{ esCerrada ? 'Campaña cerrada' : 'Solo lectura' }}
-              </span>
-            </div>
-          </div>
-          <div class="px-5 py-4 grid grid-cols-12 gap-x-3 gap-y-3">
+        <!-- KPI Bar -->
+        <CampaniaKpiBar :campania="campania" />
 
-            <div class="col-span-5">
-              <label :class="lbl">Nombre</label>
-              <div :class="ro">{{ campania.nombre || '—' }}</div>
-            </div>
-            <div class="col-span-5">
-              <label :class="lbl">Tipo</label>
-              <div :class="ro">{{ campania.tipoCampania?.nombre || '—' }}</div>
-            </div>
-            <div class="col-span-2">
-              <label :class="lbl">Estado</label>
-              <div :class="ro">
-                <span v-if="campania.estado"
-                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
-                  :style="badgeStyle(campania.estado.color)">
-                  {{ campania.estado.nombre }}
-                </span>
-                <span v-else class="text-slate-400">—</span>
-              </div>
-            </div>
-
-            <div class="col-span-4">
-              <label :class="lbl">Ámbito de la campaña</label>
-              <div :class="ro">{{ campania.agrupacion?.nombre || 'General (todas las agrupaciones)' }}</div>
-            </div>
-            <div class="col-span-4">
-              <label :class="lbl">Lema</label>
-              <div :class="ro">{{ campania.lema || '—' }}</div>
-            </div>
-            <div class="col-span-4">
-              <label :class="lbl">URL externa</label>
-              <div :class="ro">
-                <a v-if="campania.urlExterna"
-                  :href="campania.urlExterna" target="_blank" rel="noopener noreferrer"
-                  class="text-indigo-600 hover:text-indigo-800 truncate inline-flex items-center gap-1">
-                  {{ campania.urlExterna }} <ArrowTopRightOnSquareIcon class="w-3.5 h-3.5 shrink-0" />
-                </a>
-                <span v-else class="text-slate-400">—</span>
-              </div>
-            </div>
-
-          </div>
-        </section>
-
-        <!-- ══ 2 · PLANIFICACIÓN TEMPORAL ════════════════════════════════════ -->
-        <section :class="cardCls">
-          <button type="button" @click="togglePanel('plan')" :class="accordionBtn(open.plan)">
-            <span class="flex items-center gap-3">
-              <span class="shrink-0 w-1.5 h-5 rounded-full bg-sky-500"></span>
-              <h2 :class="titleCls">Planificación temporal</h2>
-            </span>
-            <ChevronDownIcon :class="chevronCls(open.plan)" />
+        <!-- Botones de acción global -->
+        <div class="flex items-center justify-end gap-2">
+          <button
+            v-if="!campania.notificacionEnviada && esEditable"
+            @click="abrirModalNotificacion"
+            class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-lg transition-colors"
+          >
+            <EnvelopeIcon class="w-3.5 h-3.5" /> Notificar membresía
           </button>
-          <div v-show="open.plan" class="px-5 py-4">
-            <div class="flex flex-wrap gap-4 items-end">
-              <div class="w-52">
-                <label :class="lbl">Periodicidad</label>
-                <div :class="ro">{{ labelPeriodicidad(campania.periodicidad) }}</div>
-              </div>
-              <div class="w-36">
-                <label :class="lbl">Fecha de inicio</label>
-                <div :class="ro">{{ fmtFecha(campania.fechaInicioPlan) || '—' }}</div>
-              </div>
-              <div v-if="campania.periodicidad !== 'permanente'" class="w-36">
-                <label :class="lbl">Fecha de fin</label>
-                <div :class="ro">{{ fmtFecha(campania.fechaFinPlan) || '—' }}</div>
-              </div>
-            </div>
-            <div v-if="campania.fechaInicioReal || campania.fechaFinReal"
-              class="flex flex-wrap gap-4 items-end mt-3 pt-3 border-t border-slate-100">
-              <div class="w-36">
-                <label :class="lbl">Inicio real</label>
-                <div :class="ro">{{ fmtFecha(campania.fechaInicioReal) || '—' }}</div>
-              </div>
-              <div class="w-36">
-                <label :class="lbl">Fin real</label>
-                <div :class="ro">{{ fmtFecha(campania.fechaFinReal) || '—' }}</div>
-              </div>
-            </div>
-            <div v-if="campania.canales?.length" class="mt-3 pt-3 border-t border-slate-100">
-              <label :class="lbl">Canales de difusión</label>
-              <div class="flex flex-wrap gap-2 mt-1">
-                <span v-for="c in campania.canales" :key="c.id"
-                  class="inline-flex items-center px-3 py-1 bg-sky-50 text-sky-700 border border-sky-200 text-xs font-medium rounded-full">
-                  {{ c.canal.nombre }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ══ 3 · DESCRIPCIÓN Y OBJETIVOS ══════════════════════════════════ -->
-        <section :class="cardCls">
-          <button type="button" @click="togglePanel('desc')" :class="accordionBtn(open.desc)">
-            <span class="flex items-center gap-3">
-              <span class="shrink-0 w-1.5 h-5 rounded-full bg-violet-500"></span>
-              <h2 :class="titleCls">Descripción y objetivos</h2>
-            </span>
-            <ChevronDownIcon :class="chevronCls(open.desc)" />
+          <span
+            v-else-if="campania.notificacionEnviada"
+            class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg"
+          >
+            <CheckBadgeIcon class="w-3.5 h-3.5" /> Notificación enviada
+          </span>
+          <button @click="abrirModalClonar"
+            class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200 rounded-lg transition-colors">
+            <DocumentDuplicateIcon class="w-3.5 h-3.5" /> Clonar
           </button>
-          <div v-show="open.desc" class="px-5 py-4 space-y-3">
-            <div>
-              <label :class="lbl">Descripción corta</label>
-              <div :class="ro">{{ campania.descripcionCorta || '—' }}</div>
-            </div>
-            <div class="grid grid-cols-5 gap-4">
-              <div class="col-span-3">
+          <button v-if="esEliminable && tienePermiso('CAMP_DELETE')"
+            @click="confirmarEliminar = true"
+            class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200 rounded-lg transition-colors">
+            <TrashIcon class="w-3.5 h-3.5" /> Eliminar
+          </button>
+          <router-link v-if="esEditable" :to="`/campanias/${campania.id}/editar`"
+            class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-lg transition-colors">
+            <PencilSquareIcon class="w-3.5 h-3.5" /> Editar
+          </router-link>
+        </div>
+
+        <!-- 4 Acordeones -->
+        <AccordionGroup>
+
+          <!-- ══ 1 · DATOS GENERALES ══════════════════════════════════════════ -->
+          <AccordionPanel title="Datos generales" color="violet" :default-open="true">
+            <div class="px-5 py-4 grid grid-cols-12 gap-x-4 gap-y-3">
+
+              <div class="col-span-10">
+                <label :class="lbl">Nombre</label>
+                <div :class="ro">{{ campania.nombre || '—' }}</div>
+              </div>
+              <div class="col-span-2">
+                <label :class="lbl">Estado</label>
+                <div :class="ro">
+                  <span v-if="campania.estado"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
+                    :style="{ background: campania.estado.color + '20', color: campania.estado.color }">
+                    {{ campania.estado.nombre }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="col-span-4">
+                <label :class="lbl">Tipo de campaña</label>
+                <div :class="ro">{{ campania.tipoCampania?.nombre || '—' }}</div>
+              </div>
+              <div class="col-span-4">
+                <label :class="lbl">Ámbito</label>
+                <div :class="ro">{{ campania.agrupacion?.nombre || 'General (todas las agrupaciones)' }}</div>
+              </div>
+              <div class="col-span-4">
+                <label :class="lbl">Responsable</label>
+                <div :class="ro">
+                  {{ campania.responsable ? `${campania.responsable.nombre} ${campania.responsable.apellido1}` : '—' }}
+                </div>
+              </div>
+
+              <div class="col-span-6">
+                <label :class="lbl">Lema</label>
+                <div :class="ro">{{ campania.lema || '—' }}</div>
+              </div>
+              <div class="col-span-6">
+                <label :class="lbl">URL externa</label>
+                <div :class="ro">
+                  <a v-if="campania.urlExterna" :href="campania.urlExterna" target="_blank" rel="noopener noreferrer"
+                    class="text-indigo-600 hover:text-indigo-800 truncate inline-flex items-center gap-1">
+                    {{ campania.urlExterna }} <ArrowTopRightOnSquareIcon class="w-3.5 h-3.5 shrink-0" />
+                  </a>
+                  <span v-else class="text-slate-400">—</span>
+                </div>
+              </div>
+
+              <div class="col-span-12">
+                <label :class="lbl">Descripción corta</label>
+                <div :class="roL">{{ campania.descripcionCorta || '—' }}</div>
+              </div>
+              <div class="col-span-12">
                 <label :class="lbl">Descripción completa</label>
                 <div :class="roL">{{ campania.descripcionLarga || '—' }}</div>
               </div>
-              <div class="col-span-2">
+              <div class="col-span-12">
                 <label :class="lbl">Objetivo principal</label>
                 <div :class="roL">{{ campania.objetivoPrincipal || '—' }}</div>
               </div>
-            </div>
-            <!-- Metas -->
-            <div v-if="campania.metas?.length">
-              <label :class="lbl">Metas de la campaña</label>
-              <div class="rounded-lg border border-slate-200 overflow-hidden">
-                <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  <span class="col-span-5">Tipo de meta</span>
-                  <span class="col-span-2">Unidad</span>
-                  <span class="col-span-2 text-right">Planificado</span>
-                  <span class="col-span-3 text-right">Real</span>
-                </div>
-                <div v-for="(m, i) in campania.metas" :key="m.id"
-                  class="grid grid-cols-12 gap-2 px-4 py-2.5 items-center border-b border-slate-100 last:border-0"
-                  :class="i % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'">
-                  <div class="col-span-5 text-sm text-slate-800">{{ m.tipoMeta?.nombre || '—' }}</div>
-                  <div class="col-span-2 text-xs text-slate-500">{{ m.tipoMeta?.unidadMedida || '—' }}</div>
-                  <div class="col-span-2 text-sm text-slate-700 text-right tabular-nums font-medium">{{ m.valorPlanificado ?? '—' }}</div>
-                  <div class="col-span-3 text-right">
-                    <span v-if="m.valorReal !== null && m.valorReal !== undefined"
-                      class="text-sm font-semibold tabular-nums"
-                      :class="Number(m.valorReal) >= Number(m.valorPlanificado) ? 'text-emerald-700' : 'text-amber-600'">
-                      {{ m.valorReal }}
-                    </span>
-                    <span v-else class="text-xs text-slate-400 italic">Pendiente</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        <!-- ══ 4 · PRESUPUESTO ════════════════════════════════════════════════ -->
-        <section :class="cardCls">
-          <button type="button" @click="togglePanel('presupuesto')" :class="accordionBtn(open.presupuesto)">
-            <span class="flex items-center gap-3">
-              <span class="shrink-0 w-1.5 h-5 rounded-full bg-emerald-500"></span>
-              <h2 :class="titleCls">Presupuesto</h2>
-              <span v-if="campania.presupuestoEstimado"
-                class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold rounded-full tabular-nums">
-                {{ fmtEur(campania.presupuestoEstimado) }}
-              </span>
-            </span>
-            <ChevronDownIcon :class="chevronCls(open.presupuesto)" />
-          </button>
-          <div v-show="open.presupuesto" class="px-5 py-4 space-y-4">
-            <div class="flex flex-wrap gap-4">
-              <div class="w-52">
-                <label :class="lbl">Presupuesto estimado</label>
-                <div :class="ro">{{ campania.presupuestoEstimado ? fmtEur(campania.presupuestoEstimado) : '—' }}</div>
-              </div>
-              <div v-if="campania.presupuestoEjecutado !== null && campania.presupuestoEjecutado !== undefined" class="w-52">
-                <label :class="lbl">Presupuesto ejecutado</label>
-                <div :class="ro">{{ fmtEur(campania.presupuestoEjecutado) }}</div>
-              </div>
             </div>
-            <div v-if="campania.partidasPresupuesto?.length">
-              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Partidas</p>
-              <div class="rounded-lg border border-slate-200 overflow-hidden">
-                <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  <span class="col-span-5">Concepto</span>
-                  <span class="col-span-2">Tipo</span>
-                  <span class="col-span-2 text-right">Estimado</span>
-                  <span class="col-span-3 text-right">Real</span>
-                </div>
-                <div v-for="(p, i) in campania.partidasPresupuesto" :key="p.id"
-                  class="grid grid-cols-12 gap-2 px-4 py-2.5 items-center border-b border-slate-100 last:border-0"
-                  :class="i % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'">
-                  <div class="col-span-5 text-sm text-slate-800 truncate">{{ p.concepto }}</div>
-                  <div class="col-span-2">
-                    <span class="text-xs px-1.5 py-0.5 rounded-full font-medium"
-                      :class="p.tipoPartida === 'ingreso' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">
-                      {{ p.tipoPartida === 'ingreso' ? 'Ingreso' : 'Gasto' }}
-                    </span>
-                  </div>
-                  <div class="col-span-2 text-sm text-slate-700 text-right tabular-nums font-medium">
-                    {{ fmtEur(p.importeEstimado) }}
-                  </div>
-                  <div class="col-span-3 text-right">
-                    <span v-if="p.importeReal !== null && p.importeReal !== undefined"
-                      class="text-sm font-semibold tabular-nums text-slate-800">
-                      {{ fmtEur(p.importeReal) }}
-                    </span>
-                    <span v-else class="text-xs text-slate-400 italic">Pendiente</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <p v-else class="text-sm text-slate-400 italic text-center py-4">Sin partidas de presupuesto registradas.</p>
-          </div>
-        </section>
+          </AccordionPanel>
 
-        <!-- ══ 5 · RECURSOS HUMANOS ══════════════════════════════════════════ -->
-        <section :class="cardCls">
-          <button type="button" @click="togglePanel('rrhh')" :class="accordionBtn(open.rrhh)">
-            <span class="flex items-center gap-3">
-              <span class="shrink-0 w-1.5 h-5 rounded-full bg-amber-500"></span>
-              <h2 :class="titleCls">Recursos humanos</h2>
-            </span>
-            <ChevronDownIcon :class="chevronCls(open.rrhh)" />
-          </button>
-          <div v-show="open.rrhh" class="px-5 py-4 space-y-4">
-            <div class="w-72">
-              <label :class="lbl">Responsable</label>
-              <div :class="ro">
-                <span v-if="campania.responsable" class="flex items-center gap-2">
-                  <span class="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-semibold shrink-0">
-                    {{ iniciales(campania.responsable) }}
+          <!-- ══ 2 · PRESUPUESTO ══════════════════════════════════════════════ -->
+          <AccordionPanel title="Presupuesto" color="emerald">
+            <div class="px-5 py-4">
+              <div v-if="campania.partidasPresupuesto?.length" class="space-y-3">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-xs text-slate-400 uppercase border-b border-slate-100">
+                      <th class="text-left font-medium pb-2">Concepto</th>
+                      <th class="text-left font-medium pb-2 w-20">Tipo</th>
+                      <th class="text-right font-medium pb-2 w-28">Estimado</th>
+                      <th class="text-right font-medium pb-2 w-28">Real</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="p in campania.partidasPresupuesto" :key="p.id" class="border-b border-slate-50">
+                      <td class="py-2 text-slate-700">{{ p.concepto }}</td>
+                      <td class="py-2">
+                        <span class="text-xs px-1.5 py-0.5 rounded"
+                          :class="p.tipoPartida === 'gasto' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'">
+                          {{ p.tipoPartida === 'gasto' ? 'Gasto' : 'Ingreso' }}
+                        </span>
+                      </td>
+                      <td class="py-2 text-right tabular-nums text-slate-700">{{ p.importeEstimado != null ? fmtEur(p.importeEstimado) : '—' }}</td>
+                      <td class="py-2 text-right tabular-nums text-slate-700">{{ p.importeReal != null ? fmtEur(p.importeReal) : '—' }}</td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="border-t-2 border-slate-200">
+                      <td colspan="2" class="pt-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Total gastos estimados</td>
+                      <td class="pt-2 text-right font-bold tabular-nums text-emerald-700">
+                        {{ fmtEur(campania.partidasPresupuesto.filter(p => p.tipoPartida === 'gasto').reduce((s, p) => s + (p.importeEstimado || 0), 0)) }}
+                      </td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              <p v-else class="text-sm text-slate-400 italic py-3">Sin partidas presupuestarias definidas.</p>
+            </div>
+          </AccordionPanel>
+
+          <!-- ══ 3 · CALENDARIO Y ACTIVIDADES ══════════════════════════════════ -->
+          <AccordionPanel title="Calendario y actividades" color="indigo" :default-open="true">
+            <div class="px-5 py-4 space-y-4">
+
+              <!-- Fechas de campaña -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label :class="lbl">Periodicidad</label>
+                  <div :class="ro">{{ labelPeriodicidad(campania.periodicidad) }}</div>
+                </div>
+                <div>
+                  <label :class="lbl">Fecha inicio plan</label>
+                  <div :class="ro">{{ fmtFecha(campania.fechaInicioPlan) || '—' }}</div>
+                </div>
+                <div>
+                  <label :class="lbl">Fecha fin plan</label>
+                  <div :class="ro">{{ fmtFecha(campania.fechaFinPlan) || '—' }}</div>
+                </div>
+                <div v-if="campania.fechaInicioReal || campania.fechaFinReal">
+                  <label :class="lbl">Fechas reales</label>
+                  <div :class="ro">
+                    {{ fmtFecha(campania.fechaInicioReal) || '—' }}
+                    <template v-if="campania.fechaFinReal"> – {{ fmtFecha(campania.fechaFinReal) }}</template>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cabecera agenda + botón nueva actividad -->
+              <div class="flex items-center justify-between border-t border-slate-100 pt-4">
+                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Actividades ({{ actividades.length }})
+                </h3>
+                <router-link v-if="esEditable"
+                  :to="`/actividades/nueva?campaniaId=${campania.id}&campaniaNombre=${encodeURIComponent(campania.nombre)}`"
+                  class="inline-flex items-center gap-1.5 h-7 px-3 text-xs font-medium text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-lg transition-colors">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                  Nueva actividad
+                </router-link>
+              </div>
+
+              <!-- Lista agenda -->
+              <div v-if="!actividades.length"
+                class="text-sm text-slate-400 italic py-6 text-center border border-dashed border-slate-200 rounded-xl">
+                Esta campaña no tiene actividades todavía.
+              </div>
+              <div v-else class="rounded-xl border border-slate-200 overflow-hidden divide-y divide-slate-100">
+                <template v-for="(act, i) in actividades" :key="act.id">
+
+                  <!-- Separador de fecha (cuando cambia) -->
+                  <div v-if="i === 0 || act.fechaInicio !== actividades[i-1].fechaInicio"
+                    class="flex items-center gap-2 px-4 py-1.5 bg-slate-50 border-b border-slate-200">
+                    <span v-if="act.fechaInicio"
+                      class="text-xs font-semibold text-slate-500">
+                      {{ fmtDiaSemana(act.fechaInicio) }}, {{ fmtDia(act.fechaInicio) }} {{ fmtMes(act.fechaInicio) }}
+                    </span>
+                    <span v-else class="text-xs font-medium text-slate-400 italic">Sin fecha asignada</span>
+                  </div>
+
+                  <!-- Fila actividad -->
+                  <div class="bg-white">
+                    <div class="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none hover:bg-slate-50/70 transition-colors group"
+                      @click="toggleActExpand(act.id)">
+                      <!-- Chevron -->
+                      <svg class="w-3.5 h-3.5 shrink-0 transition-transform"
+                        :class="[
+                          expandedActs.has(act.id) ? 'rotate-90 text-indigo-400' : 'text-slate-300',
+                          act.tareas?.length ? '' : 'opacity-0'
+                        ]"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                      </svg>
+                      <!-- Hora -->
+                      <span class="shrink-0 w-[88px] text-xs text-slate-400 tabular-nums font-mono">
+                        <template v-if="act.horaInicio">{{ fmtHora(act.horaInicio) }}<template v-if="act.horaFin"> – {{ fmtHora(act.horaFin) }}</template></template>
+                      </span>
+                      <!-- Nombre -->
+                      <span class="flex-1 text-sm font-medium text-slate-800 truncate">{{ act.nombre }}</span>
+                      <!-- Meta: tareas + horas -->
+                      <span v-if="act.tareas?.length" class="shrink-0 hidden sm:flex items-center gap-1 text-xs text-slate-400">
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        {{ act.tareas.length }}
+                        <template v-if="act.tareas.some(t => t.horasEstimadas)">
+                          · <span class="text-amber-600 font-medium">{{ act.tareas.reduce((s, t) => s + (t.horasEstimadas || 0), 0) }}h</span>
+                        </template>
+                      </span>
+                      <!-- Tipo -->
+                      <span v-if="act.tipoActividad"
+                        class="shrink-0 hidden md:inline-flex px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600">
+                        {{ act.tipoActividad.nombre }}
+                      </span>
+                      <!-- Estado -->
+                      <span v-if="act.estado"
+                        class="shrink-0 inline-flex px-2 py-0.5 rounded-full text-xs font-semibold"
+                        :style="{ background: act.estado.color + '22', color: act.estado.color }">
+                        {{ act.estado.nombre }}
+                      </span>
+                      <!-- Ficha -->
+                      <router-link :to="`/actividades/${act.id}`" @click.stop
+                        class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-medium text-indigo-600 hover:text-indigo-800 px-2 py-1 rounded hover:bg-indigo-50">
+                        Ficha →
+                      </router-link>
+                    </div>
+
+                    <!-- Panel expandido -->
+                    <div v-if="expandedActs.has(act.id)" class="border-t border-slate-100">
+
+                      <!-- Info general si la hay -->
+                      <div v-if="act.descripcion || act.responsable || act.lugar || act.esOnline"
+                        class="px-10 py-2.5 flex flex-wrap gap-x-6 gap-y-1 text-xs text-slate-500 bg-indigo-50/30 border-b border-slate-100">
+                        <span v-if="act.descripcion" class="w-full text-slate-600">{{ act.descripcion }}</span>
+                        <span v-if="act.responsable">Resp: <span class="font-medium text-slate-700">{{ act.responsable.nombre }} {{ act.responsable.apellido1 }}</span></span>
+                        <span v-if="act.lugar || act.esOnline">Lugar: <span class="font-medium text-slate-700">{{ act.esOnline ? 'Online' : act.lugar }}</span></span>
+                        <span v-if="act.presupuestoEstimado">Presupuesto: <span class="font-medium text-slate-700">{{ fmtEur(act.presupuestoEstimado) }} €</span></span>
+                      </div>
+
+                      <!-- Tabla de tareas -->
+                      <div v-if="act.tareas?.length" class="divide-y divide-slate-50">
+                        <div v-for="(t, ti) in act.tareas" :key="t.id"
+                          class="flex items-center gap-2 pl-10 pr-4 py-2 hover:bg-slate-50/50 transition-colors">
+                          <!-- Conector árbol -->
+                          <span class="shrink-0 text-slate-200 text-xs select-none font-mono">{{ ti === act.tareas.length - 1 ? '└' : '├' }}</span>
+                          <!-- Dot estado -->
+                          <span class="shrink-0 w-1.5 h-1.5 rounded-full mt-px"
+                            :style="{ background: t.estado?.color || '#cbd5e1' }"></span>
+                          <!-- Título -->
+                          <span class="flex-1 text-sm text-slate-700">{{ t.titulo }}</span>
+                          <!-- Prioridad -->
+                          <span v-if="t.prioridad && t.prioridad !== 'normal' && t.prioridad !== 'media'"
+                            class="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                            :class="t.prioridad === 'alta' ? 'bg-red-50 text-red-500' : 'bg-slate-100 text-slate-400'">
+                            {{ t.prioridad }}
+                          </span>
+                          <!-- Horas estimadas -->
+                          <span class="shrink-0 w-8 text-right text-xs font-semibold tabular-nums"
+                            :class="t.horasEstimadas ? 'text-amber-600' : 'text-slate-200'">
+                            {{ t.horasEstimadas ? t.horasEstimadas + 'h' : '—' }}
+                          </span>
+                          <!-- Horas reales -->
+                          <span v-if="t.horasReales" class="shrink-0 text-xs text-emerald-600 tabular-nums font-medium">
+                            ({{ t.horasReales }}h real)
+                          </span>
+                          <!-- Responsable -->
+                          <span v-if="t.responsable" class="shrink-0 text-xs text-slate-400 truncate max-w-[100px]">
+                            {{ t.responsable.nombre }} {{ t.responsable.apellido1 }}
+                          </span>
+                          <!-- Estado badge -->
+                          <span v-if="t.estado"
+                            class="shrink-0 inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-semibold"
+                            :style="{ background: (t.estado.color || '#94a3b8') + '22', color: t.estado.color || '#94a3b8' }">
+                            {{ t.estado.nombre }}
+                          </span>
+                        </div>
+                      </div>
+                      <div v-else class="pl-10 pr-4 py-2 text-xs text-slate-400 italic">Sin tareas.</div>
+
+                      <!-- Participantes (compacto) -->
+                      <div v-if="act.participaciones?.length"
+                        class="pl-10 pr-4 py-2 flex flex-wrap gap-1.5 border-t border-slate-50">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide self-center mr-1">Participantes:</span>
+                        <span v-for="p in act.participaciones" :key="p.id"
+                          class="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-white border border-slate-200 rounded-full text-slate-600">
+                          {{ p.miembro ? `${p.miembro.nombre} ${p.miembro.apellido1}` : p.nombreExterno || 'Externo' }}
+                          <span v-if="p.horasAportadas" class="text-amber-600 font-medium">{{ p.horasAportadas }}h</span>
+                        </span>
+                      </div>
+
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+            </div>
+          </AccordionPanel>
+
+          <!-- ══ 4 · COMUNICACIÓN Y METAS ════════════════════════════════════ -->
+          <AccordionPanel title="Comunicación y metas" color="sky">
+            <div class="px-5 py-4 space-y-5">
+
+              <!-- Canales de difusión -->
+              <div>
+                <label :class="lbl">Canales de difusión</label>
+                <div v-if="campania.canales?.length" class="flex flex-wrap gap-2 mt-1">
+                  <span v-for="c in campania.canales" :key="c.id"
+                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-sky-50 text-sky-700 border border-sky-200">
+                    {{ c.canal?.nombre }}
                   </span>
-                  {{ campania.responsable.nombre }} {{ campania.responsable.apellido1 }}
-                </span>
-                <span v-else class="text-slate-400">—</span>
-              </div>
-            </div>
-
-            <!-- Equipos de trabajo -->
-            <div v-if="cargandoEquipos" class="py-4 flex justify-center">
-              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
-            </div>
-            <div v-else-if="grupos.length">
-              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Equipos de trabajo</p>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div v-for="g in grupos" :key="g.id"
-                  class="border border-slate-200 rounded-lg p-3">
-                  <div class="flex justify-between items-start">
-                    <div>
-                      <p class="text-sm font-medium text-slate-900">{{ g.nombre }}</p>
-                      <p class="text-xs text-slate-500 mt-0.5">{{ g.tipoGrupo?.nombre }}</p>
-                    </div>
-                    <span class="text-xs font-medium px-2 py-0.5 rounded-full shrink-0"
-                      :class="g.activo ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'">
-                      {{ g.activo ? 'Activo' : 'Inactivo' }}
-                    </span>
-                  </div>
-                  <p v-if="g.coordinador" class="mt-1.5 text-xs text-slate-500">
-                    Coordinador: {{ g.coordinador.nombre }} {{ g.coordinador.apellido1 }}
-                  </p>
-                  <p v-if="g.miembros?.length" class="mt-1 text-xs text-slate-400">
-                    {{ g.miembros.length }} miembro{{ g.miembros.length !== 1 ? 's' : '' }}
-                  </p>
                 </div>
+                <p v-else class="text-sm text-slate-400 italic mt-1">Sin canales definidos</p>
               </div>
-            </div>
-          </div>
-        </section>
 
-        <!-- ══ 6 · ACTIVIDADES ════════════════════════════════════════════════ -->
-        <section :class="cardCls">
-          <button type="button" @click="togglePanel('actividades')" :class="accordionBtn(open.actividades)">
-            <span class="flex items-center gap-3">
-              <span class="shrink-0 w-1.5 h-5 rounded-full bg-indigo-500"></span>
-              <h2 :class="titleCls">Actividades</h2>
-              <span v-if="actividades.length"
-                class="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold rounded-full">
-                {{ actividades.length }}
-              </span>
-            </span>
-            <ChevronDownIcon :class="chevronCls(open.actividades)" />
-          </button>
-          <div v-show="open.actividades">
-            <div class="flex items-center justify-between px-5 py-2.5 border-b border-slate-100 bg-slate-50/50">
-              <span></span>
-              <button v-if="tienePermiso('ACT_CREATE')"
-                @click="abrirModalActividad()"
-                class="inline-flex items-center gap-1.5 h-8 px-3 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 text-xs font-medium rounded-lg transition-colors">
-                <PlusIcon class="w-3.5 h-3.5" /> Nueva actividad
-              </button>
-            </div>
-
-            <div v-if="cargandoActividades" class="px-5 py-6 flex justify-center">
-              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
-            </div>
-            <div v-else-if="!actividades.length" class="px-5 py-8 text-center text-sm text-slate-400">
-              Sin actividades planificadas para esta campaña.
-            </div>
-            <div v-else>
-              <div class="grid grid-cols-12 gap-2 px-5 py-2 border-b border-slate-100 bg-slate-50/70">
-                <span class="col-span-1"></span>
-                <span class="col-span-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Actividad</span>
-                <span class="col-span-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Tipo</span>
-                <span class="col-span-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Estado</span>
-                <span class="col-span-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Fecha</span>
-                <span class="col-span-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Tareas</span>
-                <span class="col-span-1"></span>
-              </div>
-              <div v-for="act in actividades" :key="act.id">
-                <div class="grid grid-cols-12 gap-2 px-5 py-3 items-center border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer"
-                  @click="toggleExpand(act.id)">
-                  <div class="col-span-1 flex justify-center">
-                    <ChevronRightIcon class="w-4 h-4 text-slate-400 transition-transform"
-                      :class="expandedSet.has(act.id) ? 'rotate-90' : ''" />
-                  </div>
-                  <div class="col-span-3 min-w-0">
-                    <p class="text-sm font-medium text-slate-800 truncate">{{ act.nombre }}</p>
-                    <p v-if="act.responsable" class="text-xs text-slate-400 mt-0.5">👤 {{ act.responsable.nombre }} {{ act.responsable.apellido1 }}</p>
-                    <p v-else-if="act.grupo" class="text-xs text-slate-400 mt-0.5">👥 {{ act.grupo.nombre }}</p>
-                  </div>
-                  <div class="col-span-2">
-                    <span class="text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
-                      {{ act.tipoActividad?.nombre || '—' }}
-                    </span>
-                  </div>
-                  <div class="col-span-2">
-                    <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border"
-                      :style="badgeStyle(act.estado?.color)">
-                      {{ act.estado?.nombre || '—' }}
-                    </span>
-                  </div>
-                  <div class="col-span-2 text-xs text-slate-500">
-                    {{ fmtFechaCorta(act.fechaInicio) }}
-                    <span v-if="act.fechaFin && act.fechaFin !== act.fechaInicio"> — {{ fmtFechaCorta(act.fechaFin) }}</span>
-                  </div>
-                  <div class="col-span-1 text-xs text-slate-500 text-center">{{ act.tareas?.length || 0 }}</div>
-                  <div class="col-span-1 flex justify-end" @click.stop>
-                    <button @click="abrirModalActividad(act)"
-                      class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
-                      <PencilSquareIcon class="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-                <div v-if="expandedSet.has(act.id)"
-                  class="bg-slate-50 border-b border-slate-100 px-8 py-3 space-y-2">
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tareas</span>
-                    <button @click="abrirModalTarea(act.id)"
-                      class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
-                      <PlusIcon class="w-3 h-3" /> Nueva tarea
-                    </button>
-                  </div>
-                  <div v-if="!act.tareas?.length" class="text-xs text-slate-400 py-2">Sin tareas. Añade la primera.</div>
-                  <div v-else>
-                    <div class="grid grid-cols-12 gap-2 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      <span class="col-span-4">Título</span>
-                      <span class="col-span-2">Estado</span>
-                      <span class="col-span-3">Asignado a</span>
-                      <span class="col-span-2 text-right">Horas</span>
-                      <span class="col-span-1"></span>
-                    </div>
-                    <div v-for="t in act.tareas" :key="t.id"
-                      class="grid grid-cols-12 gap-2 py-1.5 items-center border-t border-slate-100">
-                      <div class="col-span-4 flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full shrink-0"
-                          :class="{ 'bg-red-400': t.prioridad === 1, 'bg-amber-400': t.prioridad === 2, 'bg-slate-300': t.prioridad === 3 }">
-                        </span>
-                        <span class="text-xs text-slate-700 truncate">{{ t.titulo }}</span>
-                      </div>
-                      <div class="col-span-2">
-                        <span class="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded-full border"
-                          :style="badgeStyle(t.estado?.color)">
-                          {{ t.estado?.nombre || '—' }}
-                        </span>
-                      </div>
-                      <div class="col-span-3 text-xs text-slate-500 truncate">
-                        <span v-if="t.responsable">👤 {{ t.responsable.nombre }} {{ t.responsable.apellido1 }}</span>
-                        <span v-else-if="t.grupo">👥 {{ t.grupo.nombre }}</span>
+              <!-- Metas -->
+              <div v-if="campania.metas?.length">
+                <label :class="lbl">Metas de la campaña</label>
+                <table class="w-full text-sm mt-1">
+                  <thead>
+                    <tr class="text-xs text-slate-400 uppercase border-b border-slate-100">
+                      <th class="text-left font-medium pb-2">Tipo de meta</th>
+                      <th class="text-left font-medium pb-2">Unidad</th>
+                      <th class="text-right font-medium pb-2">Planificado</th>
+                      <th class="text-right font-medium pb-2">Real</th>
+                      <th class="text-right font-medium pb-2">%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="m in campania.metas" :key="m.id" class="border-b border-slate-50">
+                      <td class="py-2 text-slate-700">{{ m.tipoMeta?.nombre }}</td>
+                      <td class="py-2 text-slate-500">{{ m.tipoMeta?.unidadMedida }}</td>
+                      <td class="py-2 text-right text-slate-700">{{ m.valorPlanificado }}</td>
+                      <td class="py-2 text-right">
+                        <span v-if="m.valorReal != null" class="text-slate-700">{{ m.valorReal }}</span>
                         <span v-else class="text-slate-300">—</span>
-                      </div>
-                      <div class="col-span-2 text-xs text-slate-400 text-right">
-                        {{ t.horasEstimadas ? t.horasEstimadas + 'h' : '—' }}
-                        <span v-if="t.horasReales" class="text-indigo-500"> / {{ t.horasReales }}h</span>
-                      </div>
-                      <div class="col-span-1"></div>
-                    </div>
+                      </td>
+                      <td class="py-2 text-right">
+                        <span v-if="m.valorReal != null && m.valorPlanificado"
+                          class="text-xs font-semibold"
+                          :class="pctMeta(m) >= 100 ? 'text-green-600' : 'text-amber-600'">
+                          {{ pctMeta(m) }}%
+                        </span>
+                        <span v-else class="text-slate-300">—</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p v-else class="text-sm text-slate-400 italic">Sin metas definidas</p>
+
+              <!-- Foto de campaña -->
+              <div v-if="campania.fotoUrl">
+                <label :class="lbl">Infografía / imagen</label>
+                <img :src="campania.fotoUrl" alt="Infografía campaña"
+                  class="max-h-48 rounded-lg border border-slate-200 object-contain" />
+              </div>
+
+            </div>
+          </AccordionPanel>
+
+          <!-- ══ 4 · VALORACIÓN Y CIERRE ════════════════════════════════════= -->
+          <AccordionPanel title="Valoración y cierre" color="emerald">
+            <div class="px-5 py-4 space-y-5">
+
+              <!-- Presupuesto ejecutado -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label :class="lbl">Presupuesto estimado</label>
+                  <div :class="ro">{{ fmtEur(campania.presupuestoEstimado) }}</div>
+                </div>
+                <div>
+                  <label :class="lbl">Presupuesto ejecutado</label>
+                  <div :class="ro">{{ campania.presupuestoEjecutado != null ? fmtEur(campania.presupuestoEjecutado) : '—' }}</div>
+                </div>
+                <div>
+                  <label :class="lbl">Objetivos cumplidos</label>
+                  <div :class="ro">
+                    <span v-if="campania.objetivosCumplidos === true" class="text-green-600 font-semibold">Sí</span>
+                    <span v-else-if="campania.objetivosCumplidos === false" class="text-red-500 font-semibold">No</span>
+                    <span v-else class="text-slate-400">—</span>
                   </div>
                 </div>
+                <div v-if="aprobadoPor">
+                  <label :class="lbl">Aprobado por</label>
+                  <div :class="ro">{{ aprobadoPor }}</div>
+                </div>
               </div>
-            </div>
-          </div>
-        </section>
 
+              <!-- Valoración -->
+              <div>
+                <label :class="lbl">Valoración</label>
+                <div :class="roL">{{ campania.valoracion || '—' }}</div>
+              </div>
+
+            </div>
+          </AccordionPanel>
+
+        </AccordionGroup>
 
       </div>
     </template>
@@ -462,7 +478,6 @@
       </div>
       <div class="px-6 py-5 space-y-5">
 
-        <!-- Bloque financiero -->
         <div class="space-y-3">
           <h4 class="text-xs font-semibold text-emerald-700 uppercase tracking-wider flex items-center gap-2">
             <span class="w-1.5 h-4 rounded-full bg-emerald-500 shrink-0"></span>
@@ -498,7 +513,6 @@
           </div>
         </div>
 
-        <!-- Bloque operativo -->
         <div v-if="modalCierre.resultadosMetas.length" class="space-y-3">
           <h4 class="text-xs font-semibold text-violet-700 uppercase tracking-wider flex items-center gap-2">
             <span class="w-1.5 h-4 rounded-full bg-violet-500 shrink-0"></span>
@@ -522,7 +536,6 @@
           </div>
         </div>
 
-        <!-- Valoración -->
         <div>
           <label class="block text-xs font-medium text-slate-700 mb-1">Valoración general (opcional)</label>
           <textarea v-model="modalCierre.valoracion" rows="3"
@@ -600,7 +613,8 @@
         <div>
           <label :class="lbl">Plantilla</label>
           <select v-model="modalNotif.plantillaCodigo" @change="cargarPreviewNotificacion"
-            :disabled="modalNotif.cargandoPlantillas || modalNotif.cargandoPreview" :class="inp">
+            :disabled="modalNotif.cargandoPlantillas || modalNotif.cargandoPreview"
+            class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option v-if="modalNotif.cargandoPlantillas" value="">Cargando plantillas…</option>
             <option v-else-if="!modalNotif.plantillas.length" value="">No hay plantillas para campañas</option>
             <option v-for="p in modalNotif.plantillas" :key="p.id" :value="p.codigo">
@@ -610,7 +624,9 @@
         </div>
         <div>
           <label :class="lbl">Asunto <span class="text-red-400">*</span></label>
-          <input v-model="modalNotif.asunto" type="text" :class="inp" placeholder="Asunto del correo" />
+          <input v-model="modalNotif.asunto" type="text"
+            class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="Asunto del correo" />
         </div>
         <div>
           <label :class="lbl">Cuerpo (HTML) <span class="text-red-400">*</span></label>
@@ -634,316 +650,192 @@
     </div>
   </div>
 
-  <!-- ── Modal actividad ──────────────────────────────────────────────────── -->
-  <div v-if="modalAct.visible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-        <h3 class="text-base font-semibold text-slate-900">
-          {{ modalAct.modo === 'editar' ? 'Editar actividad' : 'Nueva actividad' }}
-        </h3>
-        <button @click="modalAct.visible = false" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
-          <XMarkIcon class="w-4 h-4" />
-        </button>
-      </div>
-      <div class="px-6 py-5 space-y-4">
-        <div class="grid grid-cols-3 gap-3">
-          <div class="col-span-2">
-            <label :class="lbl">Nombre <span class="text-red-400">*</span></label>
-            <input v-model="modalAct.form.nombre" type="text" :class="inp" placeholder="Nombre de la actividad" autofocus />
-          </div>
-          <div>
-            <label :class="lbl">Estado <span class="text-red-400">*</span></label>
-            <select v-model="modalAct.form.estadoId" :class="inp">
-              <option value="">— Seleccionar —</option>
-              <option v-for="e in estadosActividad" :key="e.id" :value="e.id">{{ e.nombre }}</option>
-            </select>
-          </div>
-        </div>
-        <div class="grid grid-cols-3 gap-3">
-          <div>
-            <label :class="lbl">Tipo <span class="text-red-400">*</span></label>
-            <select v-model="modalAct.form.tipoActividadId" :class="inp">
-              <option value="">— Seleccionar —</option>
-              <option v-for="t in tiposActividad" :key="t.id" :value="t.id">{{ t.nombre }}</option>
-            </select>
-          </div>
-          <div>
-            <label :class="lbl">Fecha inicio</label>
-            <input v-model="modalAct.form.fechaInicio" type="date" :class="inp" />
-          </div>
-          <div>
-            <label :class="lbl">Fecha fin</label>
-            <input v-model="modalAct.form.fechaFin" type="date" :class="inp" />
-          </div>
-        </div>
-        <div class="grid grid-cols-3 gap-3">
-          <div class="col-span-2">
-            <label :class="lbl">Lugar</label>
-            <input v-model="modalAct.form.lugar" type="text" :class="inp"
-              :disabled="modalAct.form.esOnline" placeholder="Dirección o nombre del espacio" />
-          </div>
-          <div class="flex items-end pb-2 gap-2">
-            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none">
-              <input type="checkbox" v-model="modalAct.form.esOnline" class="rounded text-indigo-600" />
-              Es online
-            </label>
-          </div>
-        </div>
-        <div v-if="modalAct.form.esOnline">
-          <label :class="lbl">URL de acceso online</label>
-          <input v-model="modalAct.form.urlOnline" type="url" :class="inp" placeholder="https://meet.google.com/…" />
-        </div>
-        <div>
-          <label :class="lbl">Asignación</label>
-          <div class="flex gap-3">
-            <label v-for="op in ASIGNACION_OPTS" :key="op.value"
-              class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none">
-              <input type="radio" :value="op.value" v-model="modalAct.form.asignacion" class="text-indigo-600" />
-              {{ op.label }}
-            </label>
-          </div>
-          <div class="mt-2">
-            <select v-if="modalAct.form.asignacion === 'individual'" v-model="modalAct.form.responsableId" :class="inp">
-              <option value="">— Seleccionar miembro —</option>
-              <option v-for="m in miembrosList" :key="m.id" :value="m.id">{{ m.nombre }} {{ m.apellido1 }}</option>
-            </select>
-            <select v-else-if="modalAct.form.asignacion === 'grupo'" v-model="modalAct.form.grupoId" :class="inp">
-              <option value="">— Seleccionar equipo —</option>
-              <option v-for="g in grupos" :key="g.id" :value="g.id">{{ g.nombre }}</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label :class="lbl">Descripción</label>
-          <textarea v-model="modalAct.form.descripcion" rows="3" :class="inp" placeholder="Descripción de la actividad…"></textarea>
-        </div>
-        <p v-if="modalAct.error" class="text-xs text-red-600">{{ modalAct.error }}</p>
-      </div>
-      <div class="flex justify-end gap-2 px-6 py-4 border-t border-slate-100">
-        <button @click="modalAct.visible = false"
+  <!-- ── Modal confirmar eliminación ─────────────────────────────────────── -->
+  <div v-if="confirmarEliminar" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
+      <h3 class="text-base font-semibold text-slate-900">¿Eliminar campaña?</h3>
+      <p class="text-sm text-slate-600">
+        Se eliminará «<strong>{{ campania.nombre }}</strong>». Esta acción no se puede deshacer.
+      </p>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button @click="confirmarEliminar = false"
           class="h-9 px-4 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
-        <button @click="guardarActividad" :disabled="modalAct.submitting"
-          class="h-9 px-5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg inline-flex items-center gap-2">
-          <span v-if="modalAct.submitting" class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></span>
-          {{ modalAct.modo === 'editar' ? 'Guardar cambios' : 'Crear actividad' }}
+        <button @click="eliminarCampania" :disabled="eliminando"
+          class="h-9 px-5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg">
+          {{ eliminando ? '…' : 'Eliminar' }}
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ── Modal tarea ──────────────────────────────────────────────────────── -->
-  <div v-if="modalTarea.visible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-        <h3 class="text-base font-semibold text-slate-900">Nueva tarea</h3>
-        <button @click="modalTarea.visible = false" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
-          <XMarkIcon class="w-4 h-4" />
+  <!-- ── Modal clonar campaña ─────────────────────────────────────────────── -->
+  <div v-if="modalClonar.visible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 space-y-5">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-semibold text-slate-900">Clonar campaña</h3>
+        <button @click="modalClonar.visible = false" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+          <XMarkIcon class="w-5 h-5" />
         </button>
       </div>
-      <div class="px-6 py-5 space-y-4">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label :class="lbl">Título <span class="text-red-400">*</span></label>
-            <input v-model="modalTarea.form.titulo" type="text" :class="inp" placeholder="Título de la tarea" autofocus />
-          </div>
-          <div>
-            <label :class="lbl">Estado <span class="text-red-400">*</span></label>
-            <select v-model="modalTarea.form.estadoId" :class="inp">
-              <option value="">— Seleccionar —</option>
-              <option v-for="e in estadosTarea" :key="e.id" :value="e.id">{{ e.nombre }}</option>
-            </select>
-          </div>
-        </div>
-        <div class="grid grid-cols-3 gap-3">
-          <div>
-            <label :class="lbl">Prioridad</label>
-            <select v-model="modalTarea.form.prioridad" :class="inp">
-              <option :value="1">Alta</option>
-              <option :value="2">Media</option>
-              <option :value="3">Baja</option>
-            </select>
-          </div>
-          <div>
-            <label :class="lbl">Horas estimadas</label>
-            <input v-model.number="modalTarea.form.horasEstimadas" type="number" min="0" step="0.5" :class="inp" placeholder="0" />
-          </div>
-          <div>
-            <label :class="lbl">Fecha límite</label>
-            <input v-model="modalTarea.form.fechaLimite" type="date" :class="inp" />
-          </div>
-        </div>
+
+      <div class="space-y-4">
+        <!-- Nombre -->
         <div>
-          <label :class="lbl">Asignación</label>
-          <div class="flex gap-3 mb-2">
-            <label v-for="op in ASIGNACION_OPTS" :key="op.value"
-              class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none">
-              <input type="radio" :value="op.value" v-model="modalTarea.form.asignacion" class="text-indigo-600" />
-              {{ op.label }}
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">Nombre del clon</label>
+          <input v-model="modalClonar.nombre" type="text" maxlength="200"
+            class="h-10 w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white placeholder:text-slate-300" />
+        </div>
+
+        <!-- Desplazamiento de fechas -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">Desplazamiento de fechas</label>
+          <div class="flex items-center gap-2">
+            <input v-model.number="modalClonar.offsetValor" type="number" min="0" step="1"
+              class="h-10 w-24 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center tabular-nums" />
+            <select v-model="modalClonar.offsetUnidad"
+              class="h-10 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+              <option value="dias">días</option>
+              <option value="semanas">semanas</option>
+              <option value="meses">meses (aprox.)</option>
+            </select>
+            <span class="text-xs text-slate-400">desplaza todas las fechas</span>
+          </div>
+        </div>
+
+        <!-- Qué incluir -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">Incluir en el clon</label>
+          <div class="grid grid-cols-2 gap-y-2 gap-x-4">
+            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+              <input type="checkbox" v-model="modalClonar.incluirMetas" class="accent-indigo-600 rounded" />
+              Metas de la campaña
+            </label>
+            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+              <input type="checkbox" v-model="modalClonar.incluirPartidas" class="accent-indigo-600 rounded" />
+              Partidas de presupuesto
+            </label>
+            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+              <input type="checkbox" v-model="modalClonar.incluirCanales" class="accent-indigo-600 rounded" />
+              Canales de difusión
+            </label>
+            <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+              <input type="checkbox" v-model="modalClonar.incluirActividades" class="accent-indigo-600 rounded" />
+              Actividades y tareas
             </label>
           </div>
-          <select v-if="modalTarea.form.asignacion === 'individual'" v-model="modalTarea.form.responsableId" :class="inp">
-            <option value="">— Seleccionar miembro —</option>
-            <option v-for="m in miembrosList" :key="m.id" :value="m.id">{{ m.nombre }} {{ m.apellido1 }}</option>
-          </select>
-          <select v-else-if="modalTarea.form.asignacion === 'grupo'" v-model="modalTarea.form.grupoId" :class="inp">
-            <option value="">— Seleccionar equipo —</option>
-            <option v-for="g in grupos" :key="g.id" :value="g.id">{{ g.nombre }}</option>
-          </select>
         </div>
-        <p v-if="modalTarea.error" class="text-xs text-red-600">{{ modalTarea.error }}</p>
       </div>
-      <div class="flex justify-end gap-2 px-6 py-4 border-t border-slate-100">
-        <button @click="modalTarea.visible = false"
+
+      <div v-if="modalClonar.error" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+        {{ modalClonar.error }}
+      </div>
+
+      <div class="flex justify-end gap-2 pt-1 border-t border-slate-100">
+        <button @click="modalClonar.visible = false"
           class="h-9 px-4 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
-        <button @click="guardarTarea" :disabled="modalTarea.submitting"
-          class="h-9 px-5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg inline-flex items-center gap-2">
-          <span v-if="modalTarea.submitting" class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></span>
-          Crear tarea
+        <button @click="ejecutarClonar" :disabled="modalClonar.clonando || !modalClonar.nombre.trim()"
+          class="h-9 px-5 inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg">
+          <span v-if="modalClonar.clonando" class="animate-spin rounded-full h-3.5 w-3.5 border-[2px] border-white border-t-transparent"></span>
+          <DocumentDuplicateIcon v-else class="w-3.5 h-3.5" />
+          Clonar campaña
         </button>
       </div>
     </div>
   </div>
+
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
-  PencilSquareIcon, ArrowTopRightOnSquareIcon, LockClosedIcon,
-  PlusIcon, ChevronRightIcon, ChevronDownIcon, XMarkIcon,
-  EnvelopeIcon, CheckBadgeIcon,
+  PencilSquareIcon, ArrowTopRightOnSquareIcon,
+  TrashIcon, EnvelopeIcon, CheckBadgeIcon, XMarkIcon, DocumentDuplicateIcon,
 } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import WorkflowBar from '@/components/common/WorkflowBar.vue'
-import RecursosTab from '@/components/campanias/tabs/RecursosTab.vue'
+import AccordionGroup from '@/components/common/AccordionGroup.vue'
+import AccordionPanel from '@/components/common/AccordionPanel.vue'
+import CampaniaKpiBar from '@/modules/comunicaciones/components/CampaniaKpiBar.vue'
 import { graphqlClient } from '@/graphql/client'
-import { GET_CAMPANIA } from '@/modules/comunicaciones/graphql/queries.js'
+import { GET_CAMPANIA, GET_PLANTILLAS_CAMPANIA, PREVISUALIZAR_NOTIFICACION_CAMPANIA, ENVIAR_NOTIFICACION_CAMPANIA, CERRAR_CAMPANIA, CLONAR_CAMPANIA } from '@/modules/comunicaciones/graphql/queries.js'
 import { TRANSICIONAR_CAMPANIA, APROBAR_CAMPANIA } from '@/modules/actividades/graphql/queries.js'
-import {
-  GET_PLANTILLAS_CAMPANIA,
-  PREVISUALIZAR_NOTIFICACION_CAMPANIA,
-  ENVIAR_NOTIFICACION_CAMPANIA,
-  CERRAR_CAMPANIA,
-} from '@/modules/comunicaciones/graphql/queries.js'
-import { badgeStyle } from '@/utils/badge'
 import { usePermisos } from '@/composables/usePermisos.js'
 
 const { tienePermiso } = usePermisos()
-const route = useRoute()
+const route  = useRoute()
+const router = useRouter()
 
-// ── Estilos (mismos que CampaniaForm) ────────────────────────────────────────
-const cardCls     = 'rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden'
-const fixedHeader = 'flex items-center gap-3 px-5 py-3.5 border-b border-slate-200'
-const titleCls    = 'text-sm font-semibold text-slate-800'
-const lbl         = 'block text-sm font-medium text-slate-700 mb-1.5'
-
-// Campos de sólo lectura — visualmente idénticos a los inputs del formulario
+// ── Estilos ───────────────────────────────────────────────────────────────────
+const lbl = 'block text-sm font-medium text-slate-700 mb-1.5'
 const ro  = 'h-10 w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 flex items-center overflow-hidden'
 const roL = 'w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 leading-relaxed whitespace-pre-line min-h-[80px]'
 
-// Inputs usados en los modales
-const inp = 'h-10 w-full px-3 py-2 text-sm border border-slate-300 rounded-lg transition-all ' +
-            'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ' +
-            'bg-white placeholder:text-slate-300 disabled:bg-slate-50 disabled:text-slate-400'
-
-// ── Acordeones ───────────────────────────────────────────────────────────────
-const open = reactive({ plan: true, desc: true, presupuesto: false, rrhh: false, actividades: true })
-
-function togglePanel(key) { open[key] = !open[key] }
-
-const accordionBtn = (isOpen) =>
-  'w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50/60 transition-colors ' +
-  (isOpen ? 'border-b border-slate-200' : '')
-const chevronCls = (isOpen) =>
-  'w-4 h-4 text-slate-400 transition-transform duration-200 ' + (isOpen ? 'rotate-180' : '')
-
-// ── Constantes ───────────────────────────────────────────────────────────────
-const PERIODICIDADES = [
-  { value: 'anual',      label: 'Anual' },
-  { value: 'permanente', label: 'Permanente' },
-  { value: 'puntual',    label: 'Puntual' },
-  { value: 'semestral',  label: 'Semestral' },
-]
-const labelPeriodicidad = (v) => PERIODICIDADES.find(p => p.value === v)?.label ?? v ?? '—'
-
-const ASIGNACION_OPTS = [
-  { value: 'ninguna',    label: 'Sin asignar' },
-  { value: 'individual', label: 'Responsable individual' },
-  { value: 'grupo',      label: 'Equipo de trabajo' },
-]
-
-
 // ── Estado ───────────────────────────────────────────────────────────────────
-const cargando           = ref(true)
-const error              = ref(null)
-const campania           = ref(null)
-const actividades        = ref([])
-const grupos             = ref([])
-const miembrosMap        = ref({})
-const estadosCampania    = ref([])
-const tiposActividad     = ref([])
-const estadosActividad   = ref([])
-const estadosTarea       = ref([])
-const cargandoEquipos    = ref(false)
-const cargandoActividades = ref(false)
-const cargandoTransicion  = ref(false)
-
-const expandedSet = ref(new Set())
-const toggleExpand = (id) => {
-  const s = new Set(expandedSet.value)
-  s.has(id) ? s.delete(id) : s.add(id)
-  expandedSet.value = s
-}
-
+const cargando          = ref(true)
+const error             = ref(null)
+const campania          = ref(null)
+const estadosCampania   = ref([])
+const cargandoTransicion = ref(false)
 // ── Modales ──────────────────────────────────────────────────────────────────
-const _actForm = () => ({
-  id: null, nombre: '', tipoActividadId: '', estadoId: '',
-  descripcion: '', fechaInicio: '', fechaFin: '',
-  esOnline: false, lugar: '', urlOnline: '',
-  asignacion: 'ninguna', responsableId: '', grupoId: '',
-})
-const modalAct = ref({ visible: false, modo: 'crear', form: _actForm(), submitting: false, error: null })
-
-const _tareaForm = () => ({
-  titulo: '', estadoId: '', prioridad: 2,
-  horasEstimadas: null, fechaLimite: '',
-  asignacion: 'ninguna', responsableId: '', grupoId: '',
-})
-const modalTarea = ref({ visible: false, actividadId: null, form: _tareaForm(), submitting: false, error: null })
-
 const modalAprobacion = ref({ visible: false, titulo: '', notas: '', placeholder: '', btnLabel: '', esRechazo: false, estadoId: null, tipo: '' })
 const modalCierre = ref({
-  visible: false,
-  estadoId: null,
+  visible: false, estadoId: null,
   presupuestoEjecutado: null,
-  resultadosMetas: [],
-  resultadosPartidas: [],
-  valoracion: '',
+  resultadosMetas: [], resultadosPartidas: [], valoracion: '',
 })
-
 const modalNotif = ref({
   visible: false, cargandoPlantillas: false, cargandoPreview: false, enviando: false,
   plantillas: [], plantillaCodigo: '', asunto: '', cuerpoHtml: '',
   totalDestinatarios: 0, resultado: null, error: null,
 })
+const eliminando        = ref(false)
+const confirmarEliminar = ref(false)
+const modalClonar = ref({
+  visible: false, clonando: false, error: null,
+  nombre: '', offsetValor: 0, offsetUnidad: 'dias',
+  incluirMetas: true, incluirPartidas: true, incluirCanales: true, incluirActividades: true,
+})
+
+// ── Agenda: actividades expandibles ──────────────────────────────────────────
+const expandedActs = ref(new Set())
+function toggleActExpand(id) {
+  if (expandedActs.value.has(id)) expandedActs.value.delete(id)
+  else expandedActs.value.add(id)
+  expandedActs.value = new Set(expandedActs.value)
+}
 
 // ── Computed ─────────────────────────────────────────────────────────────────
 const titulo    = computed(() => campania.value?.nombre ?? '')
 const subtitulo = computed(() => campania.value?.tipoCampania?.nombre ?? '')
-const esFinal    = computed(() => {
+
+const actividades = computed(() => {
+  const list = campania.value?.actividades ?? []
+  return [...list].sort((a, b) => {
+    const da = a.fechaInicio ?? '9999-99-99'
+    const db = b.fechaInicio ?? '9999-99-99'
+    if (da !== db) return da.localeCompare(db)
+    const ha = a.horaInicio ?? '99:99'
+    const hb = b.horaInicio ?? '99:99'
+    return ha.localeCompare(hb)
+  })
+})
+
+const esFinal = computed(() => {
   const n = (campania.value?.estado?.nombre || '').toLowerCase()
   return n.includes('finaliz') || n.includes('cancelad')
 })
 const esCerrada  = computed(() => esFinal.value)
-const esEditable = computed(() => {
+const esEditable = computed(() => !esCerrada.value)
+const esEliminable = computed(() => {
   const n = (campania.value?.estado?.nombre || '').toLowerCase()
   return n.includes('borrador')
 })
-const miembrosList = computed(() =>
-  Object.values(miembrosMap.value).sort((a, b) =>
-    `${a.nombre} ${a.apellido1}`.localeCompare(`${b.nombre} ${b.apellido1}`, 'es')
-  )
-)
+
+const aprobadoPor = computed(() => {
+  const a = campania.value?.aprobadoPor
+  return a ? `${a.nombre} ${a.apellido1}` : null
+})
 
 const cierreCompleto = computed(() => {
   const c = modalCierre.value
@@ -952,19 +844,6 @@ const cierreCompleto = computed(() => {
   if (c.resultadosPartidas.some(p => p.importeReal === null || p.importeReal === undefined || p.importeReal === '')) return false
   return true
 })
-
-
-function indiceEstado(nombre) {
-  const n = (nombre || '').toLowerCase()
-  if (n.includes('borrador'))  return 0
-  if (n.includes('programad')) return 1
-  if (n.includes('curso'))     return 2
-  if (n.includes('pausad'))    return 3
-  if (n.includes('finaliz'))   return 4
-  if (n.includes('cancelad'))  return 5
-  return -1
-}
-const indiceCampania = computed(() => indiceEstado(campania.value?.estado?.nombre))
 
 const transicionesDisponibles = computed(() => {
   if (!campania.value || !estadosCampania.value.length) return []
@@ -994,156 +873,29 @@ const transicionesDisponibles = computed(() => {
 })
 
 // ── Formato ──────────────────────────────────────────────────────────────────
-function iniciales(r) {
-  return `${r.nombre?.[0] ?? ''}${r.apellido1?.[0] ?? ''}`.toUpperCase()
-}
+const PERIODICIDADES = [
+  { value: 'anual', label: 'Anual' },
+  { value: 'permanente', label: 'Permanente' },
+  { value: 'puntual', label: 'Puntual' },
+  { value: 'semestral', label: 'Semestral' },
+]
+const labelPeriodicidad = (v) => PERIODICIDADES.find(p => p.value === v)?.label ?? v ?? '—'
+
 const fmtFecha = (d) => d
   ? new Date(d).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
   : ''
-const fmtFechaCorta = (d) => d
-  ? new Date(d).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-  : '—'
-const fmtEur = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0)
 
-// ── GQL inline ───────────────────────────────────────────────────────────────
-const GQL_ACTIVIDADES = `
-  query ActividadesCampania($campaniaId: UUID!) {
-    actividades(filter: { campaniaId: { eq: $campaniaId }, eliminado: { eq: false } }) {
-      id nombre descripcion
-      tipoActividad { id nombre }
-      estado { id nombre color }
-      fechaInicio fechaFin
-      lugar esOnline urlOnline presupuestoEstimado
-      responsable { id nombre apellido1 }
-      grupo { id nombre }
-      tareas {
-        id titulo prioridad
-        estado { id nombre color }
-        responsable { id nombre apellido1 }
-        grupo { id nombre }
-        horasEstimadas horasReales fechaLimite
-      }
-    }
-  }
-`
-const GQL_CATALOGOS_ACT = `
-  query CatalogosActividad {
-    tiposAccion(filter: { activo: { eq: true } }) { id nombre }
-    estadosAccion { id nombre color orden activo }
-    estadosTarea { id nombre color orden activo }
-  }
-`
-const GQL_CREAR_ACT = `
-  mutation CrearActividad($data: ActividadCreateData!) {
-    crearActividad(data: $data) { id nombre }
-  }
-`
-const GQL_ACTUALIZAR_ACT = `
-  mutation ActualizarActividad($data: ActividadUpdateData!) {
-    actualizarActividad(data: $data) { id nombre }
-  }
-`
-const GQL_CREAR_TAREA = `
-  mutation CrearTarea($data: TareaCreateData!) {
-    crearTarea(data: $data) { id titulo }
-  }
-`
-const GQL_GRUPOS = `
-  query GruposCampania($campaniaId: UUID!) {
-    gruposTrabajo(filter: { campaniaId: { eq: $campaniaId } }) {
-      id nombre activo
-      tipoGrupo { id nombre }
-      coordinador { id nombre apellido1 }
-      miembros { id activo }
-    }
-  }
-`
-const GQL_MIEMBROS = `query MiembrosNombre { miembros { id nombre apellido1 apellido2 } }`
-const GQL_ESTADOS  = `query EstadosCampania { estadosCampania { id nombre } }`
+const _parseDate = (d) => d ? new Date(d + 'T12:00:00') : null
+const fmtDia  = (d) => _parseDate(d)?.toLocaleDateString('es-ES', { day: 'numeric' }) ?? '—'
+const fmtMes  = (d) => _parseDate(d)?.toLocaleDateString('es-ES', { month: 'short' }) ?? ''
+const fmtDiaSemana = (d) => _parseDate(d)?.toLocaleDateString('es-ES', { weekday: 'short' }) ?? ''
+const fmtHora = (h) => h ? h.slice(0, 5) : null
+const fmtEur = (n) =>
+  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0)
 
-// ── Modal actividad ───────────────────────────────────────────────────────────
-function abrirModalActividad(act = null) {
-  if (act) {
-    modalAct.value = {
-      visible: true, modo: 'editar', error: null, submitting: false,
-      form: {
-        id: act.id, nombre: act.nombre,
-        tipoActividadId: act.tipoActividad?.id || '',
-        estadoId: act.estado?.id || '',
-        descripcion: act.descripcion || '',
-        fechaInicio: act.fechaInicio || '', fechaFin: act.fechaFin || '',
-        esOnline: act.esOnline || false, lugar: act.lugar || '', urlOnline: act.urlOnline || '',
-        asignacion: act.grupo ? 'grupo' : act.responsable ? 'individual' : 'ninguna',
-        responsableId: act.responsable?.id || '', grupoId: act.grupo?.id || '',
-      },
-    }
-  } else {
-    const def = estadosActividad.value.find(e => e.nombre.toLowerCase().includes('borrador')) ?? estadosActividad.value[0]
-    modalAct.value = { visible: true, modo: 'crear', error: null, submitting: false,
-      form: { ..._actForm(), estadoId: def?.id || '' } }
-  }
-}
-
-async function guardarActividad() {
-  const f = modalAct.value.form
-  if (!f.nombre?.trim()) { modalAct.value.error = 'El nombre es obligatorio'; return }
-  if (!f.tipoActividadId) { modalAct.value.error = 'Selecciona un tipo'; return }
-  if (!f.estadoId) { modalAct.value.error = 'Selecciona un estado'; return }
-  modalAct.value.submitting = true
-  modalAct.value.error = null
-  try {
-    const base = {
-      nombre: f.nombre.trim(), tipoActividadId: f.tipoActividadId, estadoId: f.estadoId,
-      campaniaId: campania.value.id, descripcion: f.descripcion || null,
-      fechaInicio: f.fechaInicio || null, fechaFin: f.fechaFin || null,
-      esOnline: f.esOnline, lugar: !f.esOnline ? (f.lugar || null) : null,
-      urlOnline: f.esOnline ? (f.urlOnline || null) : null,
-      responsableId: f.asignacion === 'individual' ? (f.responsableId || null) : null,
-      grupoId: f.asignacion === 'grupo' ? (f.grupoId || null) : null,
-    }
-    if (modalAct.value.modo === 'editar')
-      await graphqlClient.request(GQL_ACTUALIZAR_ACT, { data: { id: f.id, ...base } })
-    else
-      await graphqlClient.request(GQL_CREAR_ACT, { data: base })
-    modalAct.value.visible = false
-    await cargarActividades()
-  } catch (e) {
-    modalAct.value.error = e?.response?.errors?.[0]?.message || 'Error al guardar'
-  } finally {
-    modalAct.value.submitting = false
-  }
-}
-
-// ── Modal tarea ───────────────────────────────────────────────────────────────
-function abrirModalTarea(actividadId) {
-  const def = estadosTarea.value.find(e => e.nombre.toLowerCase().includes('pend')) ?? estadosTarea.value[0]
-  modalTarea.value = { visible: true, actividadId, error: null, submitting: false,
-    form: { ..._tareaForm(), estadoId: def?.id || '' } }
-}
-
-async function guardarTarea() {
-  const f = modalTarea.value.form
-  if (!f.titulo?.trim()) { modalTarea.value.error = 'El título es obligatorio'; return }
-  if (!f.estadoId) { modalTarea.value.error = 'Selecciona un estado'; return }
-  modalTarea.value.submitting = true
-  modalTarea.value.error = null
-  try {
-    await graphqlClient.request(GQL_CREAR_TAREA, {
-      data: {
-        titulo: f.titulo.trim(), estadoId: f.estadoId, actividadId: modalTarea.value.actividadId,
-        prioridad: f.prioridad, horasEstimadas: f.horasEstimadas || null,
-        fechaLimite: f.fechaLimite || null,
-        responsableId: f.asignacion === 'individual' ? (f.responsableId || null) : null,
-        grupoId: f.asignacion === 'grupo' ? (f.grupoId || null) : null,
-      },
-    })
-    modalTarea.value.visible = false
-    await cargarActividades()
-  } catch (e) {
-    modalTarea.value.error = e?.response?.errors?.[0]?.message || 'Error al crear la tarea'
-  } finally {
-    modalTarea.value.submitting = false
-  }
+function pctMeta(m) {
+  if (!m.valorPlanificado) return 0
+  return Math.round((m.valorReal / m.valorPlanificado) * 100)
 }
 
 // ── Modal notificación ────────────────────────────────────────────────────────
@@ -1242,6 +994,7 @@ async function ejecutarTransicion(t) {
     finally { cargandoTransicion.value = false }
   }
 }
+
 async function confirmarAprobacion() {
   cargandoTransicion.value = true
   try {
@@ -1252,6 +1005,7 @@ async function confirmarAprobacion() {
   } catch (e) { alert(e?.response?.errors?.[0]?.message || 'Error') }
   finally { cargandoTransicion.value = false }
 }
+
 async function confirmarCierre() {
   cargandoTransicion.value = true
   try {
@@ -1285,41 +1039,65 @@ async function cargarCampania() {
   } catch (err) { error.value = err }
 }
 
-async function cargarActividades() {
-  cargandoActividades.value = true
-  try {
-    const data = await graphqlClient.request(GQL_ACTIVIDADES, { campaniaId: route.params.id })
-    actividades.value = data.actividades ?? []
-  } catch (e) { console.error('Error actividades:', e) }
-  finally { cargandoActividades.value = false }
-}
-
 async function cargarTodo() {
   cargando.value = true
   await cargarCampania()
   if (!error.value) {
-    cargandoEquipos.value    = true
-    cargandoActividades.value = true
-    const [dataG, dataM, dataE, dataA, dataCat] = await Promise.allSettled([
-      graphqlClient.request(GQL_GRUPOS,       { campaniaId: route.params.id }),
-      graphqlClient.request(GQL_MIEMBROS),
-      graphqlClient.request(GQL_ESTADOS),
-      graphqlClient.request(GQL_ACTIVIDADES,  { campaniaId: route.params.id }),
-      graphqlClient.request(GQL_CATALOGOS_ACT),
-    ])
-    grupos.value           = dataG.value?.gruposTrabajo ?? []
-    actividades.value      = dataA.value?.actividades ?? []
-    tiposActividad.value   = (dataCat.value?.tiposAccion ?? []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-    estadosActividad.value = (dataCat.value?.estadosAccion ?? []).filter(e => e.activo).sort((a, b) => (a.orden ?? 99) - (b.orden ?? 99))
-    estadosTarea.value     = (dataCat.value?.estadosTarea ?? []).filter(e => e.activo).sort((a, b) => (a.orden ?? 99) - (b.orden ?? 99))
-    const map = {}
-    for (const m of dataM.value?.miembros ?? []) map[m.id] = m
-    miembrosMap.value     = map
-    estadosCampania.value = dataE.value?.estadosCampania ?? []
-    cargandoEquipos.value    = false
-    cargandoActividades.value = false
+    try {
+      const data = await graphqlClient.request('query EstadosCampania { estadosCampania { id nombre } }')
+      estadosCampania.value = data.estadosCampania ?? []
+    } catch (e) { console.error('Error estados campania:', e) }
   }
   cargando.value = false
+}
+
+// ── Eliminar campaña ──────────────────────────────────────────────────────────
+const GQL_ELIMINAR = `mutation EliminarCampania($id: UUID!) { eliminarCampanias(filter: { id: { eq: $id } }) { id } }`
+
+async function eliminarCampania() {
+  eliminando.value = true
+  try {
+    await graphqlClient.request(GQL_ELIMINAR, { id: campania.value.id })
+    router.push('/campanias')
+  } catch (e) {
+    alert(e?.response?.errors?.[0]?.message || 'Error al eliminar la campaña')
+  } finally {
+    eliminando.value = false
+    confirmarEliminar.value = false
+  }
+}
+
+function abrirModalClonar() {
+  modalClonar.value = {
+    visible: true, clonando: false, error: null,
+    nombre: `${campania.value.nombre} (copia)`,
+    offsetValor: 0, offsetUnidad: 'dias',
+    incluirMetas: true, incluirPartidas: true, incluirCanales: true, incluirActividades: true,
+  }
+}
+
+async function ejecutarClonar() {
+  const mc = modalClonar.value
+  if (!mc.nombre.trim()) return
+  mc.clonando = true
+  mc.error = null
+  try {
+    const factores = { dias: 1, semanas: 7, meses: 30 }
+    const offsetDias = (mc.offsetValor || 0) * (factores[mc.offsetUnidad] ?? 1)
+    const res = await graphqlClient.request(CLONAR_CAMPANIA, {
+      campaniaId: campania.value.id,
+      nombre: mc.nombre.trim(),
+      offsetDias,
+      incluirActividades: mc.incluirActividades,
+    })
+    const nuevaId = res.clonarCampania?.id
+    modalClonar.value.visible = false
+    if (nuevaId) router.push(`/campanias/${nuevaId}`)
+  } catch (e) {
+    mc.error = e?.response?.errors?.[0]?.message || 'Error al clonar la campaña'
+  } finally {
+    mc.clonando = false
+  }
 }
 
 onMounted(cargarTodo)

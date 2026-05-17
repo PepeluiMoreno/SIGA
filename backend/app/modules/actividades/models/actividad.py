@@ -1,11 +1,11 @@
 """Modelo de Actividad — unidad operativa de la ONG (reemplaza Accion)."""
 
 import uuid
-from datetime import date, time
+from datetime import date, time, datetime
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import String, Integer, Uuid, ForeignKey, Date, Numeric, Text, Boolean, Time
+from sqlalchemy import String, Integer, Uuid, ForeignKey, Date, Numeric, Text, Boolean, Time, BigInteger, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ....infrastructure.base_model import BaseModel, InmutableMixin
@@ -82,9 +82,15 @@ class Actividad(BaseModel):
     fecha_fin: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     hora_fin: Mapped[Optional[time]] = mapped_column(Time, nullable=True)
 
+    # Duración estimada (puede usarse sin fechas concretas en planificación)
+    duracion_horas: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2), nullable=True)
+    duracion_dias: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
     # Presencia física
     lugar: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     direccion: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    localidad: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
+    provincia: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     aforo: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     es_online: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     url_online: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
@@ -129,6 +135,9 @@ class Actividad(BaseModel):
         foreign_keys='Tarea.actividad_id', lazy='selectin',
     )
     participaciones = relationship('Participacion', back_populates='actividad', lazy='selectin')
+    partidas = relationship('PartidaPresupuestoActividad', back_populates='actividad', lazy='selectin', cascade='all, delete-orphan')
+    registros_trabajo = relationship('RegistroTrabajoActividad', back_populates='actividad', lazy='selectin', cascade='all, delete-orphan')
+    documentos = relationship('DocumentoActividad', back_populates='actividad', lazy='selectin', cascade='all, delete-orphan')
 
     def __repr__(self) -> str:
         return f"<Actividad(nombre='{self.nombre}')>"
@@ -166,3 +175,84 @@ class Participacion(BaseModel):
 
     def __repr__(self) -> str:
         return f"<Participacion(actividad_id='{self.actividad_id}', rol='{self.rol}')>"
+
+
+class PartidaPresupuestoActividad(BaseModel):
+    """Desglose de presupuesto por partida a nivel de actividad."""
+    __tablename__ = 'partidas_presupuesto_actividad'
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    actividad_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('actividades.id', ondelete='CASCADE'), nullable=False, index=True)
+    concepto: Mapped[str] = mapped_column(String(200), nullable=False)
+    importe_estimado: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal('0.00'), nullable=False)
+    importe_real: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
+    tipo_partida: Mapped[str] = mapped_column(String(10), nullable=False, default='gasto')  # 'gasto' | 'ingreso'
+    orden: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    actividad = relationship('Actividad', back_populates='partidas', lazy='selectin')
+    documentos = relationship('DocumentoPartida', back_populates='partida_actividad', lazy='selectin', cascade='all, delete-orphan', foreign_keys='DocumentoPartida.partida_actividad_id')
+
+    def __repr__(self) -> str:
+        return f"<PartidaPresupuestoActividad(concepto='{self.concepto}', importe={self.importe_estimado})>"
+
+
+class RegistroTrabajoActividad(BaseModel):
+    """Parte de trabajo: horas aportadas por un miembro a una actividad."""
+    __tablename__ = 'registros_trabajo_actividad'
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    actividad_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('actividades.id', ondelete='CASCADE'), nullable=False, index=True)
+    miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('miembros.id'), nullable=False, index=True)
+    fecha: Mapped[date] = mapped_column(Date, nullable=False)
+    horas: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False)
+    descripcion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    tipo: Mapped[str] = mapped_column(String(20), nullable=False, default='presencia')  # presencia|teletrabajo|coordinacion|otro
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    actividad = relationship('Actividad', back_populates='registros_trabajo', lazy='selectin')
+    miembro = relationship('Miembro', foreign_keys=[miembro_id], lazy='selectin')
+
+    def __repr__(self) -> str:
+        return f"<RegistroTrabajoActividad(miembro_id='{self.miembro_id}', horas={self.horas})>"
+
+
+class DocumentoActividad(BaseModel):
+    """Documento adjunto a una actividad (acta, informe, foto, material)."""
+    __tablename__ = 'documentos_actividad'
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    actividad_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('actividades.id', ondelete='CASCADE'), nullable=False, index=True)
+    nombre: Mapped[str] = mapped_column(String(200), nullable=False)
+    nombre_archivo: Mapped[str] = mapped_column(String(300), nullable=False)
+    ruta: Mapped[str] = mapped_column(String(500), nullable=False)
+    tipo_mime: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    tamanyo: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    tipo_doc: Mapped[str] = mapped_column(String(20), nullable=False, default='otro')  # acta|informe|foto|material|otro
+    subido_por_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('usuarios.id', ondelete='SET NULL'), nullable=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    actividad = relationship('Actividad', back_populates='documentos', lazy='selectin')
+    subido_por = relationship('Usuario', foreign_keys=[subido_por_id], lazy='selectin')
+
+    def __repr__(self) -> str:
+        return f"<DocumentoActividad(nombre='{self.nombre}', tipo='{self.tipo_doc}')>"
+
+
+class DocumentoPartida(BaseModel):
+    """Justificante contable adjunto a una partida de presupuesto (factura, ticket, etc.)."""
+    __tablename__ = 'documentos_partida'
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    partida_actividad_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('partidas_presupuesto_actividad.id', ondelete='CASCADE'), nullable=True, index=True)
+    partida_campania_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('partidas_presupuesto_campania.id', ondelete='CASCADE'), nullable=True, index=True)
+    nombre: Mapped[str] = mapped_column(String(200), nullable=False)
+    nombre_archivo: Mapped[str] = mapped_column(String(300), nullable=False)
+    ruta: Mapped[str] = mapped_column(String(500), nullable=False)
+    tipo_mime: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    tamanyo: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    tipo_doc: Mapped[str] = mapped_column(String(20), nullable=False, default='otro')  # factura|ticket|presupuesto|otro
+    subido_por_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('usuarios.id', ondelete='SET NULL'), nullable=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    partida_actividad = relationship('PartidaPresupuestoActividad', back_populates='documentos', foreign_keys=[partida_actividad_id], lazy='selectin')
+    subido_por = relationship('Usuario', foreign_keys=[subido_por_id], lazy='selectin')

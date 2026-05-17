@@ -33,6 +33,13 @@ class Tarea(BaseModel):
     fecha_limite: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     fecha_completada: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
+    habilidad_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('habilidades.id', ondelete='SET NULL'), nullable=True, index=True
+    )
+    nivel_habilidad_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('niveles_habilidad.id', ondelete='SET NULL'), nullable=True, index=True
+    )
+
     # Al menos uno de los dos debe estar poblado:
     actividad_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid, ForeignKey('actividades.id'), nullable=True, index=True
@@ -43,6 +50,8 @@ class Tarea(BaseModel):
 
     estado = relationship('EstadoTarea', foreign_keys=[estado_id], lazy='selectin')
     responsable = relationship('Miembro', foreign_keys=[responsable_id], lazy='selectin')
+    habilidad = relationship('Habilidad', foreign_keys=[habilidad_id], lazy='selectin')
+    nivel_habilidad = relationship('NivelHabilidad', foreign_keys=[nivel_habilidad_id], lazy='selectin')
     actividad = relationship('Actividad', back_populates='tareas', foreign_keys=[actividad_id], lazy='selectin')
     grupo = relationship('GrupoTrabajo', foreign_keys=[grupo_id], lazy='selectin')
 

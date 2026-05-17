@@ -5,7 +5,7 @@ from decimal import Decimal
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom import minidom
 
-from ..models import Remesa, OrdenCobro, Miembro, AgrupacionTerritorial
+from ..models import Remesa, OrdenCobro, Miembro, UnidadOrganizativa
 
 
 def generar_sepa_xml(

@@ -49,7 +49,7 @@ class Transaccion:
 
 
 @strawberry.type
-class AgrupacionTerritorial:
+class UnidadOrganizativa:
     id: int
     codigo: str
     nombre: str

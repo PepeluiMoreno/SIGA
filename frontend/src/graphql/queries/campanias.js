@@ -10,32 +10,15 @@ export const GET_CAMPANIAS = `
       nombre
       lema
       descripcionCorta
-      descripcionLarga
       urlExterna
-      tipoCampania {
-        id
-        nombre
-      }
-      estado {
-        id
-        nombre
-        color
-      }
-      responsable {
-        id
-        nombre
-        apellido1
-        apellido2
-      }
+      periodicidad
+      tipoCampania { id nombre }
+      estado { id nombre color orden }
+      agrupacion { id nombre }
+      responsable { id nombre apellido1 }
       fechaInicioPlan
       fechaFinPlan
-      fechaInicioReal
-      fechaFinReal
-      objetivoPrincipal
-      metaRecaudacion
-      metaParticipantes
-      metaFirmas
-      fotoUrl
+      actividades { id }
     }
   }
 `
@@ -78,9 +61,6 @@ export const GET_CAMPANIA = `
       fechaInicioReal
       fechaFinReal
       objetivoPrincipal
-      metaRecaudacion
-      metaParticipantes
-      metaFirmas
       fotoUrl
       presupuestoEstimado
       presupuestoEjecutado

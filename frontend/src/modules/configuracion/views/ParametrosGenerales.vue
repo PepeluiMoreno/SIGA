@@ -21,7 +21,7 @@
       </div>
 
       <!-- Acordeones -->
-      <div class="flex-1 space-y-3 pb-4">
+      <AccordionGroup class="flex-1 space-y-3 pb-4">
 
         <!-- 1. Identidad y Sede Social -->
         <AccordionPanel title="Identidad y Sede Social" :default-open="true">
@@ -269,7 +269,7 @@
           </div>
         </AccordionPanel>
 
-      </div>
+      </AccordionGroup>
 
     </form>
   </AppLayout>
@@ -280,6 +280,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
+import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import EstructuraOrganizativaEditor from '@/components/configuracion/EstructuraOrganizativaEditor.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'

@@ -10,6 +10,10 @@ from .actividad import (
     Actividad,
     Accion,      # alias de compatibilidad
     Participacion,
+    PartidaPresupuestoActividad,
+    RegistroTrabajoActividad,
+    DocumentoActividad,
+    DocumentoPartida,
 )
 from .tarea import Tarea
 from .campana import (
@@ -52,6 +56,10 @@ __all__ = [
     'Actividad',
     'Accion',
     'Participacion',
+    'PartidaPresupuestoActividad',
+    'RegistroTrabajoActividad',
+    'DocumentoActividad',
+    'DocumentoPartida',
     'Tarea',
     # Campañas
     'TipoCampania',

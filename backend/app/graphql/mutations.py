@@ -17,7 +17,7 @@ from .acceso_resolvers import AccesoMutation
 from .financiero_resolvers import FinancieroMutation
 from .membresia_resolvers import MembresiaResolverMutation
 from .geografico_resolvers import GeograficoMutation
-from .campania_resolvers import CampaniaResolverMutation
+from .campania_resolvers import CampaniaResolverMutation, CampaniaClonarMutation
 from .actividad_resolvers import ActividadResolverMutation
 from .papelera_resolvers import PapeleraResolverMutation
 from .types_auto import *
@@ -25,12 +25,11 @@ from .inputs_auto import *
 
 
 @strawberry.type
-class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, FinancieroMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, ActividadResolverMutation, PapeleraResolverMutation):
+class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, FinancieroMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, CampaniaClonarMutation, ActividadResolverMutation, PapeleraResolverMutation):
     """Mutations GraphQL del sistema SIGA con generación automática."""
 
     # === ACCESO: roles y transacciones (CRUD) ===
-    # crear_rol / actualizar_rol → AccesoMutation (custom, atómico con funcionalidades)
-    eliminar_roles: list[RolType] = strawchemy.delete(RolFilter)
+    # crear_rol / actualizar_rol / eliminar_roles → AccesoMutation (custom, protege roles sistema)
 
     crear_transaccion: TransaccionType = strawchemy.create(TransaccionCreateInput)
     actualizar_transaccion: TransaccionType = strawchemy.update_by_ids(TransaccionUpdateInput)
@@ -240,6 +239,18 @@ class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, 
     # crear_participacion → ActividadResolverMutation (custom, FK IDs)
     actualizar_participacion: ParticipacionType = strawchemy.update_by_ids(ParticipacionUpdateInput)
     eliminar_participaciones: list[ParticipacionType] = strawchemy.delete(ParticipacionFilter)
+
+    crear_partida_presupuesto_actividad: PartidaPresupuestoActividadType = strawchemy.create(PartidaPresupuestoActividadCreateInput)
+    actualizar_partida_presupuesto_actividad: PartidaPresupuestoActividadType = strawchemy.update_by_ids(PartidaPresupuestoActividadUpdateInput)
+    eliminar_partidas_presupuesto_actividad: list[PartidaPresupuestoActividadType] = strawchemy.delete(PartidaPresupuestoActividadFilter)
+
+    crear_registro_trabajo_actividad: RegistroTrabajoActividadType = strawchemy.create(RegistroTrabajoActividadCreateInput)
+    actualizar_registro_trabajo_actividad: RegistroTrabajoActividadType = strawchemy.update_by_ids(RegistroTrabajoActividadUpdateInput)
+    eliminar_registros_trabajo_actividad: list[RegistroTrabajoActividadType] = strawchemy.delete(RegistroTrabajoActividadFilter)
+
+    # documentos: alta via REST /api/uploads/; baja via GraphQL
+    eliminar_documentos_actividad: list[DocumentoActividadType] = strawchemy.delete(DocumentoActividadFilter)
+    eliminar_documentos_partida: list[DocumentoPartidaType] = strawchemy.delete(DocumentoPartidaFilter)
 
     # === GRUPOS ===
     crear_tipo_grupo: TipoGrupoType = strawchemy.create(TipoGrupoCreateInput)

@@ -884,7 +884,10 @@ class ParticipanteCampaniaFilter:
 # ACCIONES (unifica Evento + Actividad)
 # ============================================================================
 
-from ..modules.actividades.models import TipoActividad, TipoAccion, Actividad, Accion, Tarea, Participacion
+from ..modules.actividades.models import (
+    TipoActividad, TipoAccion, Actividad, Accion, Tarea, Participacion,
+    PartidaPresupuestoActividad, RegistroTrabajoActividad, DocumentoActividad, DocumentoPartida,
+)
 
 
 @strawchemy.input(TipoActividad, mode="create_input", include="all", exclude=get_exclude_fields(TipoActividad))
@@ -954,6 +957,46 @@ class ParticipacionUpdateInput:
 
 @strawchemy.filter(Participacion, include="all")
 class ParticipacionFilter:
+    pass
+
+
+@strawchemy.input(PartidaPresupuestoActividad, mode="create_input", include="all", exclude=get_exclude_fields(PartidaPresupuestoActividad))
+class PartidaPresupuestoActividadCreateInput:
+    pass
+
+
+@strawchemy.input(PartidaPresupuestoActividad, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(PartidaPresupuestoActividad))
+class PartidaPresupuestoActividadUpdateInput:
+    pass
+
+
+@strawchemy.filter(PartidaPresupuestoActividad, include="all")
+class PartidaPresupuestoActividadFilter:
+    pass
+
+
+@strawchemy.input(RegistroTrabajoActividad, mode="create_input", include="all", exclude=get_exclude_fields(RegistroTrabajoActividad))
+class RegistroTrabajoActividadCreateInput:
+    pass
+
+
+@strawchemy.input(RegistroTrabajoActividad, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(RegistroTrabajoActividad))
+class RegistroTrabajoActividadUpdateInput:
+    pass
+
+
+@strawchemy.filter(RegistroTrabajoActividad, include="all")
+class RegistroTrabajoActividadFilter:
+    pass
+
+
+@strawchemy.filter(DocumentoActividad, include="all")
+class DocumentoActividadFilter:
+    pass
+
+
+@strawchemy.filter(DocumentoPartida, include="all")
+class DocumentoPartidaFilter:
     pass
 
 

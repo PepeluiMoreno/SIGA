@@ -1,6 +1,6 @@
 {
-  "version": "1.2.0",
-  "fecha_actualizacion": "2026-05-05",
+  "version": "1.3.0",
+  "fecha_actualizacion": "2026-05-15",
   "transacciones": [
     {
       "codigo": "SOL_LIST",
@@ -453,29 +453,29 @@
       "sistema": true
     },
     {
-      "codigo": "CAMP_ACTIVATE",
-      "nombre": "Activar campaña",
-      "descripcion": "Cambiar estado de campaña a activa",
+      "codigo": "CAMP_TRANSITION",
+      "nombre": "Cambiar estado de campaña",
+      "descripcion": "Avanzar campaña entre fases: diseño → preparación → seguimiento → cierre, o cancelar",
       "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
     },
     {
-      "codigo": "CAMP_CLOSE",
-      "nombre": "Finalizar campaña",
-      "descripcion": "Cerrar y finalizar campaña",
-      "modulo": "actividad",
-      "tipo": "escritura",
-      "activa": true,
-      "sistema": true
-    },
-    {
-      "codigo": "CAMP_CANCEL",
-      "nombre": "Cancelar campaña",
-      "descripcion": "Cancelar campaña planificada",
+      "codigo": "CAMP_APPROVE",
+      "nombre": "Aprobar campaña",
+      "descripcion": "Aprobar o rechazar una campaña en estado 'Pendiente aprobación'",
       "modulo": "actividad",
       "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CAMP_RECURSE",
+      "nombre": "Inicializar edición de campaña",
+      "descripcion": "Crear nueva edición anual de una campaña recurrente a partir de la anterior",
+      "modulo": "actividad",
+      "tipo": "escritura",
       "activa": true,
       "sistema": true
     },
@@ -507,142 +507,124 @@
       "sistema": true
     },
     {
-      "codigo": "EVT_LIST",
-      "nombre": "Listar eventos",
-      "descripcion": "Ver listado de eventos",
+      "codigo": "ACT_LIST",
+      "nombre": "Listar actividades",
+      "descripcion": "Ver listado de actividades internas de la organización",
       "modulo": "actividad",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
     },
     {
-      "codigo": "EVT_VIEW",
-      "nombre": "Ver detalle de evento",
-      "descripcion": "Ver información completa del evento",
+      "codigo": "ACT_VIEW",
+      "nombre": "Ver detalle de actividad",
+      "descripcion": "Ver información completa de una actividad",
       "modulo": "actividad",
       "tipo": "consulta",
       "activa": true,
       "sistema": true
     },
     {
-      "codigo": "EVT_CREATE",
-      "nombre": "Crear evento",
-      "descripcion": "Organizar nuevo evento",
+      "codigo": "ACT_CREATE",
+      "nombre": "Crear actividad",
+      "descripcion": "Crear nueva actividad (reunión, asamblea, taller, etc.)",
       "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
     },
     {
-      "codigo": "EVT_EDIT",
-      "nombre": "Editar evento",
-      "descripcion": "Modificar evento existente",
+      "codigo": "ACT_EDIT",
+      "nombre": "Editar actividad",
+      "descripcion": "Modificar actividad existente",
       "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
     },
     {
-      "codigo": "EVT_CANCEL",
-      "nombre": "Cancelar evento",
-      "descripcion": "Cancelar evento programado",
+      "codigo": "ACT_CANCEL",
+      "nombre": "Cancelar actividad",
+      "descripcion": "Cancelar o eliminar actividad programada",
       "modulo": "actividad",
       "tipo": "critica",
       "activa": true,
       "sistema": true
     },
     {
-      "codigo": "EVT_REGISTER",
-      "nombre": "Inscribirse en evento",
-      "descripcion": "Registrarse como asistente a evento",
+      "codigo": "ACT_APPROVE",
+      "nombre": "Aprobar actividad",
+      "descripcion": "Aprobar o rechazar una actividad en estado 'Pendiente aprobación'",
+      "modulo": "actividad",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "PART_MANAGE",
+      "nombre": "Gestionar participantes",
+      "descripcion": "Inscribir, dar de baja y gestionar participantes en actividades",
       "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
     },
     {
-      "codigo": "EVT_MANAGE_REG",
-      "nombre": "Gestionar inscripciones",
-      "descripcion": "Aprobar/rechazar inscripciones a evento",
-      "modulo": "actividad",
-      "tipo": "escritura",
-      "activa": true,
-      "sistema": true
-    },
-    {
-      "codigo": "EVT_ATTENDANCE",
+      "codigo": "PART_ATTENDANCE",
       "nombre": "Registrar asistencia",
-      "descripcion": "Check-in de asistentes al evento",
+      "descripcion": "Confirmar asistencia real de participantes en actividades",
       "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
     },
     {
-      "codigo": "VOL_LIST",
-      "nombre": "Listar voluntarios",
-      "descripcion": "Ver listado de voluntarios",
+      "codigo": "TASK_DELETE",
+      "nombre": "Eliminar tarea",
+      "descripcion": "Borrar tarea de una actividad o equipo",
       "modulo": "actividad",
-      "tipo": "consulta",
+      "tipo": "critica",
       "activa": true,
       "sistema": true
     },
     {
-      "codigo": "VOL_VIEW",
-      "nombre": "Ver perfil de voluntario",
-      "descripcion": "Ver información completa del voluntario",
-      "modulo": "actividad",
-      "tipo": "consulta",
-      "activa": true,
-      "sistema": true
-    },
-    {
-      "codigo": "OPP_LIST",
-      "nombre": "Listar oportunidades de voluntariado",
-      "descripcion": "Ver oportunidades disponibles",
-      "modulo": "actividad",
-      "tipo": "consulta",
-      "activa": true,
-      "sistema": true
-    },
-    {
-      "codigo": "OPP_CREATE",
-      "nombre": "Crear oportunidad de voluntariado",
-      "descripcion": "Publicar nueva oportunidad",
+      "codigo": "REC_MANAGE",
+      "nombre": "Gestionar requisitos de recursos",
+      "descripcion": "Definir bolsas de horas/hombre por especialidad y nivel en grupos de trabajo",
       "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
     },
     {
-      "codigo": "OPP_APPLY",
-      "nombre": "Postularse a oportunidad",
-      "descripcion": "Solicitar participar en oportunidad",
+      "codigo": "HRS_COMMIT_OWN",
+      "nombre": "Comprometer horas propias",
+      "descripcion": "El miembro se compromete a aportar horas en un requisito de recurso",
       "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
     },
     {
-      "codigo": "ASG_APPROVE",
-      "nombre": "Aprobar asignación de voluntario",
-      "descripcion": "Aceptar voluntario para oportunidad",
-      "modulo": "actividad",
-      "tipo": "aprobacion",
-      "activa": true,
-      "sistema": true
-    },
-    {
-      "codigo": "SKILL_MANAGE",
-      "nombre": "Gestionar competencias",
-      "descripcion": "Añadir/validar habilidades de voluntarios",
+      "codigo": "HRS_MANAGE",
+      "nombre": "Gestionar aportaciones de horas",
+      "descripcion": "Registrar y validar horas aportadas por cualquier miembro del equipo",
       "modulo": "actividad",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
     },
     {
-      "codigo": "SKILL_LIST",
+      "codigo": "CAT_ACT_MANAGE",
+      "nombre": "Gestionar catálogos de actividad",
+      "descripcion": "Crear y editar tipos y estados de actividades",
+      "modulo": "actividad",
+      "tipo": "configuracion",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "HAB_LIST",
       "nombre": "Ver catálogo de habilidades",
       "descripcion": "Ver catálogo de habilidades/competencias disponibles",
       "modulo": "militancia",
@@ -651,7 +633,7 @@
       "sistema": true
     },
     {
-      "codigo": "SKILL_ASSIGN",
+      "codigo": "HAB_ASSIGN",
       "nombre": "Asignar habilidad a miembro",
       "descripcion": "Asignar una habilidad del catálogo a un miembro",
       "modulo": "militancia",
@@ -660,7 +642,7 @@
       "sistema": true
     },
     {
-      "codigo": "SKILL_ASSIGN_OWN",
+      "codigo": "HAB_ASSIGN_OWN",
       "nombre": "Declarar habilidades propias",
       "descripcion": "El socio declara sus propias habilidades en su ficha",
       "modulo": "militancia",
@@ -669,7 +651,7 @@
       "sistema": true
     },
     {
-      "codigo": "SKILL_VALIDATE",
+      "codigo": "HAB_VALIDATE",
       "nombre": "Validar habilidad de miembro",
       "descripcion": "Validar/certificar habilidad declarada por un miembro",
       "modulo": "militancia",
@@ -840,15 +822,6 @@
       "sistema": true
     },
     {
-      "codigo": "MEET_SCHEDULE",
-      "nombre": "Programar reunión",
-      "descripcion": "Crear nueva reunión de equipo",
-      "modulo": "actividad",
-      "tipo": "escritura",
-      "activa": true,
-      "sistema": true
-    },
-    {
       "codigo": "AGR_LIST",
       "nombre": "Listar agrupaciones territoriales",
       "descripcion": "Ver estructura territorial completa",
@@ -894,20 +867,56 @@
       "sistema": true
     },
     {
-      "codigo": "POS_ASSIGN",
-      "nombre": "Asignar cargo",
-      "descripcion": "Nombrar coordinador/secretario/tesorero",
+      "codigo": "CARGO_LIST",
+      "nombre": "Listar catálogo de cargos",
+      "descripcion": "Ver cargos orgánicos definidos en la organización",
+      "modulo": "administracion",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CARGO_MANAGE",
+      "nombre": "Gestionar catálogo de cargos",
+      "descripcion": "Crear, editar y configurar cargos orgánicos y sus reglas de nombramiento",
+      "modulo": "administracion",
+      "tipo": "configuracion",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "NOM_LIST",
+      "nombre": "Listar nombramientos",
+      "descripcion": "Ver histórico de nombramientos en el ámbito de la unidad organizativa propia",
+      "modulo": "militancia",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "NOM_CREATE",
+      "nombre": "Crear nombramiento",
+      "descripcion": "Nombrar a un miembro en un cargo dentro del propio ámbito territorial",
       "modulo": "militancia",
       "tipo": "escritura",
       "activa": true,
       "sistema": true
     },
     {
-      "codigo": "POS_REMOVE",
-      "nombre": "Remover cargo",
-      "descripcion": "Cesar de cargo a persona",
+      "codigo": "NOM_APPROVE",
+      "nombre": "Aprobar nombramiento",
+      "descripcion": "Validar nombramiento pendiente de aprobación",
       "modulo": "militancia",
-      "tipo": "escritura",
+      "tipo": "aprobacion",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "NOM_REVOKE",
+      "nombre": "Cesar nombramiento",
+      "descripcion": "Finalizar un nombramiento activo y revocar el acceso derivado",
+      "modulo": "militancia",
+      "tipo": "critica",
       "activa": true,
       "sistema": true
     },

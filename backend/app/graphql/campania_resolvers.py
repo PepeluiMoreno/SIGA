@@ -10,7 +10,7 @@ import strawberry
 from sqlalchemy import select, delete as sa_delete
 
 from app.modules.actividades.models.campana import (
-    Campania, MetaCampania, PartidaPresupuestoCampania,
+    Campania, MetaCampania, CanalDifusionCampania, PartidaPresupuestoCampania,
     PlantillaCampania, PlantillaMeta, PlantillaPartida, PlantillaActividad, PlantillaTarea,
 )
 from app.modules.core.comunicacion.plantilla_email import PlantillaEmail
@@ -630,8 +630,9 @@ class CampaniaResolverMutation:
         """Clona las metas, partidas, actividades y tareas de una plantilla a una campaña."""
         from sqlalchemy import select as sa_select
         from app.modules.actividades.models.campana import CanalDifusionCampania
-        from app.modules.actividades.models.actividad import Actividad
+        from app.modules.actividades.models.actividad import Actividad, TipoActividad
         from app.modules.actividades.models.tarea import Tarea
+        from app.modules.configuracion.models.estados import EstadoAccion, EstadoTarea
         session = info.context.session
 
         plantilla = (await session.execute(
@@ -639,6 +640,17 @@ class CampaniaResolverMutation:
         )).scalar_one()
 
         campania = await _fetch_campania(session, campania_id)
+
+        # Cargar defaults para campos NOT NULL que la plantilla no cubre
+        default_tipo = (await session.execute(
+            sa_select(TipoActividad).order_by(TipoActividad.nombre).limit(1)
+        )).scalar_one_or_none()
+        default_estado_act = (await session.execute(
+            sa_select(EstadoAccion).order_by(EstadoAccion.orden.asc().nulls_last()).limit(1)
+        )).scalar_one_or_none()
+        default_estado_tarea = (await session.execute(
+            sa_select(EstadoTarea).order_by(EstadoTarea.orden.asc().nulls_last()).limit(1)
+        )).scalar_one_or_none()
 
         # Clonar metas
         for pm in plantilla.metas:
@@ -665,7 +677,8 @@ class CampaniaResolverMutation:
             actividad = Actividad(
                 nombre=pa.nombre,
                 descripcion=pa.descripcion,
-                tipo_actividad_id=pa.tipo_actividad_id,
+                tipo_actividad_id=pa.tipo_actividad_id or (default_tipo.id if default_tipo else None),
+                estado_id=default_estado_act.id if default_estado_act else None,
                 campania_id=campania_id,
             )
             # Calcular fecha si la campaña tiene fecha de inicio y el offset está definido
@@ -682,6 +695,7 @@ class CampaniaResolverMutation:
                     horas_estimadas=pt.horas_estimadas,
                     orden=pt.orden,
                     actividad_id=actividad.id,
+                    estado_id=default_estado_tarea.id if default_estado_tarea else None,
                 ))
 
         await session.commit()
@@ -819,3 +833,203 @@ class CampaniaResolverMutation:
         await session.commit()
         await session.refresh(tarea)
         return tarea
+
+
+# ── Inputs para clonar y propagar ────────────────────────────────────────────
+
+@strawberry.input
+class ClonarCampaniaInput:
+    campania_id: uuid.UUID
+    nombre: str
+    offset_dias: int = 0
+    incluir_metas: bool = True
+    incluir_partidas: bool = True
+    incluir_canales: bool = True
+    incluir_actividades: bool = True
+    incluir_subcampanias: bool = False
+    padre_id: Optional[uuid.UUID] = None  # uso interno para recursión
+
+
+@strawberry.input
+class PropagarACampaniasInput:
+    campania_id: uuid.UUID
+    campos: list[str]  # nombres de columna a propagar a hijas
+
+
+@strawberry.type
+class CampaniaClonarMutation:
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    async def clonar_campania(
+        self, info: strawberry.Info, data: ClonarCampaniaInput,
+    ) -> CampaniaType:
+        from app.modules.actividades.models.actividad import Actividad
+        from app.modules.actividades.models.tarea import Tarea
+        from app.modules.configuracion.models.estados import EstadoAccion, EstadoTarea, EstadoCampania
+        from datetime import timedelta
+        from sqlalchemy import select as sa_select
+
+        session = info.context.session
+
+        stmt = sa_select(Campania).where(Campania.id == data.campania_id)
+        origen = (await session.execute(stmt)).scalar_one()
+
+        stmt_estado = sa_select(EstadoCampania).order_by(EstadoCampania.orden.asc().nulls_last()).limit(1)
+        estado_inicial = (await session.execute(stmt_estado)).scalar_one_or_none()
+
+        nueva = Campania(
+            nombre=data.nombre,
+            tipo_campania_id=origen.tipo_campania_id,
+            estado_id=estado_inicial.id if estado_inicial else origen.estado_id,
+            lema=origen.lema,
+            descripcion_corta=origen.descripcion_corta,
+            descripcion_larga=origen.descripcion_larga,
+            url_externa=origen.url_externa,
+            foto_url=origen.foto_url,
+            objetivo_principal=origen.objetivo_principal,
+            responsable_id=origen.responsable_id,
+            agrupacion_id=origen.agrupacion_id,
+            es_recurrente=origen.es_recurrente,
+            periodicidad=origen.periodicidad,
+            padre_id=data.padre_id,
+            fecha_inicio_plan=(
+                origen.fecha_inicio_plan + timedelta(days=data.offset_dias)
+                if origen.fecha_inicio_plan else None
+            ),
+            fecha_fin_plan=(
+                origen.fecha_fin_plan + timedelta(days=data.offset_dias)
+                if origen.fecha_fin_plan else None
+            ),
+        )
+        session.add(nueva)
+        await session.flush()
+
+        if data.incluir_metas:
+            for m in origen.metas:
+                session.add(MetaCampania(
+                    campania_id=nueva.id,
+                    tipo_meta_id=m.tipo_meta_id,
+                    unidad=m.unidad,
+                    valor_planificado=m.valor_planificado,
+                ))
+
+        if data.incluir_canales:
+            for c in origen.canales:
+                session.add(CanalDifusionCampania(
+                    campania_id=nueva.id,
+                    canal_id=c.canal_id,
+                    notas=c.notas,
+                ))
+
+        if data.incluir_partidas:
+            for p in origen.partidas_presupuesto:
+                session.add(PartidaPresupuestoCampania(
+                    campania_id=nueva.id,
+                    concepto=p.concepto,
+                    importe_estimado=p.importe_estimado,
+                    tipo_partida=p.tipo_partida,
+                    orden=p.orden,
+                ))
+
+        if data.incluir_actividades:
+            stmt_ea = sa_select(EstadoAccion).order_by(EstadoAccion.orden.asc().nulls_last()).limit(1)
+            default_estado_act = (await session.execute(stmt_ea)).scalar_one_or_none()
+            stmt_et = sa_select(EstadoTarea).order_by(EstadoTarea.orden.asc().nulls_last()).limit(1)
+            default_estado_tarea = (await session.execute(stmt_et)).scalar_one_or_none()
+
+            stmt_acts = sa_select(Actividad).where(Actividad.campania_id == origen.id)
+            actividades_origen = (await session.execute(stmt_acts)).scalars().all()
+
+            for act in actividades_origen:
+                nueva_act = Actividad(
+                    nombre=act.nombre,
+                    descripcion=act.descripcion,
+                    tipo_actividad_id=act.tipo_actividad_id,
+                    estado_id=default_estado_act.id if default_estado_act else act.estado_id,
+                    campania_id=nueva.id,
+                    grupo_id=act.grupo_id,
+                    responsable_id=act.responsable_id,
+                    lugar=act.lugar,
+                    aforo=act.aforo,
+                    es_online=act.es_online,
+                    url_online=act.url_online,
+                    presupuesto_estimado=act.presupuesto_estimado,
+                    fecha_inicio=(
+                        act.fecha_inicio + timedelta(days=data.offset_dias)
+                        if act.fecha_inicio else None
+                    ),
+                    fecha_fin=(
+                        act.fecha_fin + timedelta(days=data.offset_dias)
+                        if act.fecha_fin else None
+                    ),
+                )
+                session.add(nueva_act)
+                await session.flush()
+
+                stmt_tareas = sa_select(Tarea).where(Tarea.actividad_id == act.id)
+                for t in (await session.execute(stmt_tareas)).scalars().all():
+                    session.add(Tarea(
+                        titulo=t.titulo,
+                        descripcion=t.descripcion,
+                        horas_estimadas=t.horas_estimadas,
+                        orden=t.orden,
+                        actividad_id=nueva_act.id,
+                        estado_id=default_estado_tarea.id if default_estado_tarea else t.estado_id,
+                    ))
+
+        if data.incluir_subcampanias:
+            stmt_hijas = sa_select(Campania).where(Campania.padre_id == origen.id)
+            for hija in (await session.execute(stmt_hijas)).scalars().all():
+                await self.clonar_campania(info, ClonarCampaniaInput(
+                    campania_id=hija.id,
+                    nombre=f"{data.nombre} — {hija.nombre}",
+                    offset_dias=data.offset_dias,
+                    incluir_metas=data.incluir_metas,
+                    incluir_partidas=data.incluir_partidas,
+                    incluir_canales=data.incluir_canales,
+                    incluir_actividades=data.incluir_actividades,
+                    incluir_subcampanias=True,
+                    padre_id=nueva.id,
+                ))
+
+        await session.commit()
+        await session.refresh(nueva)
+        return nueva
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    async def propagar_a_subcampanias(
+        self, info: strawberry.Info, data: PropagarACampaniasInput,
+    ) -> list[CampaniaType]:
+        from sqlalchemy import select as sa_select
+
+        session = info.context.session
+
+        CAMPOS_PERMITIDOS = {
+            'tipo_campania_id', 'responsable_id', 'agrupacion_id',
+            'objetivo_principal', 'periodicidad', 'es_recurrente',
+        }
+        campos_validos = [c for c in data.campos if c in CAMPOS_PERMITIDOS]
+        if not campos_validos:
+            return []
+
+        stmt_padre = sa_select(Campania).where(Campania.id == data.campania_id)
+        padre = (await session.execute(stmt_padre)).scalar_one()
+        valores = {c: getattr(padre, c) for c in campos_validos}
+
+        procesadas: list[uuid.UUID] = []
+        cola = [data.campania_id]
+        while cola:
+            pid = cola.pop(0)
+            stmt_hijas = sa_select(Campania).where(Campania.padre_id == pid)
+            for h in (await session.execute(stmt_hijas)).scalars().all():
+                for campo, valor in valores.items():
+                    setattr(h, campo, valor)
+                procesadas.append(h.id)
+                cola.append(h.id)
+
+        await session.commit()
+
+        if not procesadas:
+            return []
+        stmt_result = sa_select(Campania).where(Campania.id.in_(procesadas))
+        return list((await session.execute(stmt_result)).scalars().all())

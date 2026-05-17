@@ -2,7 +2,7 @@ import strawberry
 from datetime import date, datetime
 from decimal import Decimal
 
-from .tipos_base import AgrupacionTerritorial
+from .tipos_base import UnidadOrganizativa
 from .miembro import Miembro
 from .usuario import Usuario
 
@@ -91,7 +91,7 @@ class Campania:
     meta_participantes: int | None
 
     responsable: Miembro | None
-    agrupacion: AgrupacionTerritorial | None
+    agrupacion: UnidadOrganizativa | None
 
     created_at: datetime
     creador: Usuario
