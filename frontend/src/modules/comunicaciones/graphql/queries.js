@@ -334,6 +334,8 @@ export const GET_PLANTILLA_POR_TIPO = `
           id
           titulo
           horasEstimadas
+          habilidad { id nombre }
+          nivelHabilidad { id nombre orden }
         }
       }
     }

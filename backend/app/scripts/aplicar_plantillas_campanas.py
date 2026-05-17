@@ -65,6 +65,8 @@ async def aplicar_plantilla_a_campania(
                 titulo=pt.titulo,
                 descripcion=pt.descripcion,
                 horas_estimadas=pt.horas_estimadas,
+                habilidad_id=pt.habilidad_id,
+                nivel_habilidad_id=pt.nivel_habilidad_id,
                 orden=pt.orden,
                 actividad_id=actividad.id,
                 estado_id=default_estado_tarea_id,

@@ -273,10 +273,13 @@
                   class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
               <div class="col-span-4">
-                <label class="block text-xs font-medium text-slate-700 mb-1">Responsable</label>
+                <label class="block text-xs font-medium text-slate-700 mb-1">
+                  Responsable
+                  <span v-if="formTareaNew.habilidadId" class="text-indigo-500 font-normal text-[10px]">(perfil requerido)</span>
+                </label>
                 <select v-model="formTareaNew.responsableId" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                   <option value="">— Sin asignar —</option>
-                  <option v-for="m in miembros" :key="m.id" :value="m.id">{{ m.nombre }} {{ m.apellido1 }}</option>
+                  <option v-for="m in miembrosParaTarea(formTareaNew.habilidadId, formTareaNew.nivelHabilidadId)" :key="m.id" :value="m.id">{{ m.nombre }} {{ m.apellido1 }}</option>
                 </select>
               </div>
               <div class="col-span-4">
@@ -361,10 +364,13 @@
                       class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white" />
                   </div>
                   <div class="col-span-4">
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Responsable</label>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">
+                      Responsable
+                      <span v-if="formTareaEdit.habilidadId" class="text-indigo-500 font-normal text-[10px]">(perfil requerido)</span>
+                    </label>
                     <select v-model="formTareaEdit.responsableId" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white">
                       <option value="">— Sin asignar —</option>
-                      <option v-for="m in miembros" :key="m.id" :value="m.id">{{ m.nombre }} {{ m.apellido1 }}</option>
+                      <option v-for="m in miembrosParaTarea(formTareaEdit.habilidadId, formTareaEdit.nivelHabilidadId)" :key="m.id" :value="m.id">{{ m.nombre }} {{ m.apellido1 }}</option>
                     </select>
                   </div>
                   <div class="col-span-4">
@@ -730,6 +736,7 @@ const GET_CATALOGOS = `
     estadosAccion { id nombre }
     habilidades(filter: { activo: { eq: true } }) { id nombre }
     nivelesHabilidad(filter: { activo: { eq: true } }) { id nombre orden }
+    miembrosHabilidades { miembroId habilidadId nivelHabilidadId }
   }
 `
 
@@ -752,8 +759,28 @@ const tiposActividad = ref([])
 const estadosAccion = ref([])
 const habilidades = ref([])
 const nivelesHabilidad = ref([])
+// miembroId → Set of { habilidadId, nivelHabilidadId }
+const miembroHabilidadesMap = ref(new Map())
 const errorParticipacion = ref('')
 const cargandoTransicion = ref(false)
+
+// Devuelve miembros que tienen la habilidad (y nivel >= requerido si se especifica)
+function miembrosParaTarea(habilidadId, nivelHabilidadId) {
+  if (!habilidadId) return miembros.value
+  const nivelesOrdenados = [...nivelesHabilidad.value].sort((a, b) => a.orden - b.orden)
+  const nivelMin = nivelHabilidadId
+    ? (nivelesOrdenados.find(n => n.id === nivelHabilidadId)?.orden ?? 0)
+    : 0
+  return miembros.value.filter(m => {
+    const habs = miembroHabilidadesMap.value.get(m.id) || []
+    return habs.some(h => {
+      if (h.habilidadId !== habilidadId) return false
+      if (!nivelHabilidadId) return true
+      const ordenHab = nivelesOrdenados.find(n => n.id === h.nivelHabilidadId)?.orden ?? 0
+      return ordenHab >= nivelMin
+    })
+  })
+}
 
 // Mapeo estado → fase
 function estadoAFase(nombre) {
@@ -1135,6 +1162,12 @@ onMounted(async () => {
     estadosAccion.value = resCat.estadosAccion || []
     habilidades.value = resCat.habilidades || []
     nivelesHabilidad.value = (resCat.nivelesHabilidad || []).sort((a, b) => a.orden - b.orden)
+    const mhMap = new Map()
+    for (const mh of (resCat.miembrosHabilidades || [])) {
+      if (!mhMap.has(mh.miembroId)) mhMap.set(mh.miembroId, [])
+      mhMap.get(mh.miembroId).push({ habilidadId: mh.habilidadId, nivelHabilidadId: mh.nivelHabilidadId })
+    }
+    miembroHabilidadesMap.value = mhMap
   } finally {
     loading.value = false
   }

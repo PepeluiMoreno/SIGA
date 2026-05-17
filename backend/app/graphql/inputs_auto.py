@@ -615,12 +615,12 @@ class CategoriaHabilidadFilter:
 
 @strawchemy.input(Habilidad, mode="create_input", include="all", exclude=get_exclude_fields(Habilidad))
 class HabilidadCreateInput:
-    pass
+    categoria_id: Optional[uuid.UUID] = strawberry.UNSET
 
 
 @strawchemy.input(Habilidad, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Habilidad))
 class HabilidadUpdateInput:
-    pass
+    categoria_id: Optional[uuid.UUID] = strawberry.UNSET
 
 
 @strawchemy.filter(Habilidad, include="all")

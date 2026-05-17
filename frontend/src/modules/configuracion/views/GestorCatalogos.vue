@@ -63,14 +63,20 @@
             </button>
           </div>
 
-          <!-- Barra búsqueda -->
-          <div class="px-5 py-2 border-b border-gray-100 flex-shrink-0">
-            <div class="relative max-w-xs">
+          <!-- Barra búsqueda + filtros opcionales -->
+          <div class="px-5 py-2 border-b border-gray-100 flex-shrink-0 flex items-center gap-3">
+            <div class="relative max-w-xs flex-1">
               <MagnifyingGlassIcon class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               <input v-model="busqueda" type="text" placeholder="Buscar..."
                 class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-md bg-gray-50
                        focus:bg-white focus:border-purple-400 focus:ring-1 focus:ring-purple-400 focus:outline-none transition-colors" />
             </div>
+            <select v-if="catalogoActivo?.filtroPorCategoria && filtroCategoriasOpts.length"
+              v-model="filtroCategoria"
+              class="h-8 px-2 text-sm border border-gray-200 rounded-md bg-gray-50 focus:bg-white focus:border-purple-400 focus:ring-1 focus:ring-purple-400 focus:outline-none transition-colors">
+              <option value="">Todas las categorías</option>
+              <option v-for="opt in filtroCategoriasOpts" :key="opt.id" :value="opt.id">{{ opt.nombre }}</option>
+            </select>
           </div>
 
           <!-- Cargando -->
@@ -535,6 +541,12 @@ const CATALOGOS = computed(() => [
         descripcion: 'Conocimientos y competencias del voluntariado…',
         queryName: 'habilidades', query: Q.GET_HABILIDADES_CATALOGO,
         mutations: { create: Q.CREATE_HABILIDAD, update: Q.UPDATE_HABILIDAD, delete: Q.DELETE_HABILIDAD },
+        filtroPorCategoria: { optionsQuery: Q.GET_CATEGORIAS_HABILIDAD, optionsQueryName: 'categoriasHabilidad' },
+        sortFn: (a, b) => {
+          const cA = a.categoria?.nombre ?? '', cB = b.categoria?.nombre ?? ''
+          if (cA !== cB) return cA.localeCompare(cB, 'es')
+          return a.nombre.localeCompare(b.nombre, 'es')
+        },
         columnas: [
           { key: 'nombre',      label: 'Nombre' },
           { key: 'categoria',   label: 'Categoría', format: item => item.categoria?.nombre ?? '—' },
@@ -838,9 +850,11 @@ const CATALOGOS = computed(() => [
 )
 
 // ── Estado ────────────────────────────────────────────────────────────────────
-const catalogoActivo = ref(null)
-const items          = ref([])
-const busqueda       = ref('')
+const catalogoActivo         = ref(null)
+const items                  = ref([])
+const busqueda               = ref('')
+const filtroCategoria        = ref('')
+const filtroCategoriasOpts   = ref([])
 const cargando       = ref(false)
 const errorCarga     = ref('')
 const drawerAbierto  = ref(false)
@@ -864,9 +878,18 @@ const inlineCreateLoading = ref({})
 
 // ── Computed ──────────────────────────────────────────────────────────────────
 const itemsFiltrados = computed(() => {
-  if (!busqueda.value.trim()) return items.value
-  const q = busqueda.value.toLowerCase()
-  return items.value.filter(i => i.nombre?.toLowerCase().includes(q))
+  let result = items.value
+  if (busqueda.value.trim()) {
+    const q = busqueda.value.toLowerCase()
+    result = result.filter(i => i.nombre?.toLowerCase().includes(q))
+  }
+  if (filtroCategoria.value) {
+    result = result.filter(i => i.categoria?.id === filtroCategoria.value)
+  }
+  if (catalogoActivo.value?.sortFn) {
+    result = [...result].sort(catalogoActivo.value.sortFn)
+  }
+  return result
 })
 
 // ── Funciones ─────────────────────────────────────────────────────────────────
@@ -893,6 +916,13 @@ function seleccionar(cat) {
   catalogoActivo.value = cat
   items.value = []
   busqueda.value = ''
+  filtroCategoria.value = ''
+  filtroCategoriasOpts.value = []
+  if (cat.filtroPorCategoria) {
+    graphqlClient.request(cat.filtroPorCategoria.optionsQuery)
+      .then(data => { filtroCategoriasOpts.value = data[cat.filtroPorCategoria.optionsQueryName] ?? [] })
+      .catch(() => {})
+  }
   cargarDatos()
 }
 
