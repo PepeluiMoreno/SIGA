@@ -397,6 +397,11 @@ class ConfiguracionOrganizacionMutation:
                 ))
 
         await session.commit()
+
+        # Invalidar caché del flag de contabilidad compleja
+        from app.modules.economico.core.feature_flags import invalidar_cache
+        invalidar_cache()
+
         return await _load_org_params(session)
 
     # ── NivelOrganizativo: create custom (strawchemy no persiste FKs UUID) ──

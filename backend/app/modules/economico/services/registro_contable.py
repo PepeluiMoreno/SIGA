@@ -58,8 +58,8 @@ class RegistroContable:
     async def generar_asiento_para_apunte(
         self, apunte: ApunteCaja
     ) -> Optional[AsientoContable]:
-        """Si la versión es COMPLETA, genera el asiento de partida doble."""
-        if not is_version_completa():
+        """Si org.contabilidad_compleja está activo, genera el asiento de partida doble."""
+        if not await is_version_completa(self.session):
             return None
 
         origen_str = apunte.origen.value if apunte.origen else None
