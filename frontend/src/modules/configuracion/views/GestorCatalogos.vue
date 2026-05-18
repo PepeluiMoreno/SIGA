@@ -234,10 +234,12 @@
                 class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md
                        focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none resize-none transition-colors"></textarea>
 
-              <input v-else-if="campo.type === 'number'"
-                v-model.number="formulario[campo.name]" type="number" :min="campo.min ?? 0"
-                class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md
-                       focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none transition-colors" />
+              <div v-else-if="campo.type === 'number'">
+                <input v-model.number="formulario[campo.name]" type="number" :min="campo.min ?? 0"
+                  class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md
+                         focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none transition-colors" />
+                <p v-if="campo.hint" class="mt-1 text-xs text-gray-400">{{ campo.hint }}</p>
+              </div>
 
               <div v-else-if="campo.type === 'color'" class="space-y-2">
                 <div class="flex items-center gap-2 flex-wrap">
@@ -845,6 +847,85 @@ const CATALOGOS = computed(() => [
       },
     ],
   },
+  // ── Estructura Organizativa ────────────────────────────────────────────────
+  {
+    grupo: 'Estructura Organizativa',
+    items: [
+      {
+        key: 'ambitosGeograficos', label: 'Ámbitos geográficos', labelSingular: 'Ámbito geográfico',
+        createPrefix: 'Nuevo', editPrefix: 'Editar',
+        descripcion: 'Nacional, CCAA, Provincia, Comarca, Municipio…',
+        queryName: 'ambitosGeograficos', query: Q.GET_AMBITOS_GEOGRAFICOS,
+        mutations: { create: Q.CREATE_AMBITO_GEOGRAFICO, update: Q.UPDATE_AMBITO_GEOGRAFICO, delete: Q.DELETE_AMBITO_GEOGRAFICO },
+        sortFn: (a, b) => a.granularidad - b.granularidad || a.nombre.localeCompare(b.nombre, 'es'),
+        columnas: [
+          { key: 'nombre',       label: 'Nombre' },
+          { key: 'granularidad', label: 'Orden' },
+          { key: 'descripcion',  label: 'Descripción' },
+          { key: 'activo',       label: 'Activo', type: 'toggle' },
+        ],
+        campos: [
+          { name: 'nombre',       label: 'Nombre',                    type: 'text',   required: true, maxLength: 100 },
+          { name: 'descripcion',  label: 'Descripción',               type: 'textarea' },
+          {
+            name: 'granularidad', label: 'Granularidad (1=más amplio)', type: 'number',
+            default: 50,
+            hint: 'Número menor = ámbito más amplio. Ej: Nacional=10, CCAA=20, Provincia=30…',
+          },
+          { name: 'activo', label: 'En uso', type: 'checkbox', default: true },
+        ],
+      },
+      {
+        key: 'nivelesOrganizativos', label: 'Niveles organizativos', labelSingular: 'Nivel organizativo',
+        createPrefix: 'Nuevo', editPrefix: 'Editar',
+        descripcion: 'Tipos de unidades: Sede central, Autonómica, Provincial…',
+        queryName: 'nivelesOrganizativos', query: Q.GET_NIVELES_ORGANIZATIVOS,
+        mutations: { create: Q.CREATE_NIVEL_ORGANIZATIVO, update: Q.UPDATE_NIVEL_ORGANIZATIVO, delete: Q.DELETE_NIVEL_ORGANIZATIVO },
+        sortFn: (a, b) => (a.nivel ?? 99) - (b.nivel ?? 99) || a.nombre.localeCompare(b.nombre, 'es'),
+        columnas: [
+          { key: 'nivel',            label: 'Nivel' },
+          { key: 'nombre',           label: 'Nombre' },
+          { key: 'naturaleza',       label: 'Naturaleza' },
+          { key: 'ambitoGeografico', label: 'Ámbito geográfico', format: item => item.ambitoGeografico?.nombre ?? '—' },
+          { key: 'activo',           label: 'Activo', type: 'toggle' },
+        ],
+        campos: [
+          { name: 'nombre',    label: 'Nombre', type: 'text', required: true, maxLength: 100 },
+          {
+            name: 'naturaleza', label: 'Naturaleza', type: 'select', required: true,
+            optionsStatic: [
+              { value: 'TERRITORIAL',    label: 'Territorial' },
+              { value: 'FUNCIONAL',      label: 'Funcional' },
+              { value: 'PROGRAMATICA',   label: 'Programática' },
+              { value: 'ADMINISTRATIVA', label: 'Administrativa' },
+            ],
+          },
+          {
+            name: 'vinculo', label: 'Vínculo', type: 'select', required: true,
+            optionsStatic: [
+              { value: 'INTERNA',  label: 'Interna' },
+              { value: 'FILIAL',   label: 'Filial' },
+              { value: 'FEDERADA', label: 'Federada' },
+            ],
+          },
+          { name: 'nivel', label: 'Nivel jerárquico (1=raíz)', type: 'number', default: null },
+          {
+            name: 'padreTipoId', label: 'Tipo padre', type: 'select',
+            optionsQuery: Q.GET_NIVELES_ORGANIZATIVOS, optionsQueryName: 'nivelesOrganizativos',
+            optionLabel: 'nombre', optionValue: 'id',
+            emptyLabel: 'Sin padre (raíz)',
+          },
+          {
+            name: 'ambitoGeograficoId', label: 'Ámbito geográfico', type: 'select',
+            optionsQuery: Q.GET_AMBITOS_GEOGRAFICOS, optionsQueryName: 'ambitosGeograficos',
+            optionLabel: 'nombre', optionValue: 'id',
+            emptyLabel: 'Sin ámbito definido',
+          },
+          { name: 'activo', label: 'En uso', type: 'checkbox', default: true },
+        ],
+      },
+    ],
+  },
 ].map(g => ({ ...g, items: sortItems(g.items) }))
   .sort((a, b) => a.grupo.localeCompare(b.grupo, 'es'))
 )
@@ -953,7 +1034,10 @@ function initInlineCreate() {
 
 async function cargarSelectOptions() {
   for (const campo of catalogoActivo.value?.campos ?? []) {
-    if (campo.type === 'select' && campo.optionsQuery) {
+    if (campo.type !== 'select') continue
+    if (campo.optionsStatic) {
+      selectOptions.value[campo.name] = campo.optionsStatic
+    } else if (campo.optionsQuery) {
       try {
         const data = await graphqlClient.request(campo.optionsQuery)
         selectOptions.value[campo.name] = data[campo.optionsQueryName] ?? []

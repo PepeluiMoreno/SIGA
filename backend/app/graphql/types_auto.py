@@ -182,11 +182,15 @@ class IntentoAccesoType:
 
 
 # === GEOGRÁFICO ===
-from ..modules.core.geografico import Pais, Provincia, Municipio, Direccion, UnidadOrganizativa, NivelOrganizativo
+from ..modules.core.geografico import AmbitoGeografico, Pais, Provincia, Municipio, Direccion, UnidadOrganizativa, NivelOrganizativo
+
+@strawchemy.type(AmbitoGeografico, include="all", exclude=["niveles_organizativos"], override=True)
+class AmbitoGeograficoType:
+    pass
 
 @strawchemy.type(NivelOrganizativo, include="all", override=True)
 class NivelOrganizativoType:
-    pass
+    ambito_geografico: Optional['AmbitoGeograficoType'] = None
 
 @strawchemy.type(Pais, include="all", override=True)
 class PaisType:
@@ -245,6 +249,8 @@ from ..modules.economico.models import (
     PlanificacionAnual,
     FormaPago,
     CuentaBancaria,
+    ApunteCaja,
+    ExtractoBancario,
     MovimientoTesoreria,
     ConciliacionBancaria,
     CuentaContable,
@@ -305,6 +311,14 @@ class PlanificacionAnualType:
 class CuentaBancariaType:
     pass
 
+@strawchemy.type(ApunteCaja, include="all", override=True)
+class ApunteCajaType:
+    pass
+
+@strawchemy.type(ExtractoBancario, include="all", override=True)
+class ExtractoBancarioType:
+    pass
+
 @strawchemy.type(MovimientoTesoreria, include="all", override=True)
 class MovimientoTesoreriaType:
     pass
@@ -327,6 +341,14 @@ class ApunteContableType:
 
 @strawchemy.type(BalanceContable, include="all", override=True)
 class BalanceContableType:
+    pass
+
+
+# === FINANCIERO — REGLAS CONTABLES ===
+from ..modules.economico.models.contabilidad import ReglaContable
+
+@strawchemy.type(ReglaContable, include="all", override=True)
+class ReglaContableType:
     pass
 
 

@@ -1,11 +1,11 @@
-"""Servicio de contabilidad para gestión de asientos y plan de cuentas."""
+"""Servicio de contabilidad para gestión de asientos y plan de cuentas (PCESFL 2013)."""
 
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
 
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.contabilidad import (
@@ -17,13 +17,16 @@ from ..models.contabilidad import (
     TipoAsientoContable,
     EstadoAsientoContable,
 )
+from ..core.feature_flags import is_version_completa
 
 
 class ContabilidadService:
-    """Servicio para gestionar contabilidad: plan de cuentas y asientos."""
+    """Servicio para gestionar contabilidad: plan de cuentas y asientos (PCESFL 2013)."""
 
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    # ─── Plan de cuentas ─────────────────────────────────────────────────────
 
     async def crear_cuenta_contable(
         self,
@@ -36,12 +39,15 @@ class ContabilidadService:
         descripcion: Optional[str] = None,
     ) -> CuentaContable:
         """Crea una nueva cuenta contable."""
-        # Validar que el código sea único
-        result = await self.session.execute(
+        # Validar código único
+        existing = await self.session.execute(
             select(CuentaContable).where(CuentaContable.codigo == codigo)
         )
-        if result.scalars().first():
+        if existing.scalars().first():
             raise ValueError(f"Ya existe una cuenta con código {codigo}")
+
+        # Solo las cuentas de nivel más profundo (hojas) permiten asientos
+        permite_asiento = (nivel >= 3 and padre_id is not None)
 
         cuenta = CuentaContable(
             codigo=codigo,
@@ -51,7 +57,7 @@ class ContabilidadService:
             padre_id=padre_id,
             es_dotacion=es_dotacion,
             descripcion=descripcion,
-            permite_asiento=(nivel == 3),  # Solo cuentas de nivel 3 permiten asientos
+            permite_asiento=permite_asiento,
         )
         self.session.add(cuenta)
         await self.session.commit()
@@ -59,42 +65,68 @@ class ContabilidadService:
         return cuenta
 
     async def obtener_cuenta_contable(self, cuenta_id: UUID) -> Optional[CuentaContable]:
-        """Obtiene una cuenta contable por ID."""
         result = await self.session.execute(
             select(CuentaContable).where(CuentaContable.id == cuenta_id)
         )
         return result.scalars().first()
 
     async def obtener_cuenta_por_codigo(self, codigo: str) -> Optional[CuentaContable]:
-        """Obtiene una cuenta contable por código."""
         result = await self.session.execute(
             select(CuentaContable).where(CuentaContable.codigo == codigo)
         )
         return result.scalars().first()
 
-    async def listar_cuentas_contables(
-        self, tipo: Optional[TipoCuentaContable] = None, activas_solo: bool = True
+    async def listar_plan_cuentas(
+        self,
+        tipo: Optional[TipoCuentaContable] = None,
+        nivel: Optional[int] = None,
+        activas_solo: bool = True,
     ) -> List[CuentaContable]:
-        """Lista las cuentas contables."""
         query = select(CuentaContable)
+        filtros = []
         if tipo:
-            query = query.where(CuentaContable.tipo == tipo)
+            filtros.append(CuentaContable.tipo == tipo)
+        if nivel is not None:
+            filtros.append(CuentaContable.nivel == nivel)
         if activas_solo:
-            query = query.where(CuentaContable.activa == True)
+            filtros.append(CuentaContable.activa == True)
+        if filtros:
+            query = query.where(and_(*filtros))
         query = query.order_by(CuentaContable.codigo)
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
+
+    async def listar_cuentas_raiz(self) -> List[CuentaContable]:
+        """Devuelve las cuentas sin padre (grupos de nivel 1)."""
+        result = await self.session.execute(
+            select(CuentaContable)
+            .where(and_(CuentaContable.padre_id == None, CuentaContable.activa == True))
+            .order_by(CuentaContable.codigo)
+        )
+        return list(result.scalars().all())
+
+    # ─── Asientos contables ───────────────────────────────────────────────────
+
+    async def siguiente_numero_asiento(self, ejercicio: int) -> int:
+        """Devuelve el siguiente número de asiento disponible para el ejercicio."""
+        result = await self.session.execute(
+            select(func.max(AsientoContable.numero_asiento)).where(
+                AsientoContable.ejercicio == ejercicio
+            )
+        )
+        max_num = result.scalar()
+        return (max_num or 0) + 1
 
     async def crear_asiento(
         self,
         ejercicio: int,
-        numero_asiento: int,
         fecha: date,
         glosa: str,
         tipo_asiento: TipoAsientoContable = TipoAsientoContable.GESTION,
         observaciones: Optional[str] = None,
     ) -> AsientoContable:
-        """Crea un nuevo asiento contable."""
+        """Crea un nuevo asiento en estado BORRADOR."""
+        numero_asiento = await self.siguiente_numero_asiento(ejercicio)
         asiento = AsientoContable(
             ejercicio=ejercicio,
             numero_asiento=numero_asiento,
@@ -110,13 +142,37 @@ class ContabilidadService:
         return asiento
 
     async def obtener_asiento(self, asiento_id: UUID) -> Optional[AsientoContable]:
-        """Obtiene un asiento contable por ID."""
         result = await self.session.execute(
             select(AsientoContable).where(AsientoContable.id == asiento_id)
         )
         return result.scalars().first()
 
-    async def crear_apunte(
+    async def listar_asientos(
+        self,
+        ejercicio: Optional[int] = None,
+        estado: Optional[EstadoAsientoContable] = None,
+        fecha_inicio: Optional[date] = None,
+        fecha_fin: Optional[date] = None,
+    ) -> List[AsientoContable]:
+        query = select(AsientoContable)
+        filtros = []
+        if ejercicio:
+            filtros.append(AsientoContable.ejercicio == ejercicio)
+        if estado:
+            filtros.append(AsientoContable.estado == estado)
+        if fecha_inicio:
+            filtros.append(AsientoContable.fecha >= fecha_inicio)
+        if fecha_fin:
+            filtros.append(AsientoContable.fecha <= fecha_fin)
+        if filtros:
+            query = query.where(and_(*filtros))
+        query = query.order_by(AsientoContable.fecha, AsientoContable.numero_asiento)
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    # ─── Apuntes (líneas de asiento) ─────────────────────────────────────────
+
+    async def añadir_apunte(
         self,
         asiento_id: UUID,
         cuenta_id: UUID,
@@ -124,23 +180,27 @@ class ContabilidadService:
         haber: Decimal = Decimal("0.00"),
         concepto: str = "",
         actividad_id: Optional[UUID] = None,
-        observaciones: Optional[str] = None,
     ) -> ApunteContable:
-        """Crea un apunte contable dentro de un asiento."""
-        # Validar que no sea debe y haber a la vez
-        if debe > 0 and haber > 0:
+        """Añade un apunte (línea debe/haber) a un asiento en BORRADOR."""
+        # Validaciones
+        if debe < Decimal('0') or haber < Decimal('0'):
+            raise ValueError("Debe y haber deben ser positivos o cero")
+        if debe > Decimal('0') and haber > Decimal('0'):
             raise ValueError("Un apunte no puede tener debe y haber simultáneamente")
-
-        if debe == 0 and haber == 0:
+        if debe == Decimal('0') and haber == Decimal('0'):
             raise ValueError("Un apunte debe tener debe o haber")
 
-        # Validar que la cuenta existe y permite asientos
+        asiento = await self.obtener_asiento(asiento_id)
+        if not asiento:
+            raise ValueError(f"Asiento {asiento_id} no encontrado")
+        if asiento.estado != EstadoAsientoContable.BORRADOR:
+            raise ValueError("Solo se pueden añadir apuntes a asientos en BORRADOR")
+
         cuenta = await self.obtener_cuenta_contable(cuenta_id)
         if not cuenta:
             raise ValueError(f"Cuenta contable {cuenta_id} no encontrada")
-
         if not cuenta.permite_asiento:
-            raise ValueError(f"La cuenta {cuenta.codigo} no permite asientos")
+            raise ValueError(f"La cuenta {cuenta.codigo} no permite asientos directos")
 
         apunte = ApunteContable(
             asiento_id=asiento_id,
@@ -149,139 +209,159 @@ class ContabilidadService:
             haber=haber,
             concepto=concepto,
             actividad_id=actividad_id,
-            observaciones=observaciones,
         )
         self.session.add(apunte)
         await self.session.commit()
         await self.session.refresh(apunte)
         return apunte
 
-    async def confirmar_asiento(self, asiento_id: UUID) -> AsientoContable:
-        """Confirma un asiento contable (debe estar cuadrado)."""
-        asiento = await self.obtener_asiento(asiento_id)
-        if not asiento:
-            raise ValueError(f"Asiento {asiento_id} no encontrado")
-
-        asiento.confirmar()
-        self.session.add(asiento)
-        await self.session.commit()
-        await self.session.refresh(asiento)
-        return asiento
-
-    async def anular_asiento(self, asiento_id: UUID) -> AsientoContable:
-        """Anula un asiento contable."""
-        asiento = await self.obtener_asiento(asiento_id)
-        if not asiento:
-            raise ValueError(f"Asiento {asiento_id} no encontrado")
-
-        asiento.anular()
-        self.session.add(asiento)
-        await self.session.commit()
-        await self.session.refresh(asiento)
-        return asiento
-
-    async def obtener_asientos_por_periodo(
-        self,
-        ejercicio: int,
-        fecha_inicio: Optional[date] = None,
-        fecha_fin: Optional[date] = None,
-        estado: Optional[EstadoAsientoContable] = None,
-    ) -> List[AsientoContable]:
-        """Obtiene asientos de un período."""
-        query = select(AsientoContable).where(AsientoContable.ejercicio == ejercicio)
-
-        if fecha_inicio:
-            query = query.where(AsientoContable.fecha >= fecha_inicio)
-        if fecha_fin:
-            query = query.where(AsientoContable.fecha <= fecha_fin)
-        if estado:
-            query = query.where(AsientoContable.estado == estado)
-
-        query = query.order_by(AsientoContable.fecha, AsientoContable.numero_asiento)
-        result = await self.session.execute(query)
-        return result.scalars().all()
-
-    async def calcular_saldo_cuenta(
-        self,
-        cuenta_id: UUID,
-        fecha_fin: Optional[date] = None,
-        ejercicio: Optional[int] = None,
-    ) -> Decimal:
-        """Calcula el saldo de una cuenta en una fecha determinada."""
-        query = select(ApunteContable).where(
-            and_(
-                ApunteContable.cuenta_id == cuenta_id,
-            )
-        )
-
-        if fecha_fin:
-            query = query.join(AsientoContable).where(
-                AsientoContable.fecha <= fecha_fin
-            )
-
-        if ejercicio:
-            query = query.join(AsientoContable).where(
-                AsientoContable.ejercicio == ejercicio
-            )
-
-        result = await self.session.execute(query)
-        apuntes = result.scalars().all()
-
-        saldo = Decimal("0.00")
-        for apunte in apuntes:
-            saldo += apunte.debe - apunte.haber
-
-        return saldo
-
-    async def generar_balance(
-        self, ejercicio: int, fecha_fin: date
-    ) -> BalanceContable:
-        """Genera un balance de sumas y saldos."""
-        # Obtener todos los asientos confirmados del período
-        asientos = await self.obtener_asientos_por_periodo(
-            ejercicio=ejercicio,
-            fecha_fin=fecha_fin,
-            estado=EstadoAsientoContable.CONFIRMADO,
-        )
-
-        total_debe = Decimal("0.00")
-        total_haber = Decimal("0.00")
-
-        for asiento in asientos:
-            total_debe += asiento.total_debe
-            total_haber += asiento.total_haber
-
-        balance = BalanceContable(
-            ejercicio=ejercicio,
-            total_debe=total_debe,
-            total_haber=total_haber,
-        )
-
-        self.session.add(balance)
-        await self.session.commit()
-        await self.session.refresh(balance)
-        return balance
-
-    async def obtener_apuntes_por_cuenta(
+    async def listar_apuntes_cuenta(
         self,
         cuenta_id: UUID,
         ejercicio: Optional[int] = None,
         fecha_inicio: Optional[date] = None,
         fecha_fin: Optional[date] = None,
     ) -> List[ApunteContable]:
-        """Obtiene los apuntes de una cuenta."""
-        query = select(ApunteContable).where(ApunteContable.cuenta_id == cuenta_id)
+        """Devuelve los apuntes de una cuenta (libro mayor)."""
+        query = (
+            select(ApunteContable)
+            .join(AsientoContable, ApunteContable.asiento_id == AsientoContable.id)
+            .where(ApunteContable.cuenta_id == cuenta_id)
+            .where(AsientoContable.estado == EstadoAsientoContable.CONFIRMADO)
+        )
+        # Aplicar filtros adicionales sobre AsientoContable en el mismo join
+        if ejercicio:
+            query = query.where(AsientoContable.ejercicio == ejercicio)
+        if fecha_inicio:
+            query = query.where(AsientoContable.fecha >= fecha_inicio)
+        if fecha_fin:
+            query = query.where(AsientoContable.fecha <= fecha_fin)
 
-        if ejercicio or fecha_inicio or fecha_fin:
-            query = query.join(AsientoContable)
-
-            if ejercicio:
-                query = query.where(AsientoContable.ejercicio == ejercicio)
-            if fecha_inicio:
-                query = query.where(AsientoContable.fecha >= fecha_inicio)
-            if fecha_fin:
-                query = query.where(AsientoContable.fecha <= fecha_fin)
-
-        query = query.order_by(AsientoContable.fecha)
+        query = query.order_by(AsientoContable.fecha, AsientoContable.numero_asiento)
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
+
+    # ─── Confirmación y anulación ─────────────────────────────────────────────
+
+    async def confirmar_asiento(self, asiento_id: UUID) -> AsientoContable:
+        """Confirma un asiento — debe estar cuadrado (debe == haber)."""
+        asiento = await self.obtener_asiento(asiento_id)
+        if not asiento:
+            raise ValueError(f"Asiento {asiento_id} no encontrado")
+        asiento.confirmar()  # Lanza ValueError si no cuadra
+        self.session.add(asiento)
+        await self.session.commit()
+        await self.session.refresh(asiento)
+        return asiento
+
+    async def anular_asiento(self, asiento_id: UUID) -> AsientoContable:
+        """Anula un asiento y genera el asiento de contrapartida."""
+        asiento = await self.obtener_asiento(asiento_id)
+        if not asiento:
+            raise ValueError(f"Asiento {asiento_id} no encontrado")
+        asiento.anular()
+        self.session.add(asiento)
+        await self.session.commit()
+        await self.session.refresh(asiento)
+        return asiento
+
+    # ─── Cálculo de saldos ───────────────────────────────────────────────────
+
+    async def calcular_saldo_cuenta(
+        self,
+        cuenta_id: UUID,
+        ejercicio: Optional[int] = None,
+        fecha_fin: Optional[date] = None,
+    ) -> Decimal:
+        """Calcula el saldo acumulado de una cuenta (debe - haber) sobre asientos CONFIRMADOS."""
+        # Un único join a AsientoContable con todos los filtros juntos
+        query = (
+            select(
+                func.coalesce(func.sum(ApunteContable.debe), Decimal('0')).label('total_debe'),
+                func.coalesce(func.sum(ApunteContable.haber), Decimal('0')).label('total_haber'),
+            )
+            .join(AsientoContable, ApunteContable.asiento_id == AsientoContable.id)
+            .where(ApunteContable.cuenta_id == cuenta_id)
+            .where(AsientoContable.estado == EstadoAsientoContable.CONFIRMADO)
+        )
+        if ejercicio:
+            query = query.where(AsientoContable.ejercicio == ejercicio)
+        if fecha_fin:
+            query = query.where(AsientoContable.fecha <= fecha_fin)
+
+        result = await self.session.execute(query)
+        row = result.first()
+        return (row.total_debe or Decimal('0')) - (row.total_haber or Decimal('0'))
+
+    # ─── Balance y reportes ───────────────────────────────────────────────────
+
+    async def generar_balance(
+        self, ejercicio: int, fecha_fin: Optional[date] = None
+    ) -> BalanceContable:
+        """Genera y persiste un balance de sumas y saldos."""
+        if fecha_fin is None:
+            fecha_fin = date.today()
+
+        # Calcular totales de todos los asientos confirmados del ejercicio
+        query = (
+            select(
+                func.coalesce(func.sum(ApunteContable.debe), Decimal('0')).label('total_debe'),
+                func.coalesce(func.sum(ApunteContable.haber), Decimal('0')).label('total_haber'),
+            )
+            .join(AsientoContable, ApunteContable.asiento_id == AsientoContable.id)
+            .where(AsientoContable.ejercicio == ejercicio)
+            .where(AsientoContable.estado == EstadoAsientoContable.CONFIRMADO)
+            .where(AsientoContable.fecha <= fecha_fin)
+        )
+        result = await self.session.execute(query)
+        row = result.first()
+        total_debe = row.total_debe or Decimal('0')
+        total_haber = row.total_haber or Decimal('0')
+
+        balance = BalanceContable(
+            ejercicio=ejercicio,
+            total_debe=total_debe,
+            total_haber=total_haber,
+        )
+        self.session.add(balance)
+        await self.session.commit()
+        await self.session.refresh(balance)
+        return balance
+
+    async def listar_balances(self, ejercicio: Optional[int] = None) -> List[BalanceContable]:
+        query = select(BalanceContable)
+        if ejercicio:
+            query = query.where(BalanceContable.ejercicio == ejercicio)
+        query = query.order_by(BalanceContable.fecha_generacion.desc())
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def resumen_cuentas_por_tipo(
+        self, ejercicio: int, fecha_fin: Optional[date] = None
+    ) -> dict:
+        """Suma de saldos agrupada por tipo de cuenta (para dashboard)."""
+        if fecha_fin is None:
+            fecha_fin = date.today()
+
+        query = (
+            select(
+                CuentaContable.tipo,
+                func.coalesce(func.sum(ApunteContable.debe), Decimal('0')).label('total_debe'),
+                func.coalesce(func.sum(ApunteContable.haber), Decimal('0')).label('total_haber'),
+            )
+            .join(ApunteContable, CuentaContable.id == ApunteContable.cuenta_id)
+            .join(AsientoContable, ApunteContable.asiento_id == AsientoContable.id)
+            .where(AsientoContable.ejercicio == ejercicio)
+            .where(AsientoContable.estado == EstadoAsientoContable.CONFIRMADO)
+            .where(AsientoContable.fecha <= fecha_fin)
+            .group_by(CuentaContable.tipo)
+        )
+        result = await self.session.execute(query)
+        return {
+            row.tipo.value: {
+                "debe": row.total_debe,
+                "haber": row.total_haber,
+                "saldo": row.total_debe - row.total_haber,
+            }
+            for row in result.all()
+        }

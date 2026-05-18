@@ -5,12 +5,46 @@ from typing import Optional
 
 import strawberry
 from sqlalchemy import select
-from app.modules.core.geografico import UnidadOrganizativa
-from .types_auto import UnidadOrganizativaType
+from app.modules.core.geografico import UnidadOrganizativa, NivelOrganizativo
+from .types_auto import UnidadOrganizativaType, NivelOrganizativoType
 from .permissions import RequireTransaction
 
 
-# ── Inputs con FK UUID explícitos ────────────────────────────────────────────
+# ── NivelOrganizativo: inputs y helpers ──────────────────────────────────────
+
+@strawberry.input
+class NivelOrganizativoCreateInput:
+    nombre: str
+    naturaleza: str
+    vinculo: str
+    activo: bool = True
+    nivel: Optional[int] = None
+    padre_tipo_id: Optional[uuid.UUID] = None
+    ambito_geografico_id: Optional[uuid.UUID] = None
+
+
+@strawberry.input
+class NivelOrganizativoUpdateInput:
+    id: uuid.UUID
+    nombre: Optional[str] = strawberry.UNSET
+    naturaleza: Optional[str] = strawberry.UNSET
+    vinculo: Optional[str] = strawberry.UNSET
+    activo: Optional[bool] = strawberry.UNSET
+    nivel: Optional[int] = strawberry.UNSET
+    padre_tipo_id: Optional[uuid.UUID] = strawberry.UNSET
+    ambito_geografico_id: Optional[uuid.UUID] = strawberry.UNSET
+
+
+_NV_FIELDS = ['nombre', 'naturaleza', 'vinculo', 'activo', 'nivel', 'padre_tipo_id', 'ambito_geografico_id']
+
+
+async def _fetch_nivel(session, nivel_id: uuid.UUID) -> NivelOrganizativo:
+    stmt = select(NivelOrganizativo).where(NivelOrganizativo.id == nivel_id)
+    result = await session.execute(stmt)
+    return result.scalar_one()
+
+
+# ── UnidadOrganizativa: inputs y helpers ─────────────────────────────────────
 
 @strawberry.input
 class UnidadOrganizativaCreateInput:
@@ -69,6 +103,31 @@ async def _fetch_agrupacion(session, ag_id: uuid.UUID) -> UnidadOrganizativa:
 
 @strawberry.type
 class GeograficoMutation:
+
+    @strawberry.mutation
+    async def crear_nivel_organizativo(
+        self, info: strawberry.Info, data: NivelOrganizativoCreateInput
+    ) -> NivelOrganizativoType:
+        session = info.context.session
+        kwargs = {f: getattr(data, f) for f in _NV_FIELDS}
+        nivel = NivelOrganizativo(**kwargs)
+        session.add(nivel)
+        await session.commit()
+        return await _fetch_nivel(session, nivel.id)
+
+    @strawberry.mutation
+    async def actualizar_nivel_organizativo(
+        self, info: strawberry.Info, data: NivelOrganizativoUpdateInput
+    ) -> NivelOrganizativoType:
+        session = info.context.session
+        nivel = await _fetch_nivel(session, data.id)
+        for field in _NV_FIELDS:
+            val = getattr(data, field, strawberry.UNSET)
+            if val is strawberry.UNSET:
+                continue
+            setattr(nivel, field, val)
+        await session.commit()
+        return await _fetch_nivel(session, nivel.id)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CFG_TERRITORIO_CREAR")])
     async def crear_unidad_organizativa(

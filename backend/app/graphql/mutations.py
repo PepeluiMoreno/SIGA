@@ -20,12 +20,13 @@ from .geografico_resolvers import GeograficoMutation
 from .campania_resolvers import CampaniaResolverMutation, CampaniaClonarMutation
 from .actividad_resolvers import ActividadResolverMutation
 from .papelera_resolvers import PapeleraResolverMutation
+from .financiero_mutations import FinancieroMutation
 from .types_auto import *
 from .inputs_auto import *
 
 
 @strawberry.type
-class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, EconomicoMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, CampaniaClonarMutation, ActividadResolverMutation, PapeleraResolverMutation):
+class Mutation(AuthMutation, FinancieroMutation, ConfiguracionOrganizacionMutation, AccesoMutation, EconomicoMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, CampaniaClonarMutation, ActividadResolverMutation, PapeleraResolverMutation):
     """Mutations GraphQL del sistema SIGA con generación automática."""
 
     # === ACCESO: roles y transacciones (CRUD) ===
@@ -99,8 +100,11 @@ class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, 
     eliminar_temas_ui: list[TemaUIType] = strawchemy.delete(TemaUIFilter)
 
     # === GEOGRÁFICO ===
-    # crear_nivel_organizativo → ConfiguracionOrganizacionMutation (custom, persiste padre_tipo_id)
-    actualizar_nivel_organizativo: NivelOrganizativoType = strawchemy.update_by_ids(NivelOrganizativoUpdateInput)
+    crear_ambito_geografico: AmbitoGeograficoType = strawchemy.create(AmbitoGeograficoCreateInput)
+    actualizar_ambito_geografico: AmbitoGeograficoType = strawchemy.update_by_ids(AmbitoGeograficoUpdateInput)
+    eliminar_ambitos_geograficos: list[AmbitoGeograficoType] = strawchemy.delete(AmbitoGeograficoFilter)
+
+    # crear_nivel_organizativo / actualizar_nivel_organizativo → GeograficoMutation (custom, FK UUID explícitos)
     eliminar_niveles_organizativos: list[NivelOrganizativoType] = strawchemy.delete(NivelOrganizativoFilter)
 
     eliminar_unidades_organizativas: list[UnidadOrganizativaType] = strawchemy.delete(UnidadOrganizativaFilter)
@@ -376,6 +380,37 @@ class Mutation(AuthMutation, ConfiguracionOrganizacionMutation, AccesoMutation, 
     crear_convenio: ConvenioType = strawchemy.create(ConvenioCreateInput)
     actualizar_convenio: ConvenioType = strawchemy.update_by_ids(ConvenioUpdateInput)
     eliminar_convenios: list[ConvenioType] = strawchemy.delete(ConvenioFilter)
+
+    # === FINANCIERO — TESORERÍA ===
+    crear_cuenta_bancaria: CuentaBancariaType = strawchemy.create(CuentaBancariaCreateInput)
+    actualizar_cuenta_bancaria: CuentaBancariaType = strawchemy.update_by_ids(CuentaBancariaUpdateInput)
+    eliminar_cuentas_bancarias: list[CuentaBancariaType] = strawchemy.delete(CuentaBancariaFilter)
+
+    crear_apunte_caja: ApunteCajaType = strawchemy.create(ApunteCajaCreateInput)
+    actualizar_apunte_caja: ApunteCajaType = strawchemy.update_by_ids(ApunteCajaUpdateInput)
+    eliminar_apuntes_caja: list[ApunteCajaType] = strawchemy.delete(ApunteCajaFilter)
+
+    crear_extracto_bancario: ExtractoBancarioType = strawchemy.create(ExtractoBancarioCreateInput)
+
+    crear_conciliacion_bancaria: ConciliacionBancariaType = strawchemy.create(ConciliacionBancariaCreateInput)
+
+    # === FINANCIERO — CONTABILIDAD ===
+    crear_cuenta_contable: CuentaContableType = strawchemy.create(CuentaContableCreateInput)
+    actualizar_cuenta_contable: CuentaContableType = strawchemy.update_by_ids(CuentaContableUpdateInput)
+    eliminar_cuentas_contables: list[CuentaContableType] = strawchemy.delete(CuentaContableFilter)
+
+    crear_asiento_contable: AsientoContableType = strawchemy.create(AsientoContableCreateInput)
+    actualizar_asiento_contable: AsientoContableType = strawchemy.update_by_ids(AsientoContableUpdateInput)
+    eliminar_asientos_contables: list[AsientoContableType] = strawchemy.delete(AsientoContableFilter)
+
+    crear_apunte_contable: ApunteContableType = strawchemy.create(ApunteContableCreateInput)
+    actualizar_apunte_contable: ApunteContableType = strawchemy.update_by_ids(ApunteContableUpdateInput)
+    eliminar_apuntes_contables: list[ApunteContableType] = strawchemy.delete(ApunteContableFilter)
+
+    # === FINANCIERO — REGLAS CONTABLES ===
+    crear_regla_contable: ReglaContableType = strawchemy.create(ReglaContableCreateInput)
+    actualizar_regla_contable: ReglaContableType = strawchemy.update_by_ids(ReglaContableUpdateInput)
+    eliminar_reglas_contables: list[ReglaContableType] = strawchemy.delete(ReglaContableFilter)
 
     # === FORMAS DE PAGO ===
     crear_forma_pago: FormaPagoType = strawchemy.create(FormaPagoCreateInput)

@@ -784,26 +784,27 @@ export const GET_AGRUPACIONES_TERRITORIALES = `
 export const GET_TIPOS_UNIDADES_ORGANIZATIVAS = `
   query TiposUnidadesOrganizativas {
     nivelesOrganizativos(filter: { activo: { eq: true } }) {
-      id nombre naturaleza vinculo nivel padreTipoId activo
+      id nombre naturaleza vinculo nivel padreTipoId
+      ambitoGeograficoId
+      ambitoGeografico { id nombre granularidad }
+      activo
     }
   }
 `
 
 export const CREATE_TIPO_UNIDAD_ORGANIZATIVA = `
-  mutation CrearNivelOrganizativo(
-    $nombre: String!, $naturaleza: String!, $vinculo: String!,
-    $nivel: Int, $padreTipoId: UUID, $activo: Boolean!
-  ) {
-    crearNivelOrganizativo(
-      nombre: $nombre, naturaleza: $naturaleza, vinculo: $vinculo,
-      nivel: $nivel, padreTipoId: $padreTipoId, activo: $activo
-    )
+  mutation CrearNivelOrganizativo($data: NivelOrganizativoCreateInput!) {
+    crearNivelOrganizativo(data: $data) { id nombre activo }
   }
 `
 
 export const UPDATE_TIPO_UNIDAD_ORGANIZATIVA = `
   mutation ActualizarNivelOrganizativo($data: NivelOrganizativoUpdateInput!) {
-    actualizarNivelOrganizativo(data: $data) { id nombre naturaleza vinculo nivel padreTipoId activo }
+    actualizarNivelOrganizativo(data: $data) {
+      id nombre naturaleza vinculo nivel padreTipoId ambitoGeograficoId
+      ambitoGeografico { id nombre granularidad }
+      activo
+    }
   }
 `
 
@@ -1039,5 +1040,73 @@ export const UPDATE_NIVEL_HABILIDAD = `
 export const DELETE_NIVEL_HABILIDAD = `
   mutation EliminarNivelesHabilidad($filter: NivelHabilidadFilter!) {
     eliminarNivelesHabilidad(filter: $filter) { id }
+  }
+`
+
+// =============================================
+// ESTRUCTURA ORGANIZATIVA
+// =============================================
+
+export const GET_AMBITOS_GEOGRAFICOS = `
+  query AmbitosGeograficos {
+    ambitosGeograficos {
+      id
+      nombre
+      descripcion
+      granularidad
+      activo
+    }
+  }
+`
+
+export const CREATE_AMBITO_GEOGRAFICO = `
+  mutation CrearAmbitoGeografico($data: AmbitoGeograficoCreateInput!) {
+    crearAmbitoGeografico(data: $data) { id nombre granularidad activo }
+  }
+`
+
+export const UPDATE_AMBITO_GEOGRAFICO = `
+  mutation ActualizarAmbitoGeografico($data: AmbitoGeograficoUpdateInput!) {
+    actualizarAmbitoGeografico(data: $data) { id nombre granularidad activo }
+  }
+`
+
+export const DELETE_AMBITO_GEOGRAFICO = `
+  mutation EliminarAmbitosGeograficos($filter: AmbitoGeograficoFilter!) {
+    eliminarAmbitosGeograficos(filter: $filter) { id }
+  }
+`
+
+export const GET_NIVELES_ORGANIZATIVOS = `
+  query NivelesOrganizativos {
+    nivelesOrganizativos {
+      id
+      nombre
+      naturaleza
+      vinculo
+      nivel
+      padreTipoId
+      ambitoGeograficoId
+      ambitoGeografico { id nombre granularidad }
+      activo
+    }
+  }
+`
+
+export const CREATE_NIVEL_ORGANIZATIVO = `
+  mutation CrearNivelOrganizativo($data: NivelOrganizativoCreateInput!) {
+    crearNivelOrganizativo(data: $data) { id nombre activo }
+  }
+`
+
+export const UPDATE_NIVEL_ORGANIZATIVO = `
+  mutation ActualizarNivelOrganizativo($data: NivelOrganizativoUpdateInput!) {
+    actualizarNivelOrganizativo(data: $data) { id nombre naturaleza vinculo nivel padreTipoId ambitoGeograficoId activo }
+  }
+`
+
+export const DELETE_NIVEL_ORGANIZATIVO = `
+  mutation EliminarNivelesOrganizativos($filter: NivelOrganizativoFilter!) {
+    eliminarNivelesOrganizativos(filter: $filter) { id }
   }
 `

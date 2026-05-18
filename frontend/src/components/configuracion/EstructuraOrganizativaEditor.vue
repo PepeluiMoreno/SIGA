@@ -1,11 +1,10 @@
 <template>
   <div class="space-y-0.5">
 
-    <!-- Árbol de tipos territoriales -->
     <div
       v-for="item in arbolPlano"
       :key="item.id"
-      class="flex items-center gap-1.5 min-w-0"
+      class="flex items-center gap-1 min-w-0 py-0.5"
       :style="{ paddingLeft: item.depth * 20 + 'px' }"
     >
       <span class="flex-shrink-0 w-4 text-center">
@@ -15,33 +14,66 @@
 
       <!-- Lectura -->
       <template v-if="editandoId !== item.id">
-        <!-- Raíz: nombre siempre es el de la organización, no editable aquí -->
-        <span v-if="item.depth === 0"
-          class="flex-1 text-sm font-medium text-gray-800 truncate">
-          {{ orgConfig.nombre || item.nombre }}
-        </span>
-        <span v-else class="flex-1 text-sm text-gray-800 truncate">{{ item.nombre }}</span>
+        <!-- Nombre + badge ámbito inline -->
+        <div class="flex-1 flex items-center gap-1.5 min-w-0">
+          <span :class="item.depth === 0 ? 'text-sm font-medium text-gray-800' : 'text-sm text-gray-800'" class="truncate">
+            {{ item.nombre }}
+          </span>
+          <span v-if="item.ambitoGeografico"
+            class="flex-shrink-0 px-1.5 py-0.5 text-xs rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 leading-none">
+            {{ item.ambitoGeografico.nombre }}
+          </span>
+          <span v-else
+            class="flex-shrink-0 px-1.5 py-0.5 text-xs rounded-full bg-slate-50 text-slate-400 border border-slate-200 leading-none italic">
+            sin ámbito
+          </span>
+        </div>
 
-        <button v-if="item.depth > 0" type="button" @click="iniciarEdicion(item)"
-          class="text-xs text-gray-400 hover:text-gray-700 px-1 py-0.5 rounded hover:bg-gray-100 flex-shrink-0">Editar</button>
-        <span v-else class="w-8 flex-shrink-0" />
+        <!-- ↑ Subir nivel (promover al nivel de su padre) -->
+        <button v-if="item.depth > 0" type="button" @click="promover(item)" :disabled="guardando"
+          title="Subir un nivel"
+          class="text-xs font-bold text-purple-400 hover:text-purple-700 px-1 py-0.5 rounded hover:bg-purple-50 disabled:opacity-40 flex-shrink-0">↑</button>
+        <span v-else class="w-4 flex-shrink-0" />
 
-        <button v-if="!estructuraProtegida" type="button" @click="añadirHijo(item)" :disabled="guardando"
-          class="text-xs text-purple-500 hover:text-purple-700 px-1 py-0.5 rounded hover:bg-purple-50 disabled:opacity-40 flex-shrink-0">+sub</button>
-        <span v-else class="w-8 flex-shrink-0" />
+        <!-- ↓ Bajar nivel (anidar en el hermano anterior) -->
+        <button v-if="prevSiblingOf(item)" type="button" @click="demover(item)" :disabled="guardando"
+          title="Bajar un nivel (anidar en el anterior)"
+          class="text-xs font-bold text-purple-400 hover:text-purple-700 px-1 py-0.5 rounded hover:bg-purple-50 disabled:opacity-40 flex-shrink-0">↓</button>
+        <span v-else class="w-4 flex-shrink-0" />
 
-        <!-- La raíz (depth=0) no se puede eliminar: es la propia organización -->
-        <button v-if="item.depth > 0 && !estructuraProtegida" type="button" @click="eliminarNivel(item)" :disabled="guardando"
-          class="text-xs text-gray-400 hover:text-red-500 px-1 py-0.5 rounded hover:bg-red-50 disabled:opacity-40 flex-shrink-0">✕</button>
-        <span v-else class="w-5 flex-shrink-0" />
+        <!-- ⊕↑ Insertar nivel entre este y su padre -->
+        <button type="button" @click="añadirSuperior(item)" :disabled="guardando"
+          title="Insertar nivel superior"
+          class="text-xs font-bold text-purple-400 hover:text-purple-700 px-1 py-0.5 rounded hover:bg-purple-50 disabled:opacity-40 flex-shrink-0 font-mono">⊕↑</button>
+
+        <!-- ⊕↓ Añadir subnivel -->
+        <button type="button" @click="añadirHijo(item)" :disabled="guardando"
+          title="Añadir subnivel"
+          class="text-xs font-bold text-purple-400 hover:text-purple-700 px-1 py-0.5 rounded hover:bg-purple-50 disabled:opacity-40 flex-shrink-0 font-mono">⊕↓</button>
+
+        <!-- ✎ Editar nombre y ámbito -->
+        <button type="button" @click="iniciarEdicion(item)"
+          title="Editar"
+          class="text-xs font-bold text-purple-400 hover:text-purple-700 px-1 py-0.5 rounded hover:bg-purple-50 flex-shrink-0">✎</button>
+
+        <!-- × Eliminar: siempre en no-raíz; en raíz solo si hay más de una (permite borrar huérfanos) -->
+        <button v-if="item.depth > 0 || raices.length > 1" type="button" @click="iniciarEliminar(item)" :disabled="guardando"
+          title="Eliminar"
+          class="text-xs font-bold text-purple-400 hover:text-red-500 px-1 py-0.5 rounded hover:bg-red-50 disabled:opacity-40 flex-shrink-0">×</button>
+        <span v-else class="w-4 flex-shrink-0" />
       </template>
 
-      <!-- Edición inline -->
+      <!-- Edición inline: solo nombre + ámbito geográfico -->
       <template v-else>
         <input v-model="formNombre" type="text" autofocus
           class="flex-1 min-w-0 border border-purple-400 rounded px-2 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
           @keydown.enter.prevent="guardar(item)"
           @keydown.escape="editandoId = null" />
+        <select v-model="formAmbitoId"
+          class="flex-shrink-0 border border-indigo-300 rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white">
+          <option value="">sin ámbito</option>
+          <option v-for="a in ambitosOrdenados" :key="a.id" :value="a.id">{{ a.nombre }}</option>
+        </select>
         <button type="button" @click="guardar(item)"
           class="text-xs px-2 py-0.5 bg-purple-600 text-white rounded hover:bg-purple-700 flex-shrink-0">OK</button>
         <button type="button" @click="editandoId = null"
@@ -51,35 +83,77 @@
 
     <p v-if="errorMsg" class="text-xs text-red-500 mt-0.5">{{ errorMsg }}</p>
 
-    <!-- Descripción -->
     <p class="text-xs text-gray-400 pt-0.5">
       <template v-if="arbolPlano.length <= 1">Organización simple (sin subniveles)</template>
       <template v-else>Organización extendida · {{ arbolPlano.filter(n => n.depth > 0).map(n => n.nombre).join(' › ') }}</template>
     </p>
 
   </div>
+
+  <!-- Modal confirmación de borrado -->
+  <Teleport to="body">
+    <div v-if="pendingDelete" class="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-xl p-5 max-w-sm w-full mx-4">
+        <h3 class="font-semibold text-gray-900 mb-3">Eliminar nivel «{{ pendingDelete.nombre }}»</h3>
+        <p v-if="pendingDelete.nHijos > 0 || pendingDelete.nUnidades > 0"
+          class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded p-3 mb-4">
+          <strong>Atención:</strong> este nivel tiene
+          <template v-if="pendingDelete.nHijos > 0">
+            {{ pendingDelete.nHijos }} subnivel{{ pendingDelete.nHijos > 1 ? 'es' : '' }}
+          </template>
+          <template v-if="pendingDelete.nHijos > 0 && pendingDelete.nUnidades > 0"> y </template>
+          <template v-if="pendingDelete.nUnidades > 0">
+            {{ pendingDelete.nUnidades }} órgano{{ pendingDelete.nUnidades > 1 ? 's' : '' }} asignado{{ pendingDelete.nUnidades > 1 ? 's' : '' }}
+          </template>.
+          Se reasignarán al nivel padre antes de eliminar.
+        </p>
+        <p v-else class="text-sm text-gray-500 mb-4">Esta acción no se puede deshacer.</p>
+        <div class="flex justify-end gap-2">
+          <button type="button" @click="pendingDelete = null"
+            class="text-sm px-3 py-1.5 border border-gray-200 rounded hover:bg-gray-50">Cancelar</button>
+          <button type="button" @click="confirmarEliminar" :disabled="guardando"
+            class="text-sm px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-40">
+            {{ pendingDelete.nHijos > 0 || pendingDelete.nUnidades > 0 ? 'Reasignar y eliminar' : 'Eliminar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { graphqlClient } from '@/graphql/client.js'
 import { useUnidadesOrganizativas } from '@/composables/useUnidadesOrganizativas'
 import { useOrgConfigStore } from '@/stores/orgConfig'
+import { GET_AMBITOS_GEOGRAFICOS } from '@/graphql/queries/catalogos.js'
 
-const { tipos, unidades, cargarTipos, cargarArbol, crearTipo, actualizarTipo, eliminarTipo } = useUnidadesOrganizativas()
+const { tipos, unidades, cargarTipos, cargarArbol, crearTipo, actualizarTipo, actualizarUnidad, eliminarTipo } = useUnidadesOrganizativas()
 const orgConfig = useOrgConfigStore()
-
-// Estructura protegida si ya hay agrupaciones en la BD
-const estructuraProtegida = computed(() => unidades.value.length > 0)
 
 async function recargarConfig() {
   orgConfig.invalidate()
   await orgConfig.fetchConfig()
 }
 
-const editandoId = ref(null)
-const formNombre = ref('')
-const guardando = ref(false)
-const errorMsg = ref('')
+const editandoId    = ref(null)
+const formNombre    = ref('')
+const formAmbitoId  = ref('')
+const guardando     = ref(false)
+const errorMsg      = ref('')
+const pendingDelete = ref(null)
+
+const ambitos = ref([])
+const ambitosOrdenados = computed(() =>
+  [...ambitos.value].sort((a, b) => a.granularidad - b.granularidad)
+)
+
+async function cargarAmbitos() {
+  try {
+    const data = await graphqlClient.request(GET_AMBITOS_GEOGRAFICOS)
+    ambitos.value = data.ambitosGeograficos ?? []
+  } catch { /* no bloquea */ }
+}
 
 const tiposTerritoriales = computed(() =>
   tipos.value.filter(t => t.naturaleza === 'TERRITORIAL')
@@ -111,54 +185,133 @@ const arbolPlano = computed(() => {
   return lista
 })
 
-const descendientes = (nodo) => {
-  const ids = [nodo.id]
-  const dfs = (n) => n.hijos?.forEach(h => { ids.push(h.id); dfs(h) })
+const idsDescendientes = (nodo) => {
+  const ids = new Set([nodo.id])
+  const dfs = (n) => n.hijos?.forEach(h => { ids.add(h.id); dfs(h) })
   dfs(nodo)
   return ids
 }
 
+// Devuelve el hermano anterior (mismo padre, aparece antes en el DFS)
+const prevSiblingOf = (nodo) => {
+  const idx = arbolPlano.value.findIndex(n => n.id === nodo.id)
+  if (idx <= 0) return null
+  return arbolPlano.value.slice(0, idx).reverse().find(n => n.padreTipoId === nodo.padreTipoId) || null
+}
+
 const iniciarEdicion = (tipo) => {
-  formNombre.value = tipo.nombre
-  editandoId.value = tipo.id
+  formNombre.value   = tipo.nombre
+  formAmbitoId.value = tipo.ambitoGeograficoId ?? ''
+  editandoId.value   = tipo.id
 }
 
 const guardar = async (tipo) => {
   if (!formNombre.value.trim()) return
-  await actualizarTipo({ id: tipo.id, nombre: formNombre.value.trim(), vinculo: tipo.vinculo })
+  await actualizarTipo({
+    id: tipo.id,
+    nombre: formNombre.value.trim(),
+    ambitoGeograficoId: formAmbitoId.value || null,
+  })
   editandoId.value = null
   await recargarConfig()
 }
 
-const añadirHijo = async (padre) => {
+// Sube el nodo un nivel (pasa a ser hermano de su padre)
+const promover = async (nodo) => {
+  if (!nodo.padreTipoId) return
   guardando.value = true
-  errorMsg.value = ''
+  errorMsg.value  = ''
   try {
-    await crearTipo({
-      nombre: 'Nuevo subnivel',
-      naturaleza: 'TERRITORIAL',
-      vinculo: 'INTERNA',
-      nivel: (padre.nivel ?? 0) + 1,
-      padreTipoId: padre.id,
-      activo: true,
-    })
+    const parent = arbolPlano.value.find(n => n.id === nodo.padreTipoId)
+    await actualizarTipo({ id: nodo.id, padreTipoId: parent?.padreTipoId || null })
     await recargarConfig()
   } catch (e) {
-    errorMsg.value = e?.response?.errors?.[0]?.message ?? 'Error al crear'
+    errorMsg.value = e?.response?.errors?.[0]?.message ?? 'Error al subir nivel'
   } finally {
     guardando.value = false
   }
 }
 
-const eliminarNivel = async (nodo) => {
+// Baja el nodo un nivel (pasa a ser hijo del hermano anterior)
+const demover = async (nodo) => {
+  const prev = prevSiblingOf(nodo)
+  if (!prev) return
   guardando.value = true
-  errorMsg.value = ''
+  errorMsg.value  = ''
   try {
-    const ids = descendientes(nodo)
-    for (const id of ids.reverse()) {
-      await eliminarTipo(id)
-    }
+    await actualizarTipo({ id: nodo.id, padreTipoId: prev.id })
     await recargarConfig()
+  } catch (e) {
+    errorMsg.value = e?.response?.errors?.[0]?.message ?? 'Error al bajar nivel'
+  } finally {
+    guardando.value = false
+  }
+}
+
+// Inserta un nuevo nivel ENTRE el nodo y su padre (splice hacia arriba)
+const añadirSuperior = async (nodo) => {
+  guardando.value = true
+  errorMsg.value  = ''
+  try {
+    const nuevo = await crearTipo({
+      nombre: 'Nuevo nivel',
+      naturaleza: 'TERRITORIAL',
+      vinculo: nodo.vinculo ?? 'INTERNA',
+      padreTipoId: nodo.padreTipoId || null,
+      activo: true,
+    })
+    await actualizarTipo({ id: nodo.id, padreTipoId: nuevo.id })
+    await recargarConfig()
+  } catch (e) {
+    errorMsg.value = e?.response?.errors?.[0]?.message ?? 'Error al insertar nivel superior'
+  } finally {
+    guardando.value = false
+  }
+}
+
+// Añade un hijo directo
+const añadirHijo = async (padre) => {
+  guardando.value = true
+  errorMsg.value  = ''
+  try {
+    await crearTipo({
+      nombre: 'Nuevo subnivel',
+      naturaleza: 'TERRITORIAL',
+      vinculo: 'INTERNA',
+      padreTipoId: padre.id,
+      activo: true,
+    })
+    await recargarConfig()
+  } catch (e) {
+    errorMsg.value = e?.response?.errors?.[0]?.message ?? 'Error al crear subnivel'
+  } finally {
+    guardando.value = false
+  }
+}
+
+const iniciarEliminar = (nodo) => {
+  const nHijos    = tipos.value.filter(t => t.padreTipoId === nodo.id).length
+  const nUnidades = unidades.value.filter(u => u.tipoId === nodo.id).length
+  pendingDelete.value = { ...nodo, nHijos, nUnidades }
+}
+
+const confirmarEliminar = async () => {
+  const nodo = pendingDelete.value
+  if (!nodo) return
+  guardando.value = true
+  errorMsg.value  = ''
+  try {
+    const childTipos    = tipos.value.filter(t => t.padreTipoId === nodo.id)
+    const childUnidades = unidades.value.filter(u => u.tipoId === nodo.id)
+    for (const child of childTipos) {
+      await actualizarTipo({ id: child.id, padreTipoId: nodo.padreTipoId || null })
+    }
+    for (const unit of childUnidades) {
+      await actualizarUnidad({ id: unit.id, tipoId: nodo.padreTipoId || null })
+    }
+    await eliminarTipo(nodo.id)
+    await recargarConfig()
+    pendingDelete.value = null
   } catch (e) {
     errorMsg.value = e?.response?.errors?.[0]?.message ?? 'Error al eliminar'
   } finally {
@@ -166,17 +319,16 @@ const eliminarNivel = async (nodo) => {
   }
 }
 
+const estructuraProtegida = computed(() => false)
 defineExpose({ estructuraProtegida })
 
 onMounted(async () => {
-  await Promise.all([cargarTipos(), cargarArbol()])
-  // Si no existe ningún tipo territorial, crear automáticamente la raíz
+  await Promise.all([cargarTipos(), cargarArbol(), cargarAmbitos()])
   if (tiposTerritoriales.value.length === 0) {
     await crearTipo({
       nombre: 'Asociación',
       naturaleza: 'TERRITORIAL',
       vinculo: 'INTERNA',
-      nivel: 1,
       activo: true,
     })
   }

@@ -38,10 +38,11 @@ from sqlalchemy import select, func
 from app.core.database import async_session
 from app.modules.configuracion.models.estados import EstadoCuota
 from app.modules.core.geografico.direccion import UnidadOrganizativa
-from app.modules.economico.models.cuotas import CuotaAnual
+from app.modules.economico.models.cuotas import CuotaAnual, ImporteCuotaAnio
 from app.modules.membresia.models.miembro import Miembro
 
 DUMP_FILE = "/tmp/dump.sql"
+DUMP_FALLBACK = "/opt/docker/apps/SIGA/01_europa_laica_com-2026_02_17.sql"
 
 # ---------------------------------------------------------------------------
 # Parser (mismo que seed_miembros.py)
@@ -146,17 +147,17 @@ def _parse_decimal(val: Optional[str]) -> Decimal:
 # Mapeos
 # ---------------------------------------------------------------------------
 
-# MySQL ESTADOCUOTA → código EstadoCuota en DB
+# MySQL ESTADOCUOTA → nombre EstadoCuota en DB (columna 'nombre', no 'codigo')
 ESTADO_MAP: dict[str, str] = {
-    "ABONADA":                  "COBRADA",
-    "ABONADA-PARTE":            "COBRADA",   # pagada parcialmente, pero es el estado más cercano
-    "EXENTO":                   "EXENTA",
-    "NOABONADA":                "IMPAGADA",
-    "NOABONADA-DEVUELTA":       "IMPAGADA",
-    "NOABONADA-ERROR-CUENTA":   "IMPAGADA",
-    "PENDIENTE-COBRO":          "PENDIENTE",
-    "BAJA-SOCIO":               "ANULADA",
-    "OTROS":                    "ANULADA",
+    "ABONADA":                  "Cobrada",
+    "ABONADA-PARTE":            "Cobrada",
+    "EXENTO":                   "Exenta",
+    "NOABONADA":                "Impagada",
+    "NOABONADA-DEVUELTA":       "Impagada",
+    "NOABONADA-ERROR-CUENTA":   "Impagada",
+    "PENDIENTE-COBRO":          "Pendiente",
+    "BAJA-SOCIO":               "Anulada",
+    "OTROS":                    "Anulada",
 }
 
 # MySQL MODOINGRESO → valor enum ModoIngreso
@@ -179,9 +180,9 @@ async def seed():
     print("SEED CUOTAS ANUALES (desde volcado MySQL)")
     print("=" * 60)
 
-    dump_path = Path(DUMP_FILE)
+    dump_path = Path(DUMP_FILE) if Path(DUMP_FILE).exists() else Path(DUMP_FALLBACK)
     if not dump_path.exists():
-        print(f"  [ERROR] {DUMP_FILE} no encontrado")
+        print(f"  [ERROR] volcado no encontrado en {DUMP_FILE} ni {DUMP_FALLBACK}")
         return
 
     print("  Leyendo dump…")
@@ -240,20 +241,28 @@ async def seed():
             if a.nombre_corto:
                 agr_by_codigo[a.nombre_corto] = a.id
 
-        # EstadoCuota codigo → id
+        # EstadoCuota nombre → id
         estados_result = await session.execute(select(EstadoCuota))
         estado_by_codigo: dict[str, uuid.UUID] = {}
         for e in estados_result.scalars():
-            estado_by_codigo[e.codigo] = e.id
+            estado_by_codigo[e.nombre] = e.id
 
-        estado_pendiente_id = estado_by_codigo.get("PENDIENTE")
+        estado_pendiente_id = estado_by_codigo.get("Pendiente")
         if not estado_pendiente_id:
             print("  [ERROR] Estado 'PENDIENTE' no encontrado en la BD")
             return
 
+        # ImporteCuotaAnio (ejercicio, codigo_cuota) → id
+        imp_result = await session.execute(select(ImporteCuotaAnio))
+        importe_by_key: dict[tuple, uuid.UUID] = {}
+        for imp in imp_result.scalars():
+            if imp.codigo_cuota:
+                importe_by_key[(imp.ejercicio, imp.codigo_cuota)] = imp.id
+
         print(f"\n  Miembros en BD con email: {len(email_to_miembro)}")
         print(f"  Agrupaciones en BD:       {len(agr_by_codigo)}")
         print(f"  Estados cuota en BD:      {len(estado_by_codigo)}")
+        print(f"  Importes cuota en BD:     {len(importe_by_key)}")
 
         # --- Procesar cuotas ---
         importadas = 0
@@ -267,6 +276,7 @@ async def seed():
 
             aniocuota    = str(row[0]).strip() if row[0] else None
             codsocio     = str(row[1]).strip() if row[1] else None
+            codcuota     = str(row[2]).strip() if row[2] else None   # General, Joven, Parado, Honorario
             codagrupacion = str(row[3]).strip() if row[3] else None
             importe      = _parse_decimal(row[6])
             importe_pag  = _parse_decimal(row[7])
@@ -299,7 +309,7 @@ async def seed():
                 continue
 
             # Resolver estado
-            codigo_db   = ESTADO_MAP.get(estadocuota, "PENDIENTE")
+            codigo_db   = ESTADO_MAP.get(estadocuota, "Pendiente")
             estado_id   = estado_by_codigo.get(codigo_db, estado_pendiente_id)
             if not estado_id:
                 sin_estado += 1
@@ -308,10 +318,16 @@ async def seed():
             # Modo ingreso
             modo_ingreso = MODO_MAP.get(modoingreso) if modoingreso else None
 
+            # Vincular con importe_cuota_anio si existe
+            ejercicio_int = int(aniocuota)
+            importe_cuota_anio_id = importe_by_key.get((ejercicio_int, codcuota)) if codcuota else None
+
             cuota = CuotaAnual(
                 miembro_id=miembro_id,
-                ejercicio=int(aniocuota),
+                ejercicio=ejercicio_int,
                 agrupacion_id=agrupacion_id,
+                codigo_cuota=codcuota,
+                importe_cuota_anio_id=importe_cuota_anio_id,
                 importe=importe,
                 importe_pagado=importe_pag,
                 gastos_gestion=gastos,

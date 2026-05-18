@@ -66,6 +66,7 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery):
     temasUi: list[TemaUIType] = strawchemy.field()
 
     # === GEOGRÁFICO ===
+    ambitosGeograficos: list[AmbitoGeograficoType] = strawchemy.field(filter_input=AmbitoGeograficoFilter)
     nivelesOrganizativos: list[NivelOrganizativoType] = strawchemy.field(filter_input=NivelOrganizativoFilter)
     paises: list[PaisType] = strawchemy.field(filter_input=PaisFilter)
     provincias: list[ProvinciaType] = strawchemy.field(filter_input=ProvinciaFilter)
@@ -81,6 +82,8 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery):
 
     # === FINANCIERO - Tesorería ===
     cuentasBancarias: list[CuentaBancariaType] = strawchemy.field(filter_input=CuentaBancariaFilter)
+    apuntesCaja: list[ApunteCajaType] = strawchemy.field(filter_input=ApunteCajaFilter)
+    extractosBancarios: list[ExtractoBancarioType] = strawchemy.field(filter_input=ExtractoBancarioFilter)
     movimientosTesoreria: list[MovimientoTesoreriaType] = strawchemy.field(filter_input=MovimientoTesoreriaFilter)
     conciliacionesBancarias: list[ConciliacionBancariaType] = strawchemy.field(filter_input=ConciliacionBancariaFilter)
 
@@ -88,7 +91,8 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery):
     cuentasContables: list[CuentaContableType] = strawchemy.field(filter_input=CuentaContableFilter)
     asientosContables: list[AsientoContableType] = strawchemy.field(filter_input=AsientoContableFilter)
     apuntesContables: list[ApunteContableType] = strawchemy.field(filter_input=ApunteContableFilter)
-    balancesContables: list[BalanceContableType] = strawchemy.field()
+    balancesContables: list[BalanceContableType] = strawchemy.field(filter_input=BalanceContableFilter)
+    reglasContables: list[ReglaContableType] = strawchemy.field(filter_input=ReglaContableFilter)
 
     # === FINANCIERO - Cuotas/Donaciones/Presupuesto ===
     importesCuotaAnio: list[ImporteCuotaAnioType] = strawchemy.field(filter_input=ImporteCuotaAnioFilter)

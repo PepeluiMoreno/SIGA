@@ -31,9 +31,10 @@ class ImporteCuotaAnio(BaseModel):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     ejercicio: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    tipo_miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("tipos_miembro.id"), nullable=False, index=True)
+    codigo_cuota: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)  # General, Joven, Parado, Honorario
+    tipo_miembro_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey("tipos_miembro.id"), nullable=True, index=True)
     importe: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
-    nombre_cuota: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # Ej: "General", "Estudiante", "Parado"
+    nombre_cuota: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
@@ -59,6 +60,7 @@ class CuotaAnual(BaseModel):
 
     # Relación con el importe de cuota definido para el tipo de miembro
     importe_cuota_anio_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey("importes_cuota_anio.id"), nullable=True, index=True)
+    codigo_cuota: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)  # tarifa aplicada: General, Joven, etc.
 
     # Importes
     importe: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)

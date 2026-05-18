@@ -95,6 +95,18 @@ graphql_app = GraphQLRouter(
 )
 app.include_router(graphql_app, prefix="/graphql")
 
+# Routers REST
+from app.api.recibos import router as recibos_router
+try:
+    from app.api.paypal import router as paypal_router
+    _paypal_available = True
+except ImportError:
+    _paypal_available = False
+
+app.include_router(recibos_router)
+if _paypal_available:
+    app.include_router(paypal_router)
+
 
 MEDIA_DIR = Path("media/fotos")
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)

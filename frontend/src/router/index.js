@@ -30,6 +30,7 @@ import Cuotas from '@/modules/economico/views/Cuotas.vue'
 import Remesas from '@/modules/economico/views/Remesas.vue'
 import Presupuesto from '@/modules/economico/views/Presupuesto.vue'
 import Donaciones from '@/modules/economico/views/Donaciones.vue'
+import ReglasContables from '@/modules/economico/views/ReglasContables.vue'
 
 // === Módulo: MEMBRESIA - Voluntariado ===
 import ListaVoluntarios from '@/modules/membresia/views/ListaVoluntarios.vue'
@@ -259,6 +260,12 @@ const routes = [
     path: '/economico/contabilidad',
     component: Contabilidad,
     name: 'Contabilidad',
+    meta: { requiresAuth: true, requiredPermission: 'FIN_REPORTS' }
+  },
+  {
+    path: '/economico/reglas-contables',
+    component: ReglasContables,
+    name: 'ReglasContables',
     meta: { requiresAuth: true, requiredPermission: 'FIN_REPORTS' }
   },
   {

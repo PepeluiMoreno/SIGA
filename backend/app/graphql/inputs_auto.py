@@ -419,7 +419,24 @@ class EstadoNotificacionFilter:
 # GEOGRÁFICO
 # ============================================================================
 
-from ..modules.core.geografico import Pais, Provincia, Municipio, UnidadOrganizativa, NivelOrganizativo
+from ..modules.core.geografico import AmbitoGeografico, Pais, Provincia, Municipio, UnidadOrganizativa, NivelOrganizativo
+
+
+@strawchemy.input(AmbitoGeografico, mode="create_input", include="all",
+                  exclude=get_exclude_fields(AmbitoGeografico))
+class AmbitoGeograficoCreateInput:
+    pass
+
+
+@strawchemy.input(AmbitoGeografico, mode="update_by_pk_input", include="all",
+                  exclude=get_exclude_fields(AmbitoGeografico))
+class AmbitoGeograficoUpdateInput:
+    pass
+
+
+@strawchemy.filter(AmbitoGeografico)
+class AmbitoGeograficoFilter:
+    pass
 
 
 @strawchemy.input(Pais, mode="create_input", include="all", exclude=get_exclude_fields(Pais))
@@ -470,18 +487,6 @@ class MunicipioFilter:
 @strawchemy.filter(UnidadOrganizativa)
 class UnidadOrganizativaFilter:
     pass
-
-
-@strawchemy.input(NivelOrganizativo, mode="create_input", include="all",
-                  exclude=get_exclude_fields(NivelOrganizativo))
-class NivelOrganizativoCreateInput:
-    padre_tipo_id: Optional[uuid.UUID] = None
-
-
-@strawchemy.input(NivelOrganizativo, mode="update_by_pk_input", include="all",
-                  exclude=get_exclude_fields(NivelOrganizativo))
-class NivelOrganizativoUpdateInput:
-    padre_tipo_id: Optional[uuid.UUID] = None
 
 
 @strawchemy.filter(NivelOrganizativo)
@@ -1551,4 +1556,109 @@ class ConvenioUpdateInput:
 
 @strawchemy.filter(Convenio)
 class ConvenioFilter:
+    pass
+
+
+# === FINANCIERO — TESORERÍA ===
+from ..modules.economico.models import (
+    CuentaBancaria,
+    ApunteCaja,
+    ExtractoBancario,
+    ConciliacionBancaria,
+    CuentaContable,
+    AsientoContable,
+    ApunteContable,
+    BalanceContable,
+)
+
+@strawchemy.input(CuentaBancaria, mode="create_input", include="all", exclude=get_exclude_fields(CuentaBancaria))
+class CuentaBancariaCreateInput:
+    pass
+
+
+@strawchemy.input(CuentaBancaria, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(CuentaBancaria))
+class CuentaBancariaUpdateInput:
+    pass
+
+
+@strawchemy.input(ApunteCaja, mode="create_input", include="all", exclude=get_exclude_fields(ApunteCaja))
+class ApunteCajaCreateInput:
+    pass
+
+
+@strawchemy.input(ApunteCaja, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(ApunteCaja))
+class ApunteCajaUpdateInput:
+    pass
+
+
+@strawchemy.filter(ApunteCaja)
+class ApunteCajaFilter:
+    pass
+
+
+@strawchemy.input(ExtractoBancario, mode="create_input", include="all", exclude=get_exclude_fields(ExtractoBancario))
+class ExtractoBancarioCreateInput:
+    pass
+
+
+@strawchemy.filter(ExtractoBancario)
+class ExtractoBancarioFilter:
+    pass
+
+
+@strawchemy.input(ConciliacionBancaria, mode="create_input", include="all", exclude=get_exclude_fields(ConciliacionBancaria))
+class ConciliacionBancariaCreateInput:
+    pass
+
+
+# === FINANCIERO — CONTABILIDAD ===
+
+@strawchemy.input(CuentaContable, mode="create_input", include="all", exclude=get_exclude_fields(CuentaContable))
+class CuentaContableCreateInput:
+    pass
+
+
+@strawchemy.input(CuentaContable, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(CuentaContable))
+class CuentaContableUpdateInput:
+    pass
+
+
+@strawchemy.input(AsientoContable, mode="create_input", include="all", exclude=get_exclude_fields(AsientoContable))
+class AsientoContableCreateInput:
+    pass
+
+
+@strawchemy.input(AsientoContable, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(AsientoContable))
+class AsientoContableUpdateInput:
+    pass
+
+
+@strawchemy.input(ApunteContable, mode="create_input", include="all", exclude=get_exclude_fields(ApunteContable))
+class ApunteContableCreateInput:
+    pass
+
+
+@strawchemy.input(ApunteContable, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(ApunteContable))
+class ApunteContableUpdateInput:
+    pass
+
+
+@strawchemy.filter(BalanceContable)
+class BalanceContableFilter:
+    pass
+
+
+# === FINANCIERO — REGLAS CONTABLES ===
+from ..modules.economico.models.contabilidad import ReglaContable as ReglaContableModel
+
+@strawchemy.input(ReglaContableModel, mode="create_input", include="all", exclude=get_exclude_fields(ReglaContableModel))
+class ReglaContableCreateInput:
+    pass
+
+@strawchemy.input(ReglaContableModel, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(ReglaContableModel))
+class ReglaContableUpdateInput:
+    pass
+
+@strawchemy.filter(ReglaContableModel)
+class ReglaContableFilter:
     pass

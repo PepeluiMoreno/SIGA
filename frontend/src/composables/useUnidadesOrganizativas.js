@@ -51,9 +51,14 @@ export function useUnidadesOrganizativas() {
     return raices
   }
 
-  const crearTipo = async ({ nombre, naturaleza, vinculo, nivel = null, padreTipoId = null, activo = true }) => {
-    await mutation(CREATE_TIPO_UNIDAD_ORGANIZATIVA, { nombre, naturaleza, vinculo, nivel, padreTipoId, activo })
+  const crearTipo = async ({ nombre, naturaleza, vinculo, nivel = null, padreTipoId = null, ambitoGeograficoId = null, activo = true }) => {
+    const data = { nombre, naturaleza, vinculo, activo }
+    if (nivel !== null) data.nivel = nivel
+    if (padreTipoId) data.padreTipoId = padreTipoId
+    if (ambitoGeograficoId) data.ambitoGeograficoId = ambitoGeograficoId
+    const res = await mutation(CREATE_TIPO_UNIDAD_ORGANIZATIVA, { data })
     await cargarTipos()
+    return res.crearNivelOrganizativo
   }
 
   const actualizarTipo = async (data) => {

@@ -73,9 +73,6 @@
               <option value="">— Seleccionar —</option>
               <option v-for="t in tiposDisponibles" :key="t.id" :value="t.id">{{ t.nombre }}</option>
             </select>
-            <p v-if="!tiposDisponibles.length" class="text-xs text-amber-600 mt-1">
-              Todos los tipos de campaña ya tienen plantilla asignada.
-            </p>
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1.5">Nombre <span class="text-red-400">*</span></label>
@@ -144,10 +141,9 @@ const plantillasFiltradas = computed(() => {
   return lista
 })
 
-const tiposDisponibles = computed(() => {
-  const usados = new Set(plantillas.value.map(p => p.tipoCampania?.id).filter(Boolean))
-  return tiposCampania.value.filter(t => t.activo && !usados.has(t.id))
-})
+const tiposDisponibles = computed(() =>
+  tiposCampania.value.filter(t => t.activo)
+)
 
 const camposFiltro = computed(() => [
   {
