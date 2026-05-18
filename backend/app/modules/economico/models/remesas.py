@@ -35,12 +35,16 @@ class Remesa(BaseModel):
     archivo_sepa: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)  # Path al archivo XML generado
     mensaje_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # ID del mensaje SEPA
 
+    # Agrupación territorial (tesorería delegada)
+    agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey("unidades_organizativas.id"), nullable=True, index=True)
+
     # Información adicional
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Relaciones
     ordenes: Mapped[List["OrdenCobro"]] = relationship(back_populates="remesa", lazy="selectin")
     estado = relationship('EstadoRemesa', foreign_keys=[estado_id], lazy='selectin')
+    agrupacion = relationship('UnidadOrganizativa', foreign_keys=[agrupacion_id], lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<Remesa(referencia='{self.referencia}', estado_id='{self.estado_id}', importe={self.importe_total})>"

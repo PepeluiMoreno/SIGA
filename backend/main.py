@@ -97,6 +97,7 @@ app.include_router(graphql_app, prefix="/graphql")
 
 # Routers REST
 from app.api.recibos import router as recibos_router
+from app.api.remesas import router as remesas_router
 try:
     from app.api.paypal import router as paypal_router
     _paypal_available = True
@@ -104,6 +105,7 @@ except ImportError:
     _paypal_available = False
 
 app.include_router(recibos_router)
+app.include_router(remesas_router)
 if _paypal_available:
     app.include_router(paypal_router)
 

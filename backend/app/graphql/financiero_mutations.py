@@ -13,6 +13,7 @@ from uuid import UUID
 from ..modules.economico.services.tesoreria_service import TesoreriaService
 from ..modules.economico.services.contabilidad_service import ContabilidadService
 from ..modules.economico.services.registro_contable import RegistroContable
+from ..modules.economico.services.remesa_service import RemesaService
 from ..modules.economico.models.tesoreria import TipoApunte, OrigenApunte, MetodoConciliacion
 from ..modules.economico.models.contabilidad import TipoAsientoContable
 
@@ -182,3 +183,39 @@ class FinancieroMutation:
             observaciones=observaciones,
         )
         return str(apunte.id)
+
+    # ─── Generación de remesas SEPA ────────────────────────────────────────────
+
+    @strawberry.mutation
+    async def generar_remesa_sepa(
+        self,
+        info: strawberry.Info,
+        ejercicio: int,
+        fecha_cobro: date,
+        agrupacion_id: Optional[UUID] = None,
+        observaciones: Optional[str] = None,
+    ) -> str:
+        """Genera una remesa SEPA en estado Borrador con todas las cuotas pendientes
+        del ejercicio (filtradas por agrupación si se indica).
+        Devuelve el ID de la remesa creada."""
+        session = info.context.session
+        service = RemesaService(session)
+        remesa = await service.generar_remesa(
+            ejercicio=ejercicio,
+            fecha_cobro=fecha_cobro,
+            agrupacion_id=agrupacion_id,
+            observaciones=observaciones,
+        )
+        return str(remesa.id)
+
+    @strawberry.mutation
+    async def marcar_remesa_enviada(
+        self,
+        info: strawberry.Info,
+        remesa_id: UUID,
+    ) -> bool:
+        """Marca la remesa como Enviada al banco."""
+        session = info.context.session
+        service = RemesaService(session)
+        await service.marcar_enviada(remesa_id)
+        return True

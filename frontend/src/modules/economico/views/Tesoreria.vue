@@ -131,6 +131,124 @@
       <p v-else-if="cuentaSeleccionada" class="text-center text-gray-400 py-8">No hay movimientos para esta cuenta.</p>
     </div>
 
+    <!-- Tab Remesas -->
+    <div v-if="activeTab === 'remesas'">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Panel izquierdo: Generar nueva remesa -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5">
+          <h3 class="font-semibold text-slate-800 mb-4">Generar nueva remesa SEPA</h3>
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="label">Ejercicio *</label>
+                <input type="number" v-model.number="formRemesa.ejercicio" class="input" :min="2000" :max="2099" />
+              </div>
+              <div>
+                <label class="label">Fecha de cobro *</label>
+                <input type="date" v-model="formRemesa.fechaCobro" class="input" />
+              </div>
+            </div>
+            <div>
+              <label class="label">Agrupación territorial</label>
+              <select v-model="formRemesa.agrupacionId" class="input">
+                <option :value="null">— Toda la organización —</option>
+                <option v-for="u in unidades" :key="u.id" :value="u.id">{{ u.nombre }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="label">Observaciones</label>
+              <textarea v-model="formRemesa.observaciones" class="input h-16" />
+            </div>
+
+            <!-- Preview cuotas pendientes -->
+            <div v-if="cuotasPendientesPreview.length" class="bg-slate-50 rounded-lg p-3 text-sm">
+              <p class="font-medium text-slate-700 mb-1">
+                {{ cuotasPendientesPreview.length }} cuotas pendientes —
+                <span class="text-green-700 font-semibold">{{ fmt(totalPreview) }}</span>
+              </p>
+            </div>
+            <div v-else-if="previewCargado" class="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+              No hay cuotas pendientes para el ejercicio y agrupación indicados.
+            </div>
+
+            <p v-if="errorRemesa" class="text-red-600 text-sm">{{ errorRemesa }}</p>
+            <div class="flex gap-2 pt-1">
+              <button @click="previsualizarCuotas" :disabled="guardandoRemesa" class="btn-secondary flex-1">
+                Vista previa
+              </button>
+              <button @click="generarRemesa" :disabled="guardandoRemesa || !cuotasPendientesPreview.length" class="btn-primary flex-1">
+                {{ guardandoRemesa ? 'Generando…' : 'Generar remesa' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel derecho: Remesas históricas -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-semibold text-slate-800">Remesas</h3>
+            <select v-model="filtroEjercicioRemesa" class="input-sm w-28">
+              <option value="">Todas</option>
+              <option v-for="y in ejerciciosDisponibles" :key="y" :value="y">{{ y }}</option>
+            </select>
+          </div>
+          <div v-if="remesasFiltradas.length" class="space-y-2 max-h-[480px] overflow-y-auto pr-1">
+            <div
+              v-for="r in remesasFiltradas" :key="r.id"
+              class="border rounded-lg p-3 hover:bg-slate-50 cursor-pointer"
+              :class="remesaSeleccionada?.id === r.id ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200'"
+              @click="remesaSeleccionada = r"
+            >
+              <div class="flex justify-between items-start">
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-medium text-slate-800 truncate">{{ r.referencia.replace('SEPA_ISO20022CORE_','').replace('.xml','') }}</p>
+                  <p class="text-xs text-slate-500 mt-0.5">
+                    Cobro: {{ fechaFmt(r.fechaCobro) }} · {{ r.numOrdenes }} órdenes
+                    <span v-if="r.agrupacion" class="ml-1 text-indigo-500">· {{ r.agrupacion.nombre }}</span>
+                  </p>
+                </div>
+                <div class="text-right flex-shrink-0 ml-3">
+                  <p class="text-sm font-bold text-slate-900">{{ fmt(r.importeTotal) }}</p>
+                  <span :class="estadoRemesaClass(r.estado?.nombre)" class="text-xs px-1.5 py-0.5 rounded-full">
+                    {{ r.estado?.nombre }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p v-else class="text-center text-slate-400 py-8 text-sm">No hay remesas.</p>
+
+          <!-- Acciones sobre la remesa seleccionada -->
+          <div v-if="remesaSeleccionada" class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-2">
+            <a :href="`/api/remesas/${remesaSeleccionada.id}/sepa-xml`"
+              class="btn-secondary text-sm"
+              :download="`remesa_${remesaSeleccionada.id.slice(0,8)}.xml`">
+              ↓ Descargar XML SEPA
+            </a>
+            <button
+              v-if="remesaSeleccionada.estado?.nombre === 'Borrador'"
+              @click="enviarRemesa(remesaSeleccionada.id)"
+              :disabled="guardandoRemesa"
+              class="btn-secondary text-sm">
+              Marcar enviada
+            </button>
+            <button
+              v-if="remesaSeleccionada.estado?.nombre === 'Enviada' && cuentaSeleccionada"
+              @click="liquidarRemesaSeleccionada"
+              :disabled="guardandoRemesa"
+              class="btn-primary text-sm">
+              {{ guardandoRemesa ? 'Liquidando…' : 'Liquidar (registrar cobro)' }}
+            </button>
+            <p v-if="remesaSeleccionada.estado?.nombre === 'Enviada' && !cuentaSeleccionada"
+              class="text-xs text-amber-600 self-center">
+              Selecciona una cuenta en la pestaña Cuentas para liquidar.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Tab Conciliaciones -->
     <div v-if="activeTab === 'conciliaciones'">
       <div class="flex justify-between items-center mb-4">
@@ -325,6 +443,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import LoadSpinner from '@/components/common/LoadSpinner.vue'
 import { useTesoreria } from '@/composables/useTesoreria'
 import { useUnidadesOrganizativas } from '@/composables/useUnidadesOrganizativas'
+import { useGraphQL } from '@/composables/useGraphQL'
 
 const {
   cuentasBancarias,
@@ -346,11 +465,146 @@ const {
 
 const { unidades } = useUnidadesOrganizativas()
 
+const { query: gqlQuery, mutation: gqlMutation } = useGraphQL()
+
 const activeTab = ref('cuentas')
 const cuentaSeleccionada = ref(null)
 const filtroFechaInicio = ref('')
 const filtroFechaFin = ref('')
 const filtroTipo = ref('')
+
+// ── Remesas ────────────────────────────────────────────────────────────────
+const remesas = ref([])
+const remesaSeleccionada = ref(null)
+const filtroEjercicioRemesa = ref('')
+const guardandoRemesa = ref(false)
+const errorRemesa = ref('')
+const cuotasPendientesPreview = ref([])
+const previewCargado = ref(false)
+const formRemesa = ref({
+  ejercicio: new Date().getFullYear(),
+  fechaCobro: '',
+  agrupacionId: null,
+  observaciones: '',
+})
+
+const totalPreview = computed(() =>
+  cuotasPendientesPreview.value.reduce((s, c) => s + (parseFloat(c.importe) - parseFloat(c.importePagado || 0)), 0)
+)
+
+const ejerciciosDisponibles = computed(() => {
+  const years = [...new Set(remesas.value.map(r => r.fechaCobro?.slice(0, 4)).filter(Boolean))]
+  return years.sort().reverse()
+})
+
+const remesasFiltradas = computed(() =>
+  filtroEjercicioRemesa.value
+    ? remesas.value.filter(r => r.fechaCobro?.startsWith(filtroEjercicioRemesa.value))
+    : remesas.value
+)
+
+const estadoRemesaClass = (nombre) => {
+  const map = {
+    'Borrador': 'bg-slate-100 text-slate-600',
+    'Generada': 'bg-blue-100 text-blue-700',
+    'Enviada':  'bg-amber-100 text-amber-700',
+    'Procesada':'bg-green-100 text-green-700',
+    'Rechazada':'bg-red-100 text-red-700',
+    'Parcial':  'bg-orange-100 text-orange-700',
+  }
+  return map[nombre] || 'bg-slate-100 text-slate-500'
+}
+
+const obtenerRemesas = async () => {
+  const data = await gqlQuery(`
+    query { remesas {
+      id referencia importeTotal gastos numOrdenes
+      fechaCreacion fechaCobro fechaEnvio
+      estado { id nombre }
+      agrupacion { id nombre }
+    }}
+  `)
+  remesas.value = (data.remesas || []).sort((a, b) => b.fechaCobro?.localeCompare(a.fechaCobro))
+}
+
+const previsualizarCuotas = async () => {
+  errorRemesa.value = ''
+  previewCargado.value = false
+  cuotasPendientesPreview.value = []
+  try {
+    const vars = { ejercicio: formRemesa.value.ejercicio, agrupacionId: formRemesa.value.agrupacionId || null }
+    const data = await gqlQuery(`
+      query CuotasPendientes($ejercicio: Int!, $agrupacionId: UUID) {
+        cuotasAnuales(filter: {
+          ejercicio: { eq: $ejercicio }
+          ${formRemesa.value.agrupacionId ? 'agrupacionId: { eq: $agrupacionId }' : ''}
+          estado: { nombre: { eq: "Pendiente" } }
+        }) { id importe importePagado miembro { nombre apellido1 } }
+      }
+    `, vars)
+    cuotasPendientesPreview.value = data.cuotasAnuales || []
+    previewCargado.value = true
+  } catch (e) {
+    errorRemesa.value = e.message || 'Error al previsualizar'
+  }
+}
+
+const generarRemesa = async () => {
+  if (!formRemesa.value.fechaCobro) { errorRemesa.value = 'Indica la fecha de cobro'; return }
+  guardandoRemesa.value = true
+  errorRemesa.value = ''
+  try {
+    await gqlMutation(`
+      mutation GenerarRemesa($ejercicio: Int!, $fechaCobro: Date!, $agrupacionId: UUID, $obs: String) {
+        generarRemesaSepa(ejercicio: $ejercicio, fechaCobro: $fechaCobro, agrupacionId: $agrupacionId, observaciones: $obs)
+      }
+    `, {
+      ejercicio: formRemesa.value.ejercicio,
+      fechaCobro: formRemesa.value.fechaCobro,
+      agrupacionId: formRemesa.value.agrupacionId || null,
+      obs: formRemesa.value.observaciones || null,
+    })
+    cuotasPendientesPreview.value = []
+    previewCargado.value = false
+    await obtenerRemesas()
+  } catch (e) {
+    errorRemesa.value = e.message || 'Error al generar la remesa'
+  } finally {
+    guardandoRemesa.value = false
+  }
+}
+
+const enviarRemesa = async (remesaId) => {
+  guardandoRemesa.value = true
+  try {
+    await gqlMutation(`mutation($id: UUID!) { marcarRemesaEnviada(remesaId: $id) }`, { id: remesaId })
+    await obtenerRemesas()
+    remesaSeleccionada.value = remesas.value.find(r => r.id === remesaId) || null
+  } catch (e) {
+    errorRemesa.value = e.message || 'Error'
+  } finally {
+    guardandoRemesa.value = false
+  }
+}
+
+const liquidarRemesaSeleccionada = async () => {
+  if (!cuentaSeleccionada.value || !remesaSeleccionada.value) return
+  guardandoRemesa.value = true
+  try {
+    await gqlMutation(`
+      mutation($remesaId: UUID!, $cuentaId: UUID!) {
+        liquidarRemesa(remesaId: $remesaId, cuentaBancariaId: $cuentaId)
+      }
+    `, { remesaId: remesaSeleccionada.value.id, cuentaId: cuentaSeleccionada.value.id })
+    await obtenerRemesas()
+    await obtenerCuentasBancarias()
+    remesaSeleccionada.value = remesas.value.find(r => r.id === remesaSeleccionada.value.id) || null
+  } catch (e) {
+    errorRemesa.value = e.message || 'Error al liquidar'
+  } finally {
+    guardandoRemesa.value = false
+  }
+}
 
 // Modales
 const modalCuenta = ref(false)
@@ -367,6 +621,7 @@ const formConciliacion = ref({ fechaInicio: '', fechaFin: '', saldoInicialExtrac
 const tabs = [
   { id: 'cuentas', name: 'Cuentas', icon: '🏦' },
   { id: 'movimientos', name: 'Movimientos', icon: '💸' },
+  { id: 'remesas', name: 'Remesas', icon: '📋' },
   { id: 'conciliaciones', name: 'Conciliaciones', icon: '✓' },
 ]
 
@@ -503,7 +758,10 @@ const confirmarConciliacion = async (conciliacionId) => {
   }
 }
 
-onMounted(() => obtenerCuentasBancarias())
+onMounted(async () => {
+  await obtenerCuentasBancarias()
+  await obtenerRemesas()
+})
 </script>
 
 <style scoped>
