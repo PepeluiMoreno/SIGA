@@ -25,6 +25,7 @@ TipoMovimientoTesoreria = TipoApunte
 class OrigenApunte(PyEnum):
     CUOTA = "CUOTA"
     DONACION = "DONACION"
+    REMESA = "REMESA"
     ACTIVIDAD = "ACTIVIDAD"
     PAYPAL = "PAYPAL"
     MANUAL = "MANUAL"
