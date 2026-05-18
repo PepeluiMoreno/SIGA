@@ -84,3 +84,27 @@ UPDATE niveles_organizativos SET ambito_geografico_id = (
 
 > **Instrucciones**: ejecutar con `docker exec -it siga_dev_db psql -U siga -d siga`
 > y después `docker restart siga_dev_backend`.
+
+---
+
+## Lote pendiente: Tesorería delegada por agrupación
+
+```sql
+-- Remesa vinculada a agrupación territorial (tesorería delegada)
+ALTER TABLE remesas
+  ADD COLUMN IF NOT EXISTS agrupacion_id UUID REFERENCES unidades_organizativas(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS ix_remesas_agrupacion_id ON remesas(agrupacion_id);
+
+-- OrigenApunte: añadir REMESA al enum PostgreSQL
+-- (ya aplicado directamente via ALTER TYPE en 2026-05-18)
+-- ALTER TYPE origenapunte ADD VALUE IF NOT EXISTS 'REMESA';
+```
+
+**Modelo Python a actualizar** cuando se migre:
+- `Remesa`: añadir `agrupacion_id` FK + relationship `agrupacion`
+- `RemesaCreateInput`: añadir campo `agrupacion_id`
+
+**Lógica de tesorería delegada** (fase UI posterior):
+- Al crear remesa, filtrar `CuotaAnual` por `agrupacion_id` de la cuenta bancaria seleccionada
+- Permisos: rol `TESORERO_AGRUPACION` solo ve cuentas/remesas de su agrupacion_id
+- Consolidado central: query remesas sin filtro de agrupacion (solo para SUPERADMIN / TESORERO_CENTRAL)

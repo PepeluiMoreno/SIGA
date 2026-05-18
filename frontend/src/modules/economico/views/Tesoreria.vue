@@ -51,6 +51,12 @@
               <h4 class="font-semibold text-gray-900">{{ c.nombre }}</h4>
               <p class="text-sm text-gray-500 font-mono">{{ ibanFmt(c.iban) }}</p>
               <p class="text-xs text-gray-400 mt-1">{{ c.bancoNombre }}</p>
+              <span v-if="c.agrupacion" class="inline-block mt-1 px-1.5 py-0.5 text-xs bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-full">
+                {{ c.agrupacion.nombre }}
+              </span>
+              <span v-else class="inline-block mt-1 px-1.5 py-0.5 text-xs bg-slate-50 text-slate-400 border border-slate-200 rounded-full">
+                Organización
+              </span>
             </div>
             <div class="text-right">
               <p class="text-lg font-bold text-gray-900">{{ fmt(c.saldoActual) }}</p>
@@ -193,6 +199,13 @@
             <input v-model="formCuenta.titular" class="input" />
           </div>
           <div>
+            <label class="label">Agrupación territorial</label>
+            <select v-model="formCuenta.agrupacionId" class="input">
+              <option :value="null">— Cuenta de la organización —</option>
+              <option v-for="u in unidades" :key="u.id" :value="u.id">{{ u.nombre }}</option>
+            </select>
+          </div>
+          <div>
             <label class="label">Descripción</label>
             <textarea v-model="formCuenta.descripcion" class="input h-20" />
           </div>
@@ -311,6 +324,7 @@ import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import LoadSpinner from '@/components/common/LoadSpinner.vue'
 import { useTesoreria } from '@/composables/useTesoreria'
+import { useUnidadesOrganizativas } from '@/composables/useUnidadesOrganizativas'
 
 const {
   cuentasBancarias,
@@ -330,6 +344,8 @@ const {
   saldoTotal,
 } = useTesoreria()
 
+const { unidades } = useUnidadesOrganizativas()
+
 const activeTab = ref('cuentas')
 const cuentaSeleccionada = ref(null)
 const filtroFechaInicio = ref('')
@@ -344,7 +360,7 @@ const guardando = ref(false)
 const errorModal = ref('')
 
 // Formularios
-const formCuenta = ref({ nombre: '', iban: '', bancoNombre: '', bicSwift: '', titular: '', descripcion: '' })
+const formCuenta = ref({ nombre: '', iban: '', bancoNombre: '', bicSwift: '', titular: '', agrupacionId: null, descripcion: '' })
 const formMovimiento = ref({ fecha: new Date().toISOString().split('T')[0], tipo: 'INGRESO', importe: '', concepto: '', origen: '', referenciaExterna: '', observaciones: '' })
 const formConciliacion = ref({ fechaInicio: '', fechaFin: '', saldoInicialExtracto: 0, saldoFinalExtracto: 0, observaciones: '' })
 
@@ -384,7 +400,7 @@ const recargarMovimientos = async () => {
 
 // Modales
 const abrirNuevaCuenta = () => {
-  formCuenta.value = { nombre: '', iban: '', bancoNombre: '', bicSwift: '', titular: '', descripcion: '' }
+  formCuenta.value = { nombre: '', iban: '', bancoNombre: '', bicSwift: '', titular: '', agrupacionId: null, descripcion: '' }
   errorModal.value = ''
   modalCuenta.value = true
 }

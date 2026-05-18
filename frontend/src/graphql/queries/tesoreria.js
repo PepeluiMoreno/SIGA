@@ -15,6 +15,10 @@ export const GET_CUENTAS_BANCARIAS = `
       agrupacionId
       descripcion
       fechaCreacion
+      agrupacion {
+        id
+        nombre
+      }
     }
   }
 `
