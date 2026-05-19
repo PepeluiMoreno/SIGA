@@ -34,6 +34,13 @@ import Donaciones from '@/modules/economico/views/Donaciones.vue'
 // === Módulo: MEMBRESIA - Voluntariado ===
 import ListaVoluntarios from '@/modules/membresia/views/ListaVoluntarios.vue'
 
+// === Módulo: SECRETARIA ===
+import Reuniones from '@/modules/secretaria/views/Reuniones.vue'
+import Actas from '@/modules/secretaria/views/Actas.vue'
+import Acuerdos from '@/modules/secretaria/views/Acuerdos.vue'
+import LibroSocios from '@/modules/secretaria/views/LibroSocios.vue'
+import Convenios from '@/modules/secretaria/views/Convenios.vue'
+
 // === Módulo: CONFIGURACION ===
 
 // Configuración de rutas
@@ -286,6 +293,37 @@ const routes = [
     meta: { requiresAuth: true, requiredPermission: 'DON_CREATE' }
   },
 
+  // ─── SECRETARIA ───────────────────────────────────────────────────────────
+  {
+    path: '/secretaria/reuniones',
+    component: Reuniones,
+    name: 'Reuniones',
+    meta: { requiresAuth: true, requiredPermission: 'SEC_REUNION_LISTAR' }
+  },
+  {
+    path: '/secretaria/actas',
+    component: Actas,
+    name: 'Actas',
+    meta: { requiresAuth: true, requiredPermission: 'SEC_ACTA_LISTAR' }
+  },
+  {
+    path: '/secretaria/acuerdos',
+    component: Acuerdos,
+    name: 'Acuerdos',
+    meta: { requiresAuth: true, requiredPermission: 'SEC_ACUERDO_LISTAR' }
+  },
+  {
+    path: '/secretaria/libro-socios',
+    component: LibroSocios,
+    name: 'LibroSocios',
+    meta: { requiresAuth: true, requiredPermission: 'SEC_LIBRO_SOCIOS_CONSULTAR' }
+  },
+  {
+    path: '/secretaria/convenios',
+    component: Convenios,
+    name: 'Convenios',
+    meta: { requiresAuth: true, requiredPermission: 'SEC_CONVENIO_LISTAR' }
+  },
   // ─── PAPELERA ─────────────────────────────────────────────────────────────
   {
     path: '/papelera',

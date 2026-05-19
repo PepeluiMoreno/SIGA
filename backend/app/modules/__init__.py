@@ -149,6 +149,22 @@ from .economico.models import (
     AccionReclamacion,
 )
 
+# Secretaría: reuniones, actas, libro de socios, convenios
+from .secretaria.models import (
+    TipoReunion,
+    Reunion,
+    AsistenteReunion,
+    PuntoOrdenDia,
+    Acuerdo,
+    VotacionAcuerdo,
+    Acta,
+    CertificadoAcuerdo,
+    LibroSociosSnapshot,
+    TipoConvenio,
+    Convenio,
+    DelegacionFirma,
+)
+
 __all__ = [
     # Acceso
     'Transaccion', 'Rol', 'TipoRol', 'RolTransaccion',
@@ -183,4 +199,10 @@ __all__ = [
     'TipoGrupo', 'RolGrupo', 'GrupoTrabajo', 'MiembroGrupo',
     'GrupoIniciativa', 'ReunionGrupo', 'AsistenteReunion',
     'RequisitoRecurso', 'AportacionHoras',
+    # Secretaría
+    'TipoReunion', 'Reunion', 'AsistenteReunion',
+    'PuntoOrdenDia', 'Acuerdo', 'VotacionAcuerdo',
+    'Acta', 'CertificadoAcuerdo',
+    'LibroSociosSnapshot',
+    'TipoConvenio', 'Convenio', 'DelegacionFirma',
 ]
