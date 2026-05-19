@@ -13,12 +13,13 @@ from . import strawchemy
 from .auth import AuthQuery
 from .configuracion_resolvers import ConfiguracionOrganizacionQuery
 from .economico_resolvers import EconomicoQuery
+from .secretaria_resolvers import SecretariaQuery, SecretariaResolverMutation
 from .types_auto import *  # Importar todos los tipos generados
 from .inputs_auto import *  # Importar inputs y filtros
 
 
 @strawberry.type
-class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery):
+class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, SecretariaQuery):
     """Queries GraphQL del sistema SIGA con generación automática.
 
     IMPORTANTE: Todos los nombres usan camelCase para consistencia con GraphQL.
