@@ -19,8 +19,23 @@
 
     <!-- Tab Plan de Cuentas / Categorías Fiscales según el modo -->
     <div v-if="activeTab === 'plan'">
-      <!-- Modo simplificado: categorías fiscales -->
-      <CategoriasFiscalesPanel v-if="!contabilidadCompleja" />
+      <!-- Modo simplificado: categorías fiscales y reglas de clasificación -->
+      <div v-if="!contabilidadCompleja">
+        <div class="flex gap-2 mb-4">
+          <button @click="subTabSimplificado = 'categorias'"
+            :class="subTabSimplificado === 'categorias' ? 'bg-purple-100 text-purple-700' : 'text-gray-500 hover:bg-gray-100'"
+            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
+            🏷️ Categorías
+          </button>
+          <button @click="subTabSimplificado = 'reglas'"
+            :class="subTabSimplificado === 'reglas' ? 'bg-purple-100 text-purple-700' : 'text-gray-500 hover:bg-gray-100'"
+            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
+            ⚙️ Reglas de clasificación
+          </button>
+        </div>
+        <CategoriasFiscalesPanel v-if="subTabSimplificado === 'categorias'" />
+        <ReglasCategorizacionPanel v-else />
+      </div>
 
       <!-- Modo completo: plan de cuentas PCESFL -->
       <template v-else>
@@ -521,6 +536,7 @@ import FilterBar from '@/components/common/FilterBar.vue'
 import ImputacionActividadPicker from '@/components/common/ImputacionActividadPicker.vue'
 import CuentaNode from './CuentaNode.vue'
 import CategoriasFiscalesPanel from '@/components/common/CategoriasFiscalesPanel.vue'
+import ReglasCategorizacionPanel from '@/components/common/ReglasCategorizacionPanel.vue'
 import { useContabilidad } from '@/composables/useContabilidad'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
@@ -553,6 +569,7 @@ const {
 
 const activeTab = ref('plan')
 const contabilidadCompleja = ref(true)  // se carga en onMounted; true por defecto (no degrada la vista completa)
+const subTabSimplificado = ref('categorias')  // categorias | reglas (solo modo simplificado)
 const filtroEjercicio = ref(new Date().getFullYear())
 const filtroEstado = ref('')
 
