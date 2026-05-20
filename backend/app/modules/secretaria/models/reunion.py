@@ -111,6 +111,12 @@ class Reunion(BaseModel):
 
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
+    # Actividad generada automáticamente al convocar (para integración contable/presupuestaria)
+    actividad_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('actividades.id'), nullable=True,
+        comment="Actividad creada automáticamente al convocar — permite presupuestar y contabilizar gastos"
+    )
+
     # Relaciones
     tipo_reunion = relationship('TipoReunion', back_populates='reuniones', lazy='selectin')
     agrupacion = relationship('UnidadOrganizativa', lazy='selectin')
@@ -120,6 +126,7 @@ class Reunion(BaseModel):
         lazy='selectin', order_by='PuntoOrdenDia.orden'
     )
     acta = relationship('Acta', back_populates='reunion', uselist=False, lazy='selectin')
+    actividad = relationship('Actividad', foreign_keys=[actividad_id], lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<Reunion(tipo='{self.tipo_reunion_id}', fecha='{self.fecha_celebracion}', estado='{self.estado}')>"

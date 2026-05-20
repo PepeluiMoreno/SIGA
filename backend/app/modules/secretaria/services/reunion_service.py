@@ -7,6 +7,9 @@ from uuid import UUID
 from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ...actividades.models.actividad import Actividad, TipoActividad
+from ...configuracion.models.estados import EstadoAccion
+
 from ..models.reunion import (
     TipoReunion,
     Reunion,
@@ -57,6 +60,69 @@ class ReunionService:
         )
         return (result.scalar() or 0) + 1
 
+
+    async def _crear_actividad_para_reunion(
+        self,
+        tipo_reunion: TipoReunion,
+        reunion: Reunion,
+        creado_por_id: Optional[UUID] = None,
+    ) -> Optional[Reunion]:
+        """Crea la Actividad vinculada a esta reunión para integración contable/presupuestaria.
+
+        Si el TipoReunion tiene un TipoActividad de gobierno asociado, crea una Actividad
+        con campania_id=None (actividad interna), vinculada a la reunión.
+        Si no hay TipoActividad de gobierno, no crea nada (no es error).
+        """
+        # Buscar el TipoActividad de gobierno vinculado a este TipoReunion
+        tipo_act_result = await self.session.execute(
+            select(TipoActividad).where(
+                TipoActividad.tipo_reunion_secretaria_id == tipo_reunion.id
+            )
+        )
+        tipo_actividad = tipo_act_result.scalars().first()
+
+        if tipo_actividad is None:
+            return None  # No hay tipo de actividad de gobierno configurado — OK
+
+        # Buscar el estado inicial de actividades
+        estado_result = await self.session.execute(
+            select(EstadoAccion).where(EstadoAccion.es_inicial == True).limit(1)
+        )
+        estado = estado_result.scalars().first()
+        if estado is None:
+            return None  # Sin estados configurados no se puede crear la actividad
+
+        nombre = (
+            f"{tipo_reunion.nombre} nº {reunion.numero_convocatoria}/{reunion.anio}"
+        )
+
+        actividad = Actividad(
+            nombre=nombre,
+            descripcion=f"Generada automáticamente al convocar {nombre}",
+            tipo_actividad_id=tipo_actividad.id,
+            estado_id=estado.id,
+            campania_id=None,               # Actividad interna, no de campaña
+            es_recurrente=tipo_actividad.es_actividad_gobierno and tipo_actividad.periodicidad == 'anual',
+            periodicidad=tipo_actividad.periodicidad if tipo_actividad.es_actividad_gobierno else None,
+            fecha_inicio=reunion.fecha_convocatoria,
+            fecha_fin=(
+                reunion.fecha_celebracion.date()
+                if reunion.fecha_celebracion else None
+            ),
+            lugar=reunion.lugar,
+            es_online=reunion.es_telematica,
+            url_online=reunion.plataforma_telematica,
+            presupuesto_estimado=0,
+            presupuesto_ejecutado=0,
+            creado_por_id=creado_por_id,
+        )
+        self.session.add(actividad)
+        await self.session.flush()  # Obtener el ID antes del commit
+
+        # Vincular la actividad a la reunión
+        reunion.actividad_id = actividad.id
+        return reunion
+
     async def convocar_reunion(
         self,
         tipo_reunion_id: UUID,
@@ -92,6 +158,12 @@ class ReunionService:
             creado_por_id=creado_por_id,
         )
         self.session.add(reunion)
+        await self.session.flush()  # Obtener el ID de reunion antes de crear la actividad
+
+        # Crear la Actividad vinculada para integración contable/presupuestaria
+        if tipo := await self.obtener_tipo_reunion(tipo_reunion_id):
+            await self._crear_actividad_para_reunion(tipo, reunion, creado_por_id)
+
         await self.session.commit()
         await self.session.refresh(reunion)
         return reunion

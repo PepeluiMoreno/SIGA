@@ -22,6 +22,29 @@ class TipoActividad(InmutableMixin, BaseModel):
     tiene_participantes: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
+    # Clasificación contable por defecto
+    # Código de cuenta PCESFL para imputar gastos de este tipo de actividad
+    cuenta_gasto_codigo: Mapped[Optional[str]] = mapped_column(
+        String(10), nullable=True,
+        comment="Cuenta de gasto PCESFL por defecto (ej: '501', '521')"
+    )
+    # Código de cuenta PCESFL para imputar ingresos (null si no genera ingresos propios)
+    cuenta_ingreso_codigo: Mapped[Optional[str]] = mapped_column(
+        String(10), nullable=True,
+        comment="Cuenta de ingreso PCESFL por defecto (null = sin ingresos propios)"
+    )
+
+    # Actividades de gobierno interno (asambleas, juntas, comisiones)
+    es_actividad_gobierno: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False,
+        comment="True para actividades de secretaría y presidencia"
+    )
+    # FK al tipo de reunión de secretaría que genera esta actividad (si aplica)
+    tipo_reunion_secretaria_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('sec_tipos_reunion.id'), nullable=True,
+        comment="Vincula con el TipoReunion de secretaría que crea instancias de este tipo"
+    )
+
     actividades = relationship('Actividad', back_populates='tipo_actividad', lazy='selectin')
 
     def __repr__(self) -> str:
