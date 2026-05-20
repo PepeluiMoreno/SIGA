@@ -20,11 +20,10 @@ _TRANSACCIONES = [
     TransaccionDef("ECO_ASIENTO_CREAR",          "Crear asiento contable",              "MUTACION"),
     TransaccionDef("ECO_ASIENTO_APROBAR",        "Aprobar asiento contable",            "APROBACION"),
     TransaccionDef("ECO_BALANCE_CONSULTAR",      "Consultar balance contable",          "CONSULTA"),
-    # Categorías fiscales (estructura de clasificación — contabilidad simplificada)
-    TransaccionDef("ECO_CATEGORIA_FISCAL_LISTAR", "Listar categorías fiscales",         "CONSULTA"),
-    TransaccionDef("ECO_CATEGORIA_FISCAL_CREAR",  "Crear categoría fiscal",             "MUTACION"),
-    TransaccionDef("ECO_CATEGORIA_FISCAL_EDITAR", "Editar categoría fiscal",            "MUTACION"),
-    TransaccionDef("ECO_CATEGORIA_FISCAL_ELIMINAR","Eliminar categoría fiscal",         "MUTACION"),
+    # Estructura de clasificación contable (plan de cuentas PCESFL o categorías fiscales,
+    # según el modo de la organización — comparten permiso por ser la misma función)
+    TransaccionDef("ECO_ESTRUCTURA_CONTABLE_LISTAR",    "Consultar estructura de clasificación contable", "CONSULTA"),
+    TransaccionDef("ECO_ESTRUCTURA_CONTABLE_GESTIONAR", "Gestionar estructura de clasificación contable", "MUTACION"),
     # Cuotas
     TransaccionDef("ECO_CUOTA_CONFIGURAR",       "Configurar cuotas anuales",           "MUTACION"),
     TransaccionDef("ECO_CUOTA_REGISTRAR_PAGO",   "Registrar pago de cuota",             "MUTACION"),
@@ -72,13 +71,12 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
     codigo="ESTRUCTURA_CLASIFICACION_CONTABLE",
     nombre="Estructura de clasificación contable",
     modulo=MODULO,
-    descripcion="Gestión de categorías fiscales (contabilidad simplificada). "
-                "Equivale al plan de cuentas en la contabilidad por partida doble.",
+    descripcion="Gestión de la estructura de clasificación contable: plan de cuentas "
+                "PCESFL en modo completo o categorías fiscales en modo simplificado. "
+                "Un mismo permiso cubre ambos, por ser la misma función.",
     transacciones=[
-        FuncionalidadTransaccionDef("ECO_CATEGORIA_FISCAL_LISTAR",   AmbitoTransaccion.TERRITORIAL),
-        FuncionalidadTransaccionDef("ECO_CATEGORIA_FISCAL_CREAR",    AmbitoTransaccion.TERRITORIAL),
-        FuncionalidadTransaccionDef("ECO_CATEGORIA_FISCAL_EDITAR",   AmbitoTransaccion.TERRITORIAL),
-        FuncionalidadTransaccionDef("ECO_CATEGORIA_FISCAL_ELIMINAR", AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("ECO_ESTRUCTURA_CONTABLE_LISTAR",    AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("ECO_ESTRUCTURA_CONTABLE_GESTIONAR", AmbitoTransaccion.TERRITORIAL),
     ],
 ))
 

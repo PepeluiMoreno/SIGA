@@ -1,9 +1,10 @@
-"""Asigna las transacciones del Plan de Cuentas Contables al rol TESORERO matriz. Idempotente.
+"""Asigna las transacciones de la Estructura de Clasificación Contable al rol TESORERO matriz. Idempotente.
 
-D-PCC: El mantenimiento del plan contable (crear/editar/desactivar `CuentaContable`)
-es competencia exclusiva del TESORERO de la organización matriz. En escenarios de
-tesorería delegada los tesoreros de agrupación NO pueden alterar el plan de cuentas
-(es un activo único de la asociación).
+D-PCC: El mantenimiento de la estructura contable —plan de cuentas PCESFL en modo
+completo o categorías fiscales en modo simplificado— es competencia exclusiva del
+TESORERO de la organización matriz. Ambos modos comparten el mismo permiso por ser
+la misma función. En escenarios de tesorería delegada los tesoreros de agrupación NO
+pueden alterar la estructura contable (es un activo único de la asociación).
 
 Hasta que exista la jerarquía TESORERO_CENTRAL / TESORERO_AGRUPACION, asignamos el
 permiso al rol TESORERO único.
@@ -24,7 +25,7 @@ from app.modules.acceso.models.rol_transaccion import RolTransaccion
 
 
 REPARTO = {
-    "TESORERO": ["ECO_CUENTA_CREAR", "ECO_CUENTA_LISTAR"],
+    "TESORERO": ["ECO_ESTRUCTURA_CONTABLE_GESTIONAR", "ECO_ESTRUCTURA_CONTABLE_LISTAR"],
 }
 
 
@@ -55,7 +56,7 @@ async def seed():
                 ))
                 creadas += 1
         await session.commit()
-        print(f"✓ Plan de Cuentas: +{creadas} transacciones enlazadas a TESORERO.")
+        print(f"✓ Estructura contable: +{creadas} transacciones enlazadas a TESORERO.")
 
 
 if __name__ == "__main__":

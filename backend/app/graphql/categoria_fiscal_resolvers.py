@@ -71,7 +71,7 @@ class ActualizarCategoriaFiscalInput:
 @strawberry.type
 class CategoriaFiscalQuery:
 
-    @strawberry.field(permission_classes=[RequireTransaction("ECO_CATEGORIA_FISCAL_LISTAR")])
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_LISTAR")])
     async def categorias_fiscales(
         self,
         info: strawberry.Info,
@@ -87,7 +87,7 @@ class CategoriaFiscalQuery:
 @strawberry.type
 class CategoriaFiscalMutation:
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CATEGORIA_FISCAL_CREAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_GESTIONAR")])
     async def crear_categoria_fiscal(
         self, info: strawberry.Info, data: CrearCategoriaFiscalInput
     ) -> CategoriaFiscalType:
@@ -106,7 +106,7 @@ class CategoriaFiscalMutation:
         )
         return CategoriaFiscalType.from_model(categoria)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CATEGORIA_FISCAL_EDITAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_GESTIONAR")])
     async def actualizar_categoria_fiscal(
         self, info: strawberry.Info, data: ActualizarCategoriaFiscalInput
     ) -> CategoriaFiscalType:
@@ -127,7 +127,7 @@ class CategoriaFiscalMutation:
         categoria = await service.actualizar(data.id, **cambios)
         return CategoriaFiscalType.from_model(categoria)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CATEGORIA_FISCAL_ELIMINAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_GESTIONAR")])
     async def eliminar_categoria_fiscal(
         self, info: strawberry.Info, categoria_id: uuid.UUID
     ) -> bool:

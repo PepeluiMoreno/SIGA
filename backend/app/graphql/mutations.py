@@ -412,7 +412,8 @@ class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionM
     # === FINANCIERO — CONTABILIDAD ===
     # CuentaContable: CRUD restringido a TESORERO matriz vía resolvers manuales en
     # EconomicoMutation (crear_cuenta_contable / actualizar_cuenta_contable /
-    # desactivar_cuenta_contable) con permiso `ECO_CUENTA_CREAR`.
+    # desactivar_cuenta_contable) con permiso `ECO_ESTRUCTURA_CONTABLE_GESTIONAR`
+    # (compartido con la gestión de categorías fiscales en modo simplificado).
     # Las versiones strawchemy quedaron deshabilitadas por seguridad (no admiten permission_classes).
 
     crear_asiento_contable: AsientoContableType = strawchemy.create(AsientoContableCreateInput)

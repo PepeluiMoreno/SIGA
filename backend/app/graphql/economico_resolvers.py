@@ -715,7 +715,7 @@ class EconomicoMutation:
 
     # ── Contabilidad ─────────────────────────────────────────────────────────
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUENTA_CREAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_GESTIONAR")])
     async def crear_cuenta_contable(self, info: strawberry.Info, data: CrearCuentaContableInput) -> uuid.UUID:
         """Crea una cuenta del plan contable. Restringido al rol TESORERO de la organización matriz.
         El plan de cuentas es un activo único de la asociación; los tesoreros de agrupación no pueden alterarlo."""
@@ -731,7 +731,7 @@ class EconomicoMutation:
         )
         return cuenta.id
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUENTA_CREAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_GESTIONAR")])
     async def actualizar_cuenta_contable(
         self,
         info: strawberry.Info,
@@ -756,7 +756,7 @@ class EconomicoMutation:
         await session.commit()
         return cuenta.id
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUENTA_CREAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_GESTIONAR")])
     async def desactivar_cuenta_contable(self, info: strawberry.Info, id: uuid.UUID) -> bool:
         """Desactiva una cuenta del plan contable. No se elimina por integridad referencial
         con asientos históricos — se marca como inactiva."""
