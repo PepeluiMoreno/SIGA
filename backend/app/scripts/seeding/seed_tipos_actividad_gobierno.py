@@ -1,15 +1,12 @@
 """Seed: tipos de actividad para reuniones de gobierno.
 
 Amplía el catálogo tipos_accion con los cuatro tipos correspondientes
-a actividades de secretaría y presidencia, vinculándolos a sus
-TipoReunion y asignando las cuentas PCESFL correctas.
+a actividades de secretaría y presidencia (asambleas, juntas, comisiones),
+vinculándolos a sus TipoReunion de secretaría.
 
-Cuentas utilizadas:
-  501 - Servicios externos  (sala, catering, material de reunión)
-  521 - Servicios administrativos  (notaría, certificaciones, registro)
-
-Las actividades de gobierno no generan ingresos propios (cuenta_ingreso=None),
-salvo que la asamblea cobre inscripción, caso que se gestiona manualmente.
+El mapeo a cuentas contables PCESFL se establece mediante reglas en
+la tabla ReglaContableActividad — pendiente de implementar en la PR
+feature/reglas-contables-actividades.
 """
 
 import uuid
@@ -34,8 +31,6 @@ TIPOS_GOBIERNO = [
         'tiene_lugar': True,
         'tiene_participantes': True,
         'es_actividad_gobierno': True,
-        'cuenta_gasto_codigo': '501',     # Servicios externos: sala, material
-        'cuenta_ingreso_codigo': None,    # Sin ingresos propios
         'tipo_reunion_nombre': 'Asamblea General Ordinaria',
         # Recurrente anual — la plantilla se crea con es_recurrente=True, periodicidad='anual'
         'es_recurrente': True,
@@ -48,8 +43,6 @@ TIPOS_GOBIERNO = [
         'tiene_lugar': True,
         'tiene_participantes': True,
         'es_actividad_gobierno': True,
-        'cuenta_gasto_codigo': '501',
-        'cuenta_ingreso_codigo': None,
         'tipo_reunion_nombre': 'Asamblea General Extraordinaria',
         'es_recurrente': False,
         'periodicidad': None,
@@ -61,8 +54,6 @@ TIPOS_GOBIERNO = [
         'tiene_lugar': True,
         'tiene_participantes': True,
         'es_actividad_gobierno': True,
-        'cuenta_gasto_codigo': '521',     # Servicios administrativos: notaría, registros
-        'cuenta_ingreso_codigo': None,
         'tipo_reunion_nombre': 'Reunión de Junta Directiva',
         'es_recurrente': True,
         'periodicidad': 'mensual',        # Periodicidad habitual; se ajusta por instancia
@@ -74,8 +65,6 @@ TIPOS_GOBIERNO = [
         'tiene_lugar': True,
         'tiene_participantes': True,
         'es_actividad_gobierno': True,
-        'cuenta_gasto_codigo': '501',
-        'cuenta_ingreso_codigo': None,
         'tipo_reunion_nombre': 'Comisión de Trabajo',
         'es_recurrente': False,
         'periodicidad': None,
@@ -112,8 +101,6 @@ async def seed_tipos_actividad_gobierno(session: AsyncSession) -> None:
                 tiene_lugar=datos['tiene_lugar'],
                 tiene_participantes=datos['tiene_participantes'],
                 es_actividad_gobierno=datos['es_actividad_gobierno'],
-                cuenta_gasto_codigo=datos['cuenta_gasto_codigo'],
-                cuenta_ingreso_codigo=datos['cuenta_ingreso_codigo'],
                 tipo_reunion_secretaria_id=tipo_reunion_id,
                 activo=True,
             )
@@ -122,8 +109,6 @@ async def seed_tipos_actividad_gobierno(session: AsyncSession) -> None:
         else:
             # Actualizar campos contables si ya existe
             tipo.es_actividad_gobierno = True
-            tipo.cuenta_gasto_codigo = datos['cuenta_gasto_codigo']
-            tipo.cuenta_ingreso_codigo = datos['cuenta_ingreso_codigo']
             if tipo_reunion_id:
                 tipo.tipo_reunion_secretaria_id = tipo_reunion_id
             actualizados += 1

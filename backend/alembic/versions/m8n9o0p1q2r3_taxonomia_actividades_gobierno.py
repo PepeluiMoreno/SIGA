@@ -1,7 +1,7 @@
 """Integra reuniones de secretaría en la taxonomía de actividades.
 
-Añade campos contables a TipoActividad y FK actividad_id a Reunion,
-cerrando el ciclo presupuestario y contable para actividades de gobierno.
+Añade campos de clasificación y FK estructurales en TipoActividad y Reunion.
+El mapeo a cuentas PCESFL se implementará en feature/reglas-contables-actividades.
 
 Revision ID: m8n9o0p1q2r3
 Revises: l7m8n9o0p1q2
@@ -18,15 +18,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # ── Campos contables en tipos_accion ─────────────────────────────────────
-    op.add_column('tipos_accion', sa.Column(
-        'cuenta_gasto_codigo', sa.String(10), nullable=True,
-        comment='Cuenta de gasto PCESFL por defecto (ej: 501, 521)'
-    ))
-    op.add_column('tipos_accion', sa.Column(
-        'cuenta_ingreso_codigo', sa.String(10), nullable=True,
-        comment='Cuenta de ingreso PCESFL (null = sin ingresos propios)'
-    ))
+    # ── Campos de clasificación en tipos_accion ──────────────────────────────
     op.add_column('tipos_accion', sa.Column(
         'es_actividad_gobierno', sa.Boolean(),
         nullable=False, server_default='false',
@@ -58,5 +50,3 @@ def downgrade() -> None:
     op.drop_index('ix_tipos_accion_es_actividad_gobierno', 'tipos_accion')
     op.drop_column('tipos_accion', 'tipo_reunion_secretaria_id')
     op.drop_column('tipos_accion', 'es_actividad_gobierno')
-    op.drop_column('tipos_accion', 'cuenta_ingreso_codigo')
-    op.drop_column('tipos_accion', 'cuenta_gasto_codigo')
