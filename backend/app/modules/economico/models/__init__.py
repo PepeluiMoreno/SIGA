@@ -38,6 +38,8 @@ from .contabilidad import (
     ReglaContable,
     CuentaContable,
     TipoCuentaContable,
+    CategoriaFiscal,
+    TipoCategoriaFiscal,
     AsientoContable,
     ApunteContable,
     TipoAsientoContable,
@@ -71,6 +73,7 @@ __all__ = [
     # Contabilidad
     'ReglaContable',
     'CuentaContable', 'TipoCuentaContable',
+    'CategoriaFiscal', 'TipoCategoriaFiscal',
     'AsientoContable', 'ApunteContable',
     'TipoAsientoContable', 'EstadoAsientoContable',
 ]

@@ -9,6 +9,7 @@ from .inicializar_estados import inicializar_estados
 from .inicializar_geografico import inicializar_geografico
 from .inicializar_tipos_notificacion import inicializar_tipos_notificacion
 from .seeding.seed_secretaria import seed_secretaria
+from .seeding.seed_categorias_fiscales import seed_categorias_fiscales
 from .seeding.seed_tipos_actividad_gobierno import seed_tipos_actividad_gobierno
 
 logging.basicConfig(level=logging.INFO)
@@ -51,6 +52,9 @@ async def inicializar_sistema_completo(session: AsyncSession) -> None:
 
         # Módulo de Secretaría
         await seed_secretaria(session)
+
+        # Categorías fiscales (contabilidad simplificada)
+        await seed_categorias_fiscales(session)
 
         # Tipos de actividad de gobierno (requiere sec_tipos_reunion ya seedados)
         await seed_tipos_actividad_gobierno(session)
