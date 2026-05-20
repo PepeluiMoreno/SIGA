@@ -570,6 +570,9 @@ onMounted(async () => {
     form.numero_registro                 = p.numeroRegistro                   ?? ''
     form.tipo_entidad                    = p.tipoEntidad                      ?? 'ASOCIACION'
     form.contabilidad_compleja           = p.contabilidadCompleja             ?? false
+    // Defensivo: si la entidad es fundación, el PCESFL es obligatorio aunque
+    // en BD viniera desactivado (datos inconsistentes). Se normaliza al cargar.
+    if (esObligatorioContabilidad.value) form.contabilidad_compleja = true
     form.sede_social                     = p.sedeSocial                       ?? ''
     form.localidad                       = p.localidad                        ?? ''
     form.cp                              = p.cp                               ?? ''
@@ -608,7 +611,6 @@ onMounted(async () => {
     form.openbanking_activo              = p.openbankingActivo                ?? false
     temaOriginal.value   = orgConfigStore.temas.find(t => t.slug === form.tema) ?? null
     fuenteOriginal.value = form.fuente_principal
-    if (esObligatorioContabilidad.value) form.contabilidad_compleja = true
   } catch (e) {
     errorCarga.value = e?.response?.errors?.[0]?.message
       ?? 'No se pudieron cargar los parámetros. Comprueba la conexión con el servidor.'
