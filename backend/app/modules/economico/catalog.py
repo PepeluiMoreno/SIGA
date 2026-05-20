@@ -20,6 +20,11 @@ _TRANSACCIONES = [
     TransaccionDef("ECO_ASIENTO_CREAR",          "Crear asiento contable",              "MUTACION"),
     TransaccionDef("ECO_ASIENTO_APROBAR",        "Aprobar asiento contable",            "APROBACION"),
     TransaccionDef("ECO_BALANCE_CONSULTAR",      "Consultar balance contable",          "CONSULTA"),
+    # Categorías fiscales (estructura de clasificación — contabilidad simplificada)
+    TransaccionDef("ECO_CATEGORIA_FISCAL_LISTAR", "Listar categorías fiscales",         "CONSULTA"),
+    TransaccionDef("ECO_CATEGORIA_FISCAL_CREAR",  "Crear categoría fiscal",             "MUTACION"),
+    TransaccionDef("ECO_CATEGORIA_FISCAL_EDITAR", "Editar categoría fiscal",            "MUTACION"),
+    TransaccionDef("ECO_CATEGORIA_FISCAL_ELIMINAR","Eliminar categoría fiscal",         "MUTACION"),
     # Cuotas
     TransaccionDef("ECO_CUOTA_CONFIGURAR",       "Configurar cuotas anuales",           "MUTACION"),
     TransaccionDef("ECO_CUOTA_REGISTRAR_PAGO",   "Registrar pago de cuota",             "MUTACION"),
@@ -60,6 +65,20 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
         FuncionalidadTransaccionDef("ECO_ASIENTO_CREAR",   AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("ECO_ASIENTO_APROBAR", AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("ECO_BALANCE_CONSULTAR", AmbitoTransaccion.TERRITORIAL),
+    ],
+))
+
+ModuleCatalog.register_funcionalidad(FuncionalidadDef(
+    codigo="ESTRUCTURA_CLASIFICACION_CONTABLE",
+    nombre="Estructura de clasificación contable",
+    modulo=MODULO,
+    descripcion="Gestión de categorías fiscales (contabilidad simplificada). "
+                "Equivale al plan de cuentas en la contabilidad por partida doble.",
+    transacciones=[
+        FuncionalidadTransaccionDef("ECO_CATEGORIA_FISCAL_LISTAR",   AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("ECO_CATEGORIA_FISCAL_CREAR",    AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("ECO_CATEGORIA_FISCAL_EDITAR",   AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("ECO_CATEGORIA_FISCAL_ELIMINAR", AmbitoTransaccion.TERRITORIAL),
     ],
 ))
 
