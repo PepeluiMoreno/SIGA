@@ -5,7 +5,11 @@ import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from ..modules.core.models import estados
+from ..modules.configuracion.models.estados import (
+    EstadoCuota, EstadoCampania, EstadoTarea, EstadoParticipante,
+    EstadoOrdenCobro, EstadoRemesa, EstadoDonacion, EstadoNotificacion,
+    EstadoReunion, EstadoActa, EstadoEjecucionAcuerdo,
+)
 
 
 ESTADOS_CUOTA = [
@@ -64,6 +68,28 @@ ESTADOS_DONACION = [
     {'nombre': 'Recibida',    'descripcion': 'Donación recibida',                  'orden': 2,                      'color': 'success'},
     {'nombre': 'Certificada', 'descripcion': 'Certificado de donación emitido',    'orden': 3, 'es_final': True,   'color': 'success'},
     {'nombre': 'Anulada',     'descripcion': 'Donación anulada',                   'orden': 4, 'es_final': True,   'color': 'danger'},
+]
+
+
+ESTADOS_REUNION = [
+    {'nombre': 'Convocada',     'codigo': 'CONVOCADA',     'descripcion': 'Reunión convocada pendiente de celebración', 'orden': 1, 'es_inicial': True,  'color': '#3b82f6'},
+    {'nombre': 'Celebrada',     'codigo': 'CELEBRADA',     'descripcion': 'Reunión celebrada, pendiente de acta',       'orden': 2,                      'color': '#f59e0b'},
+    {'nombre': 'Acta borrador', 'codigo': 'ACTA_BORRADOR', 'descripcion': 'Acta redactada pendiente de aprobación',     'orden': 3,                      'color': '#f97316'},
+    {'nombre': 'Acta aprobada', 'codigo': 'ACTA_APROBADA', 'descripcion': 'Acta aprobada en la siguiente reunión',      'orden': 4, 'es_final': True,   'color': '#22c55e'},
+    {'nombre': 'Cancelada',     'codigo': 'CANCELADA',     'descripcion': 'Reunión cancelada',                          'orden': 5, 'es_final': True,   'color': '#6b7280'},
+]
+
+ESTADOS_ACTA = [
+    {'nombre': 'Borrador', 'codigo': 'BORRADOR', 'descripcion': 'Acta en redacción, pendiente de aprobación', 'orden': 1, 'es_inicial': True,  'color': '#f97316'},
+    {'nombre': 'Aprobada', 'codigo': 'APROBADA', 'descripcion': 'Acta aprobada en reunión posterior',          'orden': 2,                      'color': '#6366f1'},
+    {'nombre': 'Firmada',  'codigo': 'FIRMADA',  'descripcion': 'Acta firmada por secretario y presidente',    'orden': 3, 'es_final': True,   'color': '#22c55e'},
+]
+
+ESTADOS_EJECUCION_ACUERDO = [
+    {'nombre': 'Pendiente',   'codigo': 'PENDIENTE',   'descripcion': 'Acuerdo adoptado pendiente de ejecutar', 'orden': 1, 'es_inicial': True,  'color': '#f59e0b'},
+    {'nombre': 'En curso',    'codigo': 'EN_CURSO',    'descripcion': 'Ejecución en marcha',                    'orden': 2,                      'color': '#3b82f6'},
+    {'nombre': 'Completado',  'codigo': 'COMPLETADO',  'descripcion': 'Acuerdo ejecutado satisfactoriamente',   'orden': 3, 'es_final': True,   'color': '#22c55e'},
+    {'nombre': 'Archivado',   'codigo': 'ARCHIVADO',   'descripcion': 'Acuerdo archivado sin ejecución',        'orden': 4, 'es_final': True,   'color': '#6b7280'},
 ]
 
 

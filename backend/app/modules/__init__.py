@@ -51,6 +51,9 @@ from .configuracion.models import (
     EstadoRemesa,
     EstadoDonacion,
     EstadoNotificacion,
+    EstadoReunion,
+    EstadoActa,
+    EstadoEjecucionAcuerdo,
     HistorialEstado,
 )
 
@@ -148,6 +151,22 @@ from .economico.models import (
     AccionReclamacion,
 )
 
+# Secretaría: reuniones, actas, libro de socios, convenios
+from .secretaria.models import (
+    TipoReunion,
+    Reunion,
+    AsistenteReunionSecretaria,
+    PuntoOrdenDia,
+    Acuerdo,
+    VotacionAcuerdo,
+    Acta,
+    CertificadoAcuerdo,
+    LibroSociosSnapshot,
+    TipoConvenio,
+    ConvenioInstitucional,
+    DelegacionFirma,
+)
+
 __all__ = [
     # Acceso
     'Transaccion', 'Rol', 'TipoRol', 'RolTransaccion',
@@ -164,7 +183,9 @@ __all__ = [
     'Configuracion', 'ReglaValidacionConfig', 'HistorialConfiguracion',
     'EstadoBase', 'EstadoCuota', 'EstadoCampania', 'EstadoAccion', 'EstadoTarea',
     'EstadoParticipante', 'EstadoOrdenCobro',
-    'EstadoRemesa', 'EstadoDonacion', 'EstadoNotificacion', 'HistorialEstado',
+    'EstadoRemesa', 'EstadoDonacion', 'EstadoNotificacion',
+    'EstadoReunion', 'EstadoActa', 'EstadoEjecucionAcuerdo',
+    'HistorialEstado',
     # Organizaciones
     'TipoOrganizacion', 'Organizacion', 'EstadoConvenio', 'Convenio',
     # Membresía
@@ -182,4 +203,10 @@ __all__ = [
     'TipoGrupo', 'RolGrupo', 'GrupoTrabajo', 'MiembroGrupo',
     'GrupoIniciativa', 'ReunionGrupo', 'AsistenteReunion',
     'RequisitoRecurso', 'AportacionHoras',
+    # Secretaría
+    'TipoReunion', 'Reunion', 'AsistenteReunionSecretaria',
+    'PuntoOrdenDia', 'Acuerdo', 'VotacionAcuerdo',
+    'Acta', 'CertificadoAcuerdo',
+    'LibroSociosSnapshot',
+    'TipoConvenio', 'ConvenioInstitucional', 'DelegacionFirma',
 ]

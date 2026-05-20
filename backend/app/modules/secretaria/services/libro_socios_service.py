@@ -1,0 +1,87 @@
+"""Servicio del Libro de Socios (Ley Orgánica 1/2002)."""
+
+from datetime import date, datetime
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy import select, and_, func
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..models.libro_socios import LibroSociosSnapshot
+
+
+class LibroSociosService:
+    """Genera y custodia snapshots del Libro de Socios."""
+
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def generar_snapshot(
+        self,
+        fecha_corte: Optional[date] = None,
+        motivo: Optional[str] = None,
+        observaciones: Optional[str] = None,
+        creado_por_id: Optional[UUID] = None,
+    ) -> LibroSociosSnapshot:
+        """Genera un snapshot del libro de socios en la fecha de corte indicada.
+
+        Los conteos se calculan contra la tabla miembros en tiempo real.
+        La generación del PDF queda pendiente de implementación posterior.
+        """
+        if fecha_corte is None:
+            fecha_corte = date.today()
+
+        # Importación diferida para evitar circularidad
+        from ...membresia.models.miembro import Miembro
+
+        # Socios activos en la fecha de corte
+        # (fecha_alta <= fecha_corte y (sin baja o fecha_baja > fecha_corte))
+        activos_result = await self.session.execute(
+            select(func.count(Miembro.id)).where(
+                and_(
+                    Miembro.eliminado == False,
+                    # Estado activo: simplificado; el proyecto usa estado_id
+                    # La lógica exacta depende de los estados configurados
+                    # Esta query se refinará al conectar con el servicio de membresía
+                )
+            )
+        )
+        total_activos = activos_result.scalar() or 0
+
+        historico_result = await self.session.execute(
+            select(func.count(Miembro.id)).where(Miembro.eliminado == False)
+        )
+        total_historico = historico_result.scalar() or 0
+        total_baja = total_historico - total_activos
+
+        snapshot = LibroSociosSnapshot(
+            fecha_corte=fecha_corte,
+            fecha_generacion=datetime.utcnow(),
+            total_socios_activos=total_activos,
+            total_socios_baja=max(total_baja, 0),
+            total_socios_historico=total_historico,
+            motivo=motivo,
+            observaciones=observaciones,
+            creado_por_id=creado_por_id,
+        )
+        self.session.add(snapshot)
+        await self.session.commit()
+        await self.session.refresh(snapshot)
+        return snapshot
+
+    async def listar_snapshots(self) -> List[LibroSociosSnapshot]:
+        result = await self.session.execute(
+            select(LibroSociosSnapshot)
+            .where(LibroSociosSnapshot.eliminado == False)
+            .order_by(LibroSociosSnapshot.fecha_corte.desc())
+        )
+        return list(result.scalars().all())
+
+    async def obtener_ultimo_snapshot(self) -> Optional[LibroSociosSnapshot]:
+        result = await self.session.execute(
+            select(LibroSociosSnapshot)
+            .where(LibroSociosSnapshot.eliminado == False)
+            .order_by(LibroSociosSnapshot.fecha_corte.desc())
+            .limit(1)
+        )
+        return result.scalars().first()

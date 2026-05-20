@@ -27,6 +27,16 @@ class TipoActividad(InmutableMixin, BaseModel):
     cuenta_contable_default_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid, ForeignKey('cuentas_contables.id', ondelete='SET NULL'), nullable=True, index=True,
     )
+    # Actividades de gobierno interno (asambleas, juntas, comisiones)
+    es_actividad_gobierno: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False,
+        comment="True para actividades de secretaría y presidencia"
+    )
+    # FK al tipo de reunión de secretaría que genera esta actividad (si aplica)
+    tipo_reunion_secretaria_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('sec_tipos_reunion.id'), nullable=True,
+        comment="Vincula con el TipoReunion de secretaría que crea instancias de este tipo"
+    )
 
     actividades = relationship('Actividad', back_populates='tipo_actividad', lazy='selectin')
     cuenta_contable_default = relationship(

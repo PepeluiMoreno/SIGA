@@ -921,6 +921,156 @@
             </details>
           </div>
 
+
+          <!-- Presidencia -->
+          <div>
+            <h3 class="help-section-title">
+              <span class="help-badge bg-purple-100 text-purple-700">Presidencia</span>
+            </h3>
+            <p class="help-text">
+              Cuadro de mando ejecutivo que agrega en una sola pantalla el estado real de la
+              organización: acuerdos pendientes, próximas reuniones, composición de la junta
+              directiva y convenios próximos a vencer. No requiere entrar en cada módulo —
+              la información relevante aparece sola, y las alertas desaparecen cuando el
+              problema se resuelve.
+            </p>
+
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-3 mb-1">Flujo de trabajo</p>
+            <p class="help-text">
+              El cuadro de mando es de solo lectura: recoge datos de Secretaría y Membresía
+              y los presenta priorizados. Las <strong>alertas críticas</strong> aparecen automáticamente
+              cuando hay actas sin aprobar, acuerdos con plazo vencido, mandatos próximos a
+              expirar o convenios sin renovación automática. Desde cada alerta hay un enlace
+              directo a la pantalla donde actuar. En <strong>Seguimiento de acuerdos</strong> se puede
+              actualizar el estado de ejecución de cualquier acuerdo directamente desde
+              presidencia sin ir a secretaría.
+            </p>
+
+            <ul class="help-list">
+              <li><strong>Cuadro de mando</strong> — alertas automáticas, cuatro indicadores clave
+                (socios, acuerdos, reuniones, cargos) y paneles de próximas reuniones y mandatos vigentes.</li>
+              <li><strong>Seguimiento de acuerdos</strong> — vista ejecutiva con filtros por estado
+                (Pendiente, En curso, Completado, Archivado) y actualización directa.</li>
+              <li><strong>Mandatos y cargos</strong> — composición actualizada de los órganos de gobierno,
+                con aviso automático cuando un mandato vence en menos de 90 días.</li>
+            </ul>
+          </div>
+
+          <!-- Secretaría -->
+          <div>
+            <h3 class="help-section-title">
+              <span class="help-badge bg-indigo-100 text-indigo-700">Secretaría</span>
+            </h3>
+            <p class="help-text">
+              Núcleo administrativo y legal de la asociación. Cubre las obligaciones que impone
+              la Ley Orgánica 1/2002: Libro de Socios, Libro de Actas, gestión de órganos de
+              gobierno y custodia de la documentación institucional.
+            </p>
+
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-3 mb-1">Reuniones — flujo y estados</p>
+            <p class="help-text">
+              Una reunión es una actividad puntual del órgano de gobierno, no adscrita a
+              ninguna campaña. Puede ser <strong>periódica</strong> (la Asamblea General Ordinaria, que se
+              celebra una vez al año) o <strong>puntual</strong> (Asamblea Extraordinaria, reunión de Junta,
+              Comisión). Cada tipo tiene configurada la antelación mínima de convocatoria y
+              los umbrales de quórum según sus estatutos.
+            </p>
+            <p class="help-text">
+              Cada reunión avanza por estos estados en orden:
+            </p>
+            <ol class="help-list list-decimal">
+              <li>
+                <strong>Convocada</strong> — se registra fecha, lugar o plataforma telemática, orden del día y,
+                si procede, fecha de segunda convocatoria. El sistema acepta asistencia presencial,
+                telemática, por representación o excusada.
+              </li>
+              <li>
+                <strong>Celebrada</strong> — se introducen los datos reales: número de socios totales,
+                presentes y representados, y qué convocatoria se utilizó. El sistema calcula el quórum
+                automáticamente (primera convocatoria: 50% por defecto; segunda: cualquier número).
+                Se registran los puntos del orden del día y los acuerdos con su votación
+                (mayoría simple, absoluta, dos tercios o unanimidad).
+              </li>
+              <li>
+                <strong>Acta en borrador</strong> — el secretario redacta el acta. En este estado puede
+                editarse libremente.
+              </li>
+              <li>
+                <strong>Acta aprobada</strong> — el acta se aprueba en la siguiente reunión del mismo
+                órgano, como exige la Ley 1/2002. Se registra la fecha y la reunión en la que
+                fue aprobada.
+              </li>
+            </ol>
+            <p class="help-text mt-2">
+              Una reunión convocada puede <strong>cancelarse</strong> en cualquier momento antes de celebrarse.
+              Las reuniones canceladas quedan en el historial pero no generan acta.
+            </p>
+
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-3 mb-1">Actas — flujo y firma</p>
+            <p class="help-text">
+              Cada reunión celebrada genera exactamente un acta, numerada correlativamente por
+              tipo de órgano y año (por ejemplo, la tercera acta de Junta Directiva de 2025 es
+              la nº 3/2025). El flujo es:
+            </p>
+            <ol class="help-list list-decimal">
+              <li><strong>Borrador</strong> — redacción libre, todavía modificable.</li>
+              <li><strong>Aprobada</strong> — ratificada en la reunión siguiente, con fecha de aprobación registrada.</li>
+              <li><strong>Firmada</strong> — firma del secretario/a con el visto bueno del presidente/a.
+                A partir de este estado el acta es documento oficial.</li>
+            </ol>
+            <p class="help-text mt-2">
+              Desde cualquier acta aprobada o firmada se puede emitir un
+              <strong>certificado de acuerdo</strong> para presentar ante terceros (bancos, Registro de
+              Asociaciones, organismos públicos). Cada certificado recibe una referencia
+              automática <em>CERT-AAAA-NNN</em> y lleva la firma del secretario/a con el visto
+              bueno del presidente/a.
+            </p>
+
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-3 mb-1">Acuerdos — seguimiento de ejecución</p>
+            <p class="help-text">
+              Cada acuerdo adoptado en una reunión queda registrado con su resultado de votación
+              (aprobado, rechazado, retirado o aplazado) y pasa a un flujo de seguimiento
+              independiente para controlar su ejecución:
+            </p>
+            <ol class="help-list list-decimal">
+              <li><strong>Pendiente</strong> — adoptado, aún no iniciado.</li>
+              <li><strong>En curso</strong> — en ejecución, con responsable y fecha límite opcionales.</li>
+              <li><strong>Completado</strong> — ejecutado satisfactoriamente.</li>
+              <li><strong>Archivado</strong> — cerrado sin ejecución (retirado, superseded o sin efecto).</li>
+            </ol>
+            <p class="help-text mt-2">
+              Los acuerdos con plazo vencido se señalan automáticamente en el cuadro de mando
+              de presidencia como alerta crítica.
+            </p>
+
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-3 mb-1">Libro de Socios</p>
+            <p class="help-text">
+              La Ley 1/2002 obliga a mantener un Libro de Socios actualizado y disponible para
+              inspección en cualquier momento. En SIGA, el libro se genera bajo demanda: se
+              indica una fecha de corte (por defecto hoy) y un motivo (asamblea anual, inspección
+              registral, cierre de ejercicio…). El sistema toma el censo en ese instante, registra
+              los totales y guarda el snapshot con su fecha de generación. El historial completo
+              de todas las generaciones queda disponible para acreditar el censo ante la autoridad
+              registral en cualquier fecha pasada.
+            </p>
+
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-3 mb-1">Convenios y delegaciones</p>
+            <p class="help-text">
+              Registra los acuerdos de colaboración, patrocinios, adhesiones a redes y contratos
+              firmados por la asociación, con referencia automática <em>CONV-AAAA-NNN</em>. El sistema
+              avisa en el cuadro de mando cuando un convenio está a menos de 60 días de su fecha
+              de fin. Los convenios sin renovación automática requieren acción explícita; los que
+              tienen renovación automática se señalan para que la dirección confirme o denuncie
+              el contrato con el preaviso configurado.
+            </p>
+            <p class="help-text">
+              Las <strong>delegaciones de firma</strong> registran quién está autorizado a actuar en nombre
+              de la asociación, para qué actos, con qué límite de importe y durante qué período.
+              La revocación de una delegación queda registrada con fecha de efecto. Cada delegación
+              puede vincularse al acuerdo de junta que la autoriza.
+            </p>
+          </div>
+
           <!-- Administración -->
           <div>
             <h3 class="help-section-title">

@@ -8,6 +8,8 @@ from .inicializar_configuraciones import inicializar_configuraciones
 from .inicializar_estados import inicializar_estados
 from .inicializar_geografico import inicializar_geografico
 from .inicializar_tipos_notificacion import inicializar_tipos_notificacion
+from .seeding.seed_secretaria import seed_secretaria
+from .seeding.seed_tipos_actividad_gobierno import seed_tipos_actividad_gobierno
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -46,6 +48,12 @@ async def inicializar_sistema_completo(session: AsyncSession) -> None:
         # 4. Tipos de notificación
         logger.info("\nPaso 4/4: Inicializando tipos de notificación...")
         await inicializar_tipos_notificacion(session)
+
+        # Módulo de Secretaría
+        await seed_secretaria(session)
+
+        # Tipos de actividad de gobierno (requiere sec_tipos_reunion ya seedados)
+        await seed_tipos_actividad_gobierno(session)
 
         print("\n" + "="*80)
         print(" "*25 + "¡INICIALIZACIÓN COMPLETADA!")
