@@ -296,7 +296,9 @@ class EconomicoFlujosMutation:
         observaciones: Optional[str] = None,
         actividad_id: Optional[UUID] = None,
         campania_id: Optional[UUID] = None,
+        categoria_fiscal_id: Optional[UUID] = None,
         limpiar_actividad: bool = False,
+        limpiar_categoria_fiscal: bool = False,
     ) -> str:
         """Edita metadatos no contables del apunte (concepto, observaciones, imputación).
         Para cambiar importe/fecha/tipo hay que anular y crear uno nuevo.
@@ -332,7 +334,9 @@ class EconomicoFlujosMutation:
             observaciones=observaciones,
             actividad_id=actividad_id,
             campania_id=campania_id,
+            categoria_fiscal_id=categoria_fiscal_id,
             limpiar_actividad=limpiar_actividad,
+            limpiar_categoria_fiscal=limpiar_categoria_fiscal,
         )
         return str(apunte.id)
 
