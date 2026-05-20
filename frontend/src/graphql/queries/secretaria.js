@@ -39,7 +39,8 @@ export const GET_REUNIONES = `
       sociosPresentes
       sociosRepresentados
       hayQuorum
-      estado
+      estadoCodigo
+      estadoId
       observaciones
     }
   }
@@ -96,7 +97,8 @@ export const GET_ACUERDOS_PENDIENTES = `
       resultado
       responsableId
       fechaLimiteEjecucion
-      estadoEjecucion
+      estadoEjecucionCodigo
+      estadoEjecucionId
       observacionesEjecucion
     }
   }
@@ -133,7 +135,8 @@ export const GET_ACTAS = `
       reunionId
       numero
       anio
-      estado
+      estadoCodigo
+      estadoId
       fechaAprobacion
       secretarioId
       presidenteId
@@ -169,7 +172,8 @@ export const APROBAR_ACTA = `
   mutation AprobarActa($actaId: UUID!, $fechaAprobacion: Date!, $reunionAprobacionId: UUID) {
     aprobarActa(actaId: $actaId, fechaAprobacion: $fechaAprobacion, reunionAprobacionId: $reunionAprobacionId) {
       id
-      estado
+      estadoCodigo
+      estadoId
       fechaAprobacion
     }
   }
@@ -323,6 +327,20 @@ export const REVOCAR_DELEGACION = `
     revocarDelegacionFirma(delegacionId: $delegacionId) {
       id
       activa
+    }
+  }
+`
+
+// ── MIEMBROS (ligero, para selectores) ───────────────────────────────────────
+
+export const GET_MIEMBROS_LIGERO = `
+  query MiembrosLigero {
+    miembros(filter: { eliminado: { eq: false }, activo: { eq: true } }) {
+      id
+      nombre
+      apellido1
+      apellido2
+      email
     }
   }
 `

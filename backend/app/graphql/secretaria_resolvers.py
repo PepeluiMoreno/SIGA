@@ -70,7 +70,8 @@ class ReunionGQL:
     socios_presentes: Optional[int]
     socios_representados: Optional[int]
     hay_quorum: Optional[bool]
-    estado: str
+    estado_codigo: str
+    estado_id: Optional[uuid.UUID]
     observaciones: Optional[str]
 
     @staticmethod
@@ -87,7 +88,7 @@ class ReunionGQL:
             socios_totales=m.socios_totales,
             socios_presentes=m.socios_presentes,
             socios_representados=m.socios_representados,
-            hay_quorum=m.hay_quorum, estado=m.estado,
+            hay_quorum=m.hay_quorum, estado_codigo=m.estado_codigo, estado_id=m.estado_id,
             observaciones=m.observaciones,
         )
 
@@ -102,7 +103,8 @@ class AcuerdoGQL:
     resultado: Optional[str]
     responsable_id: Optional[uuid.UUID]
     fecha_limite_ejecucion: Optional[date]
-    estado_ejecucion: str
+    estado_ejecucion_codigo: str
+    estado_ejecucion_id: Optional[uuid.UUID]
     observaciones_ejecucion: Optional[str]
 
     @staticmethod
@@ -113,7 +115,7 @@ class AcuerdoGQL:
             tipo_mayoria=m.tipo_mayoria, resultado=m.resultado,
             responsable_id=m.responsable_id,
             fecha_limite_ejecucion=m.fecha_limite_ejecucion,
-            estado_ejecucion=m.estado_ejecucion,
+            estado_ejecucion_codigo=m.estado_ejecucion_codigo, estado_ejecucion_id=m.estado_ejecucion_id,
             observaciones_ejecucion=m.observaciones_ejecucion,
         )
 
@@ -125,7 +127,8 @@ class ActaGQL:
     numero: int
     anio: int
     texto_acta: Optional[str]
-    estado: str
+    estado_codigo: str
+    estado_id: Optional[uuid.UUID]
     fecha_aprobacion: Optional[date]
     secretario_id: Optional[uuid.UUID]
     presidente_id: Optional[uuid.UUID]
@@ -136,7 +139,7 @@ class ActaGQL:
         return ActaGQL(
             id=m.id, reunion_id=m.reunion_id,
             numero=m.numero, anio=m.anio,
-            texto_acta=m.texto_acta, estado=m.estado,
+            texto_acta=m.texto_acta, estado_codigo=m.estado_codigo, estado_id=m.estado_id,
             fecha_aprobacion=m.fecha_aprobacion,
             secretario_id=m.secretario_id,
             presidente_id=m.presidente_id,
@@ -368,12 +371,12 @@ class SecretariaQuery:
         anio: Optional[int] = None,
         tipo_reunion_id: Optional[uuid.UUID] = None,
         agrupacion_id: Optional[uuid.UUID] = None,
-        estado: Optional[str] = None,
+        estado_codigo: Optional[str] = None,
     ) -> List[ReunionGQL]:
         svc = ReunionService(info.context.session)
         items = await svc.listar_reuniones(
             anio=anio, tipo_reunion_id=tipo_reunion_id,
-            agrupacion_id=agrupacion_id, estado=estado,
+            agrupacion_id=agrupacion_id, estado=estado_codigo,
         )
         return [ReunionGQL.from_model(r) for r in items]
 
@@ -392,10 +395,10 @@ class SecretariaQuery:
         self,
         info: strawberry.Info,
         anio: Optional[int] = None,
-        estado: Optional[str] = None,
+        estado_codigo: Optional[str] = None,
     ) -> List[ActaGQL]:
         svc = ActaService(info.context.session)
-        items = await svc.listar_actas(anio=anio, estado=estado)
+        items = await svc.listar_actas(anio=anio, estado=estado_codigo)
         return [ActaGQL.from_model(a) for a in items]
 
     @strawberry.field(permission_classes=[RequireTransaction("SEC_ACTA_LISTAR")])

@@ -93,6 +93,9 @@
                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
             </div>
           </div>
+          <p v-if="errorModal" class="mx-6 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            {{ errorModal }}
+          </p>
           <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
             <button @click="modalGeneracion = false"
               class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
@@ -126,6 +129,7 @@ const loading   = ref(false)
 const generando = ref(false)
 const snapshots = ref([])
 const modalGeneracion = ref(false)
+const errorModal = ref('')
 const formGen = ref({ fechaCorte: '', motivo: '' })
 
 const ultimoSnapshot = computed(() => snapshots.value[0] ?? null)
@@ -157,7 +161,7 @@ const ejecutarGeneracion = async () => {
     modalGeneracion.value = false
     await cargar()
   } catch (e) {
-    alert(e.message ?? 'Error al generar el libro')
+    errorModal.value = e.message ?? 'Error al generar el libro'
   } finally {
     generando.value = false
   }

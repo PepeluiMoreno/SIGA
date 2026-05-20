@@ -204,6 +204,13 @@
       </div>
     </Teleport>
 
+    <Teleport to="body">
+      <div v-if="errorModal && !modalConvenio"
+        class="fixed bottom-4 right-4 z-50 bg-red-600 text-white text-sm px-4 py-3 rounded-lg shadow-lg max-w-sm">
+        {{ errorModal }}
+      </div>
+    </Teleport>
+
   </AppLayout>
 </template>
 
@@ -328,14 +335,14 @@ const cambiarEstado = async (convenio, nuevoEstado) => {
   try {
     await executeMutation(CAMBIAR_ESTADO_CONVENIO, { convenioId: convenio.id, nuevoEstado })
     await cargarConvenios()
-  } catch (e) { alert(e.message ?? 'Error al cambiar el estado') }
+  } catch (e) { errorModal.value = e.message ?? 'Error al cambiar el estado'; setTimeout(() => errorModal.value = '', 4000) }
 }
 
 const revocarDelegacion = async (d) => {
   try {
     await executeMutation(REVOCAR_DELEGACION, { delegacionId: d.id })
     await cargarDelegaciones()
-  } catch (e) { alert(e.message ?? 'Error al revocar la delegación') }
+  } catch (e) { errorModal.value = e.message ?? 'Error al revocar la delegación'; setTimeout(() => errorModal.value = '', 4000) }
 }
 
 onMounted(cargarConvenios)

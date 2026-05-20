@@ -40,18 +40,18 @@
         class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow transition-shadow">
         <div class="p-5 flex flex-col sm:flex-row sm:items-start gap-4">
 
-          <div :class="estadoColor(r.estado)"
+          <div :class="estadoColor(r.estadoCodigo)"
             class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center">
-            <component :is="estadoIcono(r.estado)" class="w-5 h-5" />
+            <component :is="estadoIcono(r.estadoCodigo)" class="w-5 h-5" />
           </div>
 
           <div class="flex-1 min-w-0">
             <div class="flex flex-wrap items-center gap-2 mb-1">
               <span class="font-semibold text-gray-900">{{ nombreTipo(r.tipoReunionId) }}</span>
               <span class="text-sm text-gray-400">nº {{ r.numeroConvocatoria }}/{{ r.anio }}</span>
-              <span :class="badgeEstado(r.estado)"
+              <span :class="badgeEstado(r.estadoCodigo)"
                 class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium">
-                {{ etiquetaEstado(r.estado) }}
+                {{ etiquetaEstado(r.estadoCodigo) }}
               </span>
               <span v-if="r.esTelematica"
                 class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
@@ -80,18 +80,18 @@
           </div>
 
           <div class="flex-shrink-0 flex items-center gap-2">
-            <button v-if="r.estado === 'CONVOCADA' && tienePermiso('SEC_REUNION_REGISTRAR_ASIST')"
+            <button v-if="r.estadoCodigo === 'CONVOCADA' && tienePermiso('SEC_REUNION_REGISTRAR_ASIST')"
               @click="abrirCelebracion(r)"
               class="text-xs px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 font-medium transition-colors">
               Celebración
             </button>
-            <button v-if="r.estado === 'CELEBRADA' && tienePermiso('SEC_ACTA_CREAR')"
+            <button v-if="r.estadoCodigo === 'CELEBRADA' && tienePermiso('SEC_ACTA_CREAR')"
               @click="crearActa(r)"
               class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 font-medium transition-colors">
               Redactar acta
             </button>
             <RowActions
-              v-if="r.estado === 'CONVOCADA' && tienePermiso('SEC_REUNION_CANCELAR')"
+              v-if="r.estadoCodigo === 'CONVOCADA' && tienePermiso('SEC_REUNION_CANCELAR')"
               :show-view="false" :show-edit="false" :show-delete="true"
               confirm-title="¿Cancelar esta reunión?"
               confirm-title-soft="¿Cancelar esta reunión?"
@@ -259,6 +259,18 @@
       </div>
     </Teleport>
 
+    <!-- Toast de error para acciones rápidas -->
+    <Teleport to="body">
+      <div v-if="errorInline"
+        class="fixed bottom-4 right-4 z-50 bg-red-600 text-white text-sm px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 max-w-sm">
+        <ExclamationCircleIcon class="w-5 h-5 flex-shrink-0" />
+        <span>{{ errorInline }}</span>
+        <button @click="errorInline = ''" class="ml-auto text-white/80 hover:text-white">
+          <XMarkIcon class="w-4 h-4" />
+        </button>
+      </div>
+    </Teleport>
+
   </AppLayout>
 </template>
 
@@ -286,6 +298,7 @@ const loading   = ref(false)
 const error     = ref('')
 const guardando = ref(false)
 const errorModal = ref('')
+const errorInline = ref('')
 const reuniones   = ref([])
 const tiposReunion = ref([])
 const reunionActiva = ref(null)
@@ -444,7 +457,8 @@ const crearActa = async (r) => {
     await executeMutation(CREAR_ACTA_BORRADOR, { data: { reunionId: r.id } })
     await cargar()
   } catch (e) {
-    alert(e.message ?? 'Error al crear el acta')
+    errorInline.value = e.message ?? 'Error al crear el acta'
+    setTimeout(() => errorInline.value = '', 5000)
   }
 }
 
@@ -453,7 +467,8 @@ const ejecutarCancelar = async (r) => {
     await executeMutation(CANCELAR_REUNION, { reunionId: r.id })
     await cargar()
   } catch (e) {
-    alert(e.message ?? 'Error al cancelar la reunión')
+    errorInline.value = e.message ?? 'Error al cancelar la reunión'
+    setTimeout(() => errorInline.value = '', 5000)
   }
 }
 

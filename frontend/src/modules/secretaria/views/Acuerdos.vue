@@ -30,9 +30,9 @@
 
           <div class="flex-1 min-w-0">
             <div class="flex flex-wrap items-center gap-2 mb-2">
-              <span :class="badgeEjecucion(a.estadoEjecucion)"
+              <span :class="badgeEjecucion(a.estadoEjecucionCodigo)"
                 class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium">
-                {{ etiquetaEjecucion(a.estadoEjecucion) }}
+                {{ etiquetaEjecucion(a.estadoEjecucionCodigo) }}
               </span>
               <span class="text-xs text-gray-400">Acuerdo nº {{ a.numero }}</span>
               <span v-if="vencido(a.fechaLimiteEjecucion)"
@@ -56,7 +56,7 @@
           </div>
 
           <div v-if="tienePermiso('SEC_ACUERDO_SEGUIMIENTO')" class="flex-shrink-0">
-            <select :value="a.estadoEjecucion" @change="actualizarEstado(a, $event.target.value)"
+            <select :value="a.estadoEjecucionCodigo" @change="actualizarEstado(a, $event.target.value)"
               class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white">
               <option value="PENDIENTE">Pendiente</option>
               <option value="EN_CURSO">En curso</option>
@@ -68,6 +68,13 @@
       </div>
     </div>
 
+    <Teleport to="body">
+      <div v-if="errorAccion"
+        class="fixed bottom-4 right-4 z-50 bg-red-600 text-white text-sm px-4 py-3 rounded-lg shadow-lg max-w-sm">
+        {{ errorAccion }}
+      </div>
+    </Teleport>
+
   </AppLayout>
 </template>
 
@@ -78,14 +85,17 @@ import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { executeQuery, executeMutation } from '@/graphql/client'
-import { GET_ACUERDOS_PENDIENTES, ACTUALIZAR_SEGUIMIENTO } from '@/graphql/queries/secretaria.js'
+import { GET_ACUERDOS_PENDIENTES, ACTUALIZAR_SEGUIMIENTO, GET_MIEMBROS_LIGERO } from '@/graphql/queries/secretaria.js'
 import { ClipboardDocumentCheckIcon, CalendarIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline'
+import SelectorMiembro from '@/components/common/SelectorMiembro.vue'
 
 const { tienePermiso } = usePermisos()
 const loading  = ref(false)
 const error    = ref('')
 const acuerdos = ref([])
 const filtroEstado = ref('')
+const miembros = ref([])
+const errorAccion = ref('')
 
 const ESTADOS_EJECUCION = [
   { valor: 'PENDIENTE',  etiqueta: 'Pendiente',  clase: 'bg-yellow-100 text-yellow-700' },
@@ -96,7 +106,7 @@ const ESTADOS_EJECUCION = [
 
 const acuerdosFiltrados = computed(() =>
   filtroEstado.value
-    ? acuerdos.value.filter(a => a.estadoEjecucion === filtroEstado.value)
+    ? acuerdos.value.filter(a => a.estadoEjecucionCodigo === filtroEstado.value)
     : acuerdos.value
 )
 
@@ -121,16 +131,24 @@ const cargar = async () => {
 
 const actualizarEstado = async (acuerdo, nuevoEstado) => {
   const estadoAnterior = acuerdo.estadoEjecucion
-  acuerdo.estadoEjecucion = nuevoEstado // optimistic update
+  acuerdo.estadoEjecucionCodigo = nuevoEstado // optimistic update
   try {
     await executeMutation(ACTUALIZAR_SEGUIMIENTO, {
       data: { acuerdoId: acuerdo.id, estadoEjecucion: nuevoEstado },
     })
   } catch (e) {
-    acuerdo.estadoEjecucion = estadoAnterior // revertir
-    alert(e.message ?? 'Error al actualizar el acuerdo')
+    acuerdo.estadoEjecucionCodigo = estadoAnterior // revertir
+    errorAccion.value = e.message ?? 'Error al actualizar el acuerdo'
+    setTimeout(() => errorAccion.value = '', 4000)
   }
 }
 
-onMounted(cargar)
+const cargarMiembros = async () => {
+  try {
+    const data = await executeQuery(GET_MIEMBROS_LIGERO)
+    miembros.value = data?.miembros ?? []
+  } catch (e) { console.error(e) }
+}
+
+onMounted(() => Promise.all([cargar(), cargarMiembros()]))
 </script>
