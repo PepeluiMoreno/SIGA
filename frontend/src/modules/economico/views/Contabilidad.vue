@@ -1,5 +1,7 @@
 <template>
-  <AppLayout title="Contabilidad" subtitle="Plan de cuentas PCESFL 2013, asientos y balances">
+  <AppLayout title="Contabilidad" :subtitle="contabilidadCompleja
+    ? 'Plan de cuentas PCESFL 2013, asientos y balances'
+    : 'Contabilidad simplificada: categorías fiscales y libro de ingresos y gastos'">
 
     <!-- Tabs -->
     <div class="border-b border-gray-200 mb-6 flex items-center justify-between">
@@ -15,8 +17,13 @@
       </router-link>
     </div>
 
-    <!-- Tab Plan de Cuentas -->
+    <!-- Tab Plan de Cuentas / Categorías Fiscales según el modo -->
     <div v-if="activeTab === 'plan'">
+      <!-- Modo simplificado: categorías fiscales -->
+      <CategoriasFiscalesPanel v-if="!contabilidadCompleja" />
+
+      <!-- Modo completo: plan de cuentas PCESFL -->
+      <template v-else>
       <FilterBar
         v-model="filtrosPlan"
         v-model:search="busquedaPlan"
@@ -61,6 +68,7 @@
       <p v-else class="text-center text-gray-400 py-8 border border-dashed border-gray-200 rounded-lg">
         Ningún resultado para los filtros aplicados.
       </p>
+      </template>
     </div>
 
     <!-- Tab Asientos -->
@@ -512,6 +520,7 @@ import LoadSpinner from '@/components/common/LoadSpinner.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import ImputacionActividadPicker from '@/components/common/ImputacionActividadPicker.vue'
 import CuentaNode from './CuentaNode.vue'
+import CategoriasFiscalesPanel from '@/components/common/CategoriasFiscalesPanel.vue'
 import { useContabilidad } from '@/composables/useContabilidad'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
@@ -543,6 +552,7 @@ const {
 } = useContabilidad()
 
 const activeTab = ref('plan')
+const contabilidadCompleja = ref(true)  // se carga en onMounted; true por defecto (no degrada la vista completa)
 const filtroEjercicio = ref(new Date().getFullYear())
 const filtroEstado = ref('')
 
@@ -710,12 +720,21 @@ const toggleTodos = () => {
 provide('expandedMap', expandedMap)
 provide('toggleNodo', toggleNodo)
 
-const tabs = [
-  { id: 'plan', name: 'Plan de cuentas', icon: '📋' },
-  { id: 'bitacora', name: 'Bitácora', icon: '📒' },
-  { id: 'asientos', name: 'Asientos (técnico)', icon: '📝' },
-  { id: 'balances', name: 'Sumas y saldos', icon: '⚖️' },
-]
+const tabs = computed(() => {
+  if (!contabilidadCompleja.value) {
+    // Modo simplificado: la estructura es de categorías fiscales; sin asientos ni balances de partida doble
+    return [
+      { id: 'plan', name: 'Categorías fiscales', icon: '🏷️' },
+      { id: 'bitacora', name: 'Bitácora', icon: '📒' },
+    ]
+  }
+  return [
+    { id: 'plan', name: 'Plan de cuentas', icon: '📋' },
+    { id: 'bitacora', name: 'Bitácora', icon: '📒' },
+    { id: 'asientos', name: 'Asientos (técnico)', icon: '📝' },
+    { id: 'balances', name: 'Sumas y saldos', icon: '⚖️' },
+  ]
+})
 
 const ejercicioActual = computed(() => new Date().getFullYear())
 const ejerciciosDisponibles = computed(() => {
@@ -1145,12 +1164,24 @@ const totalHaberBalance = computed(() =>
 const diferenciaBalance = computed(() => totalDebeBalance.value - totalHaberBalance.value)
 
 onMounted(async () => {
-  await obtenerPlanCuentas()
-  await recargarAsientos()
+  // Leer el modo de contabilidad para decidir qué estructura mostrar
   try {
-    await obtenerSaldosCuentas(ejercicioActual.value)
+    const cfg = await gqlQuery(`query { parametrosOrganizacion { contabilidadCompleja } }`)
+    contabilidadCompleja.value = cfg?.parametrosOrganizacion?.contabilidadCompleja ?? true
   } catch (e) {
-    console.warn('No se pudieron cargar saldos:', e?.message)
+    console.warn('No se pudo leer el modo de contabilidad, se asume completo:', e?.message)
+    contabilidadCompleja.value = true
+  }
+
+  // En modo simplificado no hay plan de cuentas que cargar; el panel de categorías se autogestiona
+  if (contabilidadCompleja.value) {
+    await obtenerPlanCuentas()
+    await recargarAsientos()
+    try {
+      await obtenerSaldosCuentas(ejercicioActual.value)
+    } catch (e) {
+      console.warn('No se pudieron cargar saldos:', e?.message)
+    }
   }
 })
 
@@ -1159,6 +1190,13 @@ watch(activeTab, (tab) => {
   if (tab === 'bitacora') {
     if (!movimientos.value.length && !cargandoBitacora.value) cargarBitacora()
     if (!campaniasBitacora.value.length) cargarCatalogosBitacora()
+  }
+})
+
+// Si el modo cambia y la pestaña activa ya no existe, volver a 'plan'
+watch(tabs, (nuevos) => {
+  if (!nuevos.some(t => t.id === activeTab.value)) {
+    activeTab.value = 'plan'
   }
 })
 </script>
