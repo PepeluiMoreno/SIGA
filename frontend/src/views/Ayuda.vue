@@ -127,6 +127,60 @@
             </ul>
           </div>
 
+
+          <!-- Presidencia -->
+          <div>
+            <h3 class="help-section-title">
+              <span class="help-badge bg-purple-100 text-purple-700">Presidencia</span>
+            </h3>
+            <p class="help-text">
+              Cuadro de mando ejecutivo que agrega en una sola pantalla el estado real de la
+              organización: acuerdos pendientes de ejecutar, próximas reuniones, composición
+              de la junta directiva y convenios próximos a vencer. Diseñado para que la
+              presidencia tenga visión de conjunto sin necesidad de entrar en cada módulo.
+            </p>
+            <ul class="help-list">
+              <li><strong>Cuadro de mando</strong> — alertas críticas automáticas (actas sin aprobar, acuerdos
+                vencidos, mandatos próximos a expirar, convenios sin renovación automática), cuatro indicadores
+                clave y paneles de seguimiento en tiempo real.</li>
+              <li><strong>Seguimiento de acuerdos</strong> — vista ejecutiva de todos los acuerdos adoptados en
+                reuniones, con filtro por estado y actualización directa sin salir de la pantalla.</li>
+              <li><strong>Mandatos y cargos</strong> — composición actualizada de los órganos de gobierno,
+                con aviso automático cuando un mandato está próximo a vencer (menos de 90 días).</li>
+            </ul>
+          </div>
+
+          <!-- Secretaría -->
+          <div>
+            <h3 class="help-section-title">
+              <span class="help-badge bg-indigo-100 text-indigo-700">Secretaría</span>
+            </h3>
+            <p class="help-text">
+              Núcleo administrativo y legal de la asociación. Cubre las obligaciones que
+              impone la Ley Orgánica 1/2002 de asociaciones: Libro de Socios, Libro de
+              Actas, gestión de órganos de gobierno y custodia de la documentación institucional.
+            </p>
+            <ul class="help-list">
+              <li><strong>Reuniones</strong> — convocatoria con antelación mínima configurable por tipo,
+                registro de celebración, cálculo automático de quórum (primera y segunda convocatoria)
+                y transición de estados hasta el acta aprobada.</li>
+              <li><strong>Acuerdos</strong> — registro de acuerdos con votación, asignación de responsable y
+                plazo de ejecución, y seguimiento del estado de cada acuerdo desde su adopción hasta su
+                cierre. Los acuerdos vencidos se señalan automáticamente en el cuadro de mando.</li>
+              <li><strong>Libro de Actas</strong> — numeración correlativa por tipo de órgano y año,
+                flujo de aprobación (borrador → aprobada → firmada) con selector de firmantes, y
+                emisión de certificados de acuerdos concretos para presentar ante terceros
+                (bancos, registros, organismos públicos) con referencia automática <em>CERT-AAAA-NNN</em>.</li>
+              <li><strong>Libro de Socios</strong> — generación del libro oficial exigido por la Ley 1/2002,
+                con historial de snapshots fechados y firmados para acreditar el censo en cualquier
+                momento ante la autoridad registral.</li>
+              <li><strong>Convenios y delegaciones</strong> — registro de acuerdos de colaboración,
+                patrocinios, adhesiones y contratos con referencia automática <em>CONV-AAAA-NNN</em>,
+                alerta de vencimiento próximo y gestión de delegaciones de firma y poderes de
+                representación del presidente.</li>
+            </ul>
+          </div>
+
           <!-- Administración -->
           <div>
             <h3 class="help-section-title">
