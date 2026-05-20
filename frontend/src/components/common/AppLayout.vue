@@ -191,6 +191,38 @@
 
             <hr class="nav-sep" />
 
+            <!-- Presidencia -->
+            <div class="mb-1">
+              <button @click="toggleSection('presidencia')" class="section-btn">
+                <span>Presidencia</span>
+                <ChevronDownIcon class="chevron" :class="openSections.presidencia ? '' : '-rotate-90'" />
+              </button>
+              <div class="accordion-wrap" :class="{ closed: !openSections.presidencia }">
+                <ul class="space-y-1 pb-1">
+                  <li>
+                    <router-link to="/presidencia" class="nav-item"
+                      :class="$route.path === '/presidencia' ? 'active' : 'inactive'">
+                      <HomeIcon class="nav-icon" /><span>Cuadro de mando</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/presidencia/acuerdos" class="nav-item"
+                      :class="$route.path.startsWith('/presidencia/acuerdos') ? 'active' : 'inactive'">
+                      <ClipboardDocumentCheckIcon class="nav-icon" /><span>Acuerdos</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/presidencia/mandatos" class="nav-item"
+                      :class="$route.path.startsWith('/presidencia/mandatos') ? 'active' : 'inactive'">
+                      <UserGroupIcon class="nav-icon" /><span>Mandatos</span>
+                    </router-link>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <hr class="nav-sep" />
+
             <!-- Secretaría -->
             <div v-if="tieneAlguno('SEC_REUNION_LISTAR','SEC_ACTA_LISTAR','SEC_LIBRO_SOCIOS_CONSULTAR','SEC_CONVENIO_LISTAR')" class="mb-1">
               <button @click="toggleSection('secretaria')" class="section-btn">
@@ -458,6 +490,7 @@ function scrollToTop() {
 
 // ── Secciones colapsables ─────────────────────────────────────────────────────
 const openSections = reactive({
+  presidencia: false,
   secretaria: false,
   configuracion: true,
   membresia: false,
@@ -480,6 +513,8 @@ function sectionForPath(path) {
     return 'actividades'
   if (path.startsWith('/economico'))
     return 'economico'
+  if (path.startsWith('/presidencia'))
+    return 'presidencia'
   if (path.startsWith('/secretaria'))
     return 'secretaria'
   return null

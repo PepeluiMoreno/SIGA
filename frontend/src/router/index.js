@@ -34,6 +34,11 @@ import Donaciones from '@/modules/economico/views/Donaciones.vue'
 // === Módulo: MEMBRESIA - Voluntariado ===
 import ListaVoluntarios from '@/modules/membresia/views/ListaVoluntarios.vue'
 
+// === Módulo: PRESIDENCIA ===
+import PresidenciaDashboard from '@/modules/presidencia/views/Dashboard.vue'
+import PresidenciaMandatos from '@/modules/presidencia/views/Mandatos.vue'
+import PresidenciaSeguimiento from '@/modules/presidencia/views/SeguimientoAcuerdos.vue'
+
 // === Módulo: SECRETARIA ===
 import Reuniones from '@/modules/secretaria/views/Reuniones.vue'
 import Actas from '@/modules/secretaria/views/Actas.vue'
@@ -291,6 +296,26 @@ const routes = [
     component: Donaciones,
     name: 'Donaciones',
     meta: { requiresAuth: true, requiredPermission: 'DON_CREATE' }
+  },
+
+  // ─── PRESIDENCIA ──────────────────────────────────────────────────────────
+  {
+    path: '/presidencia',
+    component: PresidenciaDashboard,
+    name: 'PresidenciaDashboard',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/presidencia/mandatos',
+    component: PresidenciaMandatos,
+    name: 'PresidenciaMandatos',
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/presidencia/acuerdos',
+    component: PresidenciaSeguimiento,
+    name: 'PresidenciaSeguimiento',
+    meta: { requiresAuth: true }
   },
 
   // ─── SECRETARIA ───────────────────────────────────────────────────────────
