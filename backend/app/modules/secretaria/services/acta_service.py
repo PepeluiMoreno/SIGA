@@ -87,7 +87,7 @@ class ActaService:
             numero=numero,
             anio=anio,
             texto_acta=texto_acta,
-            estado='BORRADOR',
+            estado_codigo='BORRADOR',
             secretario_id=secretario_id,
             presidente_id=presidente_id,
             creado_por_id=creado_por_id,
@@ -95,7 +95,7 @@ class ActaService:
         self.session.add(acta)
 
         # Actualizar estado de la reunión
-        reunion.estado = 'ACTA_BORRADOR'
+        reunion.estado_codigo = 'ACTA_BORRADOR'
         reunion.modificado_por_id = creado_por_id
 
         await self.session.commit()
@@ -126,7 +126,7 @@ class ActaService:
         if anio:
             query = query.where(Acta.anio == anio)
         if estado:
-            query = query.where(Acta.estado == estado)
+            query = query.where(Acta.estado_codigo == estado)
         if tipo_reunion_id:
             query = (
                 query.join(Reunion, Acta.reunion_id == Reunion.id)
@@ -147,10 +147,10 @@ class ActaService:
         acta = await self.obtener_acta(acta_id)
         if not acta:
             raise ValueError(f"Acta {acta_id} no encontrada")
-        if acta.estado not in ('BORRADOR',):
+        if acta.estado_codigo not in ('BORRADOR',):
             raise ValueError(f"El acta está en estado '{acta.estado}' y no puede aprobarse")
 
-        acta.estado = 'APROBADA'
+        acta.estado_codigo = 'APROBADA'
         acta.fecha_aprobacion = fecha_aprobacion
         acta.reunion_aprobacion_id = reunion_aprobacion_id
         acta.modificado_por_id = modificado_por_id
@@ -161,7 +161,7 @@ class ActaService:
         )
         reunion = reunion_result.scalars().first()
         if reunion:
-            reunion.estado = 'ACTA_APROBADA'
+            reunion.estado_codigo = 'ACTA_APROBADA'
             reunion.modificado_por_id = modificado_por_id
 
         await self.session.commit()
@@ -179,10 +179,10 @@ class ActaService:
         acta = await self.obtener_acta(acta_id)
         if not acta:
             raise ValueError(f"Acta {acta_id} no encontrada")
-        if acta.estado != 'APROBADA':
+        if acta.estado_codigo != 'APROBADA':
             raise ValueError("Solo se pueden firmar actas aprobadas")
 
-        acta.estado = 'FIRMADA'
+        acta.estado_codigo = 'FIRMADA'
         acta.secretario_id = secretario_id
         acta.presidente_id = presidente_id
         acta.fecha_firma = datetime.utcnow()
@@ -196,7 +196,7 @@ class ActaService:
         """Actas en borrador pendientes de aprobación."""
         result = await self.session.execute(
             select(Acta)
-            .where(and_(Acta.estado == 'BORRADOR', Acta.eliminado == False))
+            .where(and_(Acta.estado_codigo == 'BORRADOR', Acta.eliminado == False))
             .order_by(Acta.anio.asc(), Acta.numero.asc())
         )
         return list(result.scalars().all())

@@ -51,6 +51,9 @@ from .configuracion.models import (
     EstadoRemesa,
     EstadoDonacion,
     EstadoNotificacion,
+    EstadoReunion,
+    EstadoActa,
+    EstadoEjecucionAcuerdo,
     HistorialEstado,
 )
 
@@ -181,7 +184,9 @@ __all__ = [
     'Configuracion', 'ReglaValidacionConfig', 'HistorialConfiguracion',
     'EstadoBase', 'EstadoCuota', 'EstadoCampania', 'EstadoAccion', 'EstadoTarea',
     'EstadoParticipante', 'EstadoOrdenCobro',
-    'EstadoRemesa', 'EstadoDonacion', 'EstadoNotificacion', 'HistorialEstado',
+    'EstadoRemesa', 'EstadoDonacion', 'EstadoNotificacion',
+    'EstadoReunion', 'EstadoActa', 'EstadoEjecucionAcuerdo',
+    'HistorialEstado',
     # Organizaciones
     'TipoOrganizacion', 'Organizacion', 'EstadoConvenio', 'Convenio',
     # Membresía

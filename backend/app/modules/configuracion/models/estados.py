@@ -136,6 +136,34 @@ class EstadoNotificacion(EstadoBase):
     # ERROR: Error al enviar la notificación
 
 
+
+class EstadoReunion(EstadoBase):
+    """Estados para reuniones de órganos de gobierno."""
+    __tablename__ = 'estados_reunion'
+
+    # CONVOCADA → CELEBRADA → ACTA_BORRADOR → ACTA_APROBADA (final)
+    # CANCELADA (final)
+    codigo: Mapped[str] = mapped_column(String(30), nullable=False, unique=True,
+        comment="Código de máquina: CONVOCADA, CELEBRADA, ACTA_BORRADOR, ACTA_APROBADA, CANCELADA")
+
+
+class EstadoActa(EstadoBase):
+    """Estados para actas de reuniones."""
+    __tablename__ = 'estados_acta'
+
+    # BORRADOR → APROBADA → FIRMADA (final)
+    codigo: Mapped[str] = mapped_column(String(30), nullable=False, unique=True,
+        comment="Código de máquina: BORRADOR, APROBADA, FIRMADA")
+
+
+class EstadoEjecucionAcuerdo(EstadoBase):
+    """Estados de ejecución para acuerdos adoptados en reuniones."""
+    __tablename__ = 'estados_ejecucion_acuerdo'
+
+    # PENDIENTE → EN_CURSO → COMPLETADO (final) | ARCHIVADO (final)
+    codigo: Mapped[str] = mapped_column(String(30), nullable=False, unique=True,
+        comment="Código de máquina: PENDIENTE, EN_CURSO, COMPLETADO, ARCHIVADO")
+
 class HistorialEstado(BaseModel):
     """Registro genérico de cambios de estado de cualquier entidad.
 

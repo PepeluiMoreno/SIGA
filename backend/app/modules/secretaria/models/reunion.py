@@ -101,9 +101,13 @@ class Reunion(BaseModel):
     hay_quorum: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
 
     # Estado
-    estado: Mapped[str] = mapped_column(
+    estado_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('estados_reunion.id'), nullable=True, index=True
+    )
+    # Código de máquina denormalizado para queries de lógica sin JOIN
+    estado_codigo: Mapped[str] = mapped_column(
         String(30), nullable=False, default='CONVOCADA', index=True
-    )  # CONVOCADA | CELEBRADA | ACTA_BORRADOR | ACTA_APROBADA | CANCELADA
+    )
 
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
@@ -230,9 +234,12 @@ class Acuerdo(BaseModel):
         Uuid, ForeignKey('miembros.id'), nullable=True
     )
     fecha_limite_ejecucion: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    estado_ejecucion: Mapped[str] = mapped_column(
-        String(20), nullable=False, default='PENDIENTE', index=True
-    )  # PENDIENTE | EN_CURSO | COMPLETADO | ARCHIVADO
+    estado_ejecucion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('estados_ejecucion_acuerdo.id'), nullable=True, index=True
+    )
+    estado_ejecucion_codigo: Mapped[str] = mapped_column(
+        String(30), nullable=False, default='PENDIENTE', index=True
+    )
 
     observaciones_ejecucion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 

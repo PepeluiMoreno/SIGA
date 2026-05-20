@@ -87,7 +87,7 @@ class ReunionService:
             plataforma_telematica=plataforma_telematica,
             tiene_segunda_convocatoria=tiene_segunda_convocatoria,
             fecha_segunda_convocatoria=fecha_segunda_convocatoria,
-            estado='CONVOCADA',
+            estado_codigo='CONVOCADA',
             observaciones=observaciones,
             creado_por_id=creado_por_id,
         )
@@ -119,7 +119,7 @@ class ReunionService:
         if agrupacion_id:
             query = query.where(Reunion.agrupacion_id == agrupacion_id)
         if estado:
-            query = query.where(Reunion.estado == estado)
+            query = query.where(Reunion.estado_codigo == estado)
         query = query.order_by(Reunion.fecha_convocatoria.desc())
         result = await self.session.execute(query)
         return list(result.scalars().all())
@@ -144,7 +144,7 @@ class ReunionService:
         reunion.socios_presentes = socios_presentes
         reunion.socios_representados = socios_representados
         reunion.convocatoria_utilizada = convocatoria_utilizada
-        reunion.estado = 'CELEBRADA'
+        reunion.estado_codigo = 'CELEBRADA'
         reunion.modificado_por_id = modificado_por_id
 
         # Calcular quórum
@@ -174,10 +174,10 @@ class ReunionService:
         reunion = await self.obtener_reunion(reunion_id)
         if not reunion:
             raise ValueError(f"Reunión {reunion_id} no encontrada")
-        if reunion.estado == 'ACTA_APROBADA':
+        if reunion.estado_codigo == 'ACTA_APROBADA':
             raise ValueError("No se puede cancelar una reunión con acta aprobada")
 
-        reunion.estado = 'CANCELADA'
+        reunion.estado_codigo = 'CANCELADA'
         if motivo:
             reunion.observaciones = motivo
         reunion.modificado_por_id = modificado_por_id
@@ -309,7 +309,7 @@ class ReunionService:
             resultado=resultado,
             responsable_id=responsable_id,
             fecha_limite_ejecucion=fecha_limite_ejecucion,
-            estado_ejecucion='PENDIENTE',
+            estado_ejecucion_codigo='PENDIENTE',
             creado_por_id=creado_por_id,
         )
         self.session.add(acuerdo)
@@ -348,7 +348,7 @@ class ReunionService:
         if not acuerdo:
             raise ValueError(f"Acuerdo {acuerdo_id} no encontrado")
 
-        acuerdo.estado_ejecucion = estado_ejecucion
+        acuerdo.estado_ejecucion_codigo = estado_ejecucion
         if observaciones_ejecucion is not None:
             acuerdo.observaciones_ejecucion = observaciones_ejecucion
         if responsable_id is not None:
@@ -371,7 +371,7 @@ class ReunionService:
             .join(Reunion, PuntoOrdenDia.reunion_id == Reunion.id)
             .where(
                 and_(
-                    Acuerdo.estado_ejecucion.in_(['PENDIENTE', 'EN_CURSO']),
+                    Acuerdo.estado_ejecucion_codigo.in_(['PENDIENTE', 'EN_CURSO']),
                     Acuerdo.resultado == 'APROBADO',
                     Acuerdo.eliminado == False,
                     Reunion.eliminado == False,
