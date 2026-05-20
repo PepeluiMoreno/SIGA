@@ -760,9 +760,15 @@ async def ensure_coordinadores_usuarios(session) -> None:
 
         email = miembro.email.lower().strip()
 
+        # Buscar primero por miembro_id (constraint único): un miembro tiene como
+        # mucho un usuario, aunque su email haya cambiado respecto al de la cuenta.
         usuario = (await session.execute(
-            select(Usuario).where(Usuario.email == email, Usuario.eliminado == False)
+            select(Usuario).where(Usuario.miembro_id == miembro.id, Usuario.eliminado == False)
         )).scalar_one_or_none()
+        if usuario is None:
+            usuario = (await session.execute(
+                select(Usuario).where(Usuario.email == email, Usuario.eliminado == False)
+            )).scalar_one_or_none()
 
         if usuario is None:
             usuario = Usuario(
