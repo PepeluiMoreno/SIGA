@@ -191,6 +191,50 @@
 
             <hr class="nav-sep" />
 
+            <!-- Secretaría -->
+            <div v-if="tieneAlguno('SEC_REUNION_LISTAR','SEC_ACTA_LISTAR','SEC_LIBRO_SOCIOS_CONSULTAR','SEC_CONVENIO_LISTAR')" class="mb-1">
+              <button @click="toggleSection('secretaria')" class="section-btn">
+                <span>Secretaría</span>
+                <ChevronDownIcon class="chevron" :class="openSections.secretaria ? '' : '-rotate-90'" />
+              </button>
+              <div class="accordion-wrap" :class="{ closed: !openSections.secretaria }">
+                <ul class="space-y-1 pb-1">
+                  <li v-if="tienePermiso('SEC_REUNION_LISTAR')">
+                    <router-link to="/secretaria/reuniones" class="nav-item"
+                      :class="$route.path.startsWith('/secretaria/reuniones') ? 'active' : 'inactive'">
+                      <CalendarDaysIcon class="nav-icon" /><span>Reuniones</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('SEC_ACUERDO_LISTAR')">
+                    <router-link to="/secretaria/acuerdos" class="nav-item"
+                      :class="$route.path.startsWith('/secretaria/acuerdos') ? 'active' : 'inactive'">
+                      <ClipboardDocumentCheckIcon class="nav-icon" /><span>Acuerdos</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('SEC_ACTA_LISTAR')">
+                    <router-link to="/secretaria/actas" class="nav-item"
+                      :class="$route.path.startsWith('/secretaria/actas') ? 'active' : 'inactive'">
+                      <DocumentTextIcon class="nav-icon" /><span>Libro de Actas</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('SEC_LIBRO_SOCIOS_CONSULTAR')">
+                    <router-link to="/secretaria/libro-socios" class="nav-item"
+                      :class="$route.path.startsWith('/secretaria/libro-socios') ? 'active' : 'inactive'">
+                      <BookOpenIcon class="nav-icon" /><span>Libro de Socios</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('SEC_CONVENIO_LISTAR')">
+                    <router-link to="/secretaria/convenios" class="nav-item"
+                      :class="$route.path.startsWith('/secretaria/convenios') ? 'active' : 'inactive'">
+                      <DocumentCheckIcon class="nav-icon" /><span>Convenios</span>
+                    </router-link>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <hr class="nav-sep" />
+
             <!-- Ayuda -->
             <div class="mb-1">
               <button @click="toggleSection('ayuda')" class="section-btn">
@@ -378,6 +422,7 @@ import {
   BuildingOffice2Icon, BuildingLibraryIcon, CalculatorIcon, CreditCardIcon,
   ArrowsRightLeftIcon, ChartBarIcon, GiftIcon, UserCircleIcon,
   Bars3Icon, XMarkIcon, ChevronDownIcon, TrashIcon,
+  ClipboardDocumentCheckIcon, DocumentTextIcon, DocumentCheckIcon,
 } from '@heroicons/vue/24/outline'
 
 defineProps({
@@ -413,6 +458,7 @@ function scrollToTop() {
 
 // ── Secciones colapsables ─────────────────────────────────────────────────────
 const openSections = reactive({
+  secretaria: false,
   configuracion: true,
   membresia: false,
   actividades: false,
@@ -434,6 +480,8 @@ function sectionForPath(path) {
     return 'actividades'
   if (path.startsWith('/economico'))
     return 'economico'
+  if (path.startsWith('/secretaria'))
+    return 'secretaria'
   return null
 }
 
