@@ -17,26 +17,39 @@
     <EstadoCarga v-if="loading" />
     <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">{{ error }}</div>
 
+    <!-- Controles de vista del árbol -->
+    <div v-if="filtersApplied && arbolFiltrado.length" class="flex items-center justify-between mt-3 mb-2 px-1">
+      <button
+        @click="toggleTodos"
+        class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800"
+        :title="todoExpandido ? 'Colapsar todo' : 'Expandir todo'"
+      >
+        <span class="inline-block w-3 text-center">{{ todoExpandido ? '▼' : '▶' }}</span>
+        {{ todoExpandido ? 'Colapsar todo' : 'Expandir todo' }}
+      </button>
+      <div class="text-xs text-gray-500">{{ totalUnidadesVisibles }} unidades</div>
+    </div>
+
     <!-- Árbol -->
     <div v-else class="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
       <EstadoPendiente v-if="!filtersApplied" />
       <div v-else-if="arbolFiltrado.length === 0" class="text-center py-12 text-gray-400 text-sm">
         No hay unidades que coincidan con los filtros
       </div>
-      <div v-else-if="filtersApplied" class="p-4">
-        <NodoArbol
-          v-for="nodo in arbolFiltrado"
-          :key="nodo.id"
-          :nodo="nodo"
-          :tipos="tipos"
-          :profundidad="0"
-          :coordinador-map="coordinadorPorAgrupacion"
-          :conteo-map="conteoPorAgrupacion"
-          @editar="abrirFormulario"
-          @eliminar="confirmarEliminar"
-          @anadir-hijo="abrirFormularioHijo"
-        />
-      </div>
+    </div>
+    <div v-if="filtersApplied && arbolFiltrado.length" class="bg-white rounded-lg shadow border border-gray-100 divide-y divide-gray-50">
+      <NodoArbol
+        v-for="nodo in arbolFiltrado"
+        :key="nodo.id"
+        :nodo="nodo"
+        :tipos="tipos"
+        :profundidad="0"
+        :coordinador-map="coordinadorPorAgrupacion"
+        :conteo-map="conteoPorAgrupacion"
+        @editar="abrirFormulario"
+        @eliminar="confirmarEliminar"
+        @anadir-hijo="abrirFormularioHijo"
+      />
     </div>
 
     <!-- Modal formulario -->
@@ -164,7 +177,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onActivated } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onActivated, provide } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import { useUnidadesOrganizativas } from '@/composables/useUnidadesOrganizativas'
@@ -279,6 +292,46 @@ const totalNodos = computed(() => {
   const contar = (nodos) => nodos.reduce((acc, n) => acc + 1 + contar(n.hijos), 0)
   return contar(arbolFiltrado.value)
 })
+
+const totalUnidadesVisibles = computed(() => totalNodos.value)
+
+// ── Expandir / colapsar (mismo patrón que el árbol del Plan de Cuentas) ──────
+const expandedMap = reactive({})
+
+const toggleNodo = (id) => {
+  if (expandedMap[id]) delete expandedMap[id]
+  else expandedMap[id] = true
+}
+
+const todosIds = (nodes) => {
+  const ids = []
+  const walk = (xs) => { for (const n of xs) { ids.push(n.id); walk(n.hijos || []) } }
+  walk(nodes)
+  return ids
+}
+
+const totalNodosExpandibles = computed(() => {
+  let n = 0
+  const walk = (xs) => { for (const x of xs) { if ((x.hijos || []).length) { n++; walk(x.hijos) } } }
+  walk(arbolFiltrado.value)
+  return n
+})
+
+const todoExpandido = computed(() =>
+  totalNodosExpandibles.value > 0 &&
+  Object.keys(expandedMap).length >= totalNodosExpandibles.value
+)
+
+const toggleTodos = () => {
+  if (todoExpandido.value) {
+    for (const k of Object.keys(expandedMap)) delete expandedMap[k]
+  } else {
+    for (const id of todosIds(arbolFiltrado.value)) expandedMap[id] = true
+  }
+}
+
+provide('expandedMap', expandedMap)
+provide('toggleNodo', toggleNodo)
 
 const tipoSeleccionado = computed(() => tipos.value.find(t => t.id === form.value.tipoId) ?? null)
 

@@ -11,7 +11,6 @@ from .models import (
     CuentaContable,
     AsientoContable,
     ApunteContable,
-    BalanceContable,
     ModoIngreso,
     ImporteCuotaAnio,
     CuotaAnual,
@@ -35,7 +34,7 @@ from .models import (
 __all__ = [
     'TipoMovimientoTesoreria', 'CuentaBancaria', 'MovimientoTesoreria', 'ConciliacionBancaria',
     'TipoCuentaContable', 'TipoAsientoContable', 'EstadoAsientoContable',
-    'CuentaContable', 'AsientoContable', 'ApunteContable', 'BalanceContable',
+    'CuentaContable', 'AsientoContable', 'ApunteContable',
     'ModoIngreso', 'ImporteCuotaAnio', 'CuotaAnual',
     'DonacionConcepto', 'Donacion',
     'Remesa', 'OrdenCobro',

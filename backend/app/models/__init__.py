@@ -67,7 +67,7 @@ from ..modules.actividades.models import (
 from ..modules.economico.models import (
     TipoMovimientoTesoreria, CuentaBancaria, MovimientoTesoreria, ConciliacionBancaria,
     TipoCuentaContable, TipoAsientoContable, EstadoAsientoContable,
-    CuentaContable, AsientoContable, ApunteContable, BalanceContable,
+    CuentaContable, AsientoContable, ApunteContable,
     ModoIngreso, ImporteCuotaAnio, CuotaAnual,
     DonacionConcepto, Donacion,
     Remesa, OrdenCobro,

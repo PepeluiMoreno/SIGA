@@ -2,12 +2,13 @@
 
 import uuid
 from datetime import date
+from decimal import Decimal
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .nivel_estudios import NivelEstudios
 
-from sqlalchemy import String, Integer, Uuid, ForeignKey, Date, Boolean, Text, func
+from sqlalchemy import String, Integer, Uuid, ForeignKey, Date, Boolean, Text, Numeric, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -32,8 +33,16 @@ class TipoMiembro(InmutableMixin, BaseModel):
     orden: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
+    # Flujo 1 D1.2: motivo de reducción aplicado por defecto al generar CuotaAnual
+    motivo_reduccion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('motivos_reduccion_cuota.id', ondelete='SET NULL'), nullable=True, index=True
+    )
+
     # Relaciones
     miembros = relationship('Miembro', back_populates='tipo_miembro', lazy='selectin')
+    motivo_reduccion = relationship(
+        'MotivoReduccionCuota', foreign_keys=[motivo_reduccion_id], lazy='selectin'
+    )
 
     def __repr__(self) -> str:
         return f"<TipoMiembro(nombre='{self.nombre}')>"
@@ -55,6 +64,21 @@ class Miembro(BaseModel):
 
     # Tipo de miembro (nullable: puede registrarse sin tipo y completarse después)
     tipo_miembro_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('tipos_miembro.id'), nullable=True, index=True)
+
+    # Motivo de reducción individual (override del que trae el TipoMiembro)
+    # Si está informado, prevalece sobre `tipo_miembro.motivo_reduccion_id` al calcular cuota.
+    # Solo afecta a cuotas futuras (D1.5: porcentaje congelado si ya hay recibos emitidos).
+    motivo_reduccion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('motivos_reduccion_cuota.id'), nullable=True, index=True
+    )
+
+    # Incremento voluntario de cuota: el socio decide pagar de más sobre la cuota
+    # base. Cantidad fija en euros que se SUMA al importe al generar las cuotas.
+    # No requiere aprobación (a diferencia de la reducción): solo se graba.
+    incremento_cuota: Mapped[Decimal] = mapped_column(
+        Numeric(10, 2), nullable=False, default=Decimal('0.00'), server_default='0'
+    )
+    incremento_cuota_obs: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Estado del miembro (nullable: puede registrarse sin estado y asignarse después)
     estado_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('estados_miembro.id'), nullable=True, index=True)
@@ -124,6 +148,9 @@ class Miembro(BaseModel):
 
     # Relaciones
     tipo_miembro = relationship('TipoMiembro', back_populates='miembros', lazy='selectin')
+    motivo_reduccion = relationship(
+        'MotivoReduccionCuota', foreign_keys=[motivo_reduccion_id], lazy='selectin'
+    )
     estado = relationship('EstadoMiembro', lazy='selectin')
     usuario = relationship('Usuario', back_populates='miembro', foreign_keys='Usuario.miembro_id', uselist=False, lazy='selectin')
     motivo_baja_rel = relationship('MotivoBaja', back_populates='miembros', lazy='selectin')

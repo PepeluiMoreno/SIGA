@@ -181,6 +181,27 @@ TRANSACCIONES_TESORERIA = {
         'modulo': 'tesoreria',
         'tipo': 'critica'
     },
+    'cuotas.configurar_ejercicio': {
+        'codigo': 'CUOT_EJERCICIO_CONFIG',
+        'nombre': 'Configurar cuotas del ejercicio',
+        'descripcion': 'Definir el importe base de la cuota anual y clonar del ejercicio anterior. Flujo 1 — A1/A2.',
+        'modulo': 'tesoreria',
+        'tipo': 'critica'
+    },
+    'cuotas.motivo_reduc_mgmt': {
+        'codigo': 'CUOT_MOTIVO_REDUC_MGMT',
+        'nombre': 'Gestionar motivos de reducción de cuota',
+        'descripcion': 'CRUD del catálogo de motivos de reducción (Joven, Parado, Jubilado, Honor, etc.). Flujo 1 — A3.',
+        'modulo': 'tesoreria',
+        'tipo': 'critica'
+    },
+    'tipos_miembro.motivo_default': {
+        'codigo': 'TM_MOTIVO_DEFAULT',
+        'nombre': 'Asociar motivo de reducción a tipo de miembro',
+        'descripcion': 'Establecer el motivo de reducción de cuota aplicable por defecto a cada TipoMiembro. Flujo 1 — A4.',
+        'modulo': 'membresia',
+        'tipo': 'critica'
+    },
     'cuotas.anular': {
         'codigo': 'CUOT_CANCEL',
         'nombre': 'Anular cuota',
@@ -225,7 +246,44 @@ TRANSACCIONES_TESORERIA = {
         'modulo': 'tesoreria',
         'tipo': 'consulta'
     },
-    
+    'remesas.reenviar': {
+        'codigo': 'REM_RESEND',
+        'nombre': 'Generar remesa de reenvío',
+        'descripcion': 'Crear remesa nueva con los fallidos representables (SeqTp=FRST). Flujo 4 — A4.',
+        'modulo': 'tesoreria',
+        'tipo': 'critica'
+    },
+    'remesas.previsualizar': {
+        'codigo': 'REM_PREVIEW',
+        'nombre': 'Previsualizar remesa',
+        'descripcion': 'Previsualizar cuotas incluidas/excluidas antes de crear una remesa ORDINARIA. Flujo 3 — A1 (D3.3).',
+        'modulo': 'tesoreria',
+        'tipo': 'consulta'
+    },
+    'remesas.anular': {
+        'codigo': 'REM_ANULAR',
+        'nombre': 'Anular remesa',
+        'descripcion': 'Anular una remesa Borrador, Generada o Enviada (no procesada). Libera cuotas y anula recibos. Flujo 3 — A8.',
+        'modulo': 'tesoreria',
+        'tipo': 'critica'
+    },
+
+    # Recibos
+    'recibos.listar': {
+        'codigo': 'RCB_LIST',
+        'nombre': 'Listar recibos',
+        'descripcion': 'Ver listado de recibos emitidos',
+        'modulo': 'tesoreria',
+        'tipo': 'consulta'
+    },
+    'recibos.notificar_fallido': {
+        'codigo': 'RCB_FAIL_NOTIFY',
+        'nombre': 'Comunicar fallidos a socios',
+        'descripcion': 'Enviar email a socios con recibo fallido usando plantilla de Comunicación Interna. Flujo 4 — pantalla 5.4.',
+        'modulo': 'tesoreria',
+        'tipo': 'escritura'
+    },
+
     # Donaciones
     'donaciones.listar': {
         'codigo': 'DON_LIST',

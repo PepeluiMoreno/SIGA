@@ -1,93 +1,96 @@
 <template>
   <AppLayout title="Actividades" subtitle="Reuniones, asambleas, talleres y demás actividades de la organización">
-    <div class="flex items-center justify-end mb-6">
-      <router-link
-        v-if="tienePermiso('ACT_CREATE')"
-        to="/actividades/nueva"
-        class="inline-flex items-center gap-2 h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-        </svg>
-        Nueva actividad
-      </router-link>
-    </div>
 
-    <!-- Filtros -->
-    <div class="flex flex-wrap gap-3 mb-4">
-      <input
-        v-model="filtroNombre"
-        type="text"
-        placeholder="Buscar por nombre…"
-        class="h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64"
-      />
-      <select
-        v-model="filtroTipo"
-        class="h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-      >
-        <option value="">Todos los tipos</option>
-        <option v-for="t in tiposActividad" :key="t.id" :value="t.id">{{ t.nombre }}</option>
-      </select>
-      <select
-        v-model="filtroEstado"
-        class="h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-      >
-        <option value="">Todos los estados</option>
-        <option v-for="e in estadosAccion" :key="e.id" :value="e.id">{{ e.nombre }}</option>
-      </select>
-    </div>
+    <FilterBar
+      v-model="filtros"
+      v-model:search="filtroNombre"
+      search-placeholder="Buscar por nombre…"
+      :create-label="tienePermiso('ACT_CREATE') ? 'Nueva actividad' : ''"
+      create-route="/actividades/nueva"
+      :fields="camposFiltro"
+      :count-text="`${actividadesFiltradas.length} de ${actividades.length}`"
+    />
 
-    <!-- Tabla -->
     <div v-if="loading" class="py-12 text-center text-sm text-slate-400">Cargando…</div>
+
     <div v-else-if="!actividadesFiltradas.length" class="py-12 text-center text-sm text-slate-400">
       No hay actividades que mostrar.
     </div>
-    <div v-else class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <table class="w-full text-sm">
-        <thead class="bg-slate-50 border-b border-slate-200">
-          <tr>
-            <th class="px-4 py-3 text-left font-medium text-slate-600">Nombre</th>
-            <th class="px-4 py-3 text-left font-medium text-slate-600">Tipo</th>
-            <th class="px-4 py-3 text-left font-medium text-slate-600">Estado</th>
-            <th class="px-4 py-3 text-left font-medium text-slate-600">Fecha</th>
-            <th class="px-4 py-3 text-left font-medium text-slate-600">Campaña</th>
-            <th class="px-4 py-3"></th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          <tr
-            v-for="actividad in actividadesFiltradas"
-            :key="actividad.id"
-            class="hover:bg-slate-50 transition-colors"
-          >
-            <td class="px-4 py-3 font-medium text-slate-900">{{ actividad.nombre }}</td>
-            <td class="px-4 py-3 text-slate-500">{{ actividad.tipoActividad?.nombre || '—' }}</td>
-            <td class="px-4 py-3">
-              <span
-                v-if="actividad.estado"
-                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                :style="actividad.estado.color ? `background-color: ${actividad.estado.color}22; color: ${actividad.estado.color}` : ''"
-                :class="!actividad.estado.color ? 'bg-slate-100 text-slate-600' : ''"
-              >
-                {{ actividad.estado.nombre }}
-              </span>
-            </td>
-            <td class="px-4 py-3 text-slate-500">{{ actividad.fechaInicio || '—' }}</td>
-            <td class="px-4 py-3 text-slate-500">{{ actividad.campania?.nombre || '—' }}</td>
-            <td class="px-4 py-3">
-              <RowActions
-                :show-view="true"
-                :show-edit="true"
-                confirm-title="¿Eliminar esta actividad?"
-                :confirm-text="`«${actividad.nombre}» será eliminada permanentemente.`"
-                @view="$router.push(`/actividades/${actividad.id}`)"
-                @edit="$router.push(`/actividades/${actividad.id}`)"
-                @delete="(opts) => eliminarActividad(actividad, opts)"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
+
+    <div v-else class="space-y-3 mt-3">
+
+      <!-- ── Acordeón 1: Actividades fuera de campaña (lista plana) ── -->
+      <AccordionPanel title="Fuera de campaña" :count="actividadesSinCampania.length" :default-open="true">
+        <div v-if="!actividadesSinCampania.length" class="px-5 py-8 text-center text-sm text-slate-400">
+          Ninguna actividad fuera de campaña con estos filtros.
+        </div>
+        <table v-else class="w-full text-sm">
+          <thead class="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th class="px-4 py-3 text-left font-medium text-slate-600">Nombre</th>
+              <th class="px-4 py-3 text-left font-medium text-slate-600">Tipo</th>
+              <th class="px-4 py-3 text-left font-medium text-slate-600">Carácter</th>
+              <th class="px-4 py-3 text-left font-medium text-slate-600">Estado</th>
+              <th class="px-4 py-3 text-left font-medium text-slate-600">Fecha</th>
+              <th class="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <ActividadRow
+              v-for="a in actividadesSinCampania"
+              :key="a.id"
+              :actividad="a"
+              @delete="(opts) => eliminarActividad(a, opts)"
+            />
+          </tbody>
+        </table>
+      </AccordionPanel>
+
+      <!-- ── Acordeón 2: Actividades de campaña (árbol campaña → actividad) ── -->
+      <AccordionPanel title="De campaña" :count="gruposCampania.length" :default-open="true">
+        <div v-if="!gruposCampania.length" class="px-5 py-8 text-center text-sm text-slate-400">
+          Ninguna actividad de campaña con estos filtros.
+        </div>
+        <table v-else class="w-full text-sm">
+          <thead class="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th class="px-4 py-3 text-left font-medium text-slate-600">Nombre</th>
+              <th class="px-4 py-3 text-left font-medium text-slate-600">Tipo</th>
+              <th class="px-4 py-3 text-left font-medium text-slate-600">Carácter</th>
+              <th class="px-4 py-3 text-left font-medium text-slate-600">Estado</th>
+              <th class="px-4 py-3 text-left font-medium text-slate-600">Fecha</th>
+              <th class="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody v-for="grupo in gruposCampania" :key="grupo.campania.id" class="divide-y divide-slate-100">
+            <!-- Cabecera de campaña (nivel 1 del árbol) -->
+            <tr class="bg-indigo-50/60 border-y border-indigo-100">
+              <td colspan="6" class="px-4 py-2">
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                  </svg>
+                  <span class="font-semibold text-indigo-800">{{ grupo.campania.nombre }}</span>
+                  <span v-if="grupo.campania.estado"
+                    class="text-xs px-2 py-0.5 rounded-full bg-white border border-indigo-200 text-indigo-600">
+                    {{ grupo.campania.estado.nombre }}
+                  </span>
+                  <span class="text-xs text-slate-400">· {{ grupo.actividades.length }} actividad(es)</span>
+                </div>
+              </td>
+            </tr>
+            <!-- Actividades de la campaña (nivel 2 del árbol) -->
+            <ActividadRow
+              v-for="a in grupo.actividades"
+              :key="a.id"
+              :actividad="a"
+              :indent="true"
+              @delete="(opts) => eliminarActividad(a, opts)"
+            />
+          </tbody>
+        </table>
+      </AccordionPanel>
+
     </div>
   </AppLayout>
 </template>
@@ -95,7 +98,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
-import RowActions from '@/components/common/RowActions.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
+import AccordionPanel from '@/components/common/AccordionPanel.vue'
+import ActividadRow from './ActividadRow.vue'
 import { graphqlClient } from '@/graphql/client'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_ACCIONES, GET_TIPOS_ACCION, GET_ESTADOS_ACCION, ELIMINAR_ACCION, SOFT_DELETE_ACCION } from '../graphql/queries.js'
@@ -105,23 +110,76 @@ const loading = ref(true)
 const actividades = ref([])
 const tiposActividad = ref([])
 const estadosAccion = ref([])
+
 const filtroNombre = ref('')
-const filtroTipo = ref('')
-const filtroEstado = ref('')
+const filtros = ref({ caracter: '', estado: '', tipo: '' })
+
+const camposFiltro = computed(() => [
+  {
+    key: 'caracter',
+    label: 'Carácter',
+    type: 'select',
+    allLabel: 'Todos los caracteres',
+    options: [
+      { value: 'PERMANENTE', label: 'Permanente' },
+      { value: 'PUNTUAL',    label: 'Puntual' },
+      { value: 'RECURRENTE', label: 'Recurrente' },
+    ],
+  },
+  {
+    key: 'estado',
+    label: 'Estado',
+    type: 'select',
+    allLabel: 'Todos los estados',
+    options: estadosAccion.value.map(e => ({ value: e.id, label: e.nombre })),
+  },
+  {
+    key: 'tipo',
+    label: 'Tipo',
+    type: 'select',
+    allLabel: 'Todos los tipos',
+    options: tiposActividad.value.map(t => ({ value: t.id, label: t.nombre })),
+  },
+])
 
 const actividadesFiltradas = computed(() => {
   let list = actividades.value
   if (filtroNombre.value) {
     const q = filtroNombre.value.toLowerCase()
-    list = list.filter(a => a.nombre.toLowerCase().includes(q))
+    list = list.filter(a => (a.nombre || '').toLowerCase().includes(q))
   }
-  if (filtroTipo.value) {
-    list = list.filter(a => a.tipoActividad?.id === filtroTipo.value)
+  if (filtros.value.caracter) {
+    list = list.filter(a => a.caracter === filtros.value.caracter)
   }
-  if (filtroEstado.value) {
-    list = list.filter(a => a.estado?.id === filtroEstado.value)
+  if (filtros.value.estado) {
+    list = list.filter(a => a.estado?.id === filtros.value.estado)
+  }
+  if (filtros.value.tipo) {
+    list = list.filter(a => a.tipoActividad?.id === filtros.value.tipo)
   }
   return list
+})
+
+const ordenarPorNombre = (arr) =>
+  arr.slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'))
+
+// Acordeón 1: sin campaña, lista plana alfabética
+const actividadesSinCampania = computed(() =>
+  ordenarPorNombre(actividadesFiltradas.value.filter(a => !a.campaniaId))
+)
+
+// Acordeón 2: agrupadas por campaña (árbol de dos niveles)
+const gruposCampania = computed(() => {
+  const mapa = new Map()
+  for (const a of actividadesFiltradas.value) {
+    if (!a.campaniaId) continue
+    const camp = a.campania || { id: a.campaniaId, nombre: 'Campaña sin nombre' }
+    if (!mapa.has(camp.id)) mapa.set(camp.id, { campania: camp, actividades: [] })
+    mapa.get(camp.id).actividades.push(a)
+  }
+  return Array.from(mapa.values())
+    .map(g => ({ campania: g.campania, actividades: ordenarPorNombre(g.actividades) }))
+    .sort((x, y) => (x.campania.nombre || '').localeCompare(y.campania.nombre || '', 'es'))
 })
 
 async function cargar() {

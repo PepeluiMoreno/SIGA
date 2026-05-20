@@ -19,7 +19,46 @@ export const GET_TIPOS_MIEMBRO = `
       requiereCuota
       puedeVotar
       activo
+      motivoReduccionId
+      motivoReduccion { id codigo nombre porcentajeReduccion }
     }
+  }
+`
+
+// ─── Motivos de reducción de cuota (Flujo 1, D1.1) ──────────────────────────
+export const GET_MOTIVOS_REDUCCION_CUOTA = `
+  query MotivosReduccionCuota {
+    motivosReduccionCuota {
+      id
+      codigo
+      nombre
+      descripcion
+      porcentajeReduccion
+      orden
+      activo
+    }
+  }
+`
+
+export const CREATE_MOTIVO_REDUCCION_CUOTA = `
+  mutation CrearMotivoReduccionCuota($data: MotivoReduccionCuotaCreateInput!) {
+    crearMotivoReduccionCuota(data: $data) {
+      id codigo nombre porcentajeReduccion
+    }
+  }
+`
+
+export const UPDATE_MOTIVO_REDUCCION_CUOTA = `
+  mutation ActualizarMotivoReduccionCuota($data: MotivoReduccionCuotaUpdateInput!) {
+    actualizarMotivoReduccionCuota(data: $data) {
+      id codigo nombre porcentajeReduccion activo
+    }
+  }
+`
+
+export const DELETE_MOTIVO_REDUCCION_CUOTA = `
+  mutation EliminarMotivoReduccionCuota($filter: MotivoReduccionCuotaFilter!) {
+    eliminarMotivosReduccionCuota(filter: $filter) { id }
   }
 `
 

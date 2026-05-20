@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date
-from typing import Optional
+from typing import Optional, List
 
 import strawberry
 from sqlalchemy import select
@@ -65,7 +65,8 @@ class MiembroCreateInput:
     disponibilidad: Optional[str] = None
     horas_disponibles_semana: Optional[int] = None
     profesion: Optional[str] = None
-    nivel_estudios: Optional[str] = None
+    nivel_estudios_id: Optional[uuid.UUID] = None
+    motivo_reduccion_id: Optional[uuid.UUID] = None
     experiencia_voluntariado: Optional[str] = None
     intereses: Optional[str] = None
     observaciones_voluntariado: Optional[str] = None
@@ -117,7 +118,8 @@ class MiembroUpdateInput:
     disponibilidad: Optional[str] = None
     horas_disponibles_semana: Optional[int] = None
     profesion: Optional[str] = None
-    nivel_estudios: Optional[str] = None
+    nivel_estudios_id: Optional[uuid.UUID] = None
+    motivo_reduccion_id: Optional[uuid.UUID] = None
     experiencia_voluntariado: Optional[str] = None
     intereses: Optional[str] = None
     observaciones_voluntariado: Optional[str] = None
@@ -140,7 +142,8 @@ _MIEMBRO_FIELDS = [
     'observaciones', 'solicita_supresion_datos', 'fecha_solicitud_supresion',
     'fecha_limite_retencion', 'datos_anonimizados', 'fecha_anonimizacion',
     'activo', 'es_voluntario', 'disponibilidad', 'horas_disponibles_semana',
-    'profesion', 'nivel_estudios', 'experiencia_voluntariado', 'intereses',
+    'profesion', 'nivel_estudios_id', 'motivo_reduccion_id',
+    'experiencia_voluntariado', 'intereses',
     'observaciones_voluntariado', 'puede_conducir', 'vehiculo_propio',
     'disponibilidad_viajar',
 ]
@@ -221,3 +224,113 @@ class MembresiaResolverMutation:
         await session.commit()
 
         return await _fetch_miembro(session, miembro.id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_EDITAR")])
+    async def anonimizar_miembro(
+        self,
+        info: strawberry.Info,
+        miembro_id: uuid.UUID,
+    ) -> 'MiembroType':
+        """RGPD — anonimiza de forma irreversible los datos personales del
+        miembro. El registro se conserva (para estadística e histórico) pero
+        despojado de toda información identificativa. Solo se permite sobre
+        miembros dados de baja.
+        """
+        session = info.context.session
+        miembro = await _fetch_miembro(session, miembro_id)
+
+        if miembro.datos_anonimizados:
+            raise ValueError("Los datos de este miembro ya están anonimizados.")
+        if miembro.fecha_baja is None:
+            raise ValueError(
+                "Solo pueden anonimizarse los datos de un miembro dado de baja."
+            )
+
+        # Despojar de toda información personal identificativa.
+        miembro.nombre = "Anonimizado"
+        miembro.apellido1 = "Anonimizado"
+        miembro.apellido2 = None
+        miembro.fecha_nacimiento = None
+        miembro.sexo = None
+        miembro.tipo_documento = None
+        miembro.numero_documento = None
+        miembro.direccion = None
+        miembro.codigo_postal = None
+        miembro.localidad = None
+        miembro.telefono = None
+        miembro.telefono2 = None
+        miembro.email = None
+        miembro.iban = None
+        miembro.swift_bic = None
+        miembro.referencia_pago = None
+        miembro.foto_url = None
+        miembro.observaciones = None
+        miembro.observaciones_voluntariado = None
+
+        miembro.datos_anonimizados = True
+        miembro.fecha_anonimizacion = date.today()
+
+        await session.commit()
+        return await _fetch_miembro(session, miembro_id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("SOC_EXPORT")])
+    async def exportar_miembros_xlsx(
+        self,
+        info: strawberry.Info,
+        ids: List[uuid.UUID],
+    ) -> str:
+        """Exporta a XLSX los miembros indicados (los visibles con los filtros
+        aplicados en el listado). Devuelve el contenido del fichero en base64.
+        """
+        import base64
+        import io
+        from openpyxl import Workbook
+        from openpyxl.styles import Font
+        from openpyxl.utils import get_column_letter
+
+        session = info.context.session
+        if not ids:
+            raise ValueError("No hay miembros que exportar.")
+
+        result = await session.execute(select(Miembro).where(Miembro.id.in_(ids)))
+        miembros = list(result.scalars().all())
+        miembros.sort(key=lambda m: (
+            (m.apellido1 or '').lower(),
+            (m.apellido2 or '').lower(),
+            (m.nombre or '').lower(),
+        ))
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Miembros"
+        cabecera = [
+            "Nombre", "Primer apellido", "Segundo apellido", "Tipo", "Situación",
+            "Email", "Teléfono", "Agrupación", "Localidad", "Fecha de alta", "Fecha de baja",
+        ]
+        ws.append(cabecera)
+        for celda in ws[1]:
+            celda.font = Font(bold=True)
+
+        for m in miembros:
+            ws.append([
+                m.nombre or '',
+                m.apellido1 or '',
+                m.apellido2 or '',
+                m.tipo_miembro.nombre if m.tipo_miembro else '',
+                m.estado.nombre if m.estado else '',
+                m.email or '',
+                m.telefono or '',
+                m.agrupacion.nombre if m.agrupacion else '',
+                m.localidad or '',
+                m.fecha_alta.isoformat() if m.fecha_alta else '',
+                m.fecha_baja.isoformat() if m.fecha_baja else '',
+            ])
+
+        anchos = [16, 16, 16, 14, 14, 30, 14, 26, 20, 13, 13]
+        for i, ancho in enumerate(anchos, start=1):
+            ws.column_dimensions[get_column_letter(i)].width = ancho
+        ws.freeze_panes = "A2"
+
+        buf = io.BytesIO()
+        wb.save(buf)
+        return base64.b64encode(buf.getvalue()).decode()

@@ -141,7 +141,7 @@
 
             <hr class="nav-sep" />
 
-            <!-- Económico -->
+            <!-- Económico (sidebar minimalista: solo Tesorería + Contabilidad) -->
             <div v-if="tieneAlguno('FIN_REPORTS','CUOT_GENERATE','REM_CREATE','DON_CREATE')" class="mb-1">
               <button @click="toggleSection('economico')" class="section-btn">
                 <span>Económico</span>
@@ -156,33 +156,15 @@
                     </router-link>
                   </li>
                   <li v-if="tienePermiso('FIN_REPORTS')">
-                    <router-link to="/economico/contabilidad" class="nav-item"
-                      :class="$route.path.startsWith('/economico/contabilidad') ? 'active' : 'inactive'">
-                      <CalculatorIcon class="nav-icon" /><span>Contabilidad</span>
-                    </router-link>
-                  </li>
-                  <li v-if="tienePermiso('CUOT_GENERATE')">
-                    <router-link to="/economico/cuotas" class="nav-item"
-                      :class="$route.path.startsWith('/economico/cuotas') ? 'active' : 'inactive'">
-                      <CreditCardIcon class="nav-icon" /><span>Cuotas</span>
-                    </router-link>
-                  </li>
-                  <li v-if="tienePermiso('REM_CREATE')">
-                    <router-link to="/economico/remesas" class="nav-item"
-                      :class="$route.path.startsWith('/economico/remesas') ? 'active' : 'inactive'">
-                      <ArrowsRightLeftIcon class="nav-icon" /><span>Remesas</span>
-                    </router-link>
-                  </li>
-                  <li v-if="tienePermiso('FIN_REPORTS')">
                     <router-link to="/economico/presupuesto" class="nav-item"
                       :class="$route.path.startsWith('/economico/presupuesto') ? 'active' : 'inactive'">
                       <ChartBarIcon class="nav-icon" /><span>Presupuesto</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('DON_CREATE')">
-                    <router-link to="/economico/donaciones" class="nav-item"
-                      :class="$route.path.startsWith('/economico/donaciones') ? 'active' : 'inactive'">
-                      <GiftIcon class="nav-icon" /><span>Donaciones</span>
+                  <li v-if="tienePermiso('FIN_REPORTS')">
+                    <router-link to="/economico/contabilidad" class="nav-item"
+                      :class="$route.path.startsWith('/economico/contabilidad') ? 'active' : 'inactive'">
+                      <CalculatorIcon class="nav-icon" /><span>Contabilidad</span>
                     </router-link>
                   </li>
                 </ul>
@@ -292,9 +274,12 @@
         <div class="border-t border-purple-800">
           <div class="p-4 bg-purple-800">
             <div class="flex items-center">
-              <div class="h-9 w-9 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
-                {{ userInitials }}
-              </div>
+              <AvatarImg
+                :src="authStore.userFotoUrl"
+                :nombre="authStore.userNombre"
+                :apellido="authStore.userApellido"
+                size="md"
+                class="flex-shrink-0" />
               <div class="ml-3 flex-1 min-w-0">
                 <p class="text-white font-medium text-sm truncate">{{ userName }}</p>
                 <p class="text-purple-300 text-xs truncate">{{ userRole }}</p>
@@ -371,6 +356,7 @@ import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { usePermisos } from '@/composables/usePermisos.js'
 import BackendStatus from '@/components/common/BackendStatus.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import AvatarImg from '@/components/common/AvatarImg.vue'
 import {
   HomeIcon, UserIcon, UsersIcon, MapPinIcon, FlagIcon, UserGroupIcon,
   HeartIcon, KeyIcon, ListBulletIcon, ClipboardDocumentListIcon,
@@ -452,8 +438,10 @@ watch(() => route.path, (path) => {
 
 // ── Sesión ────────────────────────────────────────────────────────────────────
 const userName = computed(() => authStore.userName || 'Usuario')
-const userInitials = computed(() => authStore.userInitials || 'US')
 const userRole = computed(() => authStore.user?.roles?.[0] || 'Usuario')
+
+// El avatar del usuario (foto del miembro vinculado) vive en el store de sesión,
+// para que al cambiar la foto desde Mis datos el sidebar se actualice al instante.
 
 const sessionStartTime = ref(Date.now())
 const sessionTime = ref('0m')
@@ -496,6 +484,7 @@ function forceLogout() {
 
 onMounted(async () => {
   await orgConfigStore.fetchConfig()
+  authStore.cargarPerfilMiembro()
   const storedTime = localStorage.getItem('session_start_time')
   if (storedTime) {
     sessionStartTime.value = parseInt(storedTime)

@@ -29,6 +29,7 @@ class OrigenApunte(PyEnum):
     ACTIVIDAD = "ACTIVIDAD"
     PAYPAL = "PAYPAL"
     MANUAL = "MANUAL"
+    JUSTIFICANTE_GASTO = "JUSTIFICANTE_GASTO"
 
 
 class ApunteCaja(BaseModel):
@@ -65,10 +66,20 @@ class ApunteCaja(BaseModel):
         Uuid, ForeignKey("asientos_contables.id"), nullable=True, index=True
     )
 
+    # Imputación a actividad / campaña (para balance económico de Memoria anual)
+    actividad_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("actividades.id"), nullable=True, index=True
+    )
+    campania_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("campanias.id"), nullable=True, index=True
+    )
+
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     cuenta_bancaria = relationship('CuentaBancaria', back_populates='apuntes', lazy='selectin')
     asiento = relationship('AsientoContable', foreign_keys=[asiento_id], lazy='selectin')
+    actividad = relationship('Actividad', foreign_keys=[actividad_id], lazy='selectin')
+    campania = relationship('Campania', foreign_keys=[campania_id], lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<ApunteCaja(tipo={self.tipo}, importe={self.importe}, fecha={self.fecha})>"

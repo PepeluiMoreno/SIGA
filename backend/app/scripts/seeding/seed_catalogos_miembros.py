@@ -37,6 +37,8 @@ FORMAS_PAGO = [
     {"codigo": "DOMICILIACION", "nombre": "Domiciliación SEPA",      "descripcion": "Domiciliación bancaria SEPA",      "activo": True},
     {"codigo": "TARJETA",       "nombre": "Tarjeta",                 "descripcion": "Pago con tarjeta",                 "activo": True},
     {"codigo": "EFECTIVO",      "nombre": "Efectivo",                "descripcion": "Pago en efectivo",                 "activo": True},
+    {"codigo": "PAYPAL",        "nombre": "PayPal",                  "descripcion": "Cobro a una cuenta PayPal",        "activo": True},
+    {"codigo": "BIZUM",         "nombre": "Bizum",                   "descripcion": "Cobro mediante Bizum al teléfono", "activo": True},
 ]
 
 

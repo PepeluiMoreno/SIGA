@@ -28,6 +28,14 @@ import Tesoreria from '@/modules/economico/views/Tesoreria.vue'
 import Contabilidad from '@/modules/economico/views/Contabilidad.vue'
 import Cuotas from '@/modules/economico/views/Cuotas.vue'
 import Remesas from '@/modules/economico/views/Remesas.vue'
+import Recibos from '@/modules/economico/views/Recibos.vue'
+import Conciliacion from '@/modules/economico/views/Conciliacion.vue'
+import Cierre from '@/modules/economico/views/Cierre.vue'
+import CuentasAnuales from '@/modules/economico/views/CuentasAnuales.vue'
+import Modelo182 from '@/modules/economico/views/Modelo182.vue'
+import ComunicacionFallidos from '@/modules/economico/views/ComunicacionFallidos.vue'
+import CuotasEjercicio from '@/modules/economico/views/CuotasEjercicio.vue'
+import MotivosReduccionCuota from '@/modules/economico/views/MotivosReduccionCuota.vue'
 import Presupuesto from '@/modules/economico/views/Presupuesto.vue'
 import Donaciones from '@/modules/economico/views/Donaciones.vue'
 import ReglasContables from '@/modules/economico/views/ReglasContables.vue'
@@ -281,6 +289,54 @@ const routes = [
     meta: { requiresAuth: true, requiredPermission: 'REM_CREATE' }
   },
   {
+    path: '/economico/recibos',
+    component: Recibos,
+    name: 'Recibos',
+    meta: { requiresAuth: true, requiredPermission: 'RCB_LIST' }
+  },
+  {
+    path: '/economico/conciliacion',
+    component: Conciliacion,
+    name: 'Conciliacion',
+    meta: { requiresAuth: true, requiredPermission: 'CON_LIST' }
+  },
+  {
+    path: '/economico/cierre-ejercicio',
+    component: Cierre,
+    name: 'Cierre',
+    meta: { requiresAuth: true, requiredPermission: 'CIERRE_CONSULTAR' }
+  },
+  {
+    path: '/economico/cuentas-anuales',
+    component: CuentasAnuales,
+    name: 'CuentasAnuales',
+    meta: { requiresAuth: true, requiredPermission: 'CCAA_LIST' }
+  },
+  {
+    path: '/economico/modelo-182',
+    component: Modelo182,
+    name: 'Modelo182',
+    meta: { requiresAuth: true, requiredPermission: 'M182_LIST' }
+  },
+  {
+    path: '/economico/comunicacion-fallidos',
+    component: ComunicacionFallidos,
+    name: 'ComunicacionFallidos',
+    meta: { requiresAuth: true, requiredPermission: 'RCB_FAIL_NOTIFY' }
+  },
+  {
+    path: '/economico/cuotas-ejercicio',
+    component: CuotasEjercicio,
+    name: 'CuotasEjercicio',
+    meta: { requiresAuth: true, requiredPermission: 'CUOT_EJERCICIO_CONFIG' }
+  },
+  {
+    path: '/parametrizacion/motivos-reduccion-cuota',
+    component: MotivosReduccionCuota,
+    name: 'MotivosReduccionCuota',
+    meta: { requiresAuth: true, requiredPermission: 'CUOT_MOTIVO_REDUC_MGMT' }
+  },
+  {
     path: '/economico/presupuesto',
     component: Presupuesto,
     name: 'Presupuesto',
@@ -404,7 +460,8 @@ const router = createRouter({
 
 // Guard de navegación
 router.beforeEach(async (to, from, next) => {
-  const isAuthenticated = !!localStorage.getItem('siga_token')
+  // El token vive en localStorage (Recordarme) o en sessionStorage
+  const isAuthenticated = !!(localStorage.getItem('siga_token') || sessionStorage.getItem('siga_token'))
   const debugStore = useDebugStore()
   const orgConfigStore = useOrgConfigStore()
 

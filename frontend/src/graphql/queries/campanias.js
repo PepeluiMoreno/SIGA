@@ -13,7 +13,7 @@ export const GET_CAMPANIAS = `
       urlExterna
       periodicidad
       tipoCampania { id nombre }
-      estado { id nombre color orden }
+      estado { id codigo nombre color orden esFinal }
       agrupacion { id nombre }
       responsable { id nombre apellido1 }
       fechaInicioPlan

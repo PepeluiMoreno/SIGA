@@ -435,6 +435,10 @@ const CATALOGOS = computed(() => [
           { key: 'descripcion',   label: 'Descripción' },
           { key: 'requiereCuota', label: 'Cuota', type: 'bool' },
           { key: 'puedeVotar',    label: 'Vota', type: 'bool' },
+          { key: 'motivoReduccion', label: 'Motivo reducción',
+            format: item => item.motivoReduccion
+              ? `${item.motivoReduccion.codigo} (-${item.motivoReduccion.porcentajeReduccion}%)`
+              : '—' },
           { key: 'activo',        label: 'Activo', type: 'toggle' },
         ],
         campos: [
@@ -442,6 +446,14 @@ const CATALOGOS = computed(() => [
           { name: 'descripcion',   label: 'Descripción',   type: 'textarea' },
           { name: 'requiereCuota', label: 'Requiere cuota', type: 'checkbox', default: true },
           { name: 'puedeVotar',   label: 'Puede votar',    type: 'checkbox', default: false },
+          {
+            name: 'motivoReduccionId', label: 'Motivo reducción por defecto (Flujo 1 — D1.2)',
+            type: 'select',
+            optionsQuery: Q.GET_MOTIVOS_REDUCCION_CUOTA,
+            optionsQueryName: 'motivosReduccionCuota',
+            optionLabel: m => `${m.codigo} — ${m.nombre} (-${m.porcentajeReduccion}%)${m.porcentajeReduccion >= 100 ? ' [excluido]' : ''}`,
+            optionValue: m => m.id,
+          },
           { name: 'activo',        label: 'En uso',         type: 'checkbox', default: true },
         ],
       },
@@ -573,6 +585,33 @@ const CATALOGOS = computed(() => [
   {
     grupo: 'Económico',
     items: [
+      {
+        key: 'motivosReduccionCuota', label: 'Motivos de reducción de cuota', labelSingular: 'Motivo de reducción',
+        descripcion: 'Joven, Parado, Jubilado, Honor… ≥100% excluye al socio del proceso',
+        queryName: 'motivosReduccionCuota', query: Q.GET_MOTIVOS_REDUCCION_CUOTA,
+        mutations: {
+          create: Q.CREATE_MOTIVO_REDUCCION_CUOTA,
+          update: Q.UPDATE_MOTIVO_REDUCCION_CUOTA,
+          delete: Q.DELETE_MOTIVO_REDUCCION_CUOTA,
+        },
+        columnas: [
+          { key: 'codigo', label: 'Código' },
+          { key: 'nombre', label: 'Nombre' },
+          { key: 'porcentajeReduccion', label: '% Reducción',
+            format: item => `${item.porcentajeReduccion}%${item.porcentajeReduccion >= 100 ? ' (excluye)' : ''}` },
+          { key: 'orden', label: 'Orden' },
+          { key: 'activo', label: 'Activo', type: 'toggle' },
+        ],
+        campos: [
+          { name: 'codigo',  label: 'Código (único, mayúsculas)', type: 'text', required: true, maxLength: 30 },
+          { name: 'nombre',  label: 'Nombre',                      type: 'text', required: true, maxLength: 100 },
+          { name: 'descripcion', label: 'Descripción', type: 'textarea' },
+          { name: 'porcentajeReduccion', label: '% de reducción (0–100; ≥100 = excluye del proceso, D1.4)',
+            type: 'number', required: true, default: 0 },
+          { name: 'orden',  label: 'Orden', type: 'number', default: 0 },
+          { name: 'activo', label: 'En uso', type: 'checkbox', default: true },
+        ],
+      },
       {
         key: 'formasPago', label: 'Formas de pago', labelSingular: 'Forma de pago',
         descripcion: 'Transferencia, Domiciliación, Tarjeta…',

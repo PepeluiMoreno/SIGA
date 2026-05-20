@@ -7,6 +7,7 @@ from .estado_miembro import EstadoMiembro
 from .motivo_baja import MotivoBaja
 from .junta import JuntaDirectiva
 from .historial_nombramiento import HistorialNombramiento
+from .nombramiento_vigente import NombramientoVigente
 from .coordinacion_territorial import CoordinacionTerritorial
 from .categoria_habilidad import CategoriaHabilidad
 from .habilidad import Habilidad, MiembroHabilidad
@@ -35,6 +36,7 @@ __all__ = [
     'MotivoBaja',
     'JuntaDirectiva',
     'HistorialNombramiento',
+    'NombramientoVigente',
     'CoordinacionTerritorial',
     'CategoriaHabilidad',
     'Habilidad',

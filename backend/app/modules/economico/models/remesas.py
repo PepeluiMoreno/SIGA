@@ -5,7 +5,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional, List
 
-from sqlalchemy import String, ForeignKey, Date, Numeric, Text, Uuid, func
+from sqlalchemy import String, ForeignKey, Date, Numeric, Text, Uuid, Integer, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ....infrastructure.base_model import BaseModel
@@ -37,6 +37,17 @@ class Remesa(BaseModel):
 
     # Agrupación territorial (tesorería delegada)
     agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey("unidades_organizativas.id"), nullable=True, index=True)
+
+    # Tipo de remesa: ORDINARIA | EXTRAORDINARIA | REENVIO
+    tipo_remesa: Mapped[str] = mapped_column(String(20), nullable=False, default="ORDINARIA", index=True)
+    # Concepto libre — para extraordinarias y reenvíos
+    concepto: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
+    # SEPA Sequence Type: FRST | RCUR | LAST | OOFF (norma EPC131-08)
+    seq_tipo: Mapped[str] = mapped_column(String(4), nullable=False, default="RCUR")
+    # Remesa origen (si es REENVIO, apunta a la remesa que tuvo los fallidos)
+    remesa_origen_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("remesas.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     # Información adicional
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -78,6 +89,10 @@ class OrdenCobro(BaseModel):
     remesa_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("remesas.id"), nullable=False, index=True)
     cuota_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("cuotas_anuales.id"), nullable=False, index=True)
 
+    # Correlativo de la orden dentro de la remesa (D4.1):
+    # forma el EndToEndId SEPA como f"{remesa.referencia}-{nseq:03d}"
+    nseq: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+
     # Datos del cobro
     importe: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     referencia_mandato: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # Referencia del mandato SEPA
@@ -90,6 +105,7 @@ class OrdenCobro(BaseModel):
     fecha_procesamiento: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     codigo_rechazo: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     motivo_rechazo: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    fecha_rechazo: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
     # Relaciones
     remesa: Mapped["Remesa"] = relationship(back_populates="ordenes", lazy="selectin")
@@ -99,14 +115,35 @@ class OrdenCobro(BaseModel):
     def __repr__(self) -> str:
         return f"<OrdenCobro(cuota_id='{self.cuota_id}', importe={self.importe}, estado_id='{self.estado_id}')>"
 
+    @property
+    def end_to_end_id(self) -> str:
+        """Identificador SEPA legible {referencia_remesa}-{nseq:03d} (D4.1).
+
+        Requiere que la relación 'remesa' esté cargada (lazy='selectin' ya lo
+        hace por defecto). Máx 35 caracteres (límite SEPA EndToEndIdentification).
+        """
+        ref = self.remesa.referencia if self.remesa else ""
+        return f"{ref}-{self.nseq:03d}"
+
+    @staticmethod
+    def parse_end_to_end_id(value: str) -> tuple[str, int] | None:
+        """Descompone un EndToEndId en (referencia_remesa, nseq). None si no encaja."""
+        if not value or "-" not in value:
+            return None
+        ref, sep, nseq = value.rpartition("-")
+        if not sep or not nseq.isdigit():
+            return None
+        return (ref, int(nseq))
+
     def marcar_procesada(self) -> None:
         """Marca la orden como procesada exitosamente."""
         # TODO: self.estado_id = # buscar estado 'PROCESADA'
         self.fecha_procesamiento = date.today()
 
-    def marcar_fallida(self, codigo_rechazo: str, motivo: str) -> None:
-        """Marca la orden como fallida."""
-        # TODO: self.estado_id = # buscar estado 'FALLIDA'
+    def marcar_fallida(self, codigo_rechazo: str, motivo: str, fecha_rechazo: Optional[date] = None) -> None:
+        """Marca la orden como fallida con código SEPA y motivo."""
+        # El estado_id lo cambia el servicio (necesita acceso a la sesión)
         self.fecha_procesamiento = date.today()
+        self.fecha_rechazo = fecha_rechazo or date.today()
         self.codigo_rechazo = codigo_rechazo
         self.motivo_rechazo = motivo

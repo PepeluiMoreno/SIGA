@@ -73,6 +73,13 @@ class ParametrosOrganizacion:
     # Apariencia
     tema: str
     fuente_principal: str
+    # SEPA — acreedor para remesas (D3.5, flujo 3)
+    sepa_creditor_name: str
+    sepa_creditor_iban: str
+    sepa_creditor_bic: str
+    sepa_creditor_id: str
+    # Open Banking — conciliación bancaria automática (flujo 8)
+    openbanking_activo: bool
 
 
 # ---------------------------------------------------------------------------
@@ -133,6 +140,13 @@ class ParametrosOrganizacionInput:
     # Apariencia
     tema: Optional[str] = 'violeta'
     fuente_principal: Optional[str] = 'Inter'
+    # SEPA — acreedor para remesas (D3.5, flujo 3)
+    sepa_creditor_name: Optional[str] = ''
+    sepa_creditor_iban: Optional[str] = ''
+    sepa_creditor_bic: Optional[str] = ''
+    sepa_creditor_id: Optional[str] = ''
+    # Open Banking — conciliación bancaria automática (flujo 8)
+    openbanking_activo: Optional[bool] = False
 
 
 # ---------------------------------------------------------------------------
@@ -185,6 +199,13 @@ _MAPPING = [
     ('auth.session_maximo_minutos',                'int',    'session_maximo_minutos'),
     ('org.tema',                                   'string', 'tema'),
     ('org.fuente_principal',                       'string', 'fuente_principal'),
+    # SEPA — acreedor para remesas (D3.5)
+    ('sepa.creditor_name',                         'string', 'sepa_creditor_name'),
+    ('sepa.creditor_iban',                         'string', 'sepa_creditor_iban'),
+    ('sepa.creditor_bic',                          'string', 'sepa_creditor_bic'),
+    ('sepa.creditor_id',                           'string', 'sepa_creditor_id'),
+    # Open Banking (flujo 8)
+    ('funcion.openbanking.activo',                 'bool',   'openbanking_activo'),
 ]
 
 
@@ -252,6 +273,11 @@ async def _load_org_params(session) -> ParametrosOrganizacion:
         session_maximo_minutos=int(cfg.get('auth.session_maximo_minutos', 480)),
         tema=cfg.get('org.tema', 'violeta'),
         fuente_principal=cfg.get('org.fuente_principal', 'Inter'),
+        sepa_creditor_name=cfg.get('sepa.creditor_name', ''),
+        sepa_creditor_iban=cfg.get('sepa.creditor_iban', ''),
+        sepa_creditor_bic=cfg.get('sepa.creditor_bic', ''),
+        sepa_creditor_id=cfg.get('sepa.creditor_id', ''),
+        openbanking_activo=bool(cfg.get('funcion.openbanking.activo', False)),
     )
 
 
@@ -366,6 +392,11 @@ class ConfiguracionOrganizacionMutation:
             'session_maximo_minutos': datos.session_maximo_minutos if datos.session_maximo_minutos is not None else 480,
             'tema': datos.tema or 'violeta',
             'fuente_principal': datos.fuente_principal or 'Inter',
+            'sepa_creditor_name': datos.sepa_creditor_name or '',
+            'sepa_creditor_iban': datos.sepa_creditor_iban or '',
+            'sepa_creditor_bic': datos.sepa_creditor_bic or '',
+            'sepa_creditor_id': datos.sepa_creditor_id or '',
+            'openbanking_activo': datos.openbanking_activo or False,
         }
 
         # No sobreescribir la contraseña SMTP si el frontend devuelve el placeholder

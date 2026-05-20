@@ -28,14 +28,17 @@ TIPOS = [
 
 # UUIDs fijos: garantizan que el mismo estado tenga el mismo ID en cualquier entorno.
 # Nunca cambiar estos UUIDs. Si se necesita un estado nuevo, añadir una fila con un UUID nuevo.
-# (id, nombre, orden, es_inicial, es_final, descripcion)
+# CERRADA (es_final=true) bloquea imputación de gastos/ingresos; FINALIZADA todavía la admite
+# (gastos rezagados al final del ejercicio). La API estable del catálogo es `codigo`.
+# (id, codigo, nombre, orden, es_inicial, es_final, descripcion, color)
 ESTADOS = [
-    ("f181fc67-a7e1-44db-8b57-344f37bfe1c4", "Borrador",   1, True,  False, "Campaña en elaboración, no publicada"),
-    ("2a55d055-7055-4657-9f1d-30ba76277bd6", "Programada", 2, False, False, "Campaña aprobada y pendiente de inicio"),
-    ("c7d882d2-1aa0-4e74-b212-95ea731c19a0", "En curso",   3, False, False, "Campaña activa en ejecución"),
-    ("05b3edc1-1230-48ee-b7e5-fb7c5f632eff", "Pausada",    4, False, False, "Campaña temporalmente suspendida"),
-    ("7db81ba1-b5ed-4834-8b11-dd1d6c46d71f", "Finalizada", 5, False, True,  "Campaña concluida satisfactoriamente"),
-    ("156dbbf9-46de-4550-ab2a-a7fef2a546ff", "Cancelada",  6, False, True,  "Campaña cancelada antes de finalizar"),
+    ("f181fc67-a7e1-44db-8b57-344f37bfe1c4", "BORRADOR",   "Borrador",   1, True,  False, "Campaña en elaboración, no publicada", "#6B7280"),
+    ("2a55d055-7055-4657-9f1d-30ba76277bd6", "PROGRAMADA", "Programada", 2, False, False, "Campaña aprobada y pendiente de inicio", "#3B82F6"),
+    ("c7d882d2-1aa0-4e74-b212-95ea731c19a0", "EN_CURSO",   "En curso",   3, False, False, "Campaña activa en ejecución", "#10B981"),
+    ("05b3edc1-1230-48ee-b7e5-fb7c5f632eff", "PAUSADA",    "Pausada",    4, False, False, "Campaña temporalmente suspendida", "#F59E0B"),
+    ("7db81ba1-b5ed-4834-8b11-dd1d6c46d71f", "FINALIZADA", "Finalizada", 5, False, True,  "Actividades terminadas; todavía pueden imputarse gastos rezagados", "#6366F1"),
+    ("156dbbf9-46de-4550-ab2a-a7fef2a546ff", "CANCELADA",  "Cancelada",  6, False, True,  "Campaña cancelada antes de finalizar", "#EF4444"),
+    ("9bca5b18-0a49-4493-8cc4-f406b2721f9a", "CERRADA",    "Cerrada",    7, False, True,  "Campaña cerrada económicamente; no admite nuevos gastos", "#1F2937"),
 ]
 
 
@@ -68,25 +71,28 @@ async def seed(session: AsyncSession):
 
     # ── Estados ───────────────────────────────────────────────────────────────
     print("\n— Estados de campaña —")
-    for id_fijo, nombre, orden, es_inicial, es_final, descripcion in ESTADOS:
+    for id_fijo, codigo, nombre, orden, es_inicial, es_final, descripcion, color in ESTADOS:
         await session.execute(
             text("""
                 INSERT INTO estados_campania
-                  (id, nombre, orden, es_inicial, es_final, activo, descripcion)
+                  (id, codigo, nombre, orden, es_inicial, es_final, activo, descripcion, color)
                 VALUES
-                  (:id, :nombre, :orden, :es_inicial, :es_final, true, :descripcion)
+                  (:id, :codigo, :nombre, :orden, :es_inicial, :es_final, true, :descripcion, :color)
                 ON CONFLICT (id) DO UPDATE SET
+                  codigo      = EXCLUDED.codigo,
                   nombre      = EXCLUDED.nombre,
                   orden       = EXCLUDED.orden,
                   es_inicial  = EXCLUDED.es_inicial,
                   es_final    = EXCLUDED.es_final,
                   descripcion = EXCLUDED.descripcion,
+                  color       = EXCLUDED.color,
                   activo      = true
             """),
-            {"id": id_fijo, "nombre": nombre, "orden": orden,
-             "es_inicial": es_inicial, "es_final": es_final, "descripcion": descripcion},
+            {"id": id_fijo, "codigo": codigo, "nombre": nombre, "orden": orden,
+             "es_inicial": es_inicial, "es_final": es_final,
+             "descripcion": descripcion, "color": color},
         )
-        print(f"  [upsert] {id_fijo[:8]}… {nombre}")
+        print(f"  [upsert] {codigo:10s} — {nombre}")
 
     await session.commit()
     print("\n[OK] Seed de catálogos de campaña completado.")

@@ -291,6 +291,294 @@
       "sistema": true
     },
     {
+      "codigo": "REM_RESEND",
+      "nombre": "Generar remesa de reenvío",
+      "descripcion": "Crear remesa nueva con los fallidos representables (SeqTp=FRST). Flujo 4 — A4.",
+      "modulo": "contable",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "REM_PREVIEW",
+      "nombre": "Previsualizar remesa",
+      "descripcion": "Previsualizar cuotas incluidas/excluidas antes de crear una remesa ORDINARIA. Flujo 3 — A1 (D3.3).",
+      "modulo": "contable",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "REM_ANULAR",
+      "nombre": "Anular remesa",
+      "descripcion": "Anular una remesa Borrador, Generada o Enviada (no procesada). Libera cuotas y anula recibos. Flujo 3 — A8.",
+      "modulo": "contable",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "RCB_LIST",
+      "nombre": "Listar recibos",
+      "descripcion": "Ver listado de recibos emitidos",
+      "modulo": "contable",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "RCB_FAIL_NOTIFY",
+      "nombre": "Comunicar fallidos a socios",
+      "descripcion": "Enviar email a socios con recibo fallido usando plantilla de Comunicación Interna. Flujo 4 — pantalla 5.4.",
+      "modulo": "contable",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "RCB_EMIT_LOTE",
+      "nombre": "Emitir recibos en lote",
+      "descripcion": "Emitir un lote de recibos para las cuotas pendientes del ejercicio (ordinario o extraordinario). Flujo 2 — A1/A2.",
+      "modulo": "contable",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "RCB_MARCAR_COBRADO",
+      "nombre": "Marcar recibo cobrado manualmente",
+      "descripcion": "Registrar el cobro manual de un recibo (transferencia, efectivo, tarjeta). Crea ApunteCaja + asiento. Flujo 2 — A3.",
+      "modulo": "contable",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "RCB_ANULAR",
+      "nombre": "Anular recibo",
+      "descripcion": "Anular un recibo emitido o fallido (no cobrado). Si tipo CUOTA_ORDINARIA, la cuota vuelve a Pendiente. Flujo 2 — A4.",
+      "modulo": "contable",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "RCB_DESCARGAR_PDF",
+      "nombre": "Descargar PDF del recibo",
+      "descripcion": "Generar y descargar el PDF resguardo del recibo (formato A5 estilo bancario). Flujo 2 — A5.",
+      "modulo": "contable",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "RCB_ENVIAR_EMAIL",
+      "nombre": "Enviar recibo por email al socio",
+      "descripcion": "Enviar el PDF del recibo al socio usando plantilla de Comunicación Interna. Flujo 2 — A6.",
+      "modulo": "contable",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "JUST_PRESENTAR",
+      "nombre": "Presentar justificante de gasto",
+      "descripcion": "Cualquier miembro activo puede presentar un justificante de gasto imputado a una actividad. Flujo 7 — A1/A2/A8.",
+      "modulo": "contable",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "JUST_ACEPTAR",
+      "nombre": "Aceptar justificante de gasto (responsable de actividad)",
+      "descripcion": "El responsable de la actividad acepta o rechaza el justificante. Flujo 7 — A3/A4 (D7.5).",
+      "modulo": "contable",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "JUST_APROBAR",
+      "nombre": "Aprobar justificante de gasto (tesorero)",
+      "descripcion": "El tesorero aprueba o rechaza el justificante ya aceptado por el responsable. Flujo 7 — A5/A6 (D7.1).",
+      "modulo": "contable",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "JUST_PAGAR",
+      "nombre": "Registrar pago de justificante",
+      "descripcion": "Registra el pago del justificante aprobado. Crea ApunteCaja (GASTO) + asiento contable. Flujo 7 — A7.",
+      "modulo": "contable",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "JUST_LIST",
+      "nombre": "Listar justificantes de gasto",
+      "descripcion": "Ver listado y detalle de justificantes (filtrado por rol y ámbito). Flujo 7.",
+      "modulo": "contable",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CON_IMPORTAR_EXTRACTO",
+      "nombre": "Importar extracto bancario",
+      "descripcion": "Subir el extracto bancario (CSV o Norma 43) para conciliarlo con los apuntes. Flujo 8 — A1.",
+      "modulo": "contable",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CON_CONCILIAR_APUNTE",
+      "nombre": "Conciliar apunte con extracto",
+      "descripcion": "Emparejar (o romper) un apunte de caja con una línea del extracto bancario. Flujo 8 — A2/A5.",
+      "modulo": "contable",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CON_CONFIRMAR_PERIODO",
+      "nombre": "Confirmar conciliación de período",
+      "descripcion": "Cerrar y firmar la conciliación bancaria de un período (mes). Flujo 8 — A3/A4.",
+      "modulo": "contable",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CON_LIST",
+      "nombre": "Listar conciliaciones",
+      "descripcion": "Ver listado de conciliaciones y extractos. Flujo 8.",
+      "modulo": "contable",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CIERRE_EJECUTAR",
+      "nombre": "Ejecutar cierre de ejercicio",
+      "descripcion": "Generar los asientos de regularización, cierre y apertura del ejercicio (PCESFL 2013). Solo TESORERO de la matriz. Flujo 9 — A1/A2/A3 (D9.2).",
+      "modulo": "contable",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CIERRE_CONSULTAR",
+      "nombre": "Consultar estado del cierre",
+      "descripcion": "Ver checklist del cierre, Balance PCESFL, Cuenta de Resultados y descargar Libro Diario. Flujo 9 — A0/A4/A5/A6.",
+      "modulo": "contable",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CCAA_GENERAR",
+      "nombre": "Generar / editar Cuentas Anuales (Memoria)",
+      "descripcion": "Generar el snapshot de CCAA de un ejercicio cerrado y editar la Memoria económica. Flujo 10 — A1/A2.",
+      "modulo": "contable",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CCAA_APROBAR",
+      "nombre": "Aprobar Cuentas Anuales (junta)",
+      "descripcion": "Aprobar las CCAA en acta de junta. Pasa de BORRADOR a APROBADAS. Flujo 10 — A3.",
+      "modulo": "contable",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CCAA_DEPOSITAR",
+      "nombre": "Marcar Cuentas Anuales como depositadas",
+      "descripcion": "Registrar el depósito ante Protectorado / Registro / Tribunal de Cuentas con fecha y acuse. Flujo 10 — A4.",
+      "modulo": "contable",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CCAA_LIST",
+      "nombre": "Consultar Cuentas Anuales",
+      "descripcion": "Ver listado y detalle de CCAA, exportar PDF. Flujo 10 — A5.",
+      "modulo": "contable",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "M182_GENERAR",
+      "nombre": "Generar Modelo 182",
+      "descripcion": "Generar agregado anual de donaciones, fichero AEAT (TXT) y PDF resumen. Flujo 11 — A1/A2/A3.",
+      "modulo": "contable",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "M182_REGISTRAR",
+      "nombre": "Registrar presentación Modelo 182",
+      "descripcion": "Registrar la presentación a la AEAT con código de acuse y fecha. Flujo 11 — A4.",
+      "modulo": "contable",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "M182_LIST",
+      "nombre": "Consultar presentaciones Modelo 182",
+      "descripcion": "Ver histórico de presentaciones del Modelo 182. Flujo 11 — A5.",
+      "modulo": "contable",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CUOT_EJERCICIO_CONFIG",
+      "nombre": "Configurar cuotas del ejercicio",
+      "descripcion": "Definir el importe base de la cuota anual y clonar del ejercicio anterior. Flujo 1 — A1/A2.",
+      "modulo": "contable",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CUOT_MOTIVO_REDUC_MGMT",
+      "nombre": "Gestionar motivos de reducción de cuota",
+      "descripcion": "CRUD del catálogo de motivos de reducción (Joven, Parado, Jubilado, Honor, etc.). Flujo 1 — A3.",
+      "modulo": "contable",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "TM_MOTIVO_DEFAULT",
+      "nombre": "Asociar motivo de reducción a tipo de miembro",
+      "descripcion": "Establecer el motivo de reducción de cuota aplicable por defecto a cada TipoMiembro. Flujo 1 — A4.",
+      "modulo": "miembros",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CUOT_MOTIVO_LIST",
+      "nombre": "Ver catálogo de motivos de reducción",
+      "descripcion": "Consultar el catálogo de motivos de reducción de cuota. Flujo 1.",
+      "modulo": "contable",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
       "codigo": "DON_LIST",
       "nombre": "Listar donaciones",
       "descripcion": "Ver listado de donaciones recibidas",

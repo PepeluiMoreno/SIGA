@@ -22,7 +22,16 @@ class TipoActividad(InmutableMixin, BaseModel):
     tiene_participantes: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
+    # Cuenta contable por defecto a la que se imputarán los gastos de los justificantes
+    # de actividades de este tipo. Si es NULL, el tesorero la elegirá manualmente al pagar.
+    cuenta_contable_default_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('cuentas_contables.id', ondelete='SET NULL'), nullable=True, index=True,
+    )
+
     actividades = relationship('Actividad', back_populates='tipo_actividad', lazy='selectin')
+    cuenta_contable_default = relationship(
+        'CuentaContable', foreign_keys=[cuenta_contable_default_id], lazy='selectin',
+    )
 
     def __repr__(self) -> str:
         return f"<TipoActividad(nombre='{self.nombre}')>"
@@ -62,6 +71,17 @@ class Actividad(BaseModel):
     periodicidad: Mapped[Optional[str]] = mapped_column(
         String(20), nullable=True
     )  # 'diaria','semanal','mensual','trimestral','anual','continua'
+
+    # Carácter temporal explícito (taxonomía de 5 categorías):
+    #   PUNTUAL    — ocurre una vez con fecha concreta
+    #   RECURRENTE — patrón con instancias (plantilla=padre_id NULL, instancia=padre_id NOT NULL)
+    #   PERMANENTE — actividad continua agregadora (solo fuera de campaña)
+    # Reglas duras:
+    #   - PERMANENTE ⇒ campania_id IS NULL, es_recurrente=False, padre_id=NULL.
+    #   - Si campania_id IS NOT NULL ⇒ caracter ∈ {PUNTUAL, RECURRENTE}.
+    caracter: Mapped[str] = mapped_column(
+        String(15), nullable=False, default="PUNTUAL", server_default="PUNTUAL", index=True,
+    )
 
     # Campaña (si presente → actividad de campaña externa)
     campania_id: Mapped[Optional[uuid.UUID]] = mapped_column(

@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
   src: { type: String, default: null },
@@ -34,6 +34,9 @@ const props = defineProps({
 const sizeMap = { xs: 24, sm: 32, md: 40, lg: 56, xl: 80 }
 
 const imgError = ref(false)
+
+// Resetear el flag de error si cambia el src (p.ej. tras subir nueva foto).
+watch(() => props.src, () => { imgError.value = false })
 
 const fullSrc = computed(() => {
   if (!props.src || imgError.value) return null

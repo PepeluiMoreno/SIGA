@@ -60,6 +60,30 @@ export const GET_APUNTES_CAJA = `
   }
 `
 
+// Bitácora: todos los apuntes de caja del ejercicio con la cuenta asociada y el id del asiento.
+// El detalle del asiento (número, estado, ejercicio) se resuelve client-side via map sobre
+// asientosContables ya cargados por useContabilidad (evita un non-null issue en la relación).
+export const GET_BITACORA_MOVIMIENTOS = `
+  query BitacoraMovimientos {
+    apuntesCaja {
+      id
+      tipo
+      origen
+      importe
+      fecha
+      concepto
+      referenciaExterna
+      observaciones
+      conciliado
+      fechaConciliacion
+      asientoId
+      actividadId
+      campaniaId
+      cuentaBancaria { id nombre iban }
+    }
+  }
+`
+
 export const GET_EXTRACTOS_BANCARIOS = `
   query ExtractosBancarios($cuentaId: UUID) {
     extractosBancarios(filter: { cuentaBancariaId: { eq: $cuentaId } }) {
@@ -119,6 +143,8 @@ export const REGISTRAR_APUNTE_CAJA = `
     $origen: String
     $referenciaExterna: String
     $observaciones: String
+    $actividadId: UUID
+    $campaniaId: UUID
   ) {
     registrarApunteCaja(
       cuentaId: $cuentaId
@@ -129,6 +155,8 @@ export const REGISTRAR_APUNTE_CAJA = `
       origen: $origen
       referenciaExterna: $referenciaExterna
       observaciones: $observaciones
+      actividadId: $actividadId
+      campaniaId: $campaniaId
     )
   }
 `
@@ -136,6 +164,38 @@ export const REGISTRAR_APUNTE_CAJA = `
 export const MARCAR_APUNTE_CONCILIADO = `
   mutation MarcarApunteConciliado($apunteId: UUID!, $fechaConciliacion: Date) {
     marcarApunteConciliado(apunteId: $apunteId, fechaConciliacion: $fechaConciliacion)
+  }
+`
+
+export const DESMARCAR_APUNTE_CONCILIADO = `
+  mutation DesmarcarApunteConciliado($apunteId: UUID!) {
+    desmarcarApunteConciliado(apunteId: $apunteId)
+  }
+`
+
+export const ACTUALIZAR_METADATOS_APUNTE = `
+  mutation ActualizarMetadatosApunteCaja(
+    $apunteId: UUID!
+    $concepto: String
+    $observaciones: String
+    $actividadId: UUID
+    $campaniaId: UUID
+    $limpiarActividad: Boolean
+  ) {
+    actualizarMetadatosApunteCaja(
+      apunteId: $apunteId
+      concepto: $concepto
+      observaciones: $observaciones
+      actividadId: $actividadId
+      campaniaId: $campaniaId
+      limpiarActividad: $limpiarActividad
+    )
+  }
+`
+
+export const ANULAR_APUNTE_CAJA = `
+  mutation AnularApunteCaja($apunteId: UUID!, $motivo: String!) {
+    anularApunteCaja(apunteId: $apunteId, motivo: $motivo)
   }
 `
 

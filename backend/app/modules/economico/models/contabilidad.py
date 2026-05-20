@@ -164,29 +164,3 @@ class ApunteContable(BaseModel):
         return self.debe - self.haber
 
 
-class BalanceContable(BaseModel):
-    """Balance de sumas y saldos (para reportes)."""
-    __tablename__ = "balances_contables"
-
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    
-    # Período
-    ejercicio: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    fecha_generacion: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
-    
-    # Datos del balance
-    total_debe: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal('0.00'), nullable=False)
-    total_haber: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal('0.00'), nullable=False)
-    
-    # Información adicional
-    observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-
-    def __repr__(self) -> str:
-        return f"<BalanceContable(ejercicio={self.ejercicio}, debe={self.total_debe}, haber={self.total_haber})>"
-
-    @property
-    def esta_equilibrado(self) -> bool:
-        """Verifica si el balance está equilibrado."""
-        return self.total_debe == self.total_haber
-
-

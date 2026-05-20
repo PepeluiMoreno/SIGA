@@ -12,7 +12,6 @@ from ..models.contabilidad import (
     CuentaContable,
     AsientoContable,
     ApunteContable,
-    BalanceContable,
     TipoCuentaContable,
     TipoAsientoContable,
     EstadoAsientoContable,
@@ -105,6 +104,36 @@ class ContabilidadService:
         )
         return list(result.scalars().all())
 
+    async def tiene_apuntes_confirmados(self, cuenta_id: UUID) -> bool:
+        """¿Esta cuenta tiene apuntes en asientos CONFIRMADOS?
+
+        Si los tiene, no se puede modificar su código, tipo ni padre, ni eliminarla
+        (rompería la integridad contable). Solo se puede renombrar y desactivar.
+        """
+        r = await self.session.execute(
+            select(func.count(ApunteContable.id))
+            .join(AsientoContable, ApunteContable.asiento_id == AsientoContable.id)
+            .where(ApunteContable.cuenta_id == cuenta_id)
+            .where(AsientoContable.estado == EstadoAsientoContable.CONFIRMADO)
+        )
+        return (r.scalar() or 0) > 0
+
+    async def ejercicio_cerrado(self, ejercicio: int) -> bool:
+        """¿El ejercicio ya tiene un asiento de CIERRE confirmado?
+
+        Si lo tiene, no se debe permitir crear asientos nuevos en ese ejercicio:
+        los importes ya se han depositado en Cuentas Anuales (Ley 50/2002 art.34,
+        LO 8/2007 para partidos políticos). Cualquier modificación rompería la
+        imagen fiel y obligaría a reformular las cuentas.
+        """
+        r = await self.session.execute(
+            select(func.count(AsientoContable.id))
+            .where(AsientoContable.ejercicio == ejercicio)
+            .where(AsientoContable.tipo_asiento == TipoAsientoContable.CIERRE)
+            .where(AsientoContable.estado == EstadoAsientoContable.CONFIRMADO)
+        )
+        return (r.scalar() or 0) > 0
+
     # ─── Asientos contables ───────────────────────────────────────────────────
 
     async def siguiente_numero_asiento(self, ejercicio: int) -> int:
@@ -125,7 +154,17 @@ class ContabilidadService:
         tipo_asiento: TipoAsientoContable = TipoAsientoContable.GESTION,
         observaciones: Optional[str] = None,
     ) -> AsientoContable:
-        """Crea un nuevo asiento en estado BORRADOR."""
+        """Crea un nuevo asiento en estado BORRADOR.
+
+        Rechaza si el ejercicio ya está cerrado (tiene asiento CIERRE confirmado),
+        salvo que el asiento sea precisamente de APERTURA (caso legítimo: la
+        apertura del ejercicio siguiente arrastra saldos del cerrado).
+        """
+        if tipo_asiento != TipoAsientoContable.APERTURA and await self.ejercicio_cerrado(ejercicio):
+            raise ValueError(
+                f"El ejercicio {ejercicio} está cerrado (tiene asiento de CIERRE confirmado). "
+                f"No se pueden crear nuevos asientos."
+            )
         numero_asiento = await self.siguiente_numero_asiento(ejercicio)
         asiento = AsientoContable(
             ejercicio=ejercicio,
@@ -293,48 +332,61 @@ class ContabilidadService:
         row = result.first()
         return (row.total_debe or Decimal('0')) - (row.total_haber or Decimal('0'))
 
-    # ─── Balance y reportes ───────────────────────────────────────────────────
+    # ─── Balance de sumas y saldos (al vuelo, no se persiste) ─────────────────
 
-    async def generar_balance(
-        self, ejercicio: int, fecha_fin: Optional[date] = None
-    ) -> BalanceContable:
-        """Genera y persiste un balance de sumas y saldos."""
-        if fecha_fin is None:
-            fecha_fin = date.today()
+    async def calcular_balance_sumas_y_saldos(
+        self,
+        ejercicio: int,
+        fecha_corte: Optional[date] = None,
+        solo_con_saldo: bool = True,
+    ) -> list[dict]:
+        """Calcula el balance de sumas y saldos del ejercicio a una fecha de corte.
 
-        # Calcular totales de todos los asientos confirmados del ejercicio
+        Este balance NO se persiste — es una proyección en vivo del libro mayor
+        a una fecha dada. Se usa para verificar cuadre (Σ debe = Σ haber) y como
+        base para el balance PCESFL del cierre.
+
+        Devuelve una lista de dicts con: codigo, nombre, tipo, total_debe,
+        total_haber, saldo (positivo = deudor, negativo = acreedor).
+        """
+        if fecha_corte is None:
+            fecha_corte = date.today()
+
         query = (
             select(
+                CuentaContable.codigo,
+                CuentaContable.nombre,
+                CuentaContable.tipo,
                 func.coalesce(func.sum(ApunteContable.debe), Decimal('0')).label('total_debe'),
                 func.coalesce(func.sum(ApunteContable.haber), Decimal('0')).label('total_haber'),
             )
-            .join(AsientoContable, ApunteContable.asiento_id == AsientoContable.id)
-            .where(AsientoContable.ejercicio == ejercicio)
-            .where(AsientoContable.estado == EstadoAsientoContable.CONFIRMADO)
-            .where(AsientoContable.fecha <= fecha_fin)
+            .select_from(CuentaContable)
+            .outerjoin(ApunteContable, ApunteContable.cuenta_id == CuentaContable.id)
+            .outerjoin(
+                AsientoContable,
+                (AsientoContable.id == ApunteContable.asiento_id)
+                & (AsientoContable.ejercicio == ejercicio)
+                & (AsientoContable.estado == EstadoAsientoContable.CONFIRMADO)
+                & (AsientoContable.fecha <= fecha_corte),
+            )
+            .group_by(CuentaContable.codigo, CuentaContable.nombre, CuentaContable.tipo)
+            .order_by(CuentaContable.codigo)
         )
         result = await self.session.execute(query)
-        row = result.first()
-        total_debe = row.total_debe or Decimal('0')
-        total_haber = row.total_haber or Decimal('0')
-
-        balance = BalanceContable(
-            ejercicio=ejercicio,
-            total_debe=total_debe,
-            total_haber=total_haber,
-        )
-        self.session.add(balance)
-        await self.session.commit()
-        await self.session.refresh(balance)
-        return balance
-
-    async def listar_balances(self, ejercicio: Optional[int] = None) -> List[BalanceContable]:
-        query = select(BalanceContable)
-        if ejercicio:
-            query = query.where(BalanceContable.ejercicio == ejercicio)
-        query = query.order_by(BalanceContable.fecha_generacion.desc())
-        result = await self.session.execute(query)
-        return list(result.scalars().all())
+        filas = []
+        for r in result.all():
+            saldo = (r.total_debe or Decimal('0')) - (r.total_haber or Decimal('0'))
+            if solo_con_saldo and r.total_debe == 0 and r.total_haber == 0:
+                continue
+            filas.append({
+                "codigo": r.codigo,
+                "nombre": r.nombre,
+                "tipo": r.tipo.value if hasattr(r.tipo, "value") else str(r.tipo),
+                "total_debe": r.total_debe or Decimal('0'),
+                "total_haber": r.total_haber or Decimal('0'),
+                "saldo": saldo,
+            })
+        return filas
 
     async def resumen_cuentas_por_tipo(
         self, ejercicio: int, fecha_fin: Optional[date] = None

@@ -71,10 +71,13 @@ graphqlClient.request = async function patchedRequest(document, variables, reque
       e.message?.includes('Autenticación requerida') ||
       e.message?.toLowerCase().includes('token') && e.message?.toLowerCase().includes('expirado')
     )
-    if (isAuthError && localStorage.getItem('siga_token')) {
+    if (isAuthError && (localStorage.getItem('siga_token') || sessionStorage.getItem('siga_token'))) {
+      // El token puede estar en localStorage (Recordarme) o sessionStorage
       localStorage.removeItem('siga_token')
       localStorage.removeItem('siga_user')
       localStorage.removeItem('session_start_time')
+      sessionStorage.removeItem('siga_token')
+      sessionStorage.removeItem('siga_user')
       setAuthToken(null)
       if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
         window.location.href = '/login'
@@ -93,8 +96,9 @@ export function setAuthToken(token) {
   }
 }
 
-// Inicializa el header desde localStorage en la carga del módulo.
-const _stored = localStorage.getItem('siga_token')
+// Inicializa el header desde el almacén de sesión (localStorage si "Recordarme",
+// si no sessionStorage) en la carga del módulo.
+const _stored = localStorage.getItem('siga_token') || sessionStorage.getItem('siga_token')
 if (_stored) setAuthToken(_stored)
 
 export async function executeQuery(query, variables = {}) {

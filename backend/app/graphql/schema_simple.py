@@ -91,17 +91,21 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery):
     cuentasContables: list[CuentaContableType] = strawchemy.field(filter_input=CuentaContableFilter)
     asientosContables: list[AsientoContableType] = strawchemy.field(filter_input=AsientoContableFilter)
     apuntesContables: list[ApunteContableType] = strawchemy.field(filter_input=ApunteContableFilter)
-    balancesContables: list[BalanceContableType] = strawchemy.field(filter_input=BalanceContableFilter)
     reglasContables: list[ReglaContableType] = strawchemy.field(filter_input=ReglaContableFilter)
 
     # === FINANCIERO - Cuotas/Donaciones/Presupuesto ===
     importesCuotaAnio: list[ImporteCuotaAnioType] = strawchemy.field(filter_input=ImporteCuotaAnioFilter)
     formasPago: list[FormaPagoType] = strawchemy.field(filter_input=FormaPagoFilter)
     cuotasAnuales: list[CuotaAnualType] = strawchemy.field(filter_input=CuotaAnualFilter)
+    # Flujo 1 — catálogo de motivos de reducción
+    motivosReduccionCuota: list[MotivoReduccionCuotaType] = strawchemy.field(filter_input=MotivoReduccionCuotaFilter)
     donacionConceptos: list[DonacionConceptoType] = strawchemy.field(filter_input=DonacionConceptoFilter)
     donaciones: list[DonacionType] = strawchemy.field(filter_input=DonacionFilter)
     remesas: list[RemesaType] = strawchemy.field(filter_input=RemesaFilter)
     ordenesCobro: list[OrdenCobroType] = strawchemy.field(filter_input=OrdenCobroFilter)
+    recibos: list[ReciboType] = strawchemy.field(filter_input=ReciboFilter)
+    justificantesGasto: list[JustificanteGastoType] = strawchemy.field(filter_input=JustificanteGastoFilter)
+    solicitudesReduccionCuota: list[SolicitudReduccionCuotaType] = strawchemy.field(filter_input=SolicitudReduccionCuotaFilter)
     estadosPlanificacion: list[EstadoPlanificacionType] = strawchemy.field()
     categoriasPartida: list[CategoriaPartidaType] = strawchemy.field()
     partidasPresupuestarias: list[PartidaPresupuestariaType] = strawchemy.field()

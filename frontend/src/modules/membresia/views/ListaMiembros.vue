@@ -9,10 +9,7 @@
       create-route="/miembros/nuevo"
       :fields="filterFields"
       :description="descripcionBusqueda"
-      :lazy="true"
-      :loading="loading"
       class="mb-4"
-      @apply="aplicarFiltros"
       @clear="limpiarFiltros">
 
       <!-- Situación: dropdown personalizado con sub-selección de motivo de baja -->
@@ -67,18 +64,15 @@
     <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-6">
       <p class="text-red-700 font-medium">Error al cargar datos</p>
       <p class="text-red-600 text-sm mt-1">{{ error.message || error }}</p>
-      <button @click="aplicarFiltros" class="mt-3 text-red-600 hover:text-red-800 text-sm font-medium">
+      <button @click="loadMiembros" class="mt-3 text-red-600 hover:text-red-800 text-sm font-medium">
         Reintentar
       </button>
     </div>
 
     <!-- Resultados -->
     <div v-else class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-      <!-- Mensaje inicial -->
-      <EstadoPendiente v-if="!filtersApplied" />
-
       <!-- Sin resultados -->
-      <div v-else-if="miembros.length === 0" class="p-12 text-center text-gray-500">
+      <div v-if="miembros.length === 0" class="p-12 text-center text-gray-500">
         <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
@@ -93,7 +87,17 @@
           <span class="text-sm text-gray-600">
             <strong>{{ total }}</strong> {{ tituloDescriptivo }}
           </span>
-          <button @click="limpiarFiltros" class="text-sm text-purple-600 hover:text-purple-800">Limpiar filtros</button>
+          <div class="flex items-center gap-4">
+            <button v-if="tienePermiso('SOC_EXPORT') && miembros.length"
+              @click="exportarExcel" :disabled="exportando"
+              class="inline-flex items-center gap-1.5 text-sm font-medium text-green-700 hover:text-green-900 disabled:opacity-50">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              {{ exportando ? 'Exportando…' : 'Exportar a Excel' }}
+            </button>
+            <button @click="limpiarFiltros" class="text-sm text-purple-600 hover:text-purple-800">Limpiar filtros</button>
+          </div>
         </div>
 
         <table class="min-w-full divide-y divide-gray-200">
@@ -135,6 +139,11 @@
                       </div>
                       <div class="flex items-center gap-2 mt-0.5">
                         <span v-if="fila.miembro.tipoMiembro" class="text-xs text-gray-400">{{ fila.miembro.tipoMiembro.nombre }}</span>
+                        <span v-if="fila.miembro.estado && fila.miembro.estado.nombre !== 'Alta'"
+                          class="text-xs px-1.5 py-0.5 rounded-full font-medium"
+                          :style="estadoBadgeStyle(fila.miembro.estado)">
+                          {{ fila.miembro.estado.nombre }}
+                        </span>
                         <span v-if="fila.miembro.esVoluntario" class="text-xs bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full">Voluntario</span>
                         <span v-if="fila.miembro.usuario?.activo" title="Tiene acceso a la aplicación"
                           class="inline-flex items-center gap-0.5 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
@@ -207,8 +216,7 @@ import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_MIEMBROS, GET_AGRUPACIONES, GET_TIPOS_MIEMBRO, GET_ESTADOS_MIEMBRO, GET_MOTIVOS_BAJA, GET_NOMBRAMIENTOS_ACTIVOS } from '@/graphql/queries/miembros.js'
 import AgrupacionCascada from '@/components/common/AgrupacionCascada.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
-import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
-const { loading, error, query } = useGraphQL()
+const { loading, error, query, mutation } = useGraphQL()
 const orgConfig = useOrgConfigStore()
 const { tienePermiso } = usePermisos()
 
@@ -234,7 +242,6 @@ const nombramientosMap = computed(() => {
 
 // Estado UI
 const searchQuery = ref('')
-const filtersApplied = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
@@ -249,25 +256,24 @@ const filters = ref({
   cargo: '',       // '' = todos, 'SIN_CARGO' = sin cargo, o codigo de rol
   soloVoluntarios: false,
   soloConAcceso: false,
+  incluirBajas: false,  // por defecto los dados de baja no se listan
 })
 
-// Limpiar resultados al cambiar cualquier filtro
+// Refiltrado reactivo: cualquier cambio de filtro re-aplica sobre los datos ya
+// cargados (no hay recarga al servidor — todo el filtrado es en cliente).
 watch(filters, () => {
-  if (filtersApplied.value) {
-    miembros.value = []
-    allMiembros.value = []
-    filtersApplied.value = false
-    total.value = 0
-    currentPage.value = 1
-  }
+  currentPage.value = 1
+  applyClientFilters()
 }, { deep: true })
 
-// Búsqueda en tiempo real sobre datos ya cargados
+// Búsqueda en tiempo real. Al buscar se despliegan todas las agrupaciones para
+// que los resultados sean visibles; al vaciar la búsqueda se vuelven a colapsar.
 watch(searchQuery, () => {
-  if (allMiembros.value.length > 0) {
-    currentPage.value = 1
-    applyClientFilters()
-  }
+  currentPage.value = 1
+  colapsadas.value = searchQuery.value.trim()
+    ? new Set()
+    : new Set([...agrupaciones.value.map(a => a.id), '__sin__'])
+  applyClientFilters()
 })
 
 // Computed: paginación
@@ -347,6 +353,11 @@ const filterFields = computed(() => [
   {
     key: 'soloConAcceso',
     label: 'Con acceso a la app',
+    type: 'toggle',
+  },
+  {
+    key: 'incluirBajas',
+    label: 'Incluir las bajas',
     type: 'toggle',
   },
   { key: 'motivoBaja', type: 'custom', hidden: true, defaultValue: '' },
@@ -580,18 +591,13 @@ const loadCatalogos = async () => {
   }
 }
 
-// Aplicar filtros y buscar
-const aplicarFiltros = async () => {
-  filtersApplied.value = true
-  currentPage.value = 1
-
+// Cargar todos los socios (una sola vez). El filtrado posterior es en cliente.
+const loadMiembros = async () => {
   try {
     const data = await query(GET_MIEMBROS)
-    if (data?.miembros) {
-      allMiembros.value = data.miembros
-      applyClientFilters()
-      colapsadas.value = new Set([...agrupaciones.value.map(a => a.id), '__sin__'])
-    }
+    allMiembros.value = data?.miembros || []
+    colapsadas.value = new Set([...agrupaciones.value.map(a => a.id), '__sin__'])
+    applyClientFilters()
   } catch (err) {
     console.error('Error al cargar miembros:', err)
   }
@@ -649,6 +655,11 @@ const applyClientFilters = () => {
     })
   }
 
+  // Los dados de baja se ocultan salvo que se marque "Incluir las bajas".
+  if (!filters.value.incluirBajas) {
+    filtered = filtered.filter(m => m.estado?.id !== estadoBajaId.value)
+  }
+
   // Filtro por tipos (OR)
   if (filters.value.tipos.length > 0) {
     filtered = filtered.filter(m => m.tipoMiembro && filters.value.tipos.includes(m.tipoMiembro.id))
@@ -693,7 +704,7 @@ const applyClientFilters = () => {
   miembros.value = filtered
 }
 
-// Limpiar filtros
+// Limpiar filtros — los watchers re-aplican el filtrado sobre los datos cargados.
 const limpiarFiltros = () => {
   filters.value = {
     estados: [],
@@ -703,12 +714,9 @@ const limpiarFiltros = () => {
     cargo: '',
     soloVoluntarios: false,
     soloConAcceso: false,
+    incluirBajas: false,
   }
   searchQuery.value = ''
-  filtersApplied.value = false
-  miembros.value = []
-  allMiembros.value = []
-  total.value = 0
   currentPage.value = 1
 }
 
@@ -742,6 +750,49 @@ const getInitials = (nombre, apellido1) => {
   return `${nombre?.[0] || ''}${apellido1?.[0] || ''}`.toUpperCase()
 }
 
-// Montar
-onMounted(() => loadCatalogos())
+// Estilo del badge de situación, teñido con el color del estado del catálogo.
+const estadoBadgeStyle = (estado) => {
+  const hex = (estado?.color || '#64748b').replace('#', '')
+  const r = parseInt(hex.slice(0, 2), 16) || 100
+  const g = parseInt(hex.slice(2, 4), 16) || 116
+  const b = parseInt(hex.slice(4, 6), 16) || 139
+  return { background: `rgba(${r},${g},${b},0.15)`, color: estado?.color || '#64748b' }
+}
+
+// ── Exportación a Excel ───────────────────────────────────────────────────────
+const exportando = ref(false)
+const EXPORTAR_MIEMBROS_XLSX = `
+  mutation ExportarMiembros($ids: [UUID!]!) {
+    exportarMiembrosXlsx(ids: $ids)
+  }
+`
+const exportarExcel = async () => {
+  if (!miembros.value.length) return
+  exportando.value = true
+  try {
+    const ids = miembros.value.map(m => m.id)
+    const data = await mutation(EXPORTAR_MIEMBROS_XLSX, { ids })
+    const bytes = Uint8Array.from(atob(data.exportarMiembrosXlsx), c => c.charCodeAt(0))
+    const blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `socios_${new Date().toISOString().slice(0, 10)}.xlsx`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error('Error exportando:', e)
+    alert(e?.response?.errors?.[0]?.message || 'No se pudo exportar el listado.')
+  } finally {
+    exportando.value = false
+  }
+}
+
+// Montar — cargar catálogos y socios de inmediato (sin pantalla de espera).
+onMounted(async () => {
+  await loadCatalogos()
+  await loadMiembros()
+})
 </script>

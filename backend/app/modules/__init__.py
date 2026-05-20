@@ -127,7 +127,6 @@ from .economico.models import (
     CuentaContable,
     AsientoContable,
     ApunteContable,
-    BalanceContable,
     ModoIngreso,
     ImporteCuotaAnio,
     CuotaAnual,

@@ -117,6 +117,8 @@ class TesoreriaService:
         entidad_origen_id: Optional[UUID] = None,
         referencia_externa: Optional[str] = None,
         observaciones: Optional[str] = None,
+        actividad_id: Optional[UUID] = None,
+        campania_id: Optional[UUID] = None,
     ) -> ApunteCaja:
         """Registra un movimiento de caja y actualiza el saldo de la cuenta."""
         cuenta = await self.obtener_cuenta_bancaria(cuenta_id)
@@ -138,6 +140,8 @@ class TesoreriaService:
             entidad_origen_id=entidad_origen_id,
             referencia_externa=referencia_externa,
             observaciones=observaciones,
+            actividad_id=actividad_id,
+            campania_id=campania_id,
         )
 
         # Actualizar saldo
@@ -226,6 +230,122 @@ class TesoreriaService:
         await self.session.refresh(apunte)
         return apunte
 
+    async def desmarcar_apunte_conciliado(self, apunte_id: UUID) -> ApunteCaja:
+        """Revierte la conciliación manual de un apunte. No toca el extracto."""
+        apunte = await self.obtener_apunte(apunte_id)
+        if not apunte:
+            raise ValueError(f"Apunte {apunte_id} no encontrado")
+        apunte.conciliado = False
+        apunte.fecha_conciliacion = None
+        self.session.add(apunte)
+        await self.session.commit()
+        await self.session.refresh(apunte)
+        return apunte
+
+    async def actualizar_metadatos_apunte(
+        self,
+        apunte_id: UUID,
+        *,
+        concepto: Optional[str] = None,
+        observaciones: Optional[str] = None,
+        actividad_id: Optional[UUID] = None,
+        campania_id: Optional[UUID] = None,
+        limpiar_actividad: bool = False,
+    ) -> ApunteCaja:
+        """Edita metadatos no contables de un apunte (concepto, observaciones, imputación).
+        NO permite cambiar importe, fecha ni tipo — para corregir esos hay que anular el apunte
+        y crear uno nuevo.
+        """
+        apunte = await self.obtener_apunte(apunte_id)
+        if not apunte:
+            raise ValueError(f"Apunte {apunte_id} no encontrado")
+        if concepto is not None:
+            if not concepto.strip():
+                raise ValueError("El concepto no puede quedar vacío.")
+            apunte.concepto = concepto.strip()
+        if observaciones is not None:
+            apunte.observaciones = observaciones
+        if limpiar_actividad:
+            apunte.actividad_id = None
+            apunte.campania_id = None
+        else:
+            if actividad_id is not None:
+                apunte.actividad_id = actividad_id
+            if campania_id is not None:
+                apunte.campania_id = campania_id
+        self.session.add(apunte)
+        await self.session.commit()
+        await self.session.refresh(apunte)
+        return apunte
+
+    async def anular_apunte(self, apunte_id: UUID, motivo: str) -> ApunteCaja:
+        """Anula un apunte generando un CONTRAAPUNTE en la misma cuenta con importe inverso.
+
+        Reglas:
+          - El apunte original se mantiene (inmutabilidad contable).
+          - Se crea un nuevo apunte con tipo opuesto (GASTO↔INGRESO) y mismo importe.
+          - Si el original tenía asiento contable confirmado, se anula también ese asiento.
+          - El motivo queda registrado en las observaciones de ambos apuntes.
+
+        Devuelve el contraapunte.
+        """
+        if not motivo or not motivo.strip():
+            raise ValueError("Debes indicar el motivo de la anulación.")
+        original = await self.obtener_apunte(apunte_id)
+        if not original:
+            raise ValueError(f"Apunte {apunte_id} no encontrado")
+
+        # Tipo inverso
+        if original.tipo == TipoApunte.INGRESO:
+            tipo_inv = TipoApunte.GASTO
+        elif original.tipo == TipoApunte.GASTO:
+            tipo_inv = TipoApunte.INGRESO
+        else:
+            raise ValueError("Los apuntes de TRANSFERENCIA no se anulan directamente.")
+
+        marca = f"[Anulación de apunte {apunte_id} — {motivo.strip()}]"
+        # Registrar motivo en el original
+        original.observaciones = ((original.observaciones or "") + "\n" + marca).strip()
+        self.session.add(original)
+
+        # Crear contraapunte
+        contra = ApunteCaja(
+            cuenta_bancaria_id=original.cuenta_bancaria_id,
+            fecha=date.today(),
+            importe=original.importe,
+            tipo=tipo_inv,
+            concepto=f"Anulación: {original.concepto}",
+            origen=OrigenApunte.MANUAL,
+            entidad_origen_tipo="apunte_caja",
+            entidad_origen_id=original.id,
+            referencia_externa=None,
+            observaciones=marca,
+            actividad_id=original.actividad_id,
+            campania_id=original.campania_id,
+        )
+        # Ajustar saldo de la cuenta
+        cuenta = await self.obtener_cuenta_bancaria(original.cuenta_bancaria_id)
+        if cuenta:
+            if tipo_inv == TipoApunte.INGRESO:
+                cuenta.saldo_actual += original.importe
+            elif tipo_inv == TipoApunte.GASTO:
+                cuenta.saldo_actual -= original.importe
+            self.session.add(cuenta)
+        self.session.add(contra)
+
+        # Anular asiento contable asociado al original
+        if original.asiento_id:
+            from .contabilidad_service import ContabilidadService
+            contab = ContabilidadService(self.session)
+            try:
+                await contab.anular_asiento(original.asiento_id)
+            except Exception:
+                pass  # idempotente: si ya estaba anulado, seguimos
+
+        await self.session.commit()
+        await self.session.refresh(contra)
+        return contra
+
     # ─── Extractos bancarios ─────────────────────────────────────────────────
 
     async def importar_extracto(
@@ -233,19 +353,47 @@ class TesoreriaService:
         cuenta_id: UUID,
         lineas: List[dict],
     ) -> List[ExtractoBancario]:
-        """Importa líneas de un extracto bancario (CSV/Norma43/MT940)."""
+        """Importa líneas de un extracto bancario.
+
+        D8.1: el cliente puede llamar con líneas pre-parseadas (de CSV en frontend)
+        o usar el parser de Norma 43 (`parse_norma43` + esta función).
+
+        Cada línea: {fecha (date), importe (number), concepto (str), referencia (str)}.
+        Evita duplicar líneas con misma (fecha, importe, referencia) en la misma cuenta.
+        """
+        from datetime import date as _date
         cuenta = await self.obtener_cuenta_bancaria(cuenta_id)
         if not cuenta:
             raise ValueError(f"Cuenta {cuenta_id} no encontrada")
 
+        # Pre-cargar líneas ya existentes para evitar duplicados (mismo día + importe + referencia)
+        existentes_r = await self.session.execute(
+            select(ExtractoBancario.fecha, ExtractoBancario.importe, ExtractoBancario.referencia)
+            .where(ExtractoBancario.cuenta_bancaria_id == cuenta_id)
+        )
+        existentes = {
+            (f, Decimal(str(i)).quantize(Decimal("0.01")), (ref or "").strip())
+            for f, i, ref in existentes_r.all()
+        }
+
         extractos = []
         for linea in lineas:
+            f = linea["fecha"]
+            if isinstance(f, str):
+                f = _date.fromisoformat(f)
+            importe_norm = Decimal(str(linea["importe"])).quantize(Decimal("0.01"))
+            ref_norm = (linea.get("referencia") or "").strip()
+            clave = (f, importe_norm, ref_norm)
+            if clave in existentes:
+                continue
+            existentes.add(clave)
+
             extracto = ExtractoBancario(
                 cuenta_bancaria_id=cuenta_id,
-                fecha=linea['fecha'],
-                importe=Decimal(str(linea['importe'])),
-                concepto=linea.get('concepto'),
-                referencia=linea.get('referencia'),
+                fecha=f,
+                importe=importe_norm,
+                concepto=linea.get("concepto"),
+                referencia=ref_norm or None,
             )
             self.session.add(extracto)
             extractos.append(extracto)
@@ -254,6 +402,123 @@ class TesoreriaService:
         for e in extractos:
             await self.session.refresh(e)
         return extractos
+
+    @staticmethod
+    def parse_norma43(contenido: bytes) -> List[dict]:
+        """D8.1: parsea un fichero Norma 43 AEB (extracto bancario español).
+
+        Formato resumido (norma CSB-43 del Consejo Superior Bancario):
+        - Cada línea tiene 80 caracteres y un código de 2 dígitos al inicio:
+            11 — Registro de cabecera de cuenta (IBAN, fechas, saldo inicial)
+            22 — Registro principal de movimiento (fecha, importe, concepto)
+            23 — Conceptos adicionales del movimiento (hasta 5 líneas 23 por 22)
+            33 — Final de cuenta (saldo final, totales)
+            88 — Final de fichero
+        - Importe en céntimos con signo en posición 41 (1=debe, 2=haber).
+        - Fechas en formato AAMMDD (4xx posiciones) o AAAAMMDD según versión.
+
+        Devuelve lista de dicts {fecha, importe, concepto, referencia} listos
+        para `importar_extracto`.
+
+        Implementación tolerante: ignora líneas que no encajan en el formato
+        y captura solo los registros 22 con su 23 acumulado.
+        """
+        from datetime import date as _date
+        try:
+            texto = contenido.decode("iso-8859-1")
+        except Exception:
+            texto = contenido.decode("utf-8", errors="ignore")
+
+        lineas: List[dict] = []
+        actual: Optional[dict] = None
+
+        for raw in texto.splitlines():
+            if len(raw) < 78:
+                continue
+            codigo = raw[:2]
+            if codigo == "22":
+                # cerrar el movimiento anterior si lo había
+                if actual:
+                    lineas.append(actual)
+                    actual = None
+                try:
+                    # fecha de operación: posiciones 10-15 (AAMMDD) — 0-indexed: [10:16]
+                    aa = int(raw[10:12])
+                    mm = int(raw[12:14])
+                    dd = int(raw[14:16])
+                    # Heurística para el siglo: si aa < 60 → 20xx; si aa >= 60 → 19xx
+                    yyyy = 2000 + aa if aa < 60 else 1900 + aa
+                    fecha = _date(yyyy, mm, dd)
+                except Exception:
+                    continue
+                # Signo en posición 27 (índice 27), importe en 28..40 (13 dígitos en céntimos)
+                try:
+                    signo = raw[27]
+                    importe_centimos = int(raw[28:41])
+                    importe = Decimal(importe_centimos) / Decimal(100)
+                    if signo == "1":
+                        importe = -importe
+                except Exception:
+                    continue
+                # Concepto común en 52..63 (12 chars) y referencia propia 39..51
+                concepto = raw[52:64].strip() if len(raw) >= 64 else ""
+                referencia = raw[41:51].strip() if len(raw) >= 51 else ""
+                actual = {
+                    "fecha": fecha,
+                    "importe": importe,
+                    "concepto": concepto,
+                    "referencia": referencia,
+                }
+            elif codigo == "23" and actual is not None:
+                # Conceptos adicionales: añadir al concepto separados por " | "
+                extra = raw[4:].strip()
+                if extra:
+                    actual["concepto"] = (actual["concepto"] + " | " + extra).strip(" | ")
+            elif codigo in ("33", "88"):
+                if actual:
+                    lineas.append(actual)
+                    actual = None
+
+        if actual:
+            lineas.append(actual)
+        return lineas
+
+    async def romper_conciliacion(
+        self,
+        conciliacion_id: UUID,
+    ) -> bool:
+        """Deshace un emparejamiento previo. Solo si el período de la conciliación
+        bancaria no está confirmado/cerrado.
+        """
+        r = await self.session.execute(
+            select(Conciliacion).where(Conciliacion.id == conciliacion_id)
+        )
+        c = r.scalars().first()
+        if not c:
+            raise ValueError(f"Conciliación {conciliacion_id} no encontrada")
+
+        # Marcar apunte y extracto como NO conciliados
+        if c.apunte_id:
+            apunte_r = await self.session.execute(
+                select(ApunteCaja).where(ApunteCaja.id == c.apunte_id)
+            )
+            apunte = apunte_r.scalars().first()
+            if apunte:
+                apunte.conciliado = False
+                apunte.fecha_conciliacion = None
+                self.session.add(apunte)
+        if c.extracto_id:
+            ext_r = await self.session.execute(
+                select(ExtractoBancario).where(ExtractoBancario.id == c.extracto_id)
+            )
+            extracto = ext_r.scalars().first()
+            if extracto:
+                extracto.conciliado = False
+                self.session.add(extracto)
+
+        await self.session.delete(c)
+        await self.session.commit()
+        return True
 
     async def listar_extractos(
         self,

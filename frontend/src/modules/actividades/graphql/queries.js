@@ -33,6 +33,10 @@ export const GET_ACCIONES = `
       id
       nombre
       descripcion
+      caracter
+      esRecurrente
+      padreId
+      campaniaId
       fechaInicio
       fechaFin
       horaInicio
@@ -60,6 +64,7 @@ export const GET_ACCIONES = `
       campania {
         id
         nombre
+        estado { id codigo nombre }
       }
       fechaCreacion
     }

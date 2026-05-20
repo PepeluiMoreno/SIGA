@@ -1131,9 +1131,10 @@ class AportacionHorasFilter:
 # ============================================================================
 
 from ..modules.economico.models import (
-    ImporteCuotaAnio, CuotaAnual, DonacionConcepto, Donacion, Remesa, OrdenCobro, FormaPago,
+    ImporteCuotaAnio, CuotaAnual, MotivoReduccionCuota, DonacionConcepto, Donacion, Remesa, OrdenCobro, Recibo,
+    JustificanteGasto, SolicitudReduccionCuota, FormaPago,
     CuentaBancaria, MovimientoTesoreria, ConciliacionBancaria,
-    CuentaContable, AsientoContable, ApunteContable, BalanceContable,
+    CuentaContable, AsientoContable, ApunteContable,
     CompromisoPresupuestario,
 )
 
@@ -1148,7 +1149,19 @@ class ImporteCuotaAnioUpdateInput:
     pass
 
 
-@strawchemy.filter(ImporteCuotaAnio)
+@strawchemy.input(MotivoReduccionCuota, mode="create_input", include="all", exclude=get_exclude_fields(MotivoReduccionCuota))
+class MotivoReduccionCuotaCreateInput:
+    pass
+
+@strawchemy.input(MotivoReduccionCuota, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(MotivoReduccionCuota))
+class MotivoReduccionCuotaUpdateInput:
+    pass
+
+@strawchemy.filter(MotivoReduccionCuota, include="all")
+class MotivoReduccionCuotaFilter:
+    pass
+
+@strawchemy.filter(ImporteCuotaAnio, include="all")
 class ImporteCuotaAnioFilter:
     pass
 
@@ -1228,6 +1241,41 @@ class OrdenCobroFilter:
     pass
 
 
+@strawchemy.input(Recibo, mode="create_input", include="all", exclude=get_exclude_fields(Recibo))
+class ReciboCreateInput:
+    pass
+
+
+@strawchemy.input(Recibo, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Recibo))
+class ReciboUpdateInput:
+    pass
+
+
+@strawchemy.filter(Recibo)
+class ReciboFilter:
+    pass
+
+
+@strawchemy.input(JustificanteGasto, mode="create_input", include="all", exclude=get_exclude_fields(JustificanteGasto))
+class JustificanteGastoCreateInput:
+    pass
+
+
+@strawchemy.input(JustificanteGasto, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(JustificanteGasto))
+class JustificanteGastoUpdateInput:
+    pass
+
+
+@strawchemy.filter(JustificanteGasto, include="all")
+class JustificanteGastoFilter:
+    pass
+
+
+@strawchemy.filter(SolicitudReduccionCuota, include="all")
+class SolicitudReduccionCuotaFilter:
+    pass
+
+
 @strawchemy.input(FormaPago, mode="create_input", include="all", exclude=get_exclude_fields(FormaPago))
 class FormaPagoCreateInput:
     pass
@@ -1243,17 +1291,17 @@ class FormaPagoFilter:
     pass
 
 
-@strawchemy.filter(CuentaBancaria)
+@strawchemy.filter(CuentaBancaria, include="all")
 class CuentaBancariaFilter:
     pass
 
 
-@strawchemy.filter(MovimientoTesoreria)
+@strawchemy.filter(MovimientoTesoreria, include="all")
 class MovimientoTesoreriaFilter:
     pass
 
 
-@strawchemy.filter(ConciliacionBancaria)
+@strawchemy.filter(ConciliacionBancaria, include="all")
 class ConciliacionBancariaFilter:
     pass
 
@@ -1568,7 +1616,6 @@ from ..modules.economico.models import (
     CuentaContable,
     AsientoContable,
     ApunteContable,
-    BalanceContable,
 )
 
 @strawchemy.input(CuentaBancaria, mode="create_input", include="all", exclude=get_exclude_fields(CuentaBancaria))
@@ -1601,7 +1648,7 @@ class ExtractoBancarioCreateInput:
     pass
 
 
-@strawchemy.filter(ExtractoBancario)
+@strawchemy.filter(ExtractoBancario, include="all")
 class ExtractoBancarioFilter:
     pass
 
@@ -1640,11 +1687,6 @@ class ApunteContableCreateInput:
 
 @strawchemy.input(ApunteContable, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(ApunteContable))
 class ApunteContableUpdateInput:
-    pass
-
-
-@strawchemy.filter(BalanceContable)
-class BalanceContableFilter:
     pass
 
 

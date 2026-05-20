@@ -303,6 +303,16 @@ class Campania(BaseModel):
     canales = relationship('CanalDifusionCampania', back_populates='campania', cascade='all, delete-orphan', lazy='selectin')
     partidas_presupuesto = relationship('PartidaPresupuestoCampania', back_populates='campania', cascade='all, delete-orphan', lazy='selectin')
 
+    # Códigos de estado que indican que la campaña no admite nuevos gastos/ingresos.
+    # Convención: el código del estado (estable, no traducible) es la API que consume
+    # el backend; el `nombre` puede cambiar libremente.
+    CODIGOS_ESTADO_CERRADO = frozenset({"CERRADA", "CANCELADA"})
+
+    @property
+    def esta_cerrada(self) -> bool:
+        """True si la campaña está cerrada económicamente y no admite nuevos movimientos."""
+        return bool(self.estado and getattr(self.estado, "codigo", None) in self.CODIGOS_ESTADO_CERRADO)
+
     def __repr__(self) -> str:
         return f"<Campania(nombre='{self.nombre}', estado_id='{self.estado_id}')>"
 

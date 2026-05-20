@@ -128,7 +128,7 @@ const handleLogin = async () => {
   error.value = ""
 
   try {
-    await authStore.login(form.value.email.trim(), form.value.password)
+    await authStore.login(form.value.email.trim(), form.value.password, form.value.remember)
   } catch (err) {
     console.error("Login failed", err)
     error.value = "Credenciales incorrectas. Por favor, verifica tu email y contraseña."

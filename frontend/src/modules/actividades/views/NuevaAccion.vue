@@ -63,6 +63,31 @@
         />
       </div>
 
+      <!-- Carácter temporal -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Carácter *</label>
+        <div class="space-y-1.5">
+          <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+            <input type="radio" v-model="form.caracter" value="PUNTUAL" />
+            <span>Puntual <span class="text-slate-400 text-xs">(con fecha concreta)</span></span>
+          </label>
+          <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+            <input type="radio" v-model="form.caracter" value="RECURRENTE" />
+            <span>Recurrente <span class="text-slate-400 text-xs">(con periodicidad — plantilla o instancia)</span></span>
+          </label>
+          <label class="flex items-center gap-2 text-sm cursor-pointer"
+                 :class="campaniaId ? 'text-slate-300 cursor-not-allowed' : 'text-slate-700'">
+            <input type="radio" v-model="form.caracter" value="PERMANENTE" :disabled="!!campaniaId" />
+            <span>
+              Permanente
+              <span class="text-slate-400 text-xs">
+                (sin fin; solo fuera de campaña{{ campaniaId ? ' — no disponible al venir de una campaña' : '' }})
+              </span>
+            </span>
+          </label>
+        </div>
+      </div>
+
       <!-- Fechas y horas -->
       <div class="grid grid-cols-4 gap-3">
         <div class="col-span-2">
@@ -187,6 +212,7 @@ const form = ref({
   tipoActividadId: '',
   estadoId: '',
   descripcion: '',
+  caracter: 'PUNTUAL',  // PUNTUAL | RECURRENTE | PERMANENTE
   fechaInicio: '',
   horaInicio: '',
   fechaFin: '',
@@ -220,14 +246,18 @@ async function guardar() {
   saving.value = true
   error.value = ''
   try {
+    // PERMANENTE no admite ni campaña ni recurrencia ni fecha_fin.
+    const esPermanente = form.value.caracter === 'PERMANENTE'
     const data = {
       nombre: form.value.nombre,
       tipoActividadId: form.value.tipoActividadId,
       estadoId: form.value.estadoId,
       descripcion: form.value.descripcion || null,
+      caracter: form.value.caracter,
+      esRecurrente: form.value.caracter === 'RECURRENTE',
       fechaInicio: form.value.fechaInicio || null,
       horaInicio: form.value.horaInicio || null,
-      fechaFin: form.value.fechaFin || null,
+      fechaFin: esPermanente ? null : (form.value.fechaFin || null),
       horaFin: form.value.horaFin || null,
       lugar: form.value.lugar || null,
       direccion: form.value.direccion || null,
@@ -237,7 +267,7 @@ async function guardar() {
       duracionDias: form.value.duracionDias || null,
       esOnline: form.value.esOnline,
       urlOnline: form.value.urlOnline || null,
-      ...(campaniaId ? { campaniaId } : {}),
+      ...(campaniaId && !esPermanente ? { campaniaId } : {}),
     }
     const res = await graphqlClient.request(CREAR_ACCION, { data })
     const id = res.crearActividad?.id

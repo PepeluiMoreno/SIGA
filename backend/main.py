@@ -401,6 +401,190 @@ async def upload_documento_partida_campania(
         }
 
 
+@app.post("/upload/justificantes/{justificante_id}/documentos")
+async def upload_documento_justificante(
+    justificante_id: str,
+    file: UploadFile = File(...),
+    authorization: Optional[str] = Header(None),
+):
+    """Sube un documento probatorio (factura, ticket, foto) asociado a un
+    JustificanteGasto. Permite múltiples documentos por justificante.
+
+    El OCR queda pendiente para un mini-ciclo aparte (requiere tesseract en imagen).
+    """
+    from app.core.security import extract_bearer_token, load_user_from_token
+    from app.core.database import async_session
+    from app.modules.economico.services.justificante_gasto_service import JustificanteGastoService
+
+    token = extract_bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="No autenticado")
+
+    async with async_session() as session:
+        user = await load_user_from_token(session, token)
+        if not user:
+            raise HTTPException(status_code=401, detail="Token inválido")
+
+        content = await file.read()
+        if len(content) > MAX_DOC_SIZE:
+            raise HTTPException(status_code=400, detail="El archivo no puede superar 30 MB")
+
+        doc_dir = UPLOADS_DIR / "justificantes" / justificante_id
+        doc_dir.mkdir(parents=True, exist_ok=True)
+        nombre_archivo = file.filename or "documento"
+        ruta = doc_dir / nombre_archivo
+        if ruta.exists():
+            stem, suffix = Path(nombre_archivo).stem, Path(nombre_archivo).suffix
+            nombre_archivo = f"{stem}_{uuid_lib.uuid4().hex[:6]}{suffix}"
+            ruta = doc_dir / nombre_archivo
+        ruta.write_bytes(content)
+
+        ruta_relativa = f"justificantes/{justificante_id}/{nombre_archivo}"
+        url_publica = f"/api/uploads/{ruta_relativa}"
+
+        try:
+            service = JustificanteGastoService(session)
+            doc = await service.adjuntar_documento(
+                justificante_id=uuid_lib.UUID(justificante_id),
+                nombre_archivo=nombre_archivo,
+                url=url_publica,
+                mime_type=file.content_type,
+                tamano_bytes=len(content),
+            )
+        except ValueError as e:
+            # Limpiar el archivo si el justificante no existe o está anulado
+            try:
+                ruta.unlink(missing_ok=True)
+            except Exception:
+                pass
+            raise HTTPException(status_code=400, detail=str(e))
+
+        return {
+            "id": str(doc.id),
+            "nombre_archivo": doc.nombre_archivo,
+            "url": doc.url,
+            "mime_type": doc.mime_type,
+            "tamano_bytes": doc.tamano_bytes,
+        }
+
+
+@app.delete("/upload/justificantes/documentos/{documento_id}")
+async def borrar_documento_justificante(
+    documento_id: str,
+    authorization: Optional[str] = Header(None),
+):
+    """Borra un documento probatorio asociado a un justificante (BD + archivo en disco)."""
+    from app.core.security import extract_bearer_token, load_user_from_token
+    from app.core.database import async_session
+    from app.modules.economico.services.justificante_gasto_service import JustificanteGastoService
+
+    token = extract_bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="No autenticado")
+
+    async with async_session() as session:
+        user = await load_user_from_token(session, token)
+        if not user:
+            raise HTTPException(status_code=401, detail="Token inválido")
+        service = JustificanteGastoService(session)
+        try:
+            await service.eliminar_documento(uuid_lib.UUID(documento_id))
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        return {"ok": True}
+
+
+@app.post("/upload/solicitudes-reduccion/{solicitud_id}/documentos")
+async def upload_documento_solicitud_reduccion(
+    solicitud_id: str,
+    file: UploadFile = File(...),
+    authorization: Optional[str] = Header(None),
+):
+    """Sube un documento acreditativo (paro, jubilación, carné de estudiante…)
+    a una SolicitudReduccionCuota. Permite varios documentos por solicitud."""
+    from app.core.security import extract_bearer_token, load_user_from_token
+    from app.core.database import async_session
+    from app.modules.economico.models.cuotas import (
+        SolicitudReduccionCuota, SolicitudReduccionCuotaDocumento,
+    )
+
+    token = extract_bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="No autenticado")
+
+    async with async_session() as session:
+        user = await load_user_from_token(session, token)
+        if not user:
+            raise HTTPException(status_code=401, detail="Token inválido")
+
+        sol = await session.get(SolicitudReduccionCuota, uuid_lib.UUID(solicitud_id))
+        if not sol:
+            raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+
+        content = await file.read()
+        if len(content) > MAX_DOC_SIZE:
+            raise HTTPException(status_code=400, detail="El archivo no puede superar 30 MB")
+
+        doc_dir = UPLOADS_DIR / "solicitudes-reduccion" / solicitud_id
+        doc_dir.mkdir(parents=True, exist_ok=True)
+        nombre_archivo = file.filename or "documento"
+        ruta = doc_dir / nombre_archivo
+        if ruta.exists():
+            stem, suffix = Path(nombre_archivo).stem, Path(nombre_archivo).suffix
+            nombre_archivo = f"{stem}_{uuid_lib.uuid4().hex[:6]}{suffix}"
+            ruta = doc_dir / nombre_archivo
+        ruta.write_bytes(content)
+
+        ruta_relativa = f"solicitudes-reduccion/{solicitud_id}/{nombre_archivo}"
+        doc = SolicitudReduccionCuotaDocumento(
+            solicitud_id=sol.id,
+            nombre_archivo=nombre_archivo,
+            url=f"/api/uploads/{ruta_relativa}",
+            mime_type=file.content_type,
+            tamano_bytes=len(content),
+        )
+        session.add(doc)
+        await session.commit()
+        return {
+            "id": str(doc.id),
+            "nombre_archivo": doc.nombre_archivo,
+            "url": doc.url,
+            "mime_type": doc.mime_type,
+            "tamano_bytes": doc.tamano_bytes,
+        }
+
+
+@app.delete("/upload/solicitudes-reduccion/documentos/{documento_id}")
+async def borrar_documento_solicitud_reduccion(
+    documento_id: str,
+    authorization: Optional[str] = Header(None),
+):
+    """Borra un documento acreditativo de una solicitud (BD + archivo en disco)."""
+    from app.core.security import extract_bearer_token, load_user_from_token
+    from app.core.database import async_session
+    from app.modules.economico.models.cuotas import SolicitudReduccionCuotaDocumento
+
+    token = extract_bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="No autenticado")
+
+    async with async_session() as session:
+        user = await load_user_from_token(session, token)
+        if not user:
+            raise HTTPException(status_code=401, detail="Token inválido")
+        doc = await session.get(SolicitudReduccionCuotaDocumento, uuid_lib.UUID(documento_id))
+        if not doc:
+            raise HTTPException(status_code=404, detail="Documento no encontrado")
+        try:
+            rel = doc.url.replace("/api/uploads/", "")
+            (UPLOADS_DIR / rel).unlink(missing_ok=True)
+        except Exception:
+            pass
+        await session.delete(doc)
+        await session.commit()
+        return {"ok": True}
+
+
 @app.get("/")
 async def root():
     return {

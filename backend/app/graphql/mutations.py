@@ -20,13 +20,13 @@ from .geografico_resolvers import GeograficoMutation
 from .campania_resolvers import CampaniaResolverMutation, CampaniaClonarMutation
 from .actividad_resolvers import ActividadResolverMutation
 from .papelera_resolvers import PapeleraResolverMutation
-from .financiero_mutations import FinancieroMutation
+from .economico_mutations import EconomicoFlujosMutation
 from .types_auto import *
 from .inputs_auto import *
 
 
 @strawberry.type
-class Mutation(AuthMutation, FinancieroMutation, ConfiguracionOrganizacionMutation, AccesoMutation, EconomicoMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, CampaniaClonarMutation, ActividadResolverMutation, PapeleraResolverMutation):
+class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionMutation, AccesoMutation, EconomicoMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, CampaniaClonarMutation, ActividadResolverMutation, PapeleraResolverMutation):
     """Mutations GraphQL del sistema SIGA con generación automática."""
 
     # === ACCESO: roles y transacciones (CRUD) ===
@@ -295,6 +295,11 @@ class Mutation(AuthMutation, FinancieroMutation, ConfiguracionOrganizacionMutati
     actualizar_cuota_anual: CuotaAnualType = strawchemy.update_by_ids(CuotaAnualUpdateInput)
     eliminar_cuotas_anuales: list[CuotaAnualType] = strawchemy.delete(CuotaAnualFilter)
 
+    # Flujo 1 — catálogo de motivos de reducción
+    # Create/update se hacen vía resolvers manuales en economico_mutations.py
+    # (con guard CUOT_MOTIVO_REDUC_MGMT + validación D1.5 de inmutabilidad del %).
+    eliminar_motivos_reduccion_cuota: list[MotivoReduccionCuotaType] = strawchemy.delete(MotivoReduccionCuotaFilter)
+
     crear_donacion_concepto: DonacionConceptoType = strawchemy.create(DonacionConceptoCreateInput)
     actualizar_donacion_concepto: DonacionConceptoType = strawchemy.update_by_ids(DonacionConceptoUpdateInput)
     eliminar_donacion_conceptos: list[DonacionConceptoType] = strawchemy.delete(DonacionConceptoFilter)
@@ -311,6 +316,14 @@ class Mutation(AuthMutation, FinancieroMutation, ConfiguracionOrganizacionMutati
     crear_ordenes_cobro: list[OrdenCobroType] = strawchemy.create(OrdenCobroCreateInput)  # Batch
     actualizar_orden_cobro: OrdenCobroType = strawchemy.update_by_ids(OrdenCobroUpdateInput)
     eliminar_ordenes_cobro: list[OrdenCobroType] = strawchemy.delete(OrdenCobroFilter)
+
+    crear_recibo: ReciboType = strawchemy.create(ReciboCreateInput)
+    actualizar_recibo: ReciboType = strawchemy.update_by_ids(ReciboUpdateInput)
+    eliminar_recibos: list[ReciboType] = strawchemy.delete(ReciboFilter)
+
+    crear_justificante_gasto: JustificanteGastoType = strawchemy.create(JustificanteGastoCreateInput)
+    actualizar_justificante_gasto: JustificanteGastoType = strawchemy.update_by_ids(JustificanteGastoUpdateInput)
+    eliminar_justificantes_gasto: list[JustificanteGastoType] = strawchemy.delete(JustificanteGastoFilter)
 
     # === VOLUNTARIADO ===
     crear_categoria_competencia: CategoriaCompetenciaType = strawchemy.create(CategoriaCompetenciaCreateInput)
@@ -395,9 +408,10 @@ class Mutation(AuthMutation, FinancieroMutation, ConfiguracionOrganizacionMutati
     crear_conciliacion_bancaria: ConciliacionBancariaType = strawchemy.create(ConciliacionBancariaCreateInput)
 
     # === FINANCIERO — CONTABILIDAD ===
-    crear_cuenta_contable: CuentaContableType = strawchemy.create(CuentaContableCreateInput)
-    actualizar_cuenta_contable: CuentaContableType = strawchemy.update_by_ids(CuentaContableUpdateInput)
-    eliminar_cuentas_contables: list[CuentaContableType] = strawchemy.delete(CuentaContableFilter)
+    # CuentaContable: CRUD restringido a TESORERO matriz vía resolvers manuales en
+    # EconomicoMutation (crear_cuenta_contable / actualizar_cuenta_contable /
+    # desactivar_cuenta_contable) con permiso `ECO_CUENTA_CREAR`.
+    # Las versiones strawchemy quedaron deshabilitadas por seguridad (no admiten permission_classes).
 
     crear_asiento_contable: AsientoContableType = strawchemy.create(AsientoContableCreateInput)
     actualizar_asiento_contable: AsientoContableType = strawchemy.update_by_ids(AsientoContableUpdateInput)

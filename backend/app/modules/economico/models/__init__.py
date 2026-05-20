@@ -5,9 +5,16 @@ Python los prefiere sobre los archivos .py del mismo nombre. Los archivos planos
 tesoreria.py y contabilidad.py son legacy y ya no se importan aquí.
 """
 
-from .cuotas import ImporteCuotaAnio, CuotaAnual, ModoIngreso
+from .cuotas import (
+    ImporteCuotaAnio, CuotaAnual, ModoIngreso, MotivoReduccionCuota,
+    SolicitudReduccionCuota, SolicitudReduccionCuotaDocumento,
+)
 from .donaciones import DonacionConcepto, Donacion
 from .remesas import Remesa, OrdenCobro
+from .recibos import Recibo
+from .justificantes_gasto import JustificanteGasto, JustificanteGastoLinea, JustificanteGastoDocumento
+from .cuentas_anuales import CuentasAnuales, APARTADOS_MEMORIA, memoria_vacia
+from .modelo_182 import Presentacion182
 from .presupuesto import EstadoPlanificacion, CategoriaPartida, PartidaPresupuestaria, CompromisoPresupuestario, PlanificacionAnual
 from .cobro import ProveedorPago, EstadoPago, TipoEventoPago, TipoPago, Pago, EventoPago, EstadoSuscripcion, Suscripcion, FormaPago
 from .reclamaciones import EstadoReclamacion, Reclamacion, TipoAccionReclamacion, AccionReclamacion
@@ -35,16 +42,20 @@ from .contabilidad import (
     ApunteContable,
     TipoAsientoContable,
     EstadoAsientoContable,
-    BalanceContable,
 )
 
 __all__ = [
     # Cuotas
-    'ImporteCuotaAnio', 'CuotaAnual', 'ModoIngreso',
+    'ImporteCuotaAnio', 'CuotaAnual', 'ModoIngreso', 'MotivoReduccionCuota',
+    'SolicitudReduccionCuota', 'SolicitudReduccionCuotaDocumento',
     # Donaciones
     'DonacionConcepto', 'Donacion',
     # Remesas
     'Remesa', 'OrdenCobro',
+    # Recibos
+    'Recibo',
+    # Justificantes de Gasto
+    'JustificanteGasto', 'JustificanteGastoLinea', 'JustificanteGastoDocumento',
     # Presupuesto
     'EstadoPlanificacion', 'CategoriaPartida', 'PartidaPresupuestaria', 'CompromisoPresupuestario', 'PlanificacionAnual',
     # Cobro
@@ -62,5 +73,4 @@ __all__ = [
     'CuentaContable', 'TipoCuentaContable',
     'AsientoContable', 'ApunteContable',
     'TipoAsientoContable', 'EstadoAsientoContable',
-    'BalanceContable',
 ]

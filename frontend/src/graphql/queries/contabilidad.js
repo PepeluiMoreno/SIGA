@@ -1,7 +1,7 @@
 // Queries y Mutations GraphQL para el módulo de Contabilidad (PCESFL 2013)
 
 export const GET_PLAN_CUENTAS = `
-  query PlanCuentas($tipo: String) {
+  query PlanCuentas {
     cuentasContables {
       id
       codigo
@@ -17,8 +17,17 @@ export const GET_PLAN_CUENTAS = `
   }
 `
 
+export const GET_SALDOS_CUENTAS = `
+  query SaldosCuentas($ejercicio: Int!) {
+    saldosCuentas(ejercicio: $ejercicio) {
+      codigo
+      saldo
+    }
+  }
+`
+
 export const GET_ASIENTOS_CONTABLES = `
-  query AsientosContables($ejercicio: Int, $estado: String) {
+  query AsientosContables {
     asientosContables {
       id
       ejercicio
@@ -46,15 +55,15 @@ export const GET_APUNTES_CONTABLES = `
   }
 `
 
-export const GET_BALANCES_CONTABLES = `
-  query BalancesContables($ejercicio: Int) {
-    balancesContables {
-      id
-      ejercicio
-      fechaGeneracion
+export const GET_BALANCE_SUMAS_SALDOS = `
+  query BalanceSumasYSaldos($ejercicio: Int!, $fechaCorte: Date, $soloConSaldo: Boolean) {
+    balanceSumasYSaldos(ejercicio: $ejercicio, fechaCorte: $fechaCorte, soloConSaldo: $soloConSaldo) {
+      codigo
+      nombre
+      tipo
       totalDebe
       totalHaber
-      observaciones
+      saldo
     }
   }
 `
@@ -66,6 +75,29 @@ export const CREATE_CUENTA_CONTABLE = `
       codigo
       nombre
     }
+  }
+`
+
+export const UPDATE_CUENTA_CONTABLE = `
+  mutation ActualizarCuentaContable($input: CuentaContableUpdateInput!) {
+    actualizarCuentaContable(data: $input) {
+      id
+      codigo
+      nombre
+      tipo
+      nivel
+      padreId
+      descripcion
+      permiteAsiento
+      esDotacion
+      activa
+    }
+  }
+`
+
+export const CUENTA_TIENE_APUNTES = `
+  query CuentaTieneApuntes($cuentaId: UUID!) {
+    cuentaTieneApuntesConfirmados(cuentaId: $cuentaId)
   }
 `
 
@@ -102,8 +134,3 @@ export const ANULAR_ASIENTO = `
   }
 `
 
-export const GENERAR_BALANCE = `
-  mutation GenerarBalanceContable($ejercicio: Int!, $fechaFin: Date) {
-    generarBalanceContable(ejercicio: $ejercicio, fechaFin: $fechaFin)
-  }
-`

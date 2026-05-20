@@ -40,16 +40,20 @@ class EstadoCuota(EstadoBase):
 
 
 class EstadoCampania(EstadoBase):
-    """Estados para campañas."""
+    """Estados para campañas.
+
+    Códigos estables (no se pueden cambiar desde la UI; InmutableMixin):
+      BORRADOR    — Campaña en creación
+      PROGRAMADA  — Campaña aprobada y pendiente de inicio
+      EN_CURSO    — Campaña activa en ejecución
+      PAUSADA     — Campaña temporalmente suspendida
+      FINALIZADA  — Actividades terminadas; admite gastos rezagados
+      CERRADA     — Campaña cerrada económicamente; NO admite nuevos gastos
+      CANCELADA   — Campaña cancelada; NO admite nuevos gastos
+    """
     __tablename__ = 'estados_campania'
 
-    # Posibles estados:
-    # BORRADOR: Campaña en creación
-    # PROGRAMADA: Campaña programada para envío
-    # EN_CURSO: Campaña activa/enviándose
-    # FINALIZADA: Campaña completada
-    # CANCELADA: Campaña cancelada
-    # PAUSADA: Campaña pausada temporalmente
+    codigo: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
 
 
 class EstadoTarea(EstadoBase):

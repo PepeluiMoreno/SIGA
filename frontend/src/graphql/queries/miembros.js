@@ -11,6 +11,7 @@ export const GET_MIEMBROS = `
       nombre
       apellido1
       apellido2
+      fotoUrl
       sexo
       email
       telefono
@@ -130,10 +131,14 @@ export const GET_MIEMBRO_BY_ID = `
       fotoUrl
       fechaCreacion
       fechaModificacion
+      motivoReduccionId
+      incrementoCuota
+      incrementoCuotaObs
       tipoMiembro { id nombre }
       estado { id nombre color }
       agrupacion { id nombre }
       motivoBajaRel { id nombre }
+      motivoReduccion { id codigo nombre porcentajeReduccion excluyeCuota }
       usuario {
         id
         email

@@ -302,28 +302,37 @@ async def cargar_plan_cuentas_esfl(session: AsyncSession) -> int:
     }
 
     creadas = 0
+    # Procesar por nivel para garantizar que los padres existen antes que los hijos.
+    # Tras cada nivel, flush() asigna IDs de BD a las cuentas recién añadidas.
+    filas_por_nivel: dict[int, list] = {}
     for row in CUENTAS_PCESFL:
-        codigo, nombre, tipo, nivel, padre_codigo, permite_asiento = row
-        if codigo in existentes:
-            continue
+        filas_por_nivel.setdefault(row[3], []).append(row)
 
-        padre_id = None
-        if padre_codigo:
-            padre = existentes.get(padre_codigo)
-            if padre:
-                padre_id = padre.id
+    for nivel in sorted(filas_por_nivel.keys()):
+        for codigo, nombre, tipo, _nivel, padre_codigo, permite_asiento in filas_por_nivel[nivel]:
+            if codigo in existentes:
+                continue
 
-        cuenta = CuentaContable(
-            codigo=codigo,
-            nombre=nombre,
-            tipo=tipo,
-            nivel=nivel,
-            padre_id=padre_id,
-            permite_asiento=permite_asiento,
-        )
-        session.add(cuenta)
-        existentes[codigo] = cuenta
-        creadas += 1
+            padre_id = None
+            if padre_codigo:
+                padre = existentes.get(padre_codigo)
+                if padre:
+                    padre_id = padre.id
+
+            cuenta = CuentaContable(
+                codigo=codigo,
+                nombre=nombre,
+                tipo=tipo,
+                nivel=nivel,
+                padre_id=padre_id,
+                permite_asiento=permite_asiento,
+            )
+            session.add(cuenta)
+            existentes[codigo] = cuenta
+            creadas += 1
+        # Flush al terminar cada nivel para que las cuentas tengan id asignado
+        # antes de que el siguiente nivel las referencie como padre.
+        await session.flush()
 
     await session.commit()
     print(f"[plan_cuentas_esfl] {creadas} cuentas creadas (PCESFL 2013).")

@@ -245,7 +245,41 @@
           </div>
         </AccordionPanel>
 
-        <!-- 7. Redes sociales -->
+        <!-- 7. SEPA — Acreedor para remesas (Flujo 3 — D3.5) -->
+        <AccordionPanel title="SEPA — Acreedor para remesas" :default-open="false">
+          <div class="px-5 py-4 space-y-3">
+            <p class="text-xs text-slate-500">
+              Datos que se incluirán como acreedor en los XML SEPA Pain.008 generados.
+              Sin completar, las remesas no podrán generar XML. La cuenta operativa puede ser cualquiera, pero
+              el <b>Identificador de acreedor SEPA</b> debe estar registrado en tu banco.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="label">Nombre del acreedor *</label>
+                <input v-model="form.sepa_creditor_name" type="text" maxlength="70" class="input"
+                       placeholder="Razón social que aparecerá en el cargo bancario al socio" />
+              </div>
+              <div>
+                <label class="label">Identificador SEPA (AT-02) *</label>
+                <input v-model="form.sepa_creditor_id" type="text" class="input"
+                       placeholder="ES77ZZZ12345678" />
+                <p class="text-xs text-slate-400 mt-1">Formato España: ES + 2 dígitos control + ZZZ + 9 dígitos del NIF.</p>
+              </div>
+              <div>
+                <label class="label">IBAN del acreedor *</label>
+                <input v-model="form.sepa_creditor_iban" type="text" class="input font-mono"
+                       placeholder="ES00 0000 0000 0000 0000 0000" />
+              </div>
+              <div>
+                <label class="label">BIC / SWIFT *</label>
+                <input v-model="form.sepa_creditor_bic" type="text" class="input font-mono"
+                       placeholder="BBVAESMM" />
+              </div>
+            </div>
+          </div>
+        </AccordionPanel>
+
+        <!-- 8. Redes sociales -->
         <AccordionPanel title="Redes sociales" :default-open="false">
           <div class="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div v-for="red in redesSociales" :key="red.key" class="flex items-center gap-2 min-w-0">
@@ -333,6 +367,13 @@ const form = reactive({
   indico_activo: false,
   indico_url: '',
   indico_api_token: '',
+  // SEPA — Acreedor para remesas (D3.5)
+  sepa_creditor_name: '',
+  sepa_creditor_iban: '',
+  sepa_creditor_bic: '',
+  sepa_creditor_id: '',
+  // Open Banking — conciliación bancaria automática (flujo 8)
+  openbanking_activo: false,
 })
 
 const temaOriginal = ref(orgConfigStore.temaActivo)
@@ -375,6 +416,13 @@ const catalogoFuncionalidades = [
       { key: 'indico_url',       label: 'URL de la instancia Indico', tipo: 'url',      placeholder: 'https://indico.tuorganizacion.org' },
       { key: 'indico_api_token', label: 'API Token',                  tipo: 'password', placeholder: '••••••••' },
     ],
+  },
+  {
+    clave: 'openbanking',
+    campo: 'openbanking_activo',
+    nombre: 'Conciliación bancaria automática (Open Banking)',
+    descripcion: 'Si está activo, los movimientos se descargan automáticamente del banco vía API PSD2 (Enable Banking u otro proveedor). Si no, se usa la importación manual de CSV o Norma 43. El emparejamiento entre apuntes y extracto sigue siendo manual en ambos casos.',
+    campos: [],
   },
 ]
 
@@ -435,6 +483,8 @@ const QUERY_PARAMETROS = `
       sessionInactividadMinutos sessionMaximoMinutos
       indicoActivo indicoUrl indicoApiToken
       tema fuentePrincipal
+      sepaCreditorName sepaCreditorIban sepaCreditorBic sepaCreditorId
+      openbankingActivo
     }
   }
 `
@@ -510,6 +560,11 @@ onMounted(async () => {
     form.indico_api_token                = p.indicoApiToken                   ?? ''
     form.tema                            = p.tema                             ?? 'violeta'
     form.fuente_principal                = p.fuentePrincipal                  ?? 'Inter'
+    form.sepa_creditor_name              = p.sepaCreditorName                 ?? ''
+    form.sepa_creditor_iban              = p.sepaCreditorIban                 ?? ''
+    form.sepa_creditor_bic               = p.sepaCreditorBic                  ?? ''
+    form.sepa_creditor_id                = p.sepaCreditorId                   ?? ''
+    form.openbanking_activo              = p.openbankingActivo                ?? false
     temaOriginal.value   = orgConfigStore.temas.find(t => t.slug === form.tema) ?? null
     fuenteOriginal.value = form.fuente_principal
     if (esObligatorioContabilidad.value) form.contabilidad_compleja = true
@@ -566,6 +621,11 @@ async function guardar() {
         indicoApiToken:                  form.indico_api_token,
         tema:                            form.tema,
         fuentePrincipal:                 form.fuente_principal,
+        sepaCreditorName:                form.sepa_creditor_name,
+        sepaCreditorIban:                form.sepa_creditor_iban,
+        sepaCreditorBic:                 form.sepa_creditor_bic,
+        sepaCreditorId:                  form.sepa_creditor_id,
+        openbankingActivo:               form.openbanking_activo,
       }
     })
     orgConfigStore.miembro          = form.denominacion_miembro

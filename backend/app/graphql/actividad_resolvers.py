@@ -11,7 +11,8 @@ from sqlalchemy import select
 
 from app.modules.actividades.models.actividad import Actividad, Participacion
 from app.modules.actividades.models.tarea import Tarea
-from app.graphql.types_auto import ActividadType, TareaType, ParticipacionType
+from app.modules.actividades.models.grupo import GrupoTrabajo, TipoGrupo
+from app.graphql.types_auto import ActividadType, TareaType, ParticipacionType, GrupoTrabajoType
 from app.graphql.permissions import RequireTransaction
 
 
@@ -28,6 +29,8 @@ class ActividadCreateData:
     padre_id: Optional[uuid.UUID] = None
     es_recurrente: bool = False
     periodicidad: Optional[str] = None
+    # Taxonomía: PUNTUAL | RECURRENTE | PERMANENTE
+    caracter: str = "PUNTUAL"
     campania_id: Optional[uuid.UUID] = None
     grupo_id: Optional[uuid.UUID] = None
     responsable_id: Optional[uuid.UUID] = None
@@ -35,8 +38,12 @@ class ActividadCreateData:
     hora_inicio: Optional[time] = None
     fecha_fin: Optional[date] = None
     hora_fin: Optional[time] = None
+    duracion_horas: Optional[Decimal] = None
+    duracion_dias: Optional[int] = None
     lugar: Optional[str] = None
     direccion: Optional[str] = None
+    localidad: Optional[str] = None
+    provincia: Optional[str] = None
     aforo: Optional[int] = None
     es_online: bool = False
     url_online: Optional[str] = None
@@ -53,6 +60,7 @@ class ActividadUpdateData:
     padre_id: Optional[uuid.UUID] = None
     es_recurrente: Optional[bool] = None
     periodicidad: Optional[str] = None
+    caracter: Optional[str] = None
     campania_id: Optional[uuid.UUID] = None
     grupo_id: Optional[uuid.UUID] = None
     responsable_id: Optional[uuid.UUID] = None
@@ -60,8 +68,12 @@ class ActividadUpdateData:
     hora_inicio: Optional[time] = None
     fecha_fin: Optional[date] = None
     hora_fin: Optional[time] = None
+    duracion_horas: Optional[Decimal] = None
+    duracion_dias: Optional[int] = None
     lugar: Optional[str] = None
     direccion: Optional[str] = None
+    localidad: Optional[str] = None
+    provincia: Optional[str] = None
     aforo: Optional[int] = None
     es_online: Optional[bool] = None
     url_online: Optional[str] = None
@@ -130,12 +142,48 @@ def _apply(obj, data, fields):
             setattr(obj, f, v)
 
 
+CARACTERES_VALIDOS = frozenset({"PUNTUAL", "RECURRENTE", "PERMANENTE"})
+
+
+def _validar_caracter_actividad(*, caracter: str, campania_id, es_recurrente: bool, padre_id):
+    """Aplica las reglas duras de la taxonomía. Lanza ValueError con mensaje claro."""
+    if caracter not in CARACTERES_VALIDOS:
+        raise ValueError(
+            f"caracter '{caracter}' no es válido. Valores aceptados: PUNTUAL, RECURRENTE, PERMANENTE."
+        )
+    if caracter == "PERMANENTE":
+        if campania_id is not None:
+            raise ValueError("Una actividad PERMANENTE no puede estar adscrita a una campaña.")
+        if es_recurrente:
+            raise ValueError("Una actividad PERMANENTE no puede ser recurrente (es_recurrente=False obligatorio).")
+        if padre_id is not None:
+            raise ValueError("Una actividad PERMANENTE no puede tener padre (es independiente).")
+    elif caracter == "PUNTUAL":
+        if es_recurrente:
+            raise ValueError("Una actividad PUNTUAL no puede ser recurrente.")
+        if padre_id is not None:
+            raise ValueError("Una actividad PUNTUAL no puede tener padre.")
+    elif caracter == "RECURRENTE":
+        # Permitido: plantilla (es_recurrente=True, padre_id=None) o instancia (padre_id != None).
+        if not es_recurrente and padre_id is None:
+            raise ValueError(
+                "Una actividad RECURRENTE debe ser plantilla (es_recurrente=True) "
+                "o instancia (padre_id informado)."
+            )
+
+
 @strawberry.type
 class ActividadResolverMutation:
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ACT_CREATE")])
     async def crear_actividad(self, info: strawberry.Info, data: ActividadCreateData) -> ActividadType:
         session = info.context.session
+        _validar_caracter_actividad(
+            caracter=data.caracter,
+            campania_id=data.campania_id,
+            es_recurrente=data.es_recurrente,
+            padre_id=data.padre_id,
+        )
         actividad = Actividad(
             nombre=data.nombre,
             tipo_actividad_id=data.tipo_actividad_id,
@@ -144,6 +192,7 @@ class ActividadResolverMutation:
             padre_id=data.padre_id,
             es_recurrente=data.es_recurrente,
             periodicidad=data.periodicidad,
+            caracter=data.caracter,
             campania_id=data.campania_id,
             grupo_id=data.grupo_id,
             responsable_id=data.responsable_id,
@@ -151,8 +200,12 @@ class ActividadResolverMutation:
             hora_inicio=data.hora_inicio,
             fecha_fin=data.fecha_fin,
             hora_fin=data.hora_fin,
+            duracion_horas=data.duracion_horas,
+            duracion_dias=data.duracion_dias,
             lugar=data.lugar,
             direccion=data.direccion,
+            localidad=data.localidad,
+            provincia=data.provincia,
             aforo=data.aforo,
             es_online=data.es_online,
             url_online=data.url_online,
@@ -170,12 +223,21 @@ class ActividadResolverMutation:
         actividad = result.scalar_one()
         _apply(actividad, data, [
             'nombre', 'tipo_actividad_id', 'estado_id', 'descripcion',
-            'padre_id', 'es_recurrente', 'periodicidad', 'campania_id',
+            'padre_id', 'es_recurrente', 'periodicidad', 'caracter', 'campania_id',
             'grupo_id', 'responsable_id',
             'fecha_inicio', 'hora_inicio', 'fecha_fin', 'hora_fin',
-            'lugar', 'direccion', 'aforo', 'es_online', 'url_online',
+            'duracion_horas', 'duracion_dias',
+            'lugar', 'direccion', 'localidad', 'provincia', 'aforo',
+            'es_online', 'url_online',
             'presupuesto_estimado', 'presupuesto_ejecutado', 'eliminado',
         ])
+        # Re-validar reglas duras con el estado post-aplicación
+        _validar_caracter_actividad(
+            caracter=actividad.caracter,
+            campania_id=actividad.campania_id,
+            es_recurrente=actividad.es_recurrente,
+            padre_id=actividad.padre_id,
+        )
         if data.eliminado is True and not actividad.fecha_eliminacion:
             from datetime import datetime
             actividad.fecha_eliminacion = datetime.utcnow()
@@ -295,6 +357,66 @@ class ActividadResolverMutation:
         await session.commit()
         result = await session.execute(select(Actividad).where(Actividad.id == id))
         return result.scalar_one()
+
+    # ─── Grupos de trabajo ─────────────────────────────────────────────────────
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("TEAM_CREATE")])
+    async def crear_grupo_trabajo_seguro(
+        self,
+        info: strawberry.Info,
+        nombre: str,
+        tipo_grupo_id: Optional[uuid.UUID] = None,
+        descripcion: Optional[str] = None,
+        objetivo: Optional[str] = None,
+        fecha_inicio: Optional[date] = None,
+        fecha_fin: Optional[date] = None,
+        coordinador_id: Optional[uuid.UUID] = None,
+        agrupacion_id: Optional[uuid.UUID] = None,
+        campania_id: Optional[uuid.UUID] = None,
+    ) -> GrupoTrabajoType:
+        """Crea un GrupoTrabajo con validación de `tipo_grupo_id`.
+
+        Si no se indica tipo, usa el primer TipoGrupo activo como default
+        (en su defecto eleva ValueError con mensaje claro, en lugar del
+        IntegrityError críptico del NOT NULL).
+        """
+        session = info.context.session
+        if not nombre or not nombre.strip():
+            raise ValueError("El nombre del grupo es obligatorio.")
+
+        # Resolver tipo: si no llega, buscar uno activo por defecto
+        if tipo_grupo_id is None:
+            r = await session.execute(
+                select(TipoGrupo).where(TipoGrupo.activo == True).order_by(TipoGrupo.nombre)
+            )
+            tipo = r.scalars().first()
+            if not tipo:
+                raise ValueError(
+                    "No hay ningún TipoGrupo activo en el catálogo. "
+                    "Crea al menos uno antes de crear grupos."
+                )
+            tipo_grupo_id = tipo.id
+        else:
+            r = await session.execute(select(TipoGrupo).where(TipoGrupo.id == tipo_grupo_id))
+            if not r.scalars().first():
+                raise ValueError(f"TipoGrupo {tipo_grupo_id} no encontrado.")
+
+        grupo = GrupoTrabajo(
+            nombre=nombre.strip(),
+            tipo_grupo_id=tipo_grupo_id,
+            descripcion=descripcion,
+            objetivo=objetivo,
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin,
+            coordinador_id=coordinador_id,
+            agrupacion_id=agrupacion_id,
+            campania_id=campania_id,
+            activo=True,
+        )
+        session.add(grupo)
+        await session.commit()
+        await session.refresh(grupo)
+        return grupo
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ACT_EDIT")])
     async def cerrar_actividad(

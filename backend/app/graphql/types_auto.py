@@ -238,10 +238,17 @@ class PlantillaEmailType:
 from ..modules.economico.models import (
     ImporteCuotaAnio,
     CuotaAnual,
+    MotivoReduccionCuota,
+    SolicitudReduccionCuota,
+    SolicitudReduccionCuotaDocumento,
     DonacionConcepto,
     Donacion,
     Remesa,
     OrdenCobro,
+    Recibo,
+    JustificanteGasto,
+    JustificanteGastoLinea,
+    JustificanteGastoDocumento,
     EstadoPlanificacion,
     CategoriaPartida,
     PartidaPresupuestaria,
@@ -256,7 +263,6 @@ from ..modules.economico.models import (
     CuentaContable,
     AsientoContable,
     ApunteContable,
-    BalanceContable,
 )
 
 @strawchemy.type(ImporteCuotaAnio, include="all", override=True)
@@ -265,6 +271,26 @@ class ImporteCuotaAnioType:
 
 @strawchemy.type(CuotaAnual, include="all", override=True)
 class CuotaAnualType:
+    pass
+
+@strawchemy.type(MotivoReduccionCuota, include="all", override=True)
+class MotivoReduccionCuotaType:
+    # Marker para que strawchemy procese el body con campos custom
+    descripcion: Optional[str] = None
+
+    @strawberry.field
+    def excluye_cuota(self) -> bool:
+        """D1.4: % ≥ 100 ⇒ no se genera CuotaAnual para miembros con este motivo."""
+        from decimal import Decimal
+        return self.porcentaje_reduccion is not None and self.porcentaje_reduccion >= Decimal("100.00")
+
+@strawchemy.type(SolicitudReduccionCuota, include="all", override=True)
+class SolicitudReduccionCuotaType:
+    # resolutor sale de resuelto_por_id (nullable mientras está PRESENTADA)
+    resolutor: Optional['MiembroType'] = None
+
+@strawchemy.type(SolicitudReduccionCuotaDocumento, include="all", override=True)
+class SolicitudReduccionCuotaDocumentoType:
     pass
 
 @strawchemy.type(DonacionConcepto, include="all", override=True)
@@ -277,10 +303,34 @@ class DonacionType:
 
 @strawchemy.type(Remesa, include="all", override=True)
 class RemesaType:
-    pass
+    agrupacion: Optional['UnidadOrganizativaType'] = None
 
 @strawchemy.type(OrdenCobro, include="all", override=True)
 class OrdenCobroType:
+    pass
+
+@strawchemy.type(Recibo, include="all", override=True)
+class ReciboType:
+    pass
+
+@strawchemy.type(JustificanteGasto, include="all", override=True)
+class JustificanteGastoType:
+    # Relaciones que pueden estar vacías mientras el justificante avanza por estados
+    aceptador: Optional['MiembroType'] = None
+    aprobador: Optional['MiembroType'] = None
+    partida_actividad: Optional['PartidaPresupuestoActividadType'] = None
+    agrupacion: Optional['UnidadOrganizativaType'] = None
+    cuenta_bancaria: Optional['CuentaBancariaType'] = None
+    apunte_caja: Optional['ApunteCajaType'] = None
+    cuenta_contable: Optional['CuentaContableType'] = None
+    presentado_por_tesorero: Optional['MiembroType'] = None
+
+@strawchemy.type(JustificanteGastoLinea, include="all", override=True)
+class JustificanteGastoLineaType:
+    pass
+
+@strawchemy.type(JustificanteGastoDocumento, include="all", override=True)
+class JustificanteGastoDocumentoType:
     pass
 
 @strawchemy.type(FormaPago, include="all", override=True)
@@ -309,7 +359,7 @@ class PlanificacionAnualType:
 
 @strawchemy.type(CuentaBancaria, include="all", override=True)
 class CuentaBancariaType:
-    pass
+    agrupacion: Optional['UnidadOrganizativaType'] = None
 
 @strawchemy.type(ApunteCaja, include="all", override=True)
 class ApunteCajaType:
@@ -338,11 +388,6 @@ class AsientoContableType:
 @strawchemy.type(ApunteContable, include="all", override=True)
 class ApunteContableType:
     pass
-
-@strawchemy.type(BalanceContable, include="all", override=True)
-class BalanceContableType:
-    pass
-
 
 # === FINANCIERO — REGLAS CONTABLES ===
 from ..modules.economico.models.contabilidad import ReglaContable
@@ -383,7 +428,7 @@ from ..modules.membresia.models import (
 
 @strawchemy.type(TipoMiembro, include="all", override=True)
 class TipoMiembroType:
-    pass
+    motivo_reduccion: Optional['MotivoReduccionCuotaType'] = None
 
 @strawchemy.type(EstadoMiembro, include="all", override=True)
 class EstadoMiembroType:
@@ -418,6 +463,7 @@ class MiembroType:
     pais_domicilio: Optional['PaisType'] = None
     pais_nacimiento: Optional['PaisType'] = None
     motivo_baja_rel: Optional['MotivoBajaType'] = None
+    motivo_reduccion: Optional['MotivoReduccionCuotaType'] = None
     usuario: Optional['UsuarioType'] = None
     nivel_estudios_rel: Optional['NivelEstudiosType'] = None
 

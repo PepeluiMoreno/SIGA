@@ -67,8 +67,8 @@ export const useDebugStore = defineStore('debug', () => {
   function refreshSnapshot() {
     if (typeof window === 'undefined') return
 
-    const token = localStorage.getItem('siga_token')
-    const user = localStorage.getItem('siga_user')
+    const token = localStorage.getItem('siga_token') || sessionStorage.getItem('siga_token')
+    const user = localStorage.getItem('siga_user') || sessionStorage.getItem('siga_user')
 
     let parsedUser = null
     if (user) {

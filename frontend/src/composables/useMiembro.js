@@ -12,6 +12,7 @@ import {
   UPDATE_MIEMBRO,
 } from '@/graphql/queries/miembros.js'
 import { GET_PAISES, GET_PROVINCIAS, GET_NIVELES_ESTUDIOS, GET_NIVELES_HABILIDAD } from '@/graphql/queries/catalogos.js'
+import { GET_MOTIVOS_REDUCCION } from '@/graphql/queries/financiero.js'
 
 export function useMiembro() {
   const router = useRouter()
@@ -30,6 +31,7 @@ export function useMiembro() {
     formasPago: [],
     nivelesEstudios: [],
     nivelesHabilidad: [],
+    motivosReduccion: [],
   })
   const miembro = ref(createEmptyMiembro())
 
@@ -66,6 +68,10 @@ export function useMiembro() {
 
       const nivelesHabData = await query(GET_NIVELES_HABILIDAD)
       catalogos.value.nivelesHabilidad = (nivelesHabData?.nivelesHabilidad || []).sort((a, b) => a.orden - b.orden)
+
+      const motivosRedData = await query(GET_MOTIVOS_REDUCCION)
+      catalogos.value.motivosReduccion = (motivosRedData?.motivosReduccionCuota || [])
+        .filter(m => m.activo).sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0))
     } catch (err) {
       console.error('Error loading member catalogs:', err)
       error.value = err.message || 'Error al cargar catálogos de militancia'
@@ -185,6 +191,7 @@ function createEmptyMiembro() {
   return {
     id: null,
     tipoMiembroId: null,
+    motivoReduccionId: null,
     estadoId: null,
     motivoBajaId: null,
     agrupacionId: null,
@@ -258,6 +265,7 @@ function buildCreatePayload(miembro) {
     sexo: normalizeText(miembro.sexo),
     fechaNacimiento: nullIfEmpty(miembro.fechaNacimiento),
     tipoMiembroId: miembro.tipoMiembroId,
+    motivoReduccionId: nullIfEmpty(miembro.motivoReduccionId),
     estadoId: miembro.estadoId,
     tipoDocumento: normalizeText(miembro.tipoDocumento),
     numeroDocumento: normalizeText(miembro.numeroDocumento),
@@ -312,6 +320,7 @@ function buildUpdatePayload(miembro) {
     sexo: normalizeText(miembro.sexo),
     fechaNacimiento: nullIfEmpty(miembro.fechaNacimiento),
     tipoMiembroId: miembro.tipoMiembroId,
+    motivoReduccionId: nullIfEmpty(miembro.motivoReduccionId),
     estadoId: miembro.estadoId,
     tipoDocumento: normalizeText(miembro.tipoDocumento),
     numeroDocumento: normalizeText(miembro.numeroDocumento),

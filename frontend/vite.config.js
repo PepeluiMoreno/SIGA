@@ -15,12 +15,16 @@ export default defineConfig({
     hmr: process.env.VITE_HMR_CLIENT_PORT
       ? { clientPort: parseInt(process.env.VITE_HMR_CLIENT_PORT) }
       : {},
-    proxy: {
-      '/api': {
-        target: process.env.VITE_BACKEND_URL || 'http://localhost:8000',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+    proxy: (() => {
+      const target = process.env.VITE_BACKEND_URL || 'http://localhost:8000'
+      return {
+        '/api': { target, changeOrigin: true, rewrite: (path) => path.replace(/^\/api/, '') },
+        // Recursos servidos por el backend sin prefijo /api: fotos (/media),
+        // documentos subidos (/uploads) y endpoints de subida (/upload, /uploads).
+        '/media': { target, changeOrigin: true },
+        '/uploads': { target, changeOrigin: true },
+        '/upload': { target, changeOrigin: true },
       }
-    }
+    })()
   }
 })

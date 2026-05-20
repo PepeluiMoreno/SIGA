@@ -68,9 +68,24 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import { graphqlClient } from '@/graphql/client'
 import { GET_TIPOS_GRUPO } from '@/modules/actividades/graphql/grupos.js'
 
+// Resolver manual con validación de tipo_grupo_id (evita el IntegrityError NOT NULL).
 const GQL_CREAR_GRUPO = `
-  mutation CrearGrupoTrabajo($data: GrupoTrabajoCreateInput!) {
-    crearGrupoTrabajo(data: $data) {
+  mutation CrearGrupoTrabajoSeguro(
+    $nombre: String!
+    $tipoGrupoId: UUID
+    $descripcion: String
+    $objetivo: String
+    $fechaInicio: Date
+    $fechaFin: Date
+  ) {
+    crearGrupoTrabajoSeguro(
+      nombre: $nombre
+      tipoGrupoId: $tipoGrupoId
+      descripcion: $descripcion
+      objetivo: $objetivo
+      fechaInicio: $fechaInicio
+      fechaFin: $fechaFin
+    ) {
       id
       nombre
     }
@@ -100,17 +115,16 @@ async function guardar() {
   error.value = ''
   guardando.value = true
   try {
-    const data = {
+    const vars = {
       nombre: form.value.nombre,
-      tipoGrupoId: form.value.tipoGrupoId,
+      tipoGrupoId: form.value.tipoGrupoId || null,
       descripcion: form.value.descripcion || null,
       objetivo: form.value.objetivo || null,
       fechaInicio: form.value.fechaInicio || null,
       fechaFin: form.value.fechaFin || null,
-      activo: true,
     }
-    const res = await graphqlClient.request(GQL_CREAR_GRUPO, { data })
-    router.push(`/grupos/${res.crearGrupoTrabajo.id}`)
+    const res = await graphqlClient.request(GQL_CREAR_GRUPO, vars)
+    router.push(`/grupos/${res.crearGrupoTrabajoSeguro.id}`)
   } catch (e) {
     error.value = e?.response?.errors?.[0]?.message ?? 'Error al crear el grupo'
   } finally {

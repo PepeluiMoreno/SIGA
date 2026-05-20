@@ -43,6 +43,15 @@ class Donacion(BaseModel):
     donante_telefono: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     donante_dni: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
 
+    # Tipo y carácter (D6.5)
+    tipo: Mapped[str] = mapped_column(String(15), nullable=False, default="DINERARIA")
+    caracter: Mapped[str] = mapped_column(String(15), nullable=False, default="PUNTUAL")
+
+    # Donación en especie
+    descripcion_especie: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    valoracion: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), nullable=True)
+    documento_valoracion: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+
     # Importes
     importe: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     gastos: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal('0.00'), nullable=False)
@@ -51,6 +60,9 @@ class Donacion(BaseModel):
     fecha: Mapped[date] = mapped_column(Date, server_default=func.now(), nullable=False, index=True)
     modo_ingreso: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     referencia_pago: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    cuenta_bancaria_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("cuentas_bancarias.id"), nullable=True, index=True
+    )
 
     # Estado (FK a EstadoDonacion)
     estado_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("estados_donacion.id"), nullable=False, index=True)
@@ -58,6 +70,20 @@ class Donacion(BaseModel):
     # Certificado fiscal
     certificado_emitido: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     fecha_certificado: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    numero_certificado: Mapped[Optional[str]] = mapped_column(String(30), unique=True, nullable=True)
+
+    # Contabilidad generada (D6.2)
+    apunte_caja_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("apuntes_caja.id"), nullable=True, index=True
+    )
+    asiento_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("asientos_contables.id"), nullable=True, index=True
+    )
+
+    # Tesorería delegada
+    agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("unidades_organizativas.id"), nullable=True, index=True
+    )
 
     # Información adicional
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -69,6 +95,10 @@ class Donacion(BaseModel):
     concepto = relationship('DonacionConcepto', back_populates='donaciones', lazy='selectin')
     # campania = relationship('Campania', foreign_keys=[campania_id], lazy='selectin')
     estado = relationship('EstadoDonacion', foreign_keys=[estado_id], lazy='selectin')
+    cuenta_bancaria = relationship('CuentaBancaria', foreign_keys=[cuenta_bancaria_id], lazy='selectin')
+    apunte_caja = relationship('ApunteCaja', foreign_keys=[apunte_caja_id], lazy='selectin')
+    asiento = relationship('AsientoContable', foreign_keys=[asiento_id], lazy='selectin')
+    agrupacion = relationship('UnidadOrganizativa', foreign_keys=[agrupacion_id], lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<Donacion(importe={self.importe}, fecha={self.fecha}, estado_id='{self.estado_id}')>"

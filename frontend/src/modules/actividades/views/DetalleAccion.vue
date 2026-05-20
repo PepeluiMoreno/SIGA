@@ -736,7 +736,7 @@ const GET_CATALOGOS = `
     estadosAccion { id nombre }
     habilidades(filter: { activo: { eq: true } }) { id nombre }
     nivelesHabilidad(filter: { activo: { eq: true } }) { id nombre orden }
-    miembrosHabilidades { miembroId habilidadId nivelHabilidadId }
+    miembrosHabilidades { miembroId habilidadId nivelId }
   }
 `
 
@@ -1165,9 +1165,13 @@ onMounted(async () => {
     const mhMap = new Map()
     for (const mh of (resCat.miembrosHabilidades || [])) {
       if (!mhMap.has(mh.miembroId)) mhMap.set(mh.miembroId, [])
-      mhMap.get(mh.miembroId).push({ habilidadId: mh.habilidadId, nivelHabilidadId: mh.nivelHabilidadId })
+      mhMap.get(mh.miembroId).push({ habilidadId: mh.habilidadId, nivelHabilidadId: mh.nivelId })
     }
     miembroHabilidadesMap.value = mhMap
+  } catch (e) {
+    // Sin esto, un error de query dejaba accion=null y la vista mostraba
+    // "Actividad no encontrada" ocultando la causa real.
+    console.error('Error cargando el detalle de la actividad:', e?.response?.errors || e)
   } finally {
     loading.value = false
   }

@@ -27,6 +27,7 @@ class UserPayload:
     id: uuid.UUID
     email: str
     activo: bool
+    miembro_id: Optional[uuid.UUID] = None
 
 
 @strawberry.type
@@ -50,7 +51,7 @@ class MiPerfilPayload:
 
 
 def _to_payload(u: Usuario) -> UserPayload:
-    return UserPayload(id=u.id, email=u.email, activo=u.activo)
+    return UserPayload(id=u.id, email=u.email, activo=u.activo, miembro_id=u.miembro_id)
 
 
 def _to_mi_perfil(u: Usuario) -> MiPerfilPayload:
