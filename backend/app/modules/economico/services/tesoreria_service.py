@@ -1,1 +1,1 @@
-placeholder_tesoreria
+# ver rama refactor/coherencia-modulos — commit siguiente

@@ -1,1 +1,1 @@
-placeholder_recibo
+# ver rama refactor/coherencia-modulos — commit siguiente

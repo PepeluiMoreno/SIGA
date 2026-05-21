@@ -1,1 +1,1 @@
-placeholder_cuota
+# ver rama refactor/coherencia-modulos — commit siguiente
