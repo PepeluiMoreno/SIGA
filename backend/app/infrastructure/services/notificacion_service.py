@@ -231,7 +231,7 @@ class NotificacionService:
         smtp = await _load_smtp_config(self.session)
         email_svc = EmailService(self.session)
         asunto = titulo
-        cuerpo = cuerpo_html_email or f"<p>{mensaje}</p>"
+        cuerpo = cuerpo_html_email or self._cuerpo_email_discreto(titulo, url_accion)
 
         for d in destinatarios:
             if not await self._email_permitido_para(d.usuario_id, tipo.id):
@@ -485,6 +485,29 @@ class NotificacionService:
         )
         pref = result.scalar_one_or_none()
         return True if pref is None else bool(pref)
+
+    @staticmethod
+    def _cuerpo_email_discreto(titulo: str, url_accion: Optional[str]) -> str:
+        """Cuerpo de email SIN datos personales: solo el título y un enlace.
+
+        El email escapa del control de la aplicación (se reenvía, se ve en la
+        pantalla de bloqueo del móvil…), por eso no se vuelca el mensaje in-app,
+        que puede contener nombres u otros datos personales. El dato sensible vive
+        dentro de la aplicación; el correo solo invita a entrar.
+        """
+        from app.core.config import get_settings
+
+        partes = [f"<p>{titulo}.</p>"]
+        if url_accion:
+            base = str(getattr(get_settings(), "app_url", "")).rstrip("/")
+            href = url_accion if url_accion.startswith("http") else f"{base}{url_accion}"
+            partes.append(
+                f'<p>Tienes un aviso pendiente en SIGA. '
+                f'<a href="{href}">Entra para verlo</a>.</p>'
+            )
+        else:
+            partes.append("<p>Tienes un aviso pendiente en SIGA. Accede para verlo.</p>")
+        return "\n".join(partes)
 
     @staticmethod
     def _canal_permitido(tipo: TipoNotificacion, canal: str) -> str:

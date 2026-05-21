@@ -47,6 +47,18 @@ In-app **siempre**. El email se añade solo si se cumplen TODAS:
 La prioridad **propone** el email; el tipo y la preferencia pueden **retirarlo**.
 Cambiar el comportamiento de un aviso = cambiar la prioridad de su tipo, sin tocar código.
 
+### Privacidad del contenido del email
+
+El email escapa del control de la aplicación (se reenvía, se ve en la pantalla de
+bloqueo del móvil, queda en bandejas). Por eso el cuerpo del correo **no incluye
+datos personales**: por defecto solo lleva el título del aviso y un enlace para
+entrar a la aplicación, donde el dato (nombres, importes, contenido) vive
+protegido tras login. El mensaje detallado con nombres se muestra solo en la
+notificación in-app. Esto se aplica de forma centralizada en `emitir()`
+(`_cuerpo_email_discreto`), así que vale para todos los avisos por email a la vez.
+Un handler puede pasar un `cuerpo_html_email` propio si necesita otro formato,
+pero la responsabilidad de no filtrar datos es entonces suya.
+
 ## 4. Cómo está implementado
 
 ```

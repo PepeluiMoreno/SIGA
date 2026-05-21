@@ -98,6 +98,7 @@ def wire_comunicacion_handlers(session_factory: Callable) -> None:
             mensaje=f"El acta de «{ev.reunion_titulo}» ha sido aprobada y está "
                     f"lista para su firma.",
             entidad_tipo="acta", entidad_id=ev.acta_id,
+            url_accion="/secretaria/actas",
         )
 
     # ── Membresía ─────────────────────────────────────────────────────────
@@ -149,6 +150,7 @@ def wire_comunicacion_handlers(session_factory: Callable) -> None:
             mensaje=f"El banco ha devuelto {n} {plural} de la remesa. "
                     f"Revisa las órdenes fallidas para gestionar el cobro.",
             entidad_tipo="remesa", entidad_id=ev.remesa_id,
+            url_accion="/economico/remesas",
         )
 
     # ── Suscripciones ─────────────────────────────────────────────────────
