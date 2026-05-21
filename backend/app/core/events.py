@@ -83,6 +83,55 @@ class JuntaReconfigured(DomainEvent):
 
 
 # -----------------------------------------------------------------------
+# Eventos de flujos de trabajo que disparan avisos (secretaría, membresía)
+# -----------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class ReunionConvocada(DomainEvent):
+    """Se ha convocado una reunión de un órgano de gobierno."""
+    reunion_id: str = ""
+    titulo: str = ""
+    agrupacion_id: Optional[str] = None
+    fecha: Optional[str] = None
+
+@dataclass(frozen=True)
+class ActaEnBorrador(DomainEvent):
+    """Un acta ha quedado en borrador, pendiente de revisión."""
+    acta_id: str = ""
+    reunion_titulo: str = ""
+    agrupacion_id: Optional[str] = None
+
+@dataclass(frozen=True)
+class ActaAprobada(DomainEvent):
+    """Un acta ha sido aprobada y está lista para su firma."""
+    acta_id: str = ""
+    reunion_titulo: str = ""
+    agrupacion_id: Optional[str] = None
+
+@dataclass(frozen=True)
+class NombramientoPendienteAprobacion(DomainEvent):
+    """Un nombramiento de cargo está pendiente de aprobación."""
+    nombramiento_id: str = ""
+    cargo_nombre: str = ""
+    miembro_nombre: str = ""
+    agrupacion_id: Optional[str] = None
+
+@dataclass(frozen=True)
+class TrasladoSolicitado(DomainEvent):
+    """Un socio ha solicitado el traslado a otra agrupación."""
+    solicitud_id: str = ""
+    miembro_nombre: str = ""
+    agrupacion_destino_id: Optional[str] = None
+
+@dataclass(frozen=True)
+class TrasladoResuelto(DomainEvent):
+    """Se ha resuelto una solicitud de traslado."""
+    solicitud_id: str = ""
+    miembro_id: str = ""
+    aprobado: bool = False
+
+
+# -----------------------------------------------------------------------
 # Event Bus
 # -----------------------------------------------------------------------
 

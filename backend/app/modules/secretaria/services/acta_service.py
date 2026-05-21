@@ -166,6 +166,25 @@ class ActaService:
 
         await self.session.commit()
         await self.session.refresh(acta)
+
+        # Aviso de flujo: acta lista para firma. Publicado tras el commit; un
+        # fallo de aviso no afecta a la aprobación (el event bus captura).
+        try:
+            from app.core.events import event_bus, ActaAprobada
+            if reunion is not None:
+                desc = f"convocatoria {reunion.numero_convocatoria}/{reunion.anio}"
+                agr = str(reunion.agrupacion_id) if reunion.agrupacion_id else None
+            else:
+                desc = f"reunión {acta.reunion_id}"
+                agr = None
+            await event_bus.publish(ActaAprobada(
+                acta_id=str(acta.id),
+                reunion_titulo=desc,
+                agrupacion_id=agr,
+            ))
+        except Exception:
+            pass
+
         return acta
 
     async def firmar_acta(

@@ -98,24 +98,24 @@ Prioridad del tipo: `URGENTE`/`ALTA` ⇒ también email; `NORMAL`/`BAJA` ⇒ sol
 - **Audiencia:** al tesorero regional `por_cargo(tesorero, agrupacion_id)`; al
   solicitante `por_miembro(miembro_id)`.
 
-### 3.4 Secretaría — Reuniones y actas
-- **Puntos:** `reunion_service.convocar()` → asistentes; `acta_service.aprobar_acta()`
-  → quien firma; acta en borrador → secretaría.
-- **Tipos:** `SECRETARIA_CONVOCATORIA` (ALTA→email), `SECRETARIA_ACTA_BORRADOR`
-  (NORMAL), `SECRETARIA_ACTA_APROBADA` (ALTA→email a firmantes).
-- **Audiencia:** convocatoria → asistentes por `por_usuario`/lista; firma →
-  `por_permiso("SECRETARIA_ACTA_FIRMAR")`.
-- **Recomendado vía evento** (`ReunionConvocada`, `ActaAprobada`): es transversal.
+### 3.4 Secretaría — Reuniones y actas  *(handlers ACTIVOS; emisión parcial)*
+- **Eventos:** `ReunionConvocada`, `ActaEnBorrador`, `ActaAprobada` (en `core/events.py`).
+- **Handlers:** suscritos en `core/comunicacion/handlers.py` →
+  `SECRETARIA_CONVOCATORIA` (audiencia `REUNION_REGISTRAR_ASIST`),
+  `SECRETARIA_ACTA_BORRADOR` (`ACTA_APROBAR`), `SECRETARIA_ACTA_APROBADA` (`ACTA_FIRMAR`).
+- **Emisión conectada:** `acta_service.aprobar_acta()` publica `ActaAprobada`
+  tras el commit (patrón de referencia end-to-end).
+- **Emisión pendiente:** publicar `ReunionConvocada` en `reunion_service.convocar()`
+  y `ActaEnBorrador` en `acta_service.crear_acta_borrador()` (mismo patrón: tras commit, envuelto).
 
-### 3.5 Membresía — Nombramientos y traslados
-- **Puntos:** nombramiento `PENDIENTE`→`EN_REVISION` (al aprobador); solicitud de
-  traslado creada/resuelta.
-- **Tipos:** `NOMBRAMIENTO_PENDIENTE_APROBACION` (ALTA→email al aprobador),
-  `TRASLADO_SOLICITADO` (NORMAL), `TRASLADO_RESUELTO` (ALTA→email al solicitante).
-- **Audiencia:** al aprobador → `por_cargo(cargo.cargo_aprobador_id, agrupacion)` o
-  `por_permiso` de la transacción de aprobación; al solicitante → `por_miembro`.
-- **Sinergia:** el evento `CargoAssigned`/`CargoRevoked` (ya existe y reconstruye
-  la matriz de permisos) puede además generar un aviso al interesado.
+### 3.5 Membresía — Nombramientos y traslados  *(handlers ACTIVOS; emisión pendiente)*
+- **Eventos:** `NombramientoPendienteAprobacion`, `TrasladoSolicitado`, `TrasladoResuelto`.
+- **Handlers:** suscritos →
+  `NOMBRAMIENTO_PENDIENTE_APROBACION` (audiencia `MEMBRESIA_CARGO_ASIGNAR`),
+  `TRASLADO_SOLICITADO` (`MEMBRESIA_TRASLADO_APROBAR`),
+  `TRASLADO_RESUELTO` (audiencia `por_miembro` del solicitante).
+- **Emisión pendiente:** publicar los eventos en los servicios de nombramiento y
+  traslado tras su commit. El subsistema ya está listo para recibirlos.
 
 ### 3.6 Actividades — Campañas y grupos de trabajo
 - **Puntos:** campaña aprobada (ya hay notificación a la membresía por email vía
@@ -160,13 +160,19 @@ LEIDA/ERROR). Cada tipo fija su `prioridad` (que decide el email), `categoria`,
    frente a cambios de modelado de roles/cargos.
 6. **Idempotencia** en el seed de tipos y estados (crear-o-actualizar por código).
 
-## 6. Orden de implementación sugerido
+## 6. Estado de implementación
 
-1. Sembrar estados + tipos (desbloquea todo).
-2. Activar presupuestos (enganche listo) → primer caso real end-to-end.
-3. Secretaría y membresía vía eventos de dominio (mayor valor, transversal).
-4. Resto de económico y actividades.
-5. Acceso/seguridad.
+1. ✅ Estados + tipos sembrados (idempotente, en bootstrap).
+2. ✅ Migración Alembic (codigo en estados_notificacion, seed, vista v_nombramientos_vigentes).
+3. ✅ DestinatarioResolver (4 vías + dedup) y NotificacionService (email por prioridad).
+4. ✅ Capa GraphQL (mis notificaciones, no leídas, marcar/archivar).
+5. ✅ Presupuestos activo (primer caso real end-to-end).
+6. ✅ Eventos de dominio + 6 handlers (secretaría y membresía) suscritos en el lifespan.
+7. ✅ Emisión conectada en `acta_service.aprobar_acta()` (patrón de referencia).
+8. ⏳ Pendiente: publicar el resto de eventos en sus servicios (reunión, acta
+   borrador, nombramientos, traslados) — el subsistema ya está listo para recibirlos.
+9. ⏳ Pendiente (fase aparte): mensajería interna usuario↔usuario (sección 7).
+10. ⏳ Pendiente: resto de económico (remesas, cuotas), actividades y seguridad.
 
 ## 7. Pendiente: mensajería interna entre usuarios (fase aparte)
 
