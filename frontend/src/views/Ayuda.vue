@@ -237,6 +237,89 @@
               </div>
             </details>
 
+            <!-- Detalle: montar las categorías fiscales (simplificada) -->
+            <details class="help-detail mt-3">
+              <summary class="help-detail-summary">
+                Flujo · Categorías fiscales (contabilidad simplificada)
+              </summary>
+              <div class="help-detail-body">
+                <p class="help-text">
+                  Las categorías fiscales son la estructura sobre la que se clasifica todo en modo
+                  simplificado. SIGA arranca con un catálogo por defecto (Cuotas, Donativos,
+                  Suministros, Personal, Alquileres…), pero puedes adaptarlo a tu organización.
+                </p>
+
+                <p class="help-subtitle">Paso 1 — Revisar el catálogo</p>
+                <p class="help-text">
+                  En <em>Económico → Contabilidad → Categorías fiscales</em>, las categorías se muestran
+                  en dos columnas: ingresos y gastos. Cada una indica con una etiqueta si computa para
+                  el Modelo 182 (donativos) o el Modelo 347 (operaciones con terceros).
+                </p>
+
+                <p class="help-subtitle">Paso 2 — Crear o editar una categoría</p>
+                <p class="help-text">
+                  Con <strong>+ Nueva categoría</strong> defines su código (por ejemplo
+                  <em>GAS_SEGUROS</em>), nombre, si es de ingreso o gasto, su tratamiento fiscal
+                  (toggles de Modelo 182 y 347, casilla del modelo si procede) y un color para
+                  identificarla en la bitácora. El código y el tipo no se pueden cambiar una vez creada,
+                  para no romper la trazabilidad de los movimientos ya clasificados.
+                </p>
+
+                <p class="help-subtitle">Paso 3 — Desactivar en lugar de borrar</p>
+                <p class="help-text">
+                  Una categoría que ya tiene movimientos asignados no se puede eliminar: el sistema lo
+                  impide para preservar el histórico. Si dejas de usarla, <strong>desactívala</strong> desde
+                  Editar; deja de ofrecerse para nuevas clasificaciones pero los movimientos antiguos
+                  la conservan.
+                </p>
+                <p class="help-text">
+                  Una vez tengas el catálogo a punto, define las
+                  <strong>reglas de clasificación</strong> (ver el flujo «Clasificar movimientos») para que
+                  los apuntes se categoricen solos.
+                </p>
+              </div>
+            </details>
+
+            <!-- Detalle: plan de cuentas y asientos (completa) -->
+            <details class="help-detail mt-3">
+              <summary class="help-detail-summary">
+                Flujo · Plan de cuentas y asientos (contabilidad completa)
+              </summary>
+              <div class="help-detail-body">
+                <p class="help-text">
+                  En modo completo, la clasificación se apoya en el plan de cuentas PCESFL y cada
+                  movimiento genera un asiento por partida doble. Este flujo describe el uso de la
+                  pantalla de Contabilidad en ese modo.
+                </p>
+
+                <p class="help-subtitle">Paso 1 — Inicializar el plan de cuentas</p>
+                <p class="help-text">
+                  La primera vez, <em>Económico → Contabilidad → Plan de cuentas</em> ofrece cargar el
+                  plan PCESFL 2013 de partida. El plan es un árbol jerárquico: grupos (1 dígito),
+                  subgrupos (2) y cuentas (3). Solo las cuentas de último nivel admiten asientos. Con
+                  <strong>+ Nueva cuenta</strong> o el botón de subcuenta de cada nodo puedes ampliarlo
+                  según tus necesidades.
+                </p>
+
+                <p class="help-subtitle">Paso 2 — La bitácora y los asientos automáticos</p>
+                <p class="help-text">
+                  La pestaña <strong>Bitácora</strong> muestra cada movimiento real de dinero (los apuntes
+                  de caja). En modo completo, cada apunte genera automáticamente su asiento de partida
+                  doble según las <strong>reglas contables</strong> (origen del movimiento → cuentas al debe
+                  y al haber). El número de asiento aparece enlazado en la propia bitácora; al pulsarlo
+                  se abre su detalle en la pestaña <strong>Asientos</strong>.
+                </p>
+
+                <p class="help-subtitle">Paso 3 — Consultar el balance</p>
+                <p class="help-text">
+                  La pestaña <strong>Sumas y saldos</strong> calcula, a una fecha de corte, el debe, el haber
+                  y el saldo de cada cuenta, con la comprobación de que el balance cuadra. Es una
+                  herramienta de consulta: no modifica nada, solo refleja el estado de la contabilidad
+                  en ese instante.
+                </p>
+              </div>
+            </details>
+
             <!-- Detalle por flujo de trabajo -->
             <details class="help-detail mt-3">
               <summary class="help-detail-summary">
