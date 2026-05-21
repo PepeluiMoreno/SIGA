@@ -100,6 +100,18 @@ class ActaService:
 
         await self.session.commit()
         await self.session.refresh(acta)
+
+        # Aviso de flujo: acta en borrador pendiente de revisión.
+        try:
+            from app.core.events import event_bus, ActaEnBorrador
+            await event_bus.publish(ActaEnBorrador(
+                acta_id=str(acta.id),
+                reunion_titulo=f"convocatoria {reunion.numero_convocatoria}/{reunion.anio}",
+                agrupacion_id=str(reunion.agrupacion_id) if reunion.agrupacion_id else None,
+            ))
+        except Exception:
+            pass
+
         return acta
 
     async def obtener_acta(self, acta_id: UUID) -> Optional[Acta]:

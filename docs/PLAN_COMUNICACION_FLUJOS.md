@@ -98,24 +98,28 @@ Prioridad del tipo: `URGENTE`/`ALTA` ⇒ también email; `NORMAL`/`BAJA` ⇒ sol
 - **Audiencia:** al tesorero regional `por_cargo(tesorero, agrupacion_id)`; al
   solicitante `por_miembro(miembro_id)`.
 
-### 3.4 Secretaría — Reuniones y actas  *(handlers ACTIVOS; emisión parcial)*
+### 3.4 Secretaría — Reuniones y actas  *(COMPLETO)*
 - **Eventos:** `ReunionConvocada`, `ActaEnBorrador`, `ActaAprobada` (en `core/events.py`).
 - **Handlers:** suscritos en `core/comunicacion/handlers.py` →
   `SECRETARIA_CONVOCATORIA` (audiencia `REUNION_REGISTRAR_ASIST`),
   `SECRETARIA_ACTA_BORRADOR` (`ACTA_APROBAR`), `SECRETARIA_ACTA_APROBADA` (`ACTA_FIRMAR`).
-- **Emisión conectada:** `acta_service.aprobar_acta()` publica `ActaAprobada`
-  tras el commit (patrón de referencia end-to-end).
-- **Emisión pendiente:** publicar `ReunionConvocada` en `reunion_service.convocar()`
-  y `ActaEnBorrador` en `acta_service.crear_acta_borrador()` (mismo patrón: tras commit, envuelto).
+- **Emisión conectada (tras commit, envuelta):**
+  `reunion_service.convocar_reunion()` → `ReunionConvocada`;
+  `acta_service.crear_acta_borrador()` → `ActaEnBorrador`;
+  `acta_service.aprobar_acta()` → `ActaAprobada`.
 
-### 3.5 Membresía — Nombramientos y traslados  *(handlers ACTIVOS; emisión pendiente)*
+### 3.5 Membresía — Nombramientos y traslados  *(handlers ACTIVOS; emisión bloqueada por diseño)*
 - **Eventos:** `NombramientoPendienteAprobacion`, `TrasladoSolicitado`, `TrasladoResuelto`.
 - **Handlers:** suscritos →
   `NOMBRAMIENTO_PENDIENTE_APROBACION` (audiencia `MEMBRESIA_CARGO_ASIGNAR`),
   `TRASLADO_SOLICITADO` (`MEMBRESIA_TRASLADO_APROBAR`),
   `TRASLADO_RESUELTO` (audiencia `por_miembro` del solicitante).
-- **Emisión pendiente:** publicar los eventos en los servicios de nombramiento y
-  traslado tras su commit. El subsistema ya está listo para recibirlos.
+- **Emisión PENDIENTE — requiere refactor previo del módulo:** hoy nombramientos y
+  traslados se crean/actualizan mediante mutations CRUD autogeneradas por strawchemy
+  (`crear_historial_nombramiento`, `crear_solicitud_traslado`), sin un método de
+  servicio con flujo de aprobación donde publicar el evento. Cuando membresía tenga
+  mutations custom de aprobación (refactor propio del módulo), basta con publicar el
+  evento tras el commit — el subsistema de comunicación ya está listo para recibirlo.
 
 ### 3.6 Actividades — Campañas y grupos de trabajo
 - **Puntos:** campaña aprobada (ya hay notificación a la membresía por email vía
@@ -168,9 +172,10 @@ LEIDA/ERROR). Cada tipo fija su `prioridad` (que decide el email), `categoria`,
 4. ✅ Capa GraphQL (mis notificaciones, no leídas, marcar/archivar).
 5. ✅ Presupuestos activo (primer caso real end-to-end).
 6. ✅ Eventos de dominio + 6 handlers (secretaría y membresía) suscritos en el lifespan.
-7. ✅ Emisión conectada en `acta_service.aprobar_acta()` (patrón de referencia).
-8. ⏳ Pendiente: publicar el resto de eventos en sus servicios (reunión, acta
-   borrador, nombramientos, traslados) — el subsistema ya está listo para recibirlos.
+7. ✅ Emisión conectada en secretaría: `convocar_reunion`, `crear_acta_borrador`,
+   `aprobar_acta` (los 3 eventos publican tras commit).
+8. ⏳ Membresía: handlers listos, pero la emisión requiere que el módulo tenga
+   mutations custom de aprobación (hoy son CRUD autogeneradas; refactor propio).
 9. ⏳ Pendiente (fase aparte): mensajería interna usuario↔usuario (sección 7).
 10. ⏳ Pendiente: resto de económico (remesas, cuotas), actividades y seguridad.
 
