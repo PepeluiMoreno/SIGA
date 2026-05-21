@@ -155,7 +155,7 @@
                       <BuildingLibraryIcon class="nav-icon" /><span>Tesorería</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('FIN_REPORTS')">
+                  <li v-if="tienePermiso('FIN_REPORTS') && orgConfigStore.usaPresupuesto">
                     <router-link to="/economico/presupuesto" class="nav-item"
                       :class="$route.path.startsWith('/economico/presupuesto') ? 'active' : 'inactive'">
                       <ChartBarIcon class="nav-icon" /><span>Presupuesto</span>

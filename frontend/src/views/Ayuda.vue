@@ -320,6 +320,65 @@
               </div>
             </details>
 
+            <!-- Detalle: presupuesto anual -->
+            <details class="help-detail mt-3">
+              <summary class="help-detail-summary">
+                Flujo · Presupuesto anual (elaboración, aprobación y seguimiento)
+              </summary>
+              <div class="help-detail-body">
+                <p class="help-text">
+                  El presupuesto es una funcionalidad opcional que se activa en
+                  <em>Configuración → Parámetros generales → Funcionalidades → Presupuesto anual</em>.
+                  Para asociaciones es opcional (según marquen sus estatutos); para fundaciones es
+                  obligatorio y viene activado de serie (plan de actuación, Ley 50/2002). Cuando está
+                  activo, aparece <em>Económico → Presupuesto</em> en el menú.
+                </p>
+
+                <p class="help-subtitle">Paso 1 — Crear el presupuesto del ejercicio</p>
+                <p class="help-text">
+                  Cada ejercicio tiene un único presupuesto. Si no existe, la pantalla ofrece crearlo.
+                  Nace en estado <strong>Borrador</strong>, donde se elabora libremente.
+                </p>
+
+                <p class="help-subtitle">Paso 2 — Añadir partidas (ingresos y gastos)</p>
+                <p class="help-text">
+                  La vista se organiza en paneles: Ingresos y Gastos, y dentro de cada uno las partidas
+                  se agrupan por categoría. Las partidas se editan <strong>directamente sobre la tabla</strong>:
+                  el nombre y el importe se modifican en su propia celda, y al pie de cada categoría hay
+                  una fila para añadir una partida nueva al vuelo. Una partida puede vincularse a una
+                  actividad o campaña concreta, para presupuestar por proyectos.
+                </p>
+
+                <p class="help-subtitle">Paso 3 — El ciclo de aprobación</p>
+                <p class="help-text">
+                  El presupuesto avanza por estados, y solo se pueden editar partidas mientras está en
+                  Borrador o Propuesto:
+                </p>
+                <ol class="help-list list-decimal">
+                  <li><strong>Borrador</strong> — elaboración. Se propone cuando está listo.</li>
+                  <li><strong>Propuesto</strong> — pendiente de aprobación por el órgano de gobierno.
+                    Se puede devolver a borrador para corregir.</li>
+                  <li><strong>Aprobado</strong> — ratificado (acto de gobierno, queda la fecha). El
+                    presupuesto se congela: ya no se editan partidas a mano.</li>
+                  <li><strong>En ejecución</strong> — el ejercicio está en marcha y se registra el gasto real.</li>
+                  <li><strong>Cerrado</strong> — fin del ejercicio.</li>
+                </ol>
+                <p class="help-text">
+                  Aprobar, iniciar ejecución y cerrar requieren el permiso de aprobación de presupuesto;
+                  elaborar y proponer, el de creación.
+                </p>
+
+                <p class="help-subtitle">Paso 4 — Seguimiento de la ejecución</p>
+                <p class="help-text">
+                  Cuando un movimiento de tesorería se imputa a una actividad o campaña que tiene una
+                  partida asociada, su importe se suma automáticamente a lo ejecutado de esa partida. El
+                  panel <strong>Seguimiento de ejecución</strong> muestra, partida a partida, lo presupuestado
+                  frente a lo ejecutado, con la desviación y el porcentaje de ejecución, señalando en rojo
+                  las partidas sobreejecutadas.
+                </p>
+              </div>
+            </details>
+
             <!-- Detalle por flujo de trabajo -->
             <details class="help-detail mt-3">
               <summary class="help-detail-summary">

@@ -155,6 +155,19 @@ class TesoreriaService:
         self.session.add(cuenta)
         await self.session.commit()
         await self.session.refresh(apunte)
+
+        # Imputar a presupuesto si el apunte está afecto a una actividad o campaña
+        # con partida presupuestaria. Defensivo: si no hay partida, no hace nada.
+        if (actividad_id or campania_id) and tipo in (TipoApunte.INGRESO, TipoApunte.GASTO):
+            try:
+                from .presupuesto_service import PresupuestoService
+                await PresupuestoService(self.session).imputar_ejecucion(
+                    importe=importe, actividad_id=actividad_id, campania_id=campania_id,
+                )
+            except Exception:
+                # La imputación a presupuesto nunca debe impedir registrar el movimiento real
+                pass
+
         return apunte
 
     # Alias para compatibilidad con el nombre antiguo
@@ -261,6 +274,12 @@ class TesoreriaService:
         apunte = await self.obtener_apunte(apunte_id)
         if not apunte:
             raise ValueError(f"Apunte {apunte_id} no encontrado")
+
+        # Capturar la imputación previa para reajustar el presupuesto si cambia
+        afecta_presupuesto = apunte.tipo in (TipoApunte.INGRESO, TipoApunte.GASTO)
+        prev_actividad_id = apunte.actividad_id
+        prev_campania_id = apunte.campania_id
+
         if concepto is not None:
             if not concepto.strip():
                 raise ValueError("El concepto no puede quedar vacío.")
@@ -283,6 +302,26 @@ class TesoreriaService:
         self.session.add(apunte)
         await self.session.commit()
         await self.session.refresh(apunte)
+
+        # Reajustar el presupuesto si la imputación (actividad/campaña) ha cambiado
+        if afecta_presupuesto and (
+            apunte.actividad_id != prev_actividad_id or apunte.campania_id != prev_campania_id
+        ):
+            try:
+                from .presupuesto_service import PresupuestoService
+                presup = PresupuestoService(self.session)
+                # Quitar de la partida anterior y sumar a la nueva
+                await presup.revertir_ejecucion(
+                    importe=apunte.importe,
+                    actividad_id=prev_actividad_id, campania_id=prev_campania_id,
+                )
+                await presup.imputar_ejecucion(
+                    importe=apunte.importe,
+                    actividad_id=apunte.actividad_id, campania_id=apunte.campania_id,
+                )
+            except Exception:
+                pass  # La imputación a presupuesto nunca debe impedir editar el apunte
+
         return apunte
 
     async def anular_apunte(self, apunte_id: UUID, motivo: str) -> ApunteCaja:
@@ -327,8 +366,11 @@ class TesoreriaService:
             entidad_origen_id=original.id,
             referencia_externa=None,
             observaciones=marca,
-            actividad_id=original.actividad_id,
-            campania_id=original.campania_id,
+            # El contraapunte NO hereda la imputación a actividad/campaña: la reversión
+            # presupuestaria del original ya se hace explícitamente más abajo. Heredarla
+            # provocaría doble cómputo si en el futuro se reprocesara.
+            actividad_id=None,
+            campania_id=None,
         )
         # Ajustar saldo de la cuenta
         cuenta = await self.obtener_cuenta_bancaria(original.cuenta_bancaria_id)
@@ -348,6 +390,19 @@ class TesoreriaService:
                 await contab.anular_asiento(original.asiento_id)
             except Exception:
                 pass  # idempotente: si ya estaba anulado, seguimos
+
+        # Revertir la imputación presupuestaria del original (si la tenía)
+        if original.tipo in (TipoApunte.INGRESO, TipoApunte.GASTO) and (
+            original.actividad_id or original.campania_id
+        ):
+            try:
+                from .presupuesto_service import PresupuestoService
+                await PresupuestoService(self.session).revertir_ejecucion(
+                    importe=original.importe,
+                    actividad_id=original.actividad_id, campania_id=original.campania_id,
+                )
+            except Exception:
+                pass  # la reversión presupuestaria nunca impide anular
 
         await self.session.commit()
         await self.session.refresh(contra)
