@@ -115,14 +115,48 @@ class PresupuestoService:
 
     # ── Fase 3: clonado, prórroga, comparativa, liquidación ──────────────────
 
+    async def calcular_ratio_cuota(
+        self,
+        ejercicio_origen: int,
+        ejercicio_nuevo: int,
+    ) -> Optional[Decimal]:
+        """Devuelve el ratio cuota_nuevo/cuota_origen o None si alguno no está definido.
+
+        Suma todos los importes de ImporteCuotaAnio de cada ejercicio (puede haber varios
+        tipos de miembro). Si el total origen es cero devuelve None.
+        """
+        from sqlalchemy import func
+        from ..models.cuotas import ImporteCuotaAnio
+
+        async def _total(ejercicio: int) -> Decimal:
+            result = await self.session.execute(
+                select(func.sum(ImporteCuotaAnio.importe)).where(
+                    ImporteCuotaAnio.ejercicio == ejercicio
+                )
+            )
+            return result.scalar_one_or_none() or Decimal("0")
+
+        total_origen = await _total(ejercicio_origen)
+        total_nuevo  = await _total(ejercicio_nuevo)
+
+        if not total_origen:
+            return None
+        if not total_nuevo:
+            return None
+        return (total_nuevo / total_origen).quantize(Decimal("0.0001"))
+
     async def clonar_planificacion(
         self,
         ejercicio_origen: int,
         ejercicio_nuevo: int,
         nombre: Optional[str] = None,
         es_prorroga: bool = False,
+        factor: Optional[Decimal] = None,
     ) -> PlanificacionAnual:
         """Crea el presupuesto de un ejercicio copiando las partidas de otro.
+
+        Si se indica `factor`, escala todos los importes presupuestados por ese valor
+        (p. ej. el ratio de variación de cuota entre ejercicios).
 
         Las partidas se copian con su importe presupuestado como punto de partida; el
         ejecutado y comprometido arrancan a cero. El nuevo nace en BORRADOR.
@@ -152,15 +186,17 @@ class PresupuestoService:
         await self.session.refresh(nuevo)
 
         # Copiar las partidas (importe presupuestado como base; ejecución a cero)
+        _factor = (factor or Decimal("1")).quantize(Decimal("0.0001"))
         partidas_origen = await self.listar_partidas(origen.id)
         for po in partidas_origen:
+            importe = (po.importe_presupuestado * _factor).quantize(Decimal("0.01"))
             self.session.add(PartidaPresupuestaria(
                 planificacion_id=nuevo.id,
                 ejercicio=ejercicio_nuevo,
                 codigo=f"{ejercicio_nuevo}-{po.codigo.split('-', 1)[-1]}" if "-" in po.codigo else f"{ejercicio_nuevo}-{po.codigo}",
                 nombre=po.nombre,
                 tipo=po.tipo,
-                importe_presupuestado=po.importe_presupuestado,
+                importe_presupuestado=importe,
                 categoria_id=po.categoria_id,
                 actividad_id=po.actividad_id,
                 campania_id=po.campania_id,

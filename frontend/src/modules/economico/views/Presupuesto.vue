@@ -3,27 +3,72 @@
     <LoadSpinner v-if="loading" />
 
     <!-- Sin presupuesto del ejercicio: ofrecer crearlo -->
-    <div v-else-if="!planificacion" class="bg-white rounded-lg shadow border border-gray-200 p-8 text-center">
-      <p class="font-medium text-gray-700 mb-1">No hay presupuesto para {{ ejercicioActual }}</p>
-      <p class="text-sm text-gray-500 mb-4">Crea la planificación anual para empezar a presupuestar.</p>
-      <div v-if="puedeCrear" class="flex items-center justify-center gap-2">
-        <input v-model.number="nuevoEjercicio" type="number"
-          class="input-sm w-28 text-center" />
-        <button @click="crearPlanificacion"
-          class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700">
-          Crear presupuesto {{ nuevoEjercicio }}
-        </button>
-      </div>
-      <div v-if="puedeCrear" class="mt-3 text-sm text-gray-500">
-        o
-        <button @click="clonarDelAnterior" class="text-purple-600 hover:underline ml-1">
-          partir del presupuesto de {{ nuevoEjercicio - 1 }}
-        </button>
-        <span v-if="puedeAprobar"> ·
-          <button @click="prorrogarDelAnterior" class="text-purple-600 hover:underline">
-            prorrogar el de {{ nuevoEjercicio - 1 }}
+    <div v-else-if="!planificacion" class="bg-white rounded-lg shadow border border-gray-200 p-8">
+      <div class="text-center">
+        <p class="font-medium text-gray-700 mb-1">No hay presupuesto para {{ ejercicioActual }}</p>
+        <p class="text-sm text-gray-500 mb-4">Crea la planificación anual para empezar a presupuestar.</p>
+        <div v-if="puedeCrear" class="flex items-center justify-center gap-2">
+          <input v-model.number="nuevoEjercicio" type="number"
+            class="input-sm w-28 text-center" @change="onCambioEjercicio" />
+          <button @click="crearPlanificacion"
+            class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700">
+            Crear presupuesto {{ nuevoEjercicio }}
           </button>
-        </span>
+        </div>
+        <div v-if="puedeCrear" class="mt-3 text-sm text-gray-500">
+          o
+          <button @click="mostrarPanelClonar = true" class="text-purple-600 hover:underline ml-1">
+            partir del presupuesto de {{ nuevoEjercicio - 1 }}
+          </button>
+          <span v-if="puedeAprobar"> ·
+            <button @click="prorrogarDelAnterior" class="text-purple-600 hover:underline">
+              prorrogar el de {{ nuevoEjercicio - 1 }}
+            </button>
+          </span>
+        </div>
+      </div>
+
+      <!-- Panel de clonado con factor de cuota -->
+      <div v-if="mostrarPanelClonar" class="mt-6 border border-indigo-200 rounded-lg bg-indigo-50 p-4 max-w-lg mx-auto">
+        <h3 class="text-sm font-semibold text-indigo-800 mb-3">
+          Partir del presupuesto {{ nuevoEjercicio - 1 }}
+        </h3>
+
+        <!-- Ratio de cuota -->
+        <div v-if="ratioCuota === null" class="text-xs text-slate-500 mb-3 italic">
+          Cargando variación de cuota…
+        </div>
+        <div v-else-if="ratioCuota.disponible" class="mb-3">
+          <div class="flex items-center justify-between text-sm mb-1">
+            <span class="text-slate-700">Variación de cuota {{ nuevoEjercicio - 1 }} → {{ nuevoEjercicio }}</span>
+            <span :class="ratioCuota.variacionPorcentaje >= 0 ? 'text-green-700 font-semibold' : 'text-red-600 font-semibold'">
+              {{ ratioCuota.variacionPorcentaje >= 0 ? '+' : '' }}{{ ratioCuota.variacionPorcentaje.toFixed(1) }}%
+            </span>
+          </div>
+          <div class="text-xs text-slate-500 mb-2">
+            Cuota {{ nuevoEjercicio - 1 }}: {{ ratioCuota.totalOrigen.toFixed(2) }} € →
+            Cuota {{ nuevoEjercicio }}: {{ ratioCuota.totalNuevo.toFixed(2) }} €
+          </div>
+          <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none">
+            <input type="checkbox" v-model="aplicarFactorCuota" class="rounded" />
+            Escalar todas las partidas con este factor (×{{ ratioCuota.ratio.toFixed(4) }})
+          </label>
+        </div>
+        <div v-else class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
+          No hay cuotas definidas para {{ nuevoEjercicio - 1 }} o {{ nuevoEjercicio }}.
+          Los importes se copiarán tal cual.
+        </div>
+
+        <div class="flex gap-2 justify-end mt-2">
+          <button @click="mostrarPanelClonar = false"
+            class="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-800">
+            Cancelar
+          </button>
+          <button @click="clonarDelAnterior" :disabled="ocupado"
+            class="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+            {{ ocupado ? 'Creando…' : 'Crear borrador' }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -265,7 +310,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
@@ -281,6 +326,7 @@ import {
   CERRAR_PRESUPUESTO, DEVOLVER_A_BORRADOR,
   GET_MODIFICACIONES, GET_ALERTAS, REGISTRAR_MODIFICACION, ESTABLECER_CONTROL_DISPONIBILIDAD,
   GET_COMPARATIVA_INTERANUAL, GET_LIQUIDACION, CLONAR_PRESUPUESTO, PRORROGAR_PRESUPUESTO,
+  GET_RATIO_VARIACION_CUOTA,
 } from '@/graphql/queries/presupuestos.js'
 
 const { query, mutation } = useGraphQL()
@@ -304,6 +350,29 @@ const liquidacion = ref(null)
 
 const ejercicioActual = new Date().getFullYear()
 const nuevoEjercicio = ref(ejercicioActual)
+const mostrarPanelClonar = ref(false)
+const ratioCuota = ref(null)
+const aplicarFactorCuota = ref(false)
+
+async function cargarRatioCuota() {
+  ratioCuota.value = null
+  aplicarFactorCuota.value = false
+  try {
+    const data = await query(GET_RATIO_VARIACION_CUOTA, {
+      ejercicioOrigen: nuevoEjercicio.value - 1,
+      ejercicioNuevo: nuevoEjercicio.value,
+    })
+    ratioCuota.value = data.ratioVariacionCuota
+  } catch {
+    ratioCuota.value = { disponible: false }
+  }
+}
+
+function onCambioEjercicio() {
+  if (mostrarPanelClonar.value) cargarRatioCuota()
+}
+
+watch(mostrarPanelClonar, (v) => { if (v) cargarRatioCuota() })
 
 const partidasIngreso = computed(() => partidas.value.filter(p => p.tipo === 'INGRESO'))
 const partidasGasto = computed(() => partidas.value.filter(p => p.tipo === 'GASTO'))
@@ -432,9 +501,15 @@ const toggleControl = async (activo) => {
 const clonarDelAnterior = async () => {
   ocupado.value = true
   try {
+    const factor = (aplicarFactorCuota.value && ratioCuota.value?.disponible)
+      ? ratioCuota.value.ratio
+      : null
     await mutation(CLONAR_PRESUPUESTO, {
-      ejercicioOrigen: nuevoEjercicio.value - 1, ejercicioNuevo: nuevoEjercicio.value,
+      ejercicioOrigen: nuevoEjercicio.value - 1,
+      ejercicioNuevo: nuevoEjercicio.value,
+      factor,
     })
+    mostrarPanelClonar.value = false
     await cargar()
   } catch (e) {
     console.error(e?.message || e)

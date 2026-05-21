@@ -12,6 +12,7 @@ from .seeding.seed_secretaria import seed_secretaria
 from .seeding.seed_categorias_fiscales import seed_categorias_fiscales
 from .seeding.seed_estados_planificacion import seed_estados_planificacion
 from .seeding.seed_tipos_actividad_gobierno import seed_tipos_actividad_gobierno
+from .seeding.seed_presupuesto_demo import seed_presupuesto_demo
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -62,6 +63,9 @@ async def inicializar_sistema_completo(session: AsyncSession) -> None:
 
         # Tipos de actividad de gobierno (requiere sec_tipos_reunion ya seedados)
         await seed_tipos_actividad_gobierno(session)
+
+        # Presupuesto demo 2025 (datos de ejemplo)
+        await seed_presupuesto_demo(session)
 
         print("\n" + "="*80)
         print(" "*25 + "¡INICIALIZACIÓN COMPLETADA!")

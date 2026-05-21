@@ -168,6 +168,17 @@ class LiquidacionPresupuestariaType:
     grado_ejecucion_gastos: float = 0.0
 
 
+@strawberry.type
+class RatioVariacionCuotaType:
+    ejercicio_origen: int
+    ejercicio_nuevo: int
+    total_origen: float
+    total_nuevo: float
+    ratio: float
+    variacion_porcentaje: float
+    disponible: bool
+
+
 @strawberry.input
 class RegistrarModificacionInput:
     planificacion_id: uuid.UUID
@@ -274,6 +285,44 @@ class PresupuestoQuery:
         service = PresupuestoService(info.context.session)
         d = await service.liquidacion_presupuestaria(ejercicio)
         return LiquidacionPresupuestariaType(**d)
+
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")])
+    async def ratio_variacion_cuota(
+        self, info: strawberry.Info, ejercicio_origen: int, ejercicio_nuevo: int
+    ) -> RatioVariacionCuotaType:
+        service = PresupuestoService(info.context.session)
+        ratio = await service.calcular_ratio_cuota(ejercicio_origen, ejercicio_nuevo)
+        if ratio is None:
+            return RatioVariacionCuotaType(
+                ejercicio_origen=ejercicio_origen,
+                ejercicio_nuevo=ejercicio_nuevo,
+                total_origen=0.0, total_nuevo=0.0,
+                ratio=1.0, variacion_porcentaje=0.0,
+                disponible=False,
+            )
+        from decimal import Decimal
+        from sqlalchemy import select, func
+        from app.modules.economico.models.cuotas import ImporteCuotaAnio
+
+        async def _total(ejercicio):
+            r = await info.context.session.execute(
+                select(func.sum(ImporteCuotaAnio.importe)).where(
+                    ImporteCuotaAnio.ejercicio == ejercicio
+                )
+            )
+            return float(r.scalar_one_or_none() or 0)
+
+        t_origen = await _total(ejercicio_origen)
+        t_nuevo  = await _total(ejercicio_nuevo)
+        return RatioVariacionCuotaType(
+            ejercicio_origen=ejercicio_origen,
+            ejercicio_nuevo=ejercicio_nuevo,
+            total_origen=t_origen,
+            total_nuevo=t_nuevo,
+            ratio=float(ratio),
+            variacion_porcentaje=round((float(ratio) - 1) * 100, 2),
+            disponible=True,
+        )
 
 
 @strawberry.type
@@ -406,9 +455,14 @@ class PresupuestoMutation:
     async def clonar_presupuesto(
         self, info: strawberry.Info, ejercicio_origen: int, ejercicio_nuevo: int,
         nombre: Optional[str] = None,
+        factor: Optional[float] = None,
     ) -> PlanificacionAnualDetailType:
+        from decimal import Decimal
         service = PresupuestoService(info.context.session)
-        p = await service.clonar_planificacion(ejercicio_origen, ejercicio_nuevo, nombre=nombre)
+        factor_dec = Decimal(str(factor)) if factor is not None else None
+        p = await service.clonar_planificacion(
+            ejercicio_origen, ejercicio_nuevo, nombre=nombre, factor=factor_dec
+        )
         return PlanificacionAnualDetailType.from_model(p)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_APROBAR")])

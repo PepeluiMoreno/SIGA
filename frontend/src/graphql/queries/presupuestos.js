@@ -155,9 +155,19 @@ export const GET_LIQUIDACION = `
   }
 `
 
+export const GET_RATIO_VARIACION_CUOTA = `
+  query RatioVariacionCuota($ejercicioOrigen: Int!, $ejercicioNuevo: Int!) {
+    ratioVariacionCuota(ejercicioOrigen: $ejercicioOrigen, ejercicioNuevo: $ejercicioNuevo) {
+      ejercicioOrigen ejercicioNuevo
+      totalOrigen totalNuevo
+      ratio variacionPorcentaje disponible
+    }
+  }
+`
+
 export const CLONAR_PRESUPUESTO = `
-  mutation ClonarPresupuesto($ejercicioOrigen: Int!, $ejercicioNuevo: Int!, $nombre: String) {
-    clonarPresupuesto(ejercicioOrigen: $ejercicioOrigen, ejercicioNuevo: $ejercicioNuevo, nombre: $nombre) {
+  mutation ClonarPresupuesto($ejercicioOrigen: Int!, $ejercicioNuevo: Int!, $nombre: String, $factor: Float) {
+    clonarPresupuesto(ejercicioOrigen: $ejercicioOrigen, ejercicioNuevo: $ejercicioNuevo, nombre: $nombre, factor: $factor) {
       id ejercicio nombre estadoId
     }
   }
