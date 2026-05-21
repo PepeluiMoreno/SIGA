@@ -249,6 +249,8 @@ from ..modules.economico.models import (
     JustificanteGasto,
     JustificanteGastoLinea,
     JustificanteGastoDocumento,
+    CategoriaFiscal,
+    ReglaCategorizacion,
     EstadoPlanificacion,
     CategoriaPartida,
     PartidaPresupuestaria,
@@ -331,6 +333,14 @@ class JustificanteGastoLineaType:
 
 @strawchemy.type(JustificanteGastoDocumento, include="all", override=True)
 class JustificanteGastoDocumentoType:
+    pass
+
+@strawchemy.type(CategoriaFiscal, include="all", override=True)
+class CategoriaFiscalType:
+    pass
+
+@strawchemy.type(ReglaCategorizacion, include="all", override=True)
+class ReglaCategorizacionType:
     pass
 
 @strawchemy.type(FormaPago, include="all", override=True)

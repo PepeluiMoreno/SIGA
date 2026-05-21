@@ -12,7 +12,7 @@ from app.modules.economico.models.contabilidad import TipoCoincidencia
 
 
 @strawberry.type
-class ReglaCategorizacionType:
+class ReglaCategorizacionDetailType:
     id: uuid.UUID
     patron: str
     tipo_coincidencia: str
@@ -23,8 +23,8 @@ class ReglaCategorizacionType:
     activa: bool
 
     @staticmethod
-    def from_model(m) -> "ReglaCategorizacionType":
-        return ReglaCategorizacionType(
+    def from_model(m) -> "ReglaCategorizacionDetailType":
+        return ReglaCategorizacionDetailType(
             id=m.id,
             patron=m.patron,
             tipo_coincidencia=m.tipo_coincidencia.value if hasattr(m.tipo_coincidencia, "value") else m.tipo_coincidencia,
@@ -70,10 +70,10 @@ class CategorizacionQuery:
     @strawberry.field(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_LISTAR")])
     async def reglas_categorizacion(
         self, info: strawberry.Info, activas_solo: bool = False
-    ) -> List[ReglaCategorizacionType]:
+    ) -> List[ReglaCategorizacionDetailType]:
         service = ReglaCategorizacionService(info.context.session)
         items = await service.listar(activas_solo=activas_solo)
-        return [ReglaCategorizacionType.from_model(r) for r in items]
+        return [ReglaCategorizacionDetailType.from_model(r) for r in items]
 
     @strawberry.field(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_LISTAR")])
     async def apuntes_sin_clasificar(
@@ -89,7 +89,7 @@ class CategorizacionMutation:
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_GESTIONAR")])
     async def crear_regla_categorizacion(
         self, info: strawberry.Info, data: CrearReglaCategorizacionInput
-    ) -> ReglaCategorizacionType:
+    ) -> ReglaCategorizacionDetailType:
         service = ReglaCategorizacionService(info.context.session)
         regla = await service.crear(
             patron=data.patron,
@@ -100,12 +100,12 @@ class CategorizacionMutation:
             descripcion=data.descripcion,
             creado_por_id=info.context.current_user.id if info.context.current_user else None,
         )
-        return ReglaCategorizacionType.from_model(regla)
+        return ReglaCategorizacionDetailType.from_model(regla)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_GESTIONAR")])
     async def actualizar_regla_categorizacion(
         self, info: strawberry.Info, data: ActualizarReglaCategorizacionInput
-    ) -> ReglaCategorizacionType:
+    ) -> ReglaCategorizacionDetailType:
         service = ReglaCategorizacionService(info.context.session)
         cambios = {}
         if data.patron is not None:
@@ -123,7 +123,7 @@ class CategorizacionMutation:
         if data.activa is not None:
             cambios["activa"] = data.activa
         regla = await service.actualizar(data.id, **cambios)
-        return ReglaCategorizacionType.from_model(regla)
+        return ReglaCategorizacionDetailType.from_model(regla)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_GESTIONAR")])
     async def eliminar_regla_categorizacion(

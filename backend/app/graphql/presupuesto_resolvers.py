@@ -12,7 +12,7 @@ from app.modules.economico.services.presupuesto_service import PresupuestoServic
 
 
 @strawberry.type
-class PartidaPresupuestariaType:
+class PartidaPresupuestariaDetailType:
     id: uuid.UUID
     codigo: str
     nombre: str
@@ -29,8 +29,8 @@ class PartidaPresupuestariaType:
     porcentaje_ejecutado: float
 
     @staticmethod
-    def from_model(p) -> "PartidaPresupuestariaType":
-        return PartidaPresupuestariaType(
+    def from_model(p) -> "PartidaPresupuestariaDetailType":
+        return PartidaPresupuestariaDetailType(
             id=p.id,
             codigo=p.codigo,
             nombre=p.nombre,
@@ -49,7 +49,7 @@ class PartidaPresupuestariaType:
 
 
 @strawberry.type
-class PlanificacionAnualType:
+class PlanificacionAnualDetailType:
     id: uuid.UUID
     ejercicio: int
     nombre: str
@@ -65,8 +65,8 @@ class PlanificacionAnualType:
     porcentaje_ejecucion: float
 
     @staticmethod
-    def from_model(pl) -> "PlanificacionAnualType":
-        return PlanificacionAnualType(
+    def from_model(pl) -> "PlanificacionAnualDetailType":
+        return PlanificacionAnualDetailType(
             id=pl.id,
             ejercicio=pl.ejercicio,
             nombre=pl.nombre,
@@ -130,54 +130,29 @@ class ActualizarPartidaInput:
 
 
 @strawberry.type
-class EstadoPlanificacionType:
-    id: uuid.UUID
-    codigo: str
-    nombre: str
-    orden: int
-    color: Optional[str]
-    es_final: bool
-
-
-@strawberry.type
 class PresupuestoQuery:
 
     @strawberry.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")])
-    async def estados_planificacion(self, info: strawberry.Info) -> List[EstadoPlanificacionType]:
-        from app.modules.economico.models.presupuesto import EstadoPlanificacion
-        from sqlalchemy import select
-        result = await info.context.session.execute(
-            select(EstadoPlanificacion).order_by(EstadoPlanificacion.orden)
-        )
-        return [
-            EstadoPlanificacionType(
-                id=e.id, codigo=e.codigo, nombre=e.nombre,
-                orden=e.orden, color=e.color, es_final=e.es_final,
-            )
-            for e in result.scalars().all()
-        ]
-
-    @strawberry.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")])
-    async def planificaciones(self, info: strawberry.Info) -> List[PlanificacionAnualType]:
+    async def planificaciones(self, info: strawberry.Info) -> List[PlanificacionAnualDetailType]:
         service = PresupuestoService(info.context.session)
         items = await service.listar_planificaciones()
-        return [PlanificacionAnualType.from_model(p) for p in items]
+        return [PlanificacionAnualDetailType.from_model(p) for p in items]
 
     @strawberry.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")])
     async def planificacion(
         self, info: strawberry.Info, planificacion_id: uuid.UUID
-    ) -> Optional[PlanificacionAnualType]:
+    ) -> Optional[PlanificacionAnualDetailType]:
         service = PresupuestoService(info.context.session)
         p = await service.obtener_planificacion(planificacion_id)
-        return PlanificacionAnualType.from_model(p) if p else None
+        return PlanificacionAnualDetailType.from_model(p) if p else None
 
     @strawberry.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")])
     async def partidas_presupuestarias(
         self, info: strawberry.Info, planificacion_id: uuid.UUID, tipo: Optional[str] = None
-    ) -> List[PartidaPresupuestariaType]:
+    ) -> List[PartidaPresupuestariaDetailType]:
         service = PresupuestoService(info.context.session)
         items = await service.listar_partidas(planificacion_id, tipo=tipo)
-        return [PartidaPresupuestariaType.from_model(p) for p in items]
+        return [PartidaPresupuestariaDetailType.from_model(p) for p in items]
 
     @strawberry.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")])
     async def informe_desviaciones(
@@ -194,18 +169,18 @@ class PresupuestoMutation:
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CREAR")])
     async def crear_planificacion(
         self, info: strawberry.Info, data: CrearPlanificacionInput
-    ) -> PlanificacionAnualType:
+    ) -> PlanificacionAnualDetailType:
         service = PresupuestoService(info.context.session)
         p = await service.crear_planificacion(
             ejercicio=data.ejercicio, nombre=data.nombre,
             descripcion=data.descripcion, objetivos=data.objetivos,
         )
-        return PlanificacionAnualType.from_model(p)
+        return PlanificacionAnualDetailType.from_model(p)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CREAR")])
     async def crear_partida(
         self, info: strawberry.Info, data: CrearPartidaInput
-    ) -> PartidaPresupuestariaType:
+    ) -> PartidaPresupuestariaDetailType:
         service = PresupuestoService(info.context.session)
         p = await service.crear_partida(
             planificacion_id=data.planificacion_id,
@@ -214,12 +189,12 @@ class PresupuestoMutation:
             categoria_id=data.categoria_id, actividad_id=data.actividad_id,
             campania_id=data.campania_id, descripcion=data.descripcion,
         )
-        return PartidaPresupuestariaType.from_model(p)
+        return PartidaPresupuestariaDetailType.from_model(p)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CREAR")])
     async def actualizar_partida(
         self, info: strawberry.Info, data: ActualizarPartidaInput
-    ) -> PartidaPresupuestariaType:
+    ) -> PartidaPresupuestariaDetailType:
         service = PresupuestoService(info.context.session)
         cambios = {}
         for k in ("nombre", "descripcion", "categoria_id", "actividad_id", "campania_id"):
@@ -229,7 +204,7 @@ class PresupuestoMutation:
         if data.importe_presupuestado is not None:
             cambios["importe_presupuestado"] = Decimal(str(data.importe_presupuestado))
         p = await service.actualizar_partida(data.id, **cambios)
-        return PartidaPresupuestariaType.from_model(p)
+        return PartidaPresupuestariaDetailType.from_model(p)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CREAR")])
     async def eliminar_partida(self, info: strawberry.Info, partida_id: uuid.UUID) -> bool:
@@ -242,39 +217,39 @@ class PresupuestoMutation:
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CREAR")])
     async def proponer_presupuesto(
         self, info: strawberry.Info, planificacion_id: uuid.UUID
-    ) -> PlanificacionAnualType:
+    ) -> PlanificacionAnualDetailType:
         service = PresupuestoService(info.context.session)
         p = await service.proponer(planificacion_id)
-        return PlanificacionAnualType.from_model(p)
+        return PlanificacionAnualDetailType.from_model(p)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_APROBAR")])
     async def aprobar_presupuesto(
         self, info: strawberry.Info, planificacion_id: uuid.UUID
-    ) -> PlanificacionAnualType:
+    ) -> PlanificacionAnualDetailType:
         service = PresupuestoService(info.context.session)
         p = await service.aprobar(planificacion_id)
-        return PlanificacionAnualType.from_model(p)
+        return PlanificacionAnualDetailType.from_model(p)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_APROBAR")])
     async def iniciar_ejecucion_presupuesto(
         self, info: strawberry.Info, planificacion_id: uuid.UUID
-    ) -> PlanificacionAnualType:
+    ) -> PlanificacionAnualDetailType:
         service = PresupuestoService(info.context.session)
         p = await service.iniciar_ejecucion(planificacion_id)
-        return PlanificacionAnualType.from_model(p)
+        return PlanificacionAnualDetailType.from_model(p)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_APROBAR")])
     async def cerrar_presupuesto(
         self, info: strawberry.Info, planificacion_id: uuid.UUID
-    ) -> PlanificacionAnualType:
+    ) -> PlanificacionAnualDetailType:
         service = PresupuestoService(info.context.session)
         p = await service.cerrar(planificacion_id)
-        return PlanificacionAnualType.from_model(p)
+        return PlanificacionAnualDetailType.from_model(p)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CREAR")])
     async def devolver_presupuesto_a_borrador(
         self, info: strawberry.Info, planificacion_id: uuid.UUID
-    ) -> PlanificacionAnualType:
+    ) -> PlanificacionAnualDetailType:
         service = PresupuestoService(info.context.session)
         p = await service.devolver_a_borrador(planificacion_id)
-        return PlanificacionAnualType.from_model(p)
+        return PlanificacionAnualDetailType.from_model(p)

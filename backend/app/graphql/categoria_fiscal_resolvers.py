@@ -11,7 +11,7 @@ from app.modules.economico.models.contabilidad import TipoCategoriaFiscal
 
 
 @strawberry.type
-class CategoriaFiscalType:
+class CategoriaFiscalDetailType:
     id: uuid.UUID
     codigo: str
     nombre: str
@@ -25,8 +25,8 @@ class CategoriaFiscalType:
     activa: bool
 
     @staticmethod
-    def from_model(m) -> "CategoriaFiscalType":
-        return CategoriaFiscalType(
+    def from_model(m) -> "CategoriaFiscalDetailType":
+        return CategoriaFiscalDetailType(
             id=m.id,
             codigo=m.codigo,
             nombre=m.nombre,
@@ -77,11 +77,11 @@ class CategoriaFiscalQuery:
         info: strawberry.Info,
         tipo: Optional[str] = None,
         activas_solo: bool = True,
-    ) -> List[CategoriaFiscalType]:
+    ) -> List[CategoriaFiscalDetailType]:
         service = CategoriaFiscalService(info.context.session)
         tipo_enum = TipoCategoriaFiscal[tipo] if tipo else None
         items = await service.listar(tipo=tipo_enum, activas_solo=activas_solo)
-        return [CategoriaFiscalType.from_model(c) for c in items]
+        return [CategoriaFiscalDetailType.from_model(c) for c in items]
 
 
 @strawberry.type
@@ -90,7 +90,7 @@ class CategoriaFiscalMutation:
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_GESTIONAR")])
     async def crear_categoria_fiscal(
         self, info: strawberry.Info, data: CrearCategoriaFiscalInput
-    ) -> CategoriaFiscalType:
+    ) -> CategoriaFiscalDetailType:
         service = CategoriaFiscalService(info.context.session)
         categoria = await service.crear(
             codigo=data.codigo,
@@ -104,12 +104,12 @@ class CategoriaFiscalMutation:
             color=data.color,
             creado_por_id=info.context.current_user.id if info.context.current_user else None,
         )
-        return CategoriaFiscalType.from_model(categoria)
+        return CategoriaFiscalDetailType.from_model(categoria)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_GESTIONAR")])
     async def actualizar_categoria_fiscal(
         self, info: strawberry.Info, data: ActualizarCategoriaFiscalInput
-    ) -> CategoriaFiscalType:
+    ) -> CategoriaFiscalDetailType:
         service = CategoriaFiscalService(info.context.session)
         cambios = {
             k: v for k, v in {
@@ -125,7 +125,7 @@ class CategoriaFiscalMutation:
             }.items() if v is not None
         }
         categoria = await service.actualizar(data.id, **cambios)
-        return CategoriaFiscalType.from_model(categoria)
+        return CategoriaFiscalDetailType.from_model(categoria)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_GESTIONAR")])
     async def eliminar_categoria_fiscal(
