@@ -121,7 +121,7 @@
           <ErrorAlert v-if="errorEliminar" :message="errorEliminar" />
           <div class="flex justify-end gap-3">
             <button @click="modalEliminar = false"
-              class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+              class="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">Cancelar</button>
             <button @click="ejecutarEliminar" :disabled="eliminando"
               class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50">
               {{ eliminando ? 'Eliminando…' : 'Eliminar' }}

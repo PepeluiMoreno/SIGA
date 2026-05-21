@@ -123,7 +123,7 @@
             <ErrorAlert v-if="errorModal" :message="errorModal" />
           </div>
           <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-            <button @click="modal = false" class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+            <button @click="modal = false" class="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">Cancelar</button>
             <button @click="guardar" :disabled="guardando" class="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50">
               {{ guardando ? 'Guardando…' : 'Guardar' }}
             </button>
@@ -141,7 +141,7 @@
           <h2 class="text-base font-semibold text-gray-900">¿Eliminar esta regla?</h2>
           <p class="text-sm text-gray-600">Los apuntes ya clasificados con ella no cambian; solo deja de aplicarse a los nuevos.</p>
           <div class="flex justify-end gap-3">
-            <button @click="modalEliminar = false" class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+            <button @click="modalEliminar = false" class="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">Cancelar</button>
             <button @click="ejecutarEliminar" :disabled="eliminando" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50">
               {{ eliminando ? 'Eliminando…' : 'Eliminar' }}
             </button>

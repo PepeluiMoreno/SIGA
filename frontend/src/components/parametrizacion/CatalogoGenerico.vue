@@ -6,9 +6,9 @@
         <ArrowLeftIcon class="w-5 h-5" />
         Volver a Parametrización
       </router-link>
-      <button
+      <AppButton
         @click="abrirModalCrear"
-        class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
+        class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700"
       >
         <PlusIcon class="w-5 h-5" />
         Nuevo {{ nombreSingular }}
