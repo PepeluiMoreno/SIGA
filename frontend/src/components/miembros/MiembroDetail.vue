@@ -72,9 +72,7 @@
       <!-- Banner de guardado correcto -->
       <div v-if="saveMessage"
         class="mb-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800 flex items-center gap-2">
-        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-        </svg>
+        <CheckIcon class="w-4 h-4 shrink-0" />
         {{ saveMessage }}
       </div>
 
@@ -117,9 +115,7 @@
                   />
                   <div v-if="puedeEditarFoto" class="flex flex-col gap-1">
                     <label class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg cursor-pointer hover:bg-indigo-100 transition-colors">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-                      </svg>
+                      <ArrowUpTrayIcon class="w-3.5 h-3.5" />
                       Cambiar foto
                       <input type="file" accept="image/*" class="hidden" @change="subirFoto" />
                     </label>
@@ -1152,6 +1148,7 @@
 </template>
 
 <script setup>
+import { ArrowUpTrayIcon } from '@heroicons/vue/24/outline'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { useToast } from '@/composables/useToast'
 import { computed, defineComponent, h, nextTick, onMounted, ref, watch } from 'vue'

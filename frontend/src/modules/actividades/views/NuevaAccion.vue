@@ -6,9 +6,7 @@
     <div v-if="campaniaId" class="mb-4 flex items-center gap-2 text-xs text-slate-500">
       <router-link :to="`/campanias/${campaniaId}`"
         class="inline-flex items-center gap-1 text-indigo-600 hover:underline font-medium">
-        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-        </svg>
+        <ChevronLeftIcon class="w-3.5 h-3.5" />
         {{ campaniaNombre || 'Campaña' }}
       </router-link>
       <span class="text-slate-300">/</span>

@@ -181,9 +181,7 @@
                 class="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Coordinador</span>
               <button @click="pendingQuitarMgId = mg.id; showConfirmQuitarMiembro = true" title="Quitar del grupo"
                 class="p-1 text-slate-300 hover:text-red-500 transition-colors rounded">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
+                <XMarkIcon class="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -362,9 +360,7 @@
                   </span>
                   <button @click="eliminarRequisito(req.id)" title="Eliminar bolsa"
                     class="p-1 text-slate-300 hover:text-red-500 transition-colors rounded">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
+                    <XMarkIcon class="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -479,6 +475,7 @@
 </template>
 
 <script setup>
+import { XMarkIcon } from '@heroicons/vue/24/outline'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'

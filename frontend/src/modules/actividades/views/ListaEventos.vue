@@ -40,18 +40,13 @@
         <button @click="vista = 'lista'"
           :class="['px-4 py-1.5 flex items-center gap-1.5 font-medium transition-colors',
             vista === 'lista' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-          </svg>
+          <Bars4Icon class="w-4 h-4" />
           Lista
         </button>
         <button @click="vista = 'calendario'"
           :class="['px-4 py-1.5 flex items-center gap-1.5 font-medium border-l border-gray-300 transition-colors',
             vista === 'calendario' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-          </svg>
+          <CalendarIcon class="w-4 h-4" />
           Calendario
         </button>
       </div>
@@ -151,9 +146,7 @@
           class="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
           title="Mes anterior"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-          </svg>
+          <ChevronLeftIcon class="w-5 h-5" />
         </button>
         <div class="text-center">
           <h2 class="text-lg font-semibold text-gray-800 capitalize">{{ nombreMes }} {{ calendarioAnio }}</h2>
@@ -164,9 +157,7 @@
           class="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
           title="Mes siguiente"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-          </svg>
+          <ChevronRightIcon class="w-5 h-5" />
         </button>
       </div>
 
@@ -261,9 +252,7 @@
               @click="showModal = false"
               class="text-gray-400 hover:text-gray-600 transition-colors p-1 -mt-1 -mr-1"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
+              <XMarkIcon class="w-5 h-5" />
             </button>
           </div>
 
@@ -335,6 +324,7 @@
 </template>
 
 <script setup>
+import { XMarkIcon, ChevronRightIcon, CalendarIcon } from '@heroicons/vue/24/outline'
 import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'

@@ -42,10 +42,7 @@
 
         <!-- Placeholder vacío -->
         <div v-if="!catalogoActivo" class="flex-1 flex flex-col items-center justify-center text-center gap-3 text-gray-400">
-          <svg class="w-12 h-12 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-          </svg>
+          <ClipboardDocumentIcon class="w-12 h-12 opacity-30" />
           <p class="text-sm">Selecciona un catálogo</p>
         </div>
 
@@ -98,9 +95,7 @@
           <!-- Vacío -->
           <div v-else-if="items.length === 0"
             class="flex-1 flex flex-col items-center justify-center text-center gap-2 text-gray-400">
-            <svg class="w-8 h-8 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-            </svg>
+            <InboxIcon class="w-8 h-8 opacity-40" />
             <p class="text-sm">Sin registros. Crea el primero.</p>
           </div>
 
@@ -330,9 +325,7 @@
       <div class="relative bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full">
         <div class="flex items-start gap-3 mb-4">
           <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <svg class="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-            </svg>
+            <ExclamationTriangleIcon class="w-5 h-5 text-amber-600" />
           </div>
           <div>
             <h3 class="font-semibold text-gray-900">Estado inicial ya definido</h3>

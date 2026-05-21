@@ -32,11 +32,7 @@
             <td :colspan="colspan" class="py-2 pr-4"
               :style="{ paddingLeft: (fila.depth * 20 + 16) + 'px' }">
               <div class="flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-purple-400 shrink-0 transition-transform"
-                  :class="colapsadas.has(fila.agrupacion.id) ? '' : 'rotate-90'"
-                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
+                <ChevronRightIcon class="w-3.5 h-3.5 text-purple-400 shrink-0 transition-transform" />
                 <span class="text-sm font-semibold text-purple-800">{{ fila.agrupacion.nombre }}</span>
                 <span class="text-xs text-purple-400 font-normal">
                   {{ fila.countTotal }} {{ fila.countTotal !== 1 ? itemsLabel : itemLabel }}
@@ -58,11 +54,7 @@
             @click="toggleAgrupacion('__sin__')">
             <td :colspan="colspan" class="py-2 px-4">
               <div class="flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-purple-400 shrink-0 transition-transform"
-                  :class="colapsadas.has('__sin__') ? '' : 'rotate-90'"
-                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
+                <ChevronRightIcon class="w-3.5 h-3.5 text-purple-400 shrink-0 transition-transform" />
                 <span class="text-sm font-semibold text-purple-800">Sin agrupación asignada</span>
                 <span class="text-xs text-purple-400">{{ sinAgrupacion.length }}</span>
               </div>
@@ -81,6 +73,7 @@
 </template>
 
 <script setup>
+import { ChevronRightIcon } from '@heroicons/vue/24/outline'
 import { ref, computed, watch } from 'vue'
 
 const props = defineProps({

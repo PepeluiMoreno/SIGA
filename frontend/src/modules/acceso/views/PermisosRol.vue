@@ -69,13 +69,7 @@
                   {{ group.modulo }}
                 </span>
                 <span class="text-xs text-gray-400">{{ group.items.length }}</span>
-                <svg
-                  class="w-3.5 h-3.5 text-gray-400 transition-transform"
-                  :class="expandedLeft[group.modulo] !== false ? '' : '-rotate-90'"
-                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                >
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
+                <ChevronDownIcon class="w-3.5 h-3.5 text-gray-400 transition-transform" />
               </div>
               <!-- Items del módulo -->
               <div v-show="expandedLeft[group.modulo] !== false">
@@ -112,9 +106,7 @@
               : 'border-gray-200 bg-white text-gray-300 cursor-not-allowed'"
             title="Autorizar seleccionadas"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
-            </svg>
+            <ChevronRightIcon class="w-5 h-5" />
             <span
               v-if="selectedLeft.length > 0"
               class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-purple-100 text-purple-700 text-xs rounded-full flex items-center justify-center font-bold"
@@ -129,9 +121,7 @@
               : 'border-gray-200 bg-white text-gray-300 cursor-not-allowed'"
             title="Revocar seleccionadas"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
-            </svg>
+            <ChevronLeftIcon class="w-5 h-5" />
             <span
               v-if="selectedRight.length > 0"
               class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-100 text-red-700 text-xs rounded-full flex items-center justify-center font-bold"
@@ -184,13 +174,7 @@
                   {{ group.modulo }}
                 </span>
                 <span class="text-xs text-purple-400">{{ group.items.length }}</span>
-                <svg
-                  class="w-3.5 h-3.5 text-purple-400 transition-transform"
-                  :class="expandedRight[group.modulo] !== false ? '' : '-rotate-90'"
-                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                >
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
+                <ChevronDownIcon class="w-3.5 h-3.5 text-purple-400 transition-transform" />
               </div>
               <!-- Items del módulo -->
               <div v-show="expandedRight[group.modulo] !== false">
@@ -250,6 +234,7 @@
 </template>
 
 <script setup>
+import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import { useToast } from '@/composables/useToast'
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'

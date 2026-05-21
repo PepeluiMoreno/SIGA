@@ -404,9 +404,7 @@
                 <slot name="actions" />
                 <button v-if="canGoBack" type="button" @click="goBack"
                   class="inline-flex items-center gap-1.5 h-8 px-3 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                  </svg>
+                  <ChevronLeftIcon class="w-3.5 h-3.5" />
                   Volver
                 </button>
               </template>

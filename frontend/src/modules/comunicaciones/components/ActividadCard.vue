@@ -7,9 +7,7 @@
       @click="open = !open"
     >
       <button class="text-slate-400 hover:text-slate-600 shrink-0" tabindex="-1">
-        <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-90': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-        </svg>
+        <ChevronRightIcon class="w-4 h-4 transition-transform" />
       </button>
 
       <span class="font-semibold text-slate-800 flex-1 truncate">{{ actividad.nombre }}</span>
@@ -45,9 +43,7 @@
           title="Eliminar actividad"
           @click.stop="$emit('delete', actividad.id)"
         >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-          </svg>
+          <TrashIcon class="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -134,7 +130,7 @@
                 </td>
                 <td v-if="!readonly" class="py-1">
                   <button class="p-1 text-slate-300 hover:text-red-500" @click="local.partidas.splice(i, 1)">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <XMarkIcon class="w-4 h-4" />
                   </button>
                 </td>
               </tr>
@@ -150,7 +146,7 @@
               class="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
               @click="local.partidas.push({ concepto: '', tipoPartida: 'gasto', importeEstimado: 0, importeReal: null, orden: local.partidas.length })"
             >
-              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+              <PlusIcon class="w-3.5 h-3.5" />
               Añadir partida
             </button>
             <p class="text-xs text-slate-400 ml-auto">
@@ -190,7 +186,7 @@
             class="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
             @click="$emit('add-participacion', actividad.id)"
           >
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            <PlusIcon class="w-3.5 h-3.5" />
             Añadir participante
           </button>
         </div>
@@ -217,7 +213,7 @@
                 class="p-1 text-slate-300 hover:text-red-500 shrink-0"
                 @click="$emit('delete-tarea', t.id)"
               >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                <XMarkIcon class="w-4 h-4" />
               </button>
             </div>
             <p v-if="!actividad.tareas?.length" class="text-sm text-slate-400 italic">Sin tareas</p>
@@ -228,7 +224,7 @@
             class="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
             @click="$emit('add-tarea', actividad.id)"
           >
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            <PlusIcon class="w-3.5 h-3.5" />
             Añadir tarea
           </button>
         </div>
@@ -255,7 +251,7 @@
                 class="p-1 text-slate-300 hover:text-red-500 shrink-0"
                 @click="$emit('delete-registro', r.id)"
               >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                <XMarkIcon class="w-4 h-4" />
               </button>
             </div>
             <p v-if="!actividad.registrosTrabajo?.length" class="text-sm text-slate-400 italic">Sin partes registrados</p>
@@ -267,7 +263,7 @@
               class="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
               @click="$emit('add-registro', actividad.id)"
             >
-              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+              <PlusIcon class="w-3.5 h-3.5" />
               Registrar parte
             </button>
             <p v-if="totalHoras > 0" class="text-xs text-slate-400 ml-auto">
@@ -296,14 +292,14 @@
                 class="p-1 text-slate-400 hover:text-indigo-600"
                 title="Descargar"
               >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                <ArrowDownTrayIcon class="w-4 h-4" />
               </a>
               <button
                 v-if="!readonly"
                 class="p-1 text-slate-300 hover:text-red-500 shrink-0"
                 @click="$emit('delete-documento', d.id)"
               >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                <XMarkIcon class="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -313,7 +309,7 @@
             v-if="!readonly"
             class="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer"
           >
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            <ArrowUpTrayIcon class="w-3.5 h-3.5" />
             Subir documento
             <input type="file" class="hidden" @change="e => $emit('upload-documento', { actividadId: actividad.id, file: e.target.files[0] })" />
           </label>
@@ -325,6 +321,7 @@
 </template>
 
 <script setup>
+import { ChevronRightIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { ref, computed, watch } from 'vue'
 
 const props = defineProps({

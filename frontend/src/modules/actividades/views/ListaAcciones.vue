@@ -67,9 +67,7 @@
             <tr class="bg-indigo-50/60 border-y border-indigo-100">
               <td colspan="6" class="px-4 py-2">
                 <div class="flex items-center gap-2">
-                  <svg class="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
-                  </svg>
+                  <FolderIcon class="w-4 h-4 text-indigo-500 shrink-0" />
                   <span class="font-semibold text-indigo-800">{{ grupo.campania.nombre }}</span>
                   <span v-if="grupo.campania.estado"
                     class="text-xs px-2 py-0.5 rounded-full bg-white border border-indigo-200 text-indigo-600">

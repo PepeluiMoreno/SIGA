@@ -19,19 +19,14 @@
           @click="abrirModalJunta"
           class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition shadow-sm"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-          </svg>
+          <PlusIcon class="w-4 h-4" />
           Constituir {{ orgConfig.organoGobierno }}
         </button>
       </div>
 
       <!-- Sin junta -->
       <div v-if="!junta && !loadingJunta" class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
-        <svg class="mx-auto w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
+        <UsersIcon class="w-12 h-12 mx-auto   text-gray-300 mb-3" />
         <p class="text-gray-500 font-medium">Esta agrupación no tiene {{ orgConfig.organoGobierno }} activo</p>
         <p class="text-sm text-gray-400 mt-1">Usa el botón superior para constituirla</p>
       </div>
@@ -73,9 +68,7 @@
               @click="abrirModalCargo"
               class="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition shadow-sm"
             >
-              <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-              </svg>
+              <PlusIcon class="w-4 h-4 text-gray-500" />
               Asignar cargo
             </button>
           </div>
@@ -103,10 +96,7 @@
                   class="text-gray-300 hover:text-red-500 transition-colors"
                   title="Revocar cargo"
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
+                  <XMarkIcon class="w-4 h-4" />
                 </button>
               </div>
 
@@ -317,6 +307,7 @@
 </template>
 
 <script setup>
+import { XMarkIcon, PlusIcon, UsersIcon } from '@heroicons/vue/24/outline'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'

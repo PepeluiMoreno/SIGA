@@ -331,11 +331,7 @@
                     :class="act._open ? 'bg-indigo-50 border-b border-indigo-100' : 'bg-slate-50/70 hover:bg-slate-100/60'"
                     @click="act._open = !act._open">
                     <span class="shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">{{ idx + 1 }}</span>
-                    <svg class="w-3 h-3 transition-transform shrink-0"
-                      :class="act._open ? 'rotate-90 text-indigo-400' : 'text-slate-300'"
-                      fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                    </svg>
+                    <ChevronRightIcon class="w-3 h-3 transition-transform shrink-0" />
                     <span class="text-sm font-medium flex-1" :class="act._open ? 'text-indigo-900' : 'text-slate-800'">{{ act.nombre }}</span>
                     <span v-if="act.fechaInicio" class="text-xs text-indigo-600 font-medium tabular-nums">
                       {{ fmtFechaCorta(act.fechaInicio) }}<template v-if="act.horaInicio"> · {{ act.horaInicio.slice(0,5) }}</template>

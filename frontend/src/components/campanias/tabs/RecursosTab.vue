@@ -207,9 +207,7 @@
               <td class="px-4 py-3 text-right">
                 <button @click="eliminarCompromiso(c.id)" title="Eliminar"
                   class="p-1 text-slate-300 hover:text-red-500 transition-colors rounded">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
+                  <XMarkIcon class="w-4 h-4" />
                 </button>
               </td>
             </tr>
