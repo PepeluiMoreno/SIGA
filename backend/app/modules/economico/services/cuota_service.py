@@ -1,1 +1,1 @@
-# ver rama refactor/coherencia-modulos — commit siguiente
+# contenido original en master — pendiente de restaurar con los métodos nuevos añadidos
