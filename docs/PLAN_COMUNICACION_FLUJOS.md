@@ -167,3 +167,32 @@ LEIDA/ERROR). Cada tipo fija su `prioridad` (que decide el email), `categoria`,
 3. Secretaría y membresía vía eventos de dominio (mayor valor, transversal).
 4. Resto de económico y actividades.
 5. Acceso/seguridad.
+
+## 7. Pendiente: mensajería interna entre usuarios (fase aparte)
+
+Lo construido en esta rama cubre la comunicación **dirigida por los procesos**
+(sistema → usuario): avisos que un flujo de trabajo emite a destinatarios
+resueltos por rol/cargo/permiso. Es un alcance distinto del de la **mensajería
+interna entre personas** (usuario → usuario / usuario → canal), que queda
+PENDIENTE como fase propia.
+
+Esa segunda pieza está especificada en la primera mitad de
+`docs/modulo_comunicacion_interna.md` (modelo de **canales**): entidades
+`channel` (GLOBAL / TERRITORIAL / GROUP / DIRECT), `channel_membership`
+(con `last_read_message_id`, `muted`, `archived_at`), `message` (con
+`reply_to_id` para hilos ligeros) y `attachment` opcional; estado de no-leído
+calculado por comparación con `last_read_message_id` (O(1), sin estado por
+mensaje); API GraphQL `myChannels` / `channel` / `messages` (cursor) y mutations
+`createChannel` / `sendMessage` / `markAsRead` / `join` / `leave`; opcional
+subscription `onMessage` para tiempo real.
+
+Relación con lo ya hecho:
+- **Modelo separado.** La mensajería NO reutiliza la tabla `notificaciones`
+  (que es 1 fila por destinatario de un aviso del sistema); usa su propio modelo
+  de canales/mensajes. Sí puede **reutilizar** el `DestinatarioResolver` para,
+  por ejemplo, crear un canal con todos los portadores de un rol/cargo.
+- **Puente útil.** Un mensaje dirigido a un usuario puede, además, generar una
+  `Notificacion` in-app de tipo `MENSAJE_DIRECTO` (prioridad NORMAL) para que
+  aparezca en el badge ya existente, sin duplicar el contenido.
+- **No bloquea** la entrega de avisos de procesos: son subsistemas
+  independientes que comparten la sección de UI de "Comunicación".
