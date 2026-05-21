@@ -708,13 +708,8 @@ async function guardar() {
         openbankingActivo:               form.openbanking_activo,
       }
     })
-    orgConfigStore.miembro          = form.denominacion_miembro
-    orgConfigStore.miembros         = form.denominacion_miembro_plural
-    orgConfigStore.organoGobierno   = form.denominacion_organo_gobierno
-    orgConfigStore.organoGobiernoPl = form.denominacion_organo_gobierno_plural
+    await orgConfigStore.refreshConfig()
     const temaObj = orgConfigStore.temas.find(t => t.slug === form.tema) ?? form.tema
-    orgConfigStore.applyTheme(temaObj, form.fuente_principal)
-    orgConfigStore.markInitialized(form.nombre, form.logo)
     temaOriginal.value   = typeof temaObj === 'object' ? temaObj : null
     fuenteOriginal.value = form.fuente_principal
     guardadoExitoso = true

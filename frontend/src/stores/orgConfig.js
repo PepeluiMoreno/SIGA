@@ -73,6 +73,10 @@ export const useOrgConfigStore = defineStore('orgConfig', {
         // backend temporarily unavailable — leave initialized as null
       }
     },
+    async refreshConfig() {
+      this.loaded = false
+      await this.fetchConfig()
+    },
     async checkInitialized() {
       if (this.initialized !== null) return this.initialized
       await this.fetchConfig()
