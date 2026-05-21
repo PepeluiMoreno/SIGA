@@ -79,6 +79,7 @@ export const GET_BITACORA_MOVIMIENTOS = `
       asientoId
       actividadId
       campaniaId
+      categoriaFiscalId
       cuentaBancaria { id nombre iban }
     }
   }

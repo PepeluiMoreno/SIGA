@@ -124,10 +124,46 @@
             <input v-model="bitacoraBusqueda" type="text" placeholder="Concepto, ref…"
                    class="input-sm w-56" />
           </div>
+          <div v-if="!contabilidadCompleja" class="flex items-end gap-2">
+            <label class="flex items-center gap-2 cursor-pointer select-none pb-1.5">
+              <input type="checkbox" v-model="bitacoraSoloSinClasificar"
+                class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
+              <span class="text-sm text-gray-600">Solo sin clasificar</span>
+            </label>
+            <button @click="clasificarPendientes" :disabled="clasificandoPendientes"
+              class="px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 disabled:opacity-50">
+              {{ clasificandoPendientes ? 'Clasificando…' : '⚡ Clasificar pendientes' }}
+            </button>
+          </div>
         </div>
         <div class="text-xs text-gray-500">
           {{ movimientosFiltrados.length }} de {{ movimientos.length }} movimientos
         </div>
+      </div>
+
+      <p v-if="mensajeClasificacion"
+        class="mb-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+        {{ mensajeClasificacion }}
+      </p>
+
+      <!-- Barra de acción masiva (modo simplificado, con selección) -->
+      <div v-if="!contabilidadCompleja && seleccionApuntes.size > 0"
+        class="mb-3 flex items-center gap-3 bg-purple-50 border border-purple-200 rounded-lg px-4 py-2.5">
+        <span class="text-sm font-medium text-purple-800">{{ seleccionApuntes.size }} seleccionados</span>
+        <select v-model="categoriaMasiva" class="input-sm flex-1 max-w-xs">
+          <option :value="null">Asignar categoría…</option>
+          <optgroup label="Ingresos">
+            <option v-for="c in categoriasFiscales.filter(x => x.tipo === 'INGRESO')" :key="c.id" :value="c.id">{{ c.nombre }}</option>
+          </optgroup>
+          <optgroup label="Gastos">
+            <option v-for="c in categoriasFiscales.filter(x => x.tipo === 'GASTO')" :key="c.id" :value="c.id">{{ c.nombre }}</option>
+          </optgroup>
+        </select>
+        <button @click="aplicarCategoriaMasiva" :disabled="!categoriaMasiva || aplicandoMasiva"
+          class="px-3 py-1.5 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50">
+          {{ aplicandoMasiva ? 'Aplicando…' : 'Aplicar' }}
+        </button>
+        <button @click="limpiarSeleccion" class="text-sm text-gray-500 hover:text-gray-700">Cancelar</button>
       </div>
 
       <div v-if="cargandoBitacora" class="py-12 text-center text-slate-400 text-sm">Cargando bitácora…</div>
@@ -135,9 +171,14 @@
         <table class="min-w-full text-sm">
           <thead class="bg-gray-50">
             <tr>
+              <th v-if="!contabilidadCompleja" class="px-3 py-2 text-center w-8">
+                <input type="checkbox" :checked="todosVisiblesSeleccionados" @change="toggleSeleccionTodos"
+                  class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
+              </th>
               <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Fecha</th>
               <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Origen</th>
               <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Concepto</th>
+              <th v-if="!contabilidadCompleja" class="px-3 py-2 text-left text-xs font-medium text-gray-500">Categoría</th>
               <th class="px-3 py-2 text-right text-xs font-medium text-gray-500">Importe</th>
               <th class="px-3 py-2 text-center text-xs font-medium text-gray-500">Tipo</th>
               <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Cuenta</th>
@@ -148,7 +189,12 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-            <tr v-for="m in movimientosFiltrados" :key="m.id" class="hover:bg-gray-50">
+            <tr v-for="m in movimientosFiltrados" :key="m.id" class="hover:bg-gray-50"
+                :class="!contabilidadCompleja && estaSeleccionado(m.id) ? 'bg-purple-50/50' : ''">
+              <td v-if="!contabilidadCompleja" class="px-3 py-1.5 text-center">
+                <input type="checkbox" :checked="estaSeleccionado(m.id)" @change="toggleSeleccion(m.id)"
+                  class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
+              </td>
               <td class="px-3 py-1.5 text-xs text-gray-600 whitespace-nowrap">{{ fechaFmt(m.fecha) }}</td>
               <td class="px-3 py-1.5">
                 <span :class="badgeOrigen(m.origen)" class="text-[10px] uppercase rounded px-1.5 py-0.5">
@@ -156,6 +202,13 @@
                 </span>
               </td>
               <td class="px-3 py-1.5 text-gray-800 max-w-md truncate" :title="m.concepto">{{ m.concepto }}</td>
+              <td v-if="!contabilidadCompleja" class="px-3 py-1.5">
+                <span v-if="m.categoriaFiscalId" class="inline-flex items-center gap-1.5 text-xs">
+                  <span class="w-2 h-2 rounded-full" :style="{ backgroundColor: colorCategoriaFiscal(m.categoriaFiscalId) }"></span>
+                  {{ nombreCategoriaFiscal(m.categoriaFiscalId) }}
+                </span>
+                <span v-else class="text-xs text-amber-500 italic">sin clasificar</span>
+              </td>
               <td class="px-3 py-1.5 text-right font-mono"
                   :class="m.tipo === 'INGRESO' ? 'text-green-700' : (m.tipo === 'GASTO' ? 'text-red-600' : 'text-gray-700')">
                 {{ m.tipo === 'GASTO' ? '−' : (m.tipo === 'INGRESO' ? '+' : '') }}{{ fmt(m.importe) }}
@@ -548,6 +601,10 @@ import {
 } from '@/graphql/queries/tesoreria'
 import { GET_ACTIVIDADES_PARA_GASTO } from '@/graphql/queries/financiero'
 import { GET_CAMPANIAS } from '@/graphql/queries/campanias'
+import {
+  ASIGNAR_CATEGORIA_MASIVA,
+  CLASIFICAR_APUNTES_PENDIENTES,
+} from '@/graphql/queries/categorias_fiscales.js'
 
 const {
   cuentasContables,
@@ -771,6 +828,28 @@ const bitacoraTipo = ref('')
 const bitacoraOrigen = ref('')
 const bitacoraBusqueda = ref('')
 
+// ── Clasificación masiva (solo modo simplificado) ──────────────────────────
+const bitacoraSoloSinClasificar = ref(false)
+const seleccionApuntes = ref(new Set())
+const categoriasFiscales = ref([])
+const categoriaMasiva = ref(null)
+const aplicandoMasiva = ref(false)
+const clasificandoPendientes = ref(false)
+const mensajeClasificacion = ref('')
+
+const cargarCategoriasFiscales = async () => {
+  if (categoriasFiscales.value.length) return
+  try {
+    const data = await gqlQuery(`query { categoriasFiscales(activasSolo: true) { id codigo nombre tipo color } }`)
+    categoriasFiscales.value = data?.categoriasFiscales ?? []
+  } catch (e) {
+    console.warn('No se pudieron cargar categorías fiscales:', e?.message)
+  }
+}
+
+const nombreCategoriaFiscal = (id) => categoriasFiscales.value.find(c => c.id === id)?.nombre ?? null
+const colorCategoriaFiscal = (id) => categoriasFiscales.value.find(c => c.id === id)?.color ?? '#9ca3af'
+
 const cargarBitacora = async () => {
   cargandoBitacora.value = true
   try {
@@ -792,6 +871,7 @@ const movimientosFiltrados = computed(() => {
     if (bitacoraEjercicio.value && !(m.fecha || '').startsWith(String(bitacoraEjercicio.value))) return false
     if (bitacoraTipo.value && m.tipo !== bitacoraTipo.value) return false
     if (bitacoraOrigen.value && m.origen !== bitacoraOrigen.value) return false
+    if (bitacoraSoloSinClasificar.value && m.categoriaFiscalId) return false
     if (q) {
       const cs = (m.concepto || '').toLowerCase()
       const rf = (m.referenciaExterna || '').toLowerCase()
@@ -800,6 +880,24 @@ const movimientosFiltrados = computed(() => {
     return true
   })
 })
+
+// ── Selección múltiple para clasificación masiva ───────────────────────────
+const toggleSeleccion = (id) => {
+  const s = new Set(seleccionApuntes.value)
+  s.has(id) ? s.delete(id) : s.add(id)
+  seleccionApuntes.value = s
+}
+const estaSeleccionado = (id) => seleccionApuntes.value.has(id)
+const todosVisiblesSeleccionados = computed(() =>
+  movimientosFiltrados.value.length > 0 &&
+  movimientosFiltrados.value.every(m => seleccionApuntes.value.has(m.id))
+)
+const toggleSeleccionTodos = () => {
+  seleccionApuntes.value = todosVisiblesSeleccionados.value
+    ? new Set()
+    : new Set(movimientosFiltrados.value.map(m => m.id))
+}
+const limpiarSeleccion = () => { seleccionApuntes.value = new Set() }
 
 const origenLabel = (o) => ({
   CUOTA: 'Cuota',
@@ -842,6 +940,46 @@ const abrirAsientoDetalle = (asiento) => {
 // ── CRUD de apuntes: conciliar / editar / anular ───────────────────────────
 const { mutation: gqlMutation } = useGraphQL()
 const ocupadoApunte = ref(false)
+
+// ── Acciones masivas de clasificación (modo simplificado) ──────────────────
+const aplicarCategoriaMasiva = async () => {
+  if (!categoriaMasiva.value || seleccionApuntes.value.size === 0) return
+  aplicandoMasiva.value = true
+  try {
+    await gqlMutation(ASIGNAR_CATEGORIA_MASIVA, {
+      apunteIds: Array.from(seleccionApuntes.value),
+      categoriaFiscalId: categoriaMasiva.value,
+    })
+    limpiarSeleccion()
+    categoriaMasiva.value = null
+    await cargarBitacora()
+  } catch (e) {
+    console.error('Error en asignación masiva:', e?.message || e)
+  } finally {
+    aplicandoMasiva.value = false
+  }
+}
+
+const clasificarPendientes = async () => {
+  clasificandoPendientes.value = true
+  try {
+    const data = await gqlMutation(CLASIFICAR_APUNTES_PENDIENTES, {
+      ejercicio: bitacoraEjercicio.value || null,
+      forzar: false,
+    })
+    const r = data?.clasificarApuntesPendientes
+    if (r) {
+      mensajeClasificacion.value =
+        `Se clasificaron ${r.clasificados} de ${r.procesados} apuntes pendientes.`
+      setTimeout(() => { mensajeClasificacion.value = '' }, 5000)
+    }
+    await cargarBitacora()
+  } catch (e) {
+    console.error('Error al clasificar pendientes:', e?.message || e)
+  } finally {
+    clasificandoPendientes.value = false
+  }
+}
 
 // Catálogo de campañas y actividades para el modal de edición.
 const campaniasBitacora = ref([])
@@ -1207,6 +1345,7 @@ watch(activeTab, (tab) => {
   if (tab === 'bitacora') {
     if (!movimientos.value.length && !cargandoBitacora.value) cargarBitacora()
     if (!campaniasBitacora.value.length) cargarCatalogosBitacora()
+    if (!contabilidadCompleja.value) cargarCategoriasFiscales()
   }
 })
 
