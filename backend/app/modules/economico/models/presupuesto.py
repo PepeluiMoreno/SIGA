@@ -72,9 +72,21 @@ class PartidaPresupuestaria(BaseModel):
     # Vinculación a planificación
     planificacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey("planificaciones_anuales.id"), nullable=True, index=True)
 
+    # Vinculación a la taxonomía de actividad (presupuesto por programas).
+    # Opcional: una partida puede ser genérica (sin actividad ni campaña) o estar
+    # afecta a una actividad o campaña concreta para seguimiento por proyecto.
+    actividad_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("actividades.id"), nullable=True, index=True
+    )
+    campania_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("campanias.id"), nullable=True, index=True
+    )
+
     # Relaciones
     categoria: Mapped[Optional["CategoriaPartida"]] = relationship(back_populates='partidas', lazy='selectin')
     planificacion: Mapped[Optional["PlanificacionAnual"]] = relationship(back_populates='partidas', lazy='selectin')
+    actividad = relationship('Actividad', foreign_keys=[actividad_id], lazy='selectin')
+    campania = relationship('Campania', foreign_keys=[campania_id], lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<PartidaPresupuestaria(codigo='{self.codigo}', tipo='{self.tipo}', importe={self.importe_presupuestado})>"
@@ -213,17 +225,15 @@ class PlanificacionAnual(BaseModel):
             return 0.0
         return float((self.gastos_ejecutados / self.presupuesto_gastos) * 100)
 
-    def aprobar(self, fecha_aprobacion: Optional[date] = None) -> None:
-        """Marca la planificación como aprobada."""
-        # TODO: self.estado_id = # buscar estado 'APROBADO'
+    def aprobar(self, estado_aprobado_id: uuid.UUID, fecha_aprobacion: Optional[date] = None) -> None:
+        """Marca la planificación como aprobada. El estado lo resuelve el servicio."""
+        self.estado_id = estado_aprobado_id
         self.fecha_aprobacion = fecha_aprobacion or date.today()
 
-    def iniciar_ejecucion(self) -> None:
-        """Inicia la ejecución de la planificación."""
-        # TODO: self.estado_id = # buscar estado 'EN_EJECUCION'
-        pass
+    def iniciar_ejecucion(self, estado_ejecucion_id: uuid.UUID) -> None:
+        """Pone la planificación en ejecución."""
+        self.estado_id = estado_ejecucion_id
 
-    def cerrar(self) -> None:
+    def cerrar(self, estado_cerrado_id: uuid.UUID) -> None:
         """Cierra la planificación."""
-        # TODO: self.estado_id = # buscar estado 'CERRADO'
-        pass
+        self.estado_id = estado_cerrado_id
