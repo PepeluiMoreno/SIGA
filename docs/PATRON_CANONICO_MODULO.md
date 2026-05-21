@@ -4,6 +4,22 @@
 > y que la lógica viva en **un solo sitio** (DRY). Este documento extrae la
 > convención de los módulos ya maduros (`economico`, `acceso`, `secretaria`) y la
 > fija como estándar al que el resto debe converger, módulo a módulo.
+>
+> **Alcance: capa INTRA-módulo.** Este documento cubre *cómo se estructura por
+> dentro* un módulo (capas, servicios, eventos, RBAC). Es complementario —y
+> subordinado— al plan de **arquitectura de plugins activables** descrito en
+> `docs/chat modularizacion y rbac.md`, que define la capa de ENSAMBLADO: cómo un
+> módulo se enchufa/desenchufa del sistema mediante un manifiesto (`PluginRegistry`),
+> una tabla `modulo_config`, y un `schema_builder` que monta el schema GraphQL,
+> el RBAC, el router y el menú dinámicamente según los módulos activos.
+>
+> **Nota de transición importante:** hoy `schema_simple.py` y `mutations.py`
+> ensamblan `Query`/`Mutation` por **herencia de mixins fijos** (incluido el de
+> comunicación añadido recientemente). Eso es el monolito que el Sprint 2 del plan
+> de plugins desmontará. Por tanto, los mixins fijos son **transitorios**: cuando
+> exista el `schema_builder`, cada módulo —comunicación incluido— deberá exponer
+> sus campos vía `get_schema_fields()` en su manifiesto, no por herencia. No
+> añadir más acoplamiento al monolito del que sea imprescindible.
 
 ## 1. Estado actual (por qué hace falta este documento)
 
