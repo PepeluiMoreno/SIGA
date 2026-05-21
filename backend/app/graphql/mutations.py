@@ -24,10 +24,12 @@ from .papelera_resolvers import PapeleraResolverMutation
 from .economico_mutations import EconomicoFlujosMutation
 from .types_auto import *
 from .inputs_auto import *
+from .categoria_fiscal_resolvers import CategoriaFiscalMutation
+from .categorizacion_resolvers import CategorizacionMutation
 
 
 @strawberry.type
-class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionMutation, AccesoMutation, EconomicoMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, CampaniaClonarMutation, ActividadResolverMutation, PapeleraResolverMutation, SecretariaResolverMutation):
+class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionMutation, AccesoMutation, EconomicoMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, CampaniaClonarMutation, ActividadResolverMutation, PapeleraResolverMutation, SecretariaResolverMutation, CategoriaFiscalMutation, CategorizacionMutation):
     """Mutations GraphQL del sistema SIGA con generación automática."""
 
     # === ACCESO: roles y transacciones (CRUD) ===
@@ -411,7 +413,8 @@ class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionM
     # === FINANCIERO — CONTABILIDAD ===
     # CuentaContable: CRUD restringido a TESORERO matriz vía resolvers manuales en
     # EconomicoMutation (crear_cuenta_contable / actualizar_cuenta_contable /
-    # desactivar_cuenta_contable) con permiso `ECO_CUENTA_CREAR`.
+    # desactivar_cuenta_contable) con permiso `ECO_ESTRUCTURA_CONTABLE_GESTIONAR`
+    # (compartido con la gestión de categorías fiscales en modo simplificado).
     # Las versiones strawchemy quedaron deshabilitadas por seguridad (no admiten permission_classes).
 
     crear_asiento_contable: AsientoContableType = strawchemy.create(AsientoContableCreateInput)

@@ -171,6 +171,55 @@
         <!-- 4. Funcionalidades -->
         <AccordionPanel title="Funcionalidades" :default-open="false">
           <div class="px-5 py-4">
+
+            <!-- Estructura de clasificación contable -->
+            <div class="mb-6 pb-6 border-b border-slate-100">
+              <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                Estructura de clasificación contable
+              </h3>
+              <p class="text-xs text-slate-400 mb-3">
+                Determina cómo se clasifican los ingresos y gastos de la organización.
+              </p>
+              <div class="space-y-3">
+                <label class="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    :value="false"
+                    v-model="form.contabilidad_compleja"
+                    :disabled="esObligatorioContabilidad"
+                    class="h-4 w-4 mt-0.5 border-slate-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                  />
+                  <span class="text-sm text-slate-700">
+                    Categorías fiscales
+                    <span class="text-slate-400 text-xs block mt-0.5">
+                      Contabilidad simplificada: libro de ingresos y gastos clasificados por
+                      categorías que cuadran con los modelos fiscales (130/131, 182, 347).
+                      Recomendado para asociaciones pequeñas.
+                    </span>
+                  </span>
+                </label>
+                <label class="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    :value="true"
+                    v-model="form.contabilidad_compleja"
+                    :disabled="esObligatorioContabilidad"
+                    class="h-4 w-4 mt-0.5 border-slate-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                  />
+                  <span class="text-sm text-slate-700">
+                    Plan General Contable (PCESFL)
+                    <span class="text-slate-400 text-xs block mt-0.5">
+                      Contabilidad por partida doble según RD 1491/2011 — obligatorio para
+                      fundaciones.
+                    </span>
+                  </span>
+                </label>
+              </div>
+              <p v-if="esObligatorioContabilidad" class="text-xs text-amber-600 mt-2">
+                El Plan General Contable es obligatorio para fundaciones y no puede desactivarse.
+              </p>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <div v-for="feat in catalogoFuncionalidades" :key="feat.clave" class="space-y-3">
                 <label class="flex items-start gap-3 cursor-pointer"
@@ -400,14 +449,6 @@ const fuentesDisponibles = [
 
 const catalogoFuncionalidades = [
   {
-    clave: 'contabilidad_compleja',
-    campo: 'contabilidad_compleja',
-    nombre: 'Contabilidad según Plan General Contable',
-    descripcion: 'RD 1491/2011 — obligatorio para fundaciones',
-    deshabilitado: () => esObligatorioContabilidad.value,
-    campos: [],
-  },
-  {
     clave: 'indico',
     campo: 'indico_activo',
     nombre: 'Integración con Indico (gestión de eventos)',
@@ -529,6 +570,9 @@ onMounted(async () => {
     form.numero_registro                 = p.numeroRegistro                   ?? ''
     form.tipo_entidad                    = p.tipoEntidad                      ?? 'ASOCIACION'
     form.contabilidad_compleja           = p.contabilidadCompleja             ?? false
+    // Defensivo: si la entidad es fundación, el PCESFL es obligatorio aunque
+    // en BD viniera desactivado (datos inconsistentes). Se normaliza al cargar.
+    if (esObligatorioContabilidad.value) form.contabilidad_compleja = true
     form.sede_social                     = p.sedeSocial                       ?? ''
     form.localidad                       = p.localidad                        ?? ''
     form.cp                              = p.cp                               ?? ''
@@ -567,7 +611,6 @@ onMounted(async () => {
     form.openbanking_activo              = p.openbankingActivo                ?? false
     temaOriginal.value   = orgConfigStore.temas.find(t => t.slug === form.tema) ?? null
     fuenteOriginal.value = form.fuente_principal
-    if (esObligatorioContabilidad.value) form.contabilidad_compleja = true
   } catch (e) {
     errorCarga.value = e?.response?.errors?.[0]?.message
       ?? 'No se pudieron cargar los parámetros. Comprueba la conexión con el servidor.'

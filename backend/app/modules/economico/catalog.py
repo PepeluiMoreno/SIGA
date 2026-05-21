@@ -20,6 +20,10 @@ _TRANSACCIONES = [
     TransaccionDef("ECO_ASIENTO_CREAR",          "Crear asiento contable",              "MUTACION"),
     TransaccionDef("ECO_ASIENTO_APROBAR",        "Aprobar asiento contable",            "APROBACION"),
     TransaccionDef("ECO_BALANCE_CONSULTAR",      "Consultar balance contable",          "CONSULTA"),
+    # Estructura de clasificación contable (plan de cuentas PCESFL o categorías fiscales,
+    # según el modo de la organización — comparten permiso por ser la misma función)
+    TransaccionDef("ECO_ESTRUCTURA_CONTABLE_LISTAR",    "Consultar estructura de clasificación contable", "CONSULTA"),
+    TransaccionDef("ECO_ESTRUCTURA_CONTABLE_GESTIONAR", "Gestionar estructura de clasificación contable", "MUTACION"),
     # Cuotas
     TransaccionDef("ECO_CUOTA_CONFIGURAR",       "Configurar cuotas anuales",           "MUTACION"),
     TransaccionDef("ECO_CUOTA_REGISTRAR_PAGO",   "Registrar pago de cuota",             "MUTACION"),
@@ -60,6 +64,19 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
         FuncionalidadTransaccionDef("ECO_ASIENTO_CREAR",   AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("ECO_ASIENTO_APROBAR", AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("ECO_BALANCE_CONSULTAR", AmbitoTransaccion.TERRITORIAL),
+    ],
+))
+
+ModuleCatalog.register_funcionalidad(FuncionalidadDef(
+    codigo="ESTRUCTURA_CLASIFICACION_CONTABLE",
+    nombre="Estructura de clasificación contable",
+    modulo=MODULO,
+    descripcion="Gestión de la estructura de clasificación contable: plan de cuentas "
+                "PCESFL en modo completo o categorías fiscales en modo simplificado. "
+                "Un mismo permiso cubre ambos, por ser la misma función.",
+    transacciones=[
+        FuncionalidadTransaccionDef("ECO_ESTRUCTURA_CONTABLE_LISTAR",    AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("ECO_ESTRUCTURA_CONTABLE_GESTIONAR", AmbitoTransaccion.TERRITORIAL),
     ],
 ))
 

@@ -250,7 +250,9 @@ class TesoreriaService:
         observaciones: Optional[str] = None,
         actividad_id: Optional[UUID] = None,
         campania_id: Optional[UUID] = None,
+        categoria_fiscal_id: Optional[UUID] = None,
         limpiar_actividad: bool = False,
+        limpiar_categoria_fiscal: bool = False,
     ) -> ApunteCaja:
         """Edita metadatos no contables de un apunte (concepto, observaciones, imputación).
         NO permite cambiar importe, fecha ni tipo — para corregir esos hay que anular el apunte
@@ -273,6 +275,11 @@ class TesoreriaService:
                 apunte.actividad_id = actividad_id
             if campania_id is not None:
                 apunte.campania_id = campania_id
+        # Categoría fiscal (modo simplificado)
+        if limpiar_categoria_fiscal:
+            apunte.categoria_fiscal_id = None
+        elif categoria_fiscal_id is not None:
+            apunte.categoria_fiscal_id = categoria_fiscal_id
         self.session.add(apunte)
         await self.session.commit()
         await self.session.refresh(apunte)

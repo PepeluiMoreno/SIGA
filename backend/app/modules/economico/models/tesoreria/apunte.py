@@ -74,12 +74,18 @@ class ApunteCaja(BaseModel):
         Uuid, ForeignKey("campanias.id"), nullable=True, index=True
     )
 
+    # Clasificación fiscal (solo modo simplificado — equivale a la cuenta en modo completo)
+    categoria_fiscal_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("categorias_fiscales.id"), nullable=True, index=True
+    )
+
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     cuenta_bancaria = relationship('CuentaBancaria', back_populates='apuntes', lazy='selectin')
     asiento = relationship('AsientoContable', foreign_keys=[asiento_id], lazy='selectin')
     actividad = relationship('Actividad', foreign_keys=[actividad_id], lazy='selectin')
     campania = relationship('Campania', foreign_keys=[campania_id], lazy='selectin')
+    categoria_fiscal = relationship('CategoriaFiscal', foreign_keys=[categoria_fiscal_id], lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<ApunteCaja(tipo={self.tipo}, importe={self.importe}, fecha={self.fecha})>"

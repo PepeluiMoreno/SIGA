@@ -123,8 +123,202 @@
               <li><strong>Remesas</strong> — generación de ficheros SEPA para domiciliaciones bancarias.</li>
               <li><strong>Presupuesto</strong> — elaboración y seguimiento del presupuesto anual.</li>
               <li><strong>Donaciones</strong> — registro y justificación de donativos.</li>
-              <li><strong>Contabilidad</strong> — libro diario y estados financieros (si se activa la contabilidad extendida).</li>
+              <li><strong>Contabilidad</strong> — según el modo configurado: contabilidad
+                <em>simplificada</em> (categorías fiscales y libro de ingresos y gastos) o
+                <em>completa</em> (plan de cuentas PCESFL, asientos por partida doble y balances).</li>
             </ul>
+
+            <!-- Detalle: los dos modos de contabilidad -->
+            <details class="help-detail mt-3">
+              <summary class="help-detail-summary">
+                Concepto · Los dos modos de contabilidad (simplificada y completa)
+              </summary>
+              <div class="help-detail-body">
+                <p class="help-text">
+                  SIGA puede llevar la contabilidad de dos maneras según el tamaño y la forma
+                  jurídica de la organización. El modo se elige en
+                  <em>Configuración → Parámetros generales → Funcionalidades → Estructura de
+                  clasificación contable</em>, y determina cómo se clasifican todos los ingresos y gastos.
+                </p>
+
+                <p class="help-subtitle">Contabilidad simplificada (categorías fiscales)</p>
+                <p class="help-text">
+                  Pensada para asociaciones pequeñas y medianas. No usa plan de cuentas ni partida
+                  doble: cada movimiento se clasifica con una <strong>categoría fiscal</strong> (Cuotas,
+                  Donativos, Suministros, Personal…). Las categorías llevan asociado su tratamiento en
+                  los modelos tributarios (182 de donativos, 347 de operaciones con terceros), de modo
+                  que el libro de ingresos y gastos cuadra directamente con las obligaciones fiscales.
+                  Es el modo por defecto.
+                </p>
+
+                <p class="help-subtitle">Contabilidad completa (Plan General Contable)</p>
+                <p class="help-text">
+                  Contabilidad por partida doble conforme al PCESFL (Plan de Contabilidad de las
+                  Entidades Sin Fines Lucrativos). Cada movimiento genera un asiento con cuentas al
+                  debe y al haber, y permite obtener balances de sumas y saldos. Es
+                  <strong>obligatoria para fundaciones</strong> (RD 1491/2011): si el tipo de entidad es
+                  Fundación, el sistema fuerza este modo y no permite cambiarlo.
+                </p>
+
+                <p class="help-subtitle">Qué cambia en la pantalla de Contabilidad</p>
+                <p class="help-text">
+                  La estructura de clasificación ocupa el mismo lugar en ambos modos —lo que cambia
+                  es su contenido:
+                </p>
+                <ul class="help-list">
+                  <li>
+                    En modo <strong>simplificado</strong>, <em>Económico → Contabilidad</em> muestra dos
+                    pestañas: <strong>Categorías fiscales</strong> (con sus sub-secciones Categorías y
+                    Reglas de clasificación) y <strong>Bitácora</strong>. No hay asientos ni balances.
+                  </li>
+                  <li>
+                    En modo <strong>completo</strong>, muestra cuatro pestañas: <strong>Plan de cuentas</strong>,
+                    <strong>Bitácora</strong>, <strong>Asientos</strong> y <strong>Sumas y saldos</strong>.
+                  </li>
+                </ul>
+                <p class="help-text">
+                  En ambos modos, quien gestiona la estructura contable (plan de cuentas o categorías,
+                  según el modo) necesita el mismo permiso: el del rol <strong>Tesorero</strong>.
+                </p>
+              </div>
+            </details>
+
+            <!-- Detalle: clasificar movimientos en modo simplificado -->
+            <details class="help-detail mt-3">
+              <summary class="help-detail-summary">
+                Flujo · Clasificar movimientos (contabilidad simplificada)
+              </summary>
+              <div class="help-detail-body">
+                <p class="help-text">
+                  En contabilidad simplificada, cada apunte de la bitácora debe quedar asignado a una
+                  categoría fiscal. Para que esto no sea un trabajo manual interminable, SIGA combina
+                  tres mecanismos, de más a menos automático:
+                </p>
+
+                <p class="help-subtitle">1 — Clasificación automática por origen</p>
+                <p class="help-text">
+                  Los movimientos que nacen dentro del propio sistema ya saben lo que son: un cobro de
+                  cuota se clasifica como Cuotas, una donación como Donativos, etc. No requieren ninguna
+                  intervención. Esto cubre la mayoría de los movimientos de una asociación típica.
+                </p>
+
+                <p class="help-subtitle">2 — Reglas por concepto</p>
+                <p class="help-text">
+                  Para los movimientos manuales recurrentes (recibos de luz, alquiler…), define reglas
+                  en <em>Contabilidad → Categorías fiscales → Reglas de clasificación</em>. Una regla dice,
+                  por ejemplo, «si el concepto <strong>contiene</strong> "Endesa" → Suministros». A partir de
+                  entonces, todos los movimientos cuyo concepto encaje se clasifican solos. Puedes
+                  restringir una regla a solo ingresos o solo gastos, y ordenarlas por prioridad cuando
+                  varias podrían aplicar.
+                </p>
+
+                <p class="help-subtitle">3 — Clasificación en lote</p>
+                <p class="help-text">
+                  Lo que quede sin clasificar se resuelve desde la <strong>Bitácora</strong>:
+                </p>
+                <ul class="help-list">
+                  <li>
+                    Activa el filtro <strong>«Solo sin clasificar»</strong> para ver únicamente lo pendiente.
+                  </li>
+                  <li>
+                    Marca las casillas de varios movimientos a la vez, elige una categoría en la barra
+                    superior y pulsa <strong>Aplicar</strong>: todos quedan clasificados de golpe.
+                  </li>
+                  <li>
+                    El botón <strong>«Clasificar pendientes»</strong> reaplica la derivación por origen y las
+                    reglas a todos los movimientos sin clasificar del ejercicio, por si has añadido reglas
+                    nuevas después de importar movimientos.
+                  </li>
+                </ul>
+                <p class="help-text">
+                  Para un caso aislado que no encaje en ninguna regla, puedes editar el apunte
+                  individualmente desde su botón de acciones en la bitácora.
+                </p>
+              </div>
+            </details>
+
+            <!-- Detalle: montar las categorías fiscales (simplificada) -->
+            <details class="help-detail mt-3">
+              <summary class="help-detail-summary">
+                Flujo · Categorías fiscales (contabilidad simplificada)
+              </summary>
+              <div class="help-detail-body">
+                <p class="help-text">
+                  Las categorías fiscales son la estructura sobre la que se clasifica todo en modo
+                  simplificado. SIGA arranca con un catálogo por defecto (Cuotas, Donativos,
+                  Suministros, Personal, Alquileres…), pero puedes adaptarlo a tu organización.
+                </p>
+
+                <p class="help-subtitle">Paso 1 — Revisar el catálogo</p>
+                <p class="help-text">
+                  En <em>Económico → Contabilidad → Categorías fiscales</em>, las categorías se muestran
+                  en dos columnas: ingresos y gastos. Cada una indica con una etiqueta si computa para
+                  el Modelo 182 (donativos) o el Modelo 347 (operaciones con terceros).
+                </p>
+
+                <p class="help-subtitle">Paso 2 — Crear o editar una categoría</p>
+                <p class="help-text">
+                  Con <strong>+ Nueva categoría</strong> defines su código (por ejemplo
+                  <em>GAS_SEGUROS</em>), nombre, si es de ingreso o gasto, su tratamiento fiscal
+                  (toggles de Modelo 182 y 347, casilla del modelo si procede) y un color para
+                  identificarla en la bitácora. El código y el tipo no se pueden cambiar una vez creada,
+                  para no romper la trazabilidad de los movimientos ya clasificados.
+                </p>
+
+                <p class="help-subtitle">Paso 3 — Desactivar en lugar de borrar</p>
+                <p class="help-text">
+                  Una categoría que ya tiene movimientos asignados no se puede eliminar: el sistema lo
+                  impide para preservar el histórico. Si dejas de usarla, <strong>desactívala</strong> desde
+                  Editar; deja de ofrecerse para nuevas clasificaciones pero los movimientos antiguos
+                  la conservan.
+                </p>
+                <p class="help-text">
+                  Una vez tengas el catálogo a punto, define las
+                  <strong>reglas de clasificación</strong> (ver el flujo «Clasificar movimientos») para que
+                  los apuntes se categoricen solos.
+                </p>
+              </div>
+            </details>
+
+            <!-- Detalle: plan de cuentas y asientos (completa) -->
+            <details class="help-detail mt-3">
+              <summary class="help-detail-summary">
+                Flujo · Plan de cuentas y asientos (contabilidad completa)
+              </summary>
+              <div class="help-detail-body">
+                <p class="help-text">
+                  En modo completo, la clasificación se apoya en el plan de cuentas PCESFL y cada
+                  movimiento genera un asiento por partida doble. Este flujo describe el uso de la
+                  pantalla de Contabilidad en ese modo.
+                </p>
+
+                <p class="help-subtitle">Paso 1 — Inicializar el plan de cuentas</p>
+                <p class="help-text">
+                  La primera vez, <em>Económico → Contabilidad → Plan de cuentas</em> ofrece cargar el
+                  plan PCESFL 2013 de partida. El plan es un árbol jerárquico: grupos (1 dígito),
+                  subgrupos (2) y cuentas (3). Solo las cuentas de último nivel admiten asientos. Con
+                  <strong>+ Nueva cuenta</strong> o el botón de subcuenta de cada nodo puedes ampliarlo
+                  según tus necesidades.
+                </p>
+
+                <p class="help-subtitle">Paso 2 — La bitácora y los asientos automáticos</p>
+                <p class="help-text">
+                  La pestaña <strong>Bitácora</strong> muestra cada movimiento real de dinero (los apuntes
+                  de caja). En modo completo, cada apunte genera automáticamente su asiento de partida
+                  doble según las <strong>reglas contables</strong> (origen del movimiento → cuentas al debe
+                  y al haber). El número de asiento aparece enlazado en la propia bitácora; al pulsarlo
+                  se abre su detalle en la pestaña <strong>Asientos</strong>.
+                </p>
+
+                <p class="help-subtitle">Paso 3 — Consultar el balance</p>
+                <p class="help-text">
+                  La pestaña <strong>Sumas y saldos</strong> calcula, a una fecha de corte, el debe, el haber
+                  y el saldo de cada cuenta, con la comprobación de que el balance cuadra. Es una
+                  herramienta de consulta: no modifica nada, solo refleja el estado de la contabilidad
+                  en ese instante.
+                </p>
+              </div>
+            </details>
 
             <!-- Detalle por flujo de trabajo -->
             <details class="help-detail mt-3">
