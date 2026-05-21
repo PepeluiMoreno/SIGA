@@ -132,6 +132,33 @@ y para otras es obligatorio.
   contabilidad_compleja para fundaciones).
 - Desactivado: el ítem Presupuesto no aparece en el menú y la ruta queda inaccesible.
 
+## Integración presupuesto ↔ tesorería (reajuste de ejecución)
+
+La ejecución de una partida se alimenta de los apuntes de caja imputados a su
+actividad/campaña. El reajuste cubre el ciclo completo del movimiento, no solo el alta:
+
+| Acción sobre el apunte | Efecto en la partida |
+|---|---|
+| Crear apunte imputado | Suma a ejecución (`registrar_apunte` → `imputar_ejecucion`) |
+| Reasignar a otra actividad/campaña | Resta de la antigua y suma a la nueva (`actualizar_metadatos_apunte`) |
+| Quitar la imputación | Resta de la partida |
+| Anular el apunte | Revierte la ejecución (`anular_apunte` → `revertir_ejecucion`); el contraapunte NO hereda imputación (evita doble cómputo) |
+
+- `imputar_ejecucion` y `revertir_ejecucion` delegan en `_ajustar_ejecucion(delta)`,
+  con regla de afectación única: si hay actividad, manda la actividad; si no, la campaña.
+- La ejecución nunca baja de cero (defensa ante descuadres).
+- Todas las llamadas a presupuesto van en try/except: un fallo de imputación nunca
+  impide registrar, editar o anular el movimiento real.
+
+## Pendiente para otra sesión: dashboard económico
+
+Los informes con **gráficas y KPIs** (incluida la visualización de la ejecución
+presupuestaria) van en un **dashboard económico transversal** (tesorería + contabilidad
++ presupuesto), no en este módulo. Estado actual: no existe ningún dashboard económico
+ni librería de gráficas instalada. Se abordará en sesión propia, rama
+`feature/dashboard-economico`. El informe de ejecución en **tabla** (panel "Seguimiento
+de ejecución") ya cubre la consulta sin gráficas.
+
 ## Patrón de UI (vista de presupuesto)
 
 **No se usan pestañas.** El proyecto usa paneles en acordeón (`AccordionPanel` +
