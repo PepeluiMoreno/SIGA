@@ -302,6 +302,28 @@ class PresupuestoService:
         Busca la partida del presupuesto en ejecución cuya actividad/campaña coincida.
         Si no hay partida afecta, no hace nada (el apunte simplemente no imputa a presupuesto).
         """
+        return await self._ajustar_ejecucion(importe, actividad_id, campania_id)
+
+    async def revertir_ejecucion(
+        self,
+        importe: Decimal,
+        actividad_id: Optional[UUID] = None,
+        campania_id: Optional[UUID] = None,
+    ) -> Optional[PartidaPresupuestaria]:
+        """Resta un importe previamente imputado (al reasignar o anular un apunte)."""
+        return await self._ajustar_ejecucion(-importe, actividad_id, campania_id)
+
+    async def _ajustar_ejecucion(
+        self,
+        delta: Decimal,
+        actividad_id: Optional[UUID] = None,
+        campania_id: Optional[UUID] = None,
+    ) -> Optional[PartidaPresupuestaria]:
+        """Suma `delta` (positivo o negativo) a la ejecución de la partida afecta.
+
+        Regla de afectación (única, compartida por imputar y revertir): si hay
+        actividad_id, manda la actividad; si no, la campaña.
+        """
         if not actividad_id and not campania_id:
             return None
 
@@ -318,7 +340,9 @@ class PresupuestoService:
         if not partida:
             return None
 
-        partida.importe_ejecutado = (partida.importe_ejecutado or Decimal("0.00")) + importe
+        nuevo = (partida.importe_ejecutado or Decimal("0.00")) + delta
+        # La ejecución no baja de cero (defensa ante descuadres)
+        partida.importe_ejecutado = nuevo if nuevo > 0 else Decimal("0.00")
         self.session.add(partida)
         await self.session.commit()
         await self.session.refresh(partida)
