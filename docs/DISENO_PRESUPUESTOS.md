@@ -70,7 +70,7 @@ Lo mínimo para que el presupuesto sea usable de punta a punta.
 - Alertas de partida agotada / sobreejecutada
 - Control de disponibilidad opcional al imputar
 
-### Fase 3 — Avanzado
+### Fase 3 — Avanzado  ✅ COMPLETADA (salvo dashboard, en sesión propia)
 - Clonar presupuesto del ejercicio anterior
 - Comparativa interanual
 - Prórroga presupuestaria

@@ -134,3 +134,39 @@ export const ESTABLECER_CONTROL_DISPONIBILIDAD = `
     }
   }
 `
+
+// ── FASE 3: clonar, prórroga, comparativa, liquidación ────────────────────────
+
+export const GET_COMPARATIVA_INTERANUAL = `
+  query ComparativaInteranual($ejercicio: Int!) {
+    comparativaInteranual(ejercicio: $ejercicio) {
+      codigo nombre tipo importeActual importeAnterior variacion variacionPorcentaje
+    }
+  }
+`
+
+export const GET_LIQUIDACION = `
+  query LiquidacionPresupuestaria($ejercicio: Int!) {
+    liquidacionPresupuestaria(ejercicio: $ejercicio) {
+      ejercicio existe
+      ingresosPrevistos ingresosEjecutados gastosPrevistos gastosEjecutados
+      resultadoPrevisto resultadoEjecutado gradoEjecucionGastos
+    }
+  }
+`
+
+export const CLONAR_PRESUPUESTO = `
+  mutation ClonarPresupuesto($ejercicioOrigen: Int!, $ejercicioNuevo: Int!, $nombre: String) {
+    clonarPresupuesto(ejercicioOrigen: $ejercicioOrigen, ejercicioNuevo: $ejercicioNuevo, nombre: $nombre) {
+      id ejercicio nombre estadoId
+    }
+  }
+`
+
+export const PRORROGAR_PRESUPUESTO = `
+  mutation ProrrogarPresupuesto($ejercicioOrigen: Int!, $ejercicioNuevo: Int!) {
+    prorrogarPresupuesto(ejercicioOrigen: $ejercicioOrigen, ejercicioNuevo: $ejercicioNuevo) {
+      id ejercicio nombre estadoId esProrroga
+    }
+  }
+`

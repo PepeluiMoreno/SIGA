@@ -395,6 +395,18 @@
                   se registra siempre—; solo avisa. Las partidas con alerta aparecen además en el panel
                   <strong>Alertas</strong>.
                 </p>
+
+                <p class="help-subtitle">Paso 6 — Reutilizar, comparar y liquidar</p>
+                <p class="help-text">
+                  Para no empezar de cero cada año, al crear el presupuesto de un ejercicio puedes
+                  <strong>partir del anterior</strong> (copia sus partidas como punto de partida) o
+                  <strong>prorrogarlo</strong> si el nuevo no se aprueba a tiempo —en ese caso el presupuesto
+                  queda marcado como prórroga hasta que apruebes el definitivo. El panel
+                  <strong>Comparativa interanual</strong> muestra las partidas frente a las del año anterior
+                  con su variación, y el panel <strong>Liquidación del presupuesto</strong> resume lo previsto
+                  frente a lo ejecutado (ingresos, gastos, resultado y grado de ejecución), listo para
+                  incorporar a la Memoria de las cuentas anuales.
+                </p>
               </div>
             </details>
 
