@@ -258,19 +258,20 @@
 
                 <p class="help-subtitle">Paso 2 — Crear o editar una categoría</p>
                 <p class="help-text">
-                  Con <strong>+ Nueva categoría</strong> defines su código (por ejemplo
-                  <em>GAS_SEGUROS</em>), nombre, si es de ingreso o gasto, su tratamiento fiscal
-                  (toggles de Modelo 182 y 347, casilla del modelo si procede) y un color para
-                  identificarla en la bitácora. El código y el tipo no se pueden cambiar una vez creada,
-                  para no romper la trazabilidad de los movimientos ya clasificados.
+                  Al pie de cada columna, <strong>+ Nueva categoría</strong> añade una fila donde
+                  introduces el código (por ejemplo <em>GAS_SEGUROS</em>) y el nombre. El resto de
+                  campos se editan <strong>directamente sobre la fila</strong>: el nombre, el color, los
+                  interruptores de Modelo 182 y 347, y la casilla del modelo. Los cambios se guardan
+                  solos al modificarlos. El código y el tipo no se pueden cambiar una vez creada, para
+                  no romper la trazabilidad de los movimientos ya clasificados.
                 </p>
 
                 <p class="help-subtitle">Paso 3 — Desactivar en lugar de borrar</p>
                 <p class="help-text">
                   Una categoría que ya tiene movimientos asignados no se puede eliminar: el sistema lo
-                  impide para preservar el histórico. Si dejas de usarla, <strong>desactívala</strong> desde
-                  Editar; deja de ofrecerse para nuevas clasificaciones pero los movimientos antiguos
-                  la conservan.
+                  impide para preservar el histórico. Si dejas de usarla, <strong>desactívala</strong> con
+                  el interruptor Activa/Inactiva de su fila; deja de ofrecerse para nuevas
+                  clasificaciones pero los movimientos antiguos la conservan.
                 </p>
                 <p class="help-text">
                   Una vez tengas el catálogo a punto, define las
