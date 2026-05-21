@@ -89,3 +89,23 @@ Lo mínimo para que el presupuesto sea usable de punta a punta.
   `ApunteCaja.actividad_id` / `campania_id`, que ya existen, vía el compromiso/partida.
 - **Aprobación enlazable con Secretaría** en Fase 1 solo se registra fecha; el vínculo
   formal con acuerdo de reunión se valora en fase posterior.
+
+## Patrón de UI (vista de presupuesto)
+
+**No se usan pestañas.** El proyecto usa paneles en acordeón (`AccordionPanel` +
+`AccordionGroup`), con anidamiento de **dos niveles jerárquicos como máximo**, igual que
+Tesoreria.vue y DetalleAccion.vue.
+
+Estructura prevista de `Presupuesto.vue`:
+
+- **Nivel 1 — paneles de acordeón:**
+  - *Cabecera del presupuesto* — ejercicio, estado, totales (ingresos/gastos/saldo),
+    botones de transición de estado según el ciclo de vida
+  - *Ingresos* — partidas de ingreso (count = nº partidas)
+  - *Gastos* — partidas de gasto (count = nº partidas)
+  - *Seguimiento de ejecución* — informe de desviaciones previsto vs ejecutado
+- **Nivel 2 — subacordeón dentro de Ingresos y Gastos:** agrupación por
+  `CategoriaPartida`; cada categoría es un subpanel que contiene la tabla de sus partidas.
+
+Componentes reutilizables disponibles: `AccordionPanel` (props `title`, `count`,
+`defaultOpen`, slot `title`), `AccordionGroup` (abre uno a la vez).
