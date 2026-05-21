@@ -1,11 +1,8 @@
 """Resolvers custom para membresía.
 
-Responsabilidad única: traducir la petición GraphQL en una llamada al
-MembresiaService y devolver el resultado. Ninguna lógica de negocio aquí.
-
-Motivo por el que este módulo existe (en lugar de usar strawchemy puro):
-  strawchemy excluye las columnas FK UUID de los inputs auto-generados.
-  Los inputs completos (con todos los FK UUID) se definen aquí.
+strawchemy excluye las columnas FK UUID de los inputs auto-generados.
+Este módulo define MiembroCreateInput y MiembroUpdateInput completos
+(con todos los FK UUID fields) y los resolvers que los usan.
 """
 from __future__ import annotations
 
@@ -14,8 +11,10 @@ from datetime import date
 from typing import Optional, List
 
 import strawberry
+from sqlalchemy import select
 
-from app.modules.membresia.services.membresia_service import MembresiaService
+from app.modules.membresia.models.miembro import Miembro
+from app.modules.acceso.services.acceso_service import AccesoService
 from app.graphql.types_auto import MiembroType
 from app.graphql.permissions import RequireTransaction
 
@@ -25,8 +24,60 @@ from app.graphql.permissions import RequireTransaction
 # ---------------------------------------------------------------------------
 
 @strawberry.input
-class _MiembroBaseInput:
-    """Campos compartidos entre creación y actualización."""
+class MiembroCreateInput:
+    nombre: str
+    apellido1: str
+    tipo_miembro_id: Optional[uuid.UUID] = None
+    estado_id: Optional[uuid.UUID] = None
+    apellido2: Optional[str] = None
+    sexo: Optional[str] = None
+    fecha_nacimiento: Optional[date] = None
+    tipo_documento: Optional[str] = None
+    numero_documento: Optional[str] = None
+    pais_documento_id: Optional[uuid.UUID] = None
+    pais_nacimiento_id: Optional[uuid.UUID] = None
+    direccion: Optional[str] = None
+    codigo_postal: Optional[str] = None
+    localidad: Optional[str] = None
+    provincia_id: Optional[uuid.UUID] = None
+    pais_domicilio_id: Optional[uuid.UUID] = None
+    telefono: Optional[str] = None
+    telefono2: Optional[str] = None
+    email: Optional[str] = None
+    agrupacion_id: Optional[uuid.UUID] = None
+    iban: Optional[str] = None
+    swift_bic: Optional[str] = None
+    referencia_pago: Optional[str] = None
+    forma_pago_id: Optional[uuid.UUID] = None
+    es_socio_honor: bool = False
+    fecha_alta: Optional[date] = None
+    fecha_baja: Optional[date] = None
+    motivo_baja_id: Optional[uuid.UUID] = None
+    motivo_baja_texto: Optional[str] = None
+    observaciones: Optional[str] = None
+    solicita_supresion_datos: bool = False
+    fecha_solicitud_supresion: Optional[date] = None
+    fecha_limite_retencion: Optional[date] = None
+    datos_anonimizados: bool = False
+    fecha_anonimizacion: Optional[date] = None
+    activo: bool = True
+    es_voluntario: bool = False
+    disponibilidad: Optional[str] = None
+    horas_disponibles_semana: Optional[int] = None
+    profesion: Optional[str] = None
+    nivel_estudios_id: Optional[uuid.UUID] = None
+    motivo_reduccion_id: Optional[uuid.UUID] = None
+    experiencia_voluntariado: Optional[str] = None
+    intereses: Optional[str] = None
+    observaciones_voluntariado: Optional[str] = None
+    puede_conducir: bool = False
+    vehiculo_propio: bool = False
+    disponibilidad_viajar: bool = False
+
+
+@strawberry.input
+class MiembroUpdateInput:
+    id: uuid.UUID
     nombre: Optional[str] = None
     apellido1: Optional[str] = None
     tipo_miembro_id: Optional[uuid.UUID] = None
@@ -77,32 +128,33 @@ class _MiembroBaseInput:
     disponibilidad_viajar: Optional[bool] = None
 
 
-@strawberry.input
-class MiembroCreateInput(_MiembroBaseInput):
-    """Input para crear un miembro. Los campos obligatorios dejan de ser Optional."""
-    nombre: str
-    apellido1: str
-    # Los demás se heredan como Optional desde la base.
-    # Defaults explícitos para los booleanos no-nulos del modelo:
-    es_socio_honor: bool = False
-    activo: bool = True
-    es_voluntario: bool = False
-    puede_conducir: bool = False
-    vehiculo_propio: bool = False
-    disponibilidad_viajar: bool = False
-    solicita_supresion_datos: bool = False
-    datos_anonimizados: bool = False
-
-
-@strawberry.input
-class MiembroUpdateInput(_MiembroBaseInput):
-    """Input para actualizar un miembro. Requiere id; el resto es opcional."""
-    id: uuid.UUID
-
-
 # ---------------------------------------------------------------------------
-# Mutations
+# Mixin de mutaciones
 # ---------------------------------------------------------------------------
+
+_MIEMBRO_FIELDS = [
+    'nombre', 'apellido1', 'apellido2', 'sexo', 'fecha_nacimiento',
+    'tipo_miembro_id', 'estado_id', 'tipo_documento', 'numero_documento',
+    'pais_documento_id', 'pais_nacimiento_id', 'direccion', 'codigo_postal',
+    'localidad', 'provincia_id', 'pais_domicilio_id', 'telefono', 'telefono2',
+    'email', 'agrupacion_id', 'iban', 'swift_bic', 'referencia_pago', 'forma_pago_id', 'es_socio_honor',
+    'fecha_alta', 'fecha_baja', 'motivo_baja_id', 'motivo_baja_texto',
+    'observaciones', 'solicita_supresion_datos', 'fecha_solicitud_supresion',
+    'fecha_limite_retencion', 'datos_anonimizados', 'fecha_anonimizacion',
+    'activo', 'es_voluntario', 'disponibilidad', 'horas_disponibles_semana',
+    'profesion', 'nivel_estudios_id', 'motivo_reduccion_id',
+    'experiencia_voluntariado', 'intereses',
+    'observaciones_voluntariado', 'puede_conducir', 'vehiculo_propio',
+    'disponibilidad_viajar',
+]
+
+
+async def _fetch_miembro(session, miembro_id: uuid.UUID):
+    """Recarga el miembro con todas las relaciones selectin."""
+    stmt = select(Miembro).where(Miembro.id == miembro_id)
+    result = await session.execute(stmt)
+    return result.scalar_one()
+
 
 @strawberry.type
 class MembresiaResolverMutation:
@@ -113,8 +165,14 @@ class MembresiaResolverMutation:
         info: strawberry.Info,
         data: MiembroCreateInput,
     ) -> 'MiembroType':
-        svc = MembresiaService(info.context.session)
-        return await svc.crear(data)
+        session = info.context.session
+
+        kwargs = {field: getattr(data, field) for field in _MIEMBRO_FIELDS}
+        miembro = Miembro(**kwargs)
+        session.add(miembro)
+        await session.commit()
+
+        return await _fetch_miembro(session, miembro.id)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_CREAR")])
     async def crear_miembro_con_acceso(
@@ -126,14 +184,25 @@ class MembresiaResolverMutation:
         tipo_vinculacion_id: Optional[uuid.UUID] = None,
         activo_usuario: bool = True,
     ) -> 'MiembroType':
-        svc = MembresiaService(info.context.session)
-        return await svc.crear_con_acceso(
-            data=data,
+        """Crea un miembro y su usuario de acceso en una única transacción atómica."""
+        session = info.context.session
+
+        kwargs = {field: getattr(data, field) for field in _MIEMBRO_FIELDS}
+        miembro = Miembro(**kwargs)
+        session.add(miembro)
+        await session.flush()
+
+        svc = AccesoService(session)
+        await svc.crear_usuario(
             email=email,
             password=password,
+            activo=activo_usuario,
+            miembro_id=miembro.id,
             tipo_vinculacion_id=tipo_vinculacion_id,
-            activo_usuario=activo_usuario,
         )
+
+        await session.commit()
+        return await _fetch_miembro(session, miembro.id)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_EDITAR")])
     async def actualizar_miembro(
@@ -141,8 +210,20 @@ class MembresiaResolverMutation:
         info: strawberry.Info,
         data: MiembroUpdateInput,
     ) -> 'MiembroType':
-        svc = MembresiaService(info.context.session)
-        return await svc.actualizar(data)
+        session = info.context.session
+
+        miembro = await _fetch_miembro(session, data.id)
+
+        for field in _MIEMBRO_FIELDS:
+            val = getattr(data, field, None)
+            if val is not None or field not in (
+                'nombre', 'apellido1', 'tipo_miembro_id', 'estado_id'
+            ):
+                setattr(miembro, field, val)
+
+        await session.commit()
+
+        return await _fetch_miembro(session, miembro.id)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_EDITAR")])
     async def anonimizar_miembro(
@@ -150,8 +231,47 @@ class MembresiaResolverMutation:
         info: strawberry.Info,
         miembro_id: uuid.UUID,
     ) -> 'MiembroType':
-        svc = MembresiaService(info.context.session)
-        return await svc.anonimizar(miembro_id)
+        """RGPD — anonimiza de forma irreversible los datos personales del
+        miembro. El registro se conserva (para estadística e histórico) pero
+        despojado de toda información identificativa. Solo se permite sobre
+        miembros dados de baja.
+        """
+        session = info.context.session
+        miembro = await _fetch_miembro(session, miembro_id)
+
+        if miembro.datos_anonimizados:
+            raise ValueError("Los datos de este miembro ya están anonimizados.")
+        if miembro.fecha_baja is None:
+            raise ValueError(
+                "Solo pueden anonimizarse los datos de un miembro dado de baja."
+            )
+
+        # Despojar de toda información personal identificativa.
+        miembro.nombre = "Anonimizado"
+        miembro.apellido1 = "Anonimizado"
+        miembro.apellido2 = None
+        miembro.fecha_nacimiento = None
+        miembro.sexo = None
+        miembro.tipo_documento = None
+        miembro.numero_documento = None
+        miembro.direccion = None
+        miembro.codigo_postal = None
+        miembro.localidad = None
+        miembro.telefono = None
+        miembro.telefono2 = None
+        miembro.email = None
+        miembro.iban = None
+        miembro.swift_bic = None
+        miembro.referencia_pago = None
+        miembro.foto_url = None
+        miembro.observaciones = None
+        miembro.observaciones_voluntariado = None
+
+        miembro.datos_anonimizados = True
+        miembro.fecha_anonimizacion = date.today()
+
+        await session.commit()
+        return await _fetch_miembro(session, miembro_id)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("SOC_EXPORT")])
     async def exportar_miembros_xlsx(
@@ -159,5 +279,58 @@ class MembresiaResolverMutation:
         info: strawberry.Info,
         ids: List[uuid.UUID],
     ) -> str:
-        svc = MembresiaService(info.context.session)
-        return await svc.exportar_xlsx(ids)
+        """Exporta a XLSX los miembros indicados (los visibles con los filtros
+        aplicados en el listado). Devuelve el contenido del fichero en base64.
+        """
+        import base64
+        import io
+        from openpyxl import Workbook
+        from openpyxl.styles import Font
+        from openpyxl.utils import get_column_letter
+
+        session = info.context.session
+        if not ids:
+            raise ValueError("No hay miembros que exportar.")
+
+        result = await session.execute(select(Miembro).where(Miembro.id.in_(ids)))
+        miembros = list(result.scalars().all())
+        miembros.sort(key=lambda m: (
+            (m.apellido1 or '').lower(),
+            (m.apellido2 or '').lower(),
+            (m.nombre or '').lower(),
+        ))
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Miembros"
+        cabecera = [
+            "Nombre", "Primer apellido", "Segundo apellido", "Tipo", "Situación",
+            "Email", "Teléfono", "Agrupación", "Localidad", "Fecha de alta", "Fecha de baja",
+        ]
+        ws.append(cabecera)
+        for celda in ws[1]:
+            celda.font = Font(bold=True)
+
+        for m in miembros:
+            ws.append([
+                m.nombre or '',
+                m.apellido1 or '',
+                m.apellido2 or '',
+                m.tipo_miembro.nombre if m.tipo_miembro else '',
+                m.estado.nombre if m.estado else '',
+                m.email or '',
+                m.telefono or '',
+                m.agrupacion.nombre if m.agrupacion else '',
+                m.localidad or '',
+                m.fecha_alta.isoformat() if m.fecha_alta else '',
+                m.fecha_baja.isoformat() if m.fecha_baja else '',
+            ])
+
+        anchos = [16, 16, 16, 14, 14, 30, 14, 26, 20, 13, 13]
+        for i, ancho in enumerate(anchos, start=1):
+            ws.column_dimensions[get_column_letter(i)].width = ancho
+        ws.freeze_panes = "A2"
+
+        buf = io.BytesIO()
+        wb.save(buf)
+        return base64.b64encode(buf.getvalue()).decode()
