@@ -130,7 +130,32 @@ class ActualizarPartidaInput:
 
 
 @strawberry.type
+class EstadoPlanificacionType:
+    id: uuid.UUID
+    codigo: str
+    nombre: str
+    orden: int
+    color: Optional[str]
+    es_final: bool
+
+
+@strawberry.type
 class PresupuestoQuery:
+
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")])
+    async def estados_planificacion(self, info: strawberry.Info) -> List[EstadoPlanificacionType]:
+        from app.modules.economico.models.presupuesto import EstadoPlanificacion
+        from sqlalchemy import select
+        result = await info.context.session.execute(
+            select(EstadoPlanificacion).order_by(EstadoPlanificacion.orden)
+        )
+        return [
+            EstadoPlanificacionType(
+                id=e.id, codigo=e.codigo, nombre=e.nombre,
+                orden=e.orden, color=e.color, es_final=e.es_final,
+            )
+            for e in result.scalars().all()
+        ]
 
     @strawberry.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")])
     async def planificaciones(self, info: strawberry.Info) -> List[PlanificacionAnualType]:

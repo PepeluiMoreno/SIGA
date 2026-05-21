@@ -109,3 +109,28 @@ Estructura prevista de `Presupuesto.vue`:
 
 Componentes reutilizables disponibles: `AccordionPanel` (props `title`, `count`,
 `defaultOpen`, slot `title`), `AccordionGroup` (abre uno a la vez).
+
+## Criterios de UX (transversales)
+
+Decididos durante el desarrollo de presupuestos, aplicables a toda la aplicación:
+
+1. **Edición ágil, no abusar de modales.** La edición preferente es *inline* (editar el
+   dato directamente sobre la fila/celda). Las modales se reservan para cuando la cantidad
+   de campos susceptibles de cambio lo aconseje (formularios ricos). Para listas de
+   registros con pocos campos editables (partidas, categorías fiscales…), edición inline.
+2. **Las gráficas van en dashboards específicos**, no embebidas en las vistas de gestión.
+   El informe de desviaciones es un panel de acordeón con tabla; su visualización gráfica
+   irá al dashboard económico.
+
+### Deuda técnica registrada (refactor a edición ágil)
+Migrar a edición inline donde hoy se usa modal innecesariamente y se den las mismas
+circunstancias (listas con pocos campos editables):
+- `CategoriasFiscalesPanel.vue` — hoy modal; pasar a inline
+- `ReglasCategorizacionPanel.vue` — revisar (las reglas tienen más campos; evaluar)
+- Revisar otras vistas de catálogo de la app con el mismo patrón
+
+### Deuda funcional registrada (dashboards)
+- **Dashboard económico**: pendiente hasta tener presupuestos (este módulo). Incorporará
+  gráficas de evolución, composición y desviaciones presupuestarias.
+- **Dashboard de Contabilidad**: igual que se está haciendo en Tesorería, Contabilidad
+  debe tener su propio dashboard con gráficas. Pendiente.
