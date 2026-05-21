@@ -13,8 +13,6 @@ from app.graphql.types_auto import ActividadType, TareaType, ParticipacionType, 
 from app.graphql.permissions import RequireTransaction
 
 
-# ─── Tipos de input (sin cambios) ──────────────────────────────────────────
-
 @strawberry.input
 class ActividadCreateData:
     nombre: str
@@ -117,57 +115,89 @@ class ParticipacionCreateData:
     horas_aportadas: Decimal = Decimal('0.00')
 
 
-# ─── Mutations ───────────────────────────────────────────────────────────────
-
 @strawberry.type
 class ActividadResolverMutation:
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ACT_CREATE")])
     async def crear_actividad(self, info: strawberry.Info, data: ActividadCreateData) -> ActividadType:
-        return await ActividadService(info.context.session).crear_actividad(data)
+        return await ActividadService(info.context.session).crear(
+            nombre=data.nombre, tipo_actividad_id=data.tipo_actividad_id,
+            estado_id=data.estado_id, caracter=data.caracter,
+            descripcion=data.descripcion, padre_id=data.padre_id,
+            es_recurrente=data.es_recurrente, periodicidad=data.periodicidad,
+            campania_id=data.campania_id, grupo_id=data.grupo_id,
+            responsable_id=data.responsable_id, fecha_inicio=data.fecha_inicio,
+            hora_inicio=data.hora_inicio, fecha_fin=data.fecha_fin, hora_fin=data.hora_fin,
+            duracion_horas=data.duracion_horas, duracion_dias=data.duracion_dias,
+            lugar=data.lugar, direccion=data.direccion, localidad=data.localidad,
+            provincia=data.provincia, aforo=data.aforo,
+            es_online=data.es_online, url_online=data.url_online,
+            presupuesto_estimado=data.presupuesto_estimado,
+        )
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ACT_EDIT")])
     async def actualizar_actividad(self, info: strawberry.Info, data: ActividadUpdateData) -> ActividadType:
-        return await ActividadService(info.context.session).actualizar_actividad(data)
+        campos = {k: getattr(data, k) for k in [
+            'nombre', 'tipo_actividad_id', 'estado_id', 'descripcion',
+            'padre_id', 'es_recurrente', 'periodicidad', 'caracter', 'campania_id',
+            'grupo_id', 'responsable_id', 'fecha_inicio', 'hora_inicio',
+            'fecha_fin', 'hora_fin', 'duracion_horas', 'duracion_dias',
+            'lugar', 'direccion', 'localidad', 'provincia', 'aforo',
+            'es_online', 'url_online', 'presupuesto_estimado',
+            'presupuesto_ejecutado', 'eliminado',
+        ]}
+        return await ActividadService(info.context.session).actualizar(data.id, campos)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ACT_EDIT")])
     async def crear_tarea(self, info: strawberry.Info, data: TareaCreateData) -> TareaType:
-        return await ActividadService(info.context.session).crear_tarea(data)
+        return await ActividadService(info.context.session).crear_tarea(
+            titulo=data.titulo, estado_id=data.estado_id, descripcion=data.descripcion,
+            prioridad=data.prioridad, orden=data.orden, responsable_id=data.responsable_id,
+            horas_estimadas=data.horas_estimadas, horas_reales=data.horas_reales,
+            fecha_limite=data.fecha_limite, actividad_id=data.actividad_id, grupo_id=data.grupo_id,
+        )
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ACT_EDIT")])
     async def actualizar_tarea(self, info: strawberry.Info, data: TareaUpdateData) -> TareaType:
-        return await ActividadService(info.context.session).actualizar_tarea(data)
+        campos = {k: getattr(data, k) for k in [
+            'titulo', 'estado_id', 'descripcion', 'prioridad', 'orden',
+            'responsable_id', 'horas_estimadas', 'horas_reales', 'fecha_limite',
+        ]}
+        return await ActividadService(info.context.session).actualizar_tarea(data.id, campos)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("PART_MANAGE")])
     async def crear_participacion(self, info: strawberry.Info, data: ParticipacionCreateData) -> ParticipacionType:
-        return await ActividadService(info.context.session).crear_participacion(data)
+        return await ActividadService(info.context.session).crear_participacion(
+            actividad_id=data.actividad_id, rol=data.rol, miembro_id=data.miembro_id,
+            nombre_externo=data.nombre_externo, email_externo=data.email_externo,
+            confirmado=data.confirmado, asistio=data.asistio,
+            horas_aportadas=data.horas_aportadas,
+        )
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ACT_EDIT")])
     async def transicionar_actividad(
         self, info: strawberry.Info,
         id: uuid.UUID, estado_id: uuid.UUID, notas: Optional[str] = None,
     ) -> ActividadType:
-        return await ActividadService(info.context.session).transicionar_actividad(id, estado_id, notas)
+        return await ActividadService(info.context.session).transicionar_estado(id, estado_id, notas)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ACT_APPROVE")])
     async def aprobar_actividad(
         self, info: strawberry.Info,
         id: uuid.UUID, estado_id: uuid.UUID, notas: Optional[str] = None,
     ) -> ActividadType:
-        aprobado_por_id = getattr(info.context, 'user_id', None)
-        return await ActividadService(info.context.session).aprobar_actividad(
-            id, estado_id, aprobado_por_id=aprobado_por_id, notas=notas,
+        return await ActividadService(info.context.session).aprobar(
+            id, estado_id,
+            aprobado_por_id=getattr(info.context, 'user_id', None),
+            notas=notas,
         )
 
     @strawberry.mutation(permission_classes=[RequireTransaction("TEAM_CREATE")])
     async def crear_grupo_trabajo_seguro(
-        self, info: strawberry.Info,
-        nombre: str,
+        self, info: strawberry.Info, nombre: str,
         tipo_grupo_id: Optional[uuid.UUID] = None,
-        descripcion: Optional[str] = None,
-        objetivo: Optional[str] = None,
-        fecha_inicio: Optional[date] = None,
-        fecha_fin: Optional[date] = None,
+        descripcion: Optional[str] = None, objetivo: Optional[str] = None,
+        fecha_inicio: Optional[date] = None, fecha_fin: Optional[date] = None,
         coordinador_id: Optional[uuid.UUID] = None,
         agrupacion_id: Optional[uuid.UUID] = None,
         campania_id: Optional[uuid.UUID] = None,
@@ -175,21 +205,19 @@ class ActividadResolverMutation:
         return await ActividadService(info.context.session).crear_grupo_trabajo(
             nombre=nombre, tipo_grupo_id=tipo_grupo_id, descripcion=descripcion,
             objetivo=objetivo, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin,
-            coordinador_id=coordinador_id, agrupacion_id=agrupacion_id, campania_id=campania_id,
+            coordinador_id=coordinador_id, agrupacion_id=agrupacion_id,
+            campania_id=campania_id,
         )
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ACT_EDIT")])
     async def cerrar_actividad(
-        self, info: strawberry.Info,
-        id: uuid.UUID,
-        valoracion: Optional[str] = None,
-        objetivos_cumplidos: Optional[bool] = None,
-        asistencia_real: Optional[int] = None,
-        presupuesto_ejecutado: Optional[Decimal] = None,
+        self, info: strawberry.Info, id: uuid.UUID,
+        valoracion: Optional[str] = None, objetivos_cumplidos: Optional[bool] = None,
+        asistencia_real: Optional[int] = None, presupuesto_ejecutado: Optional[Decimal] = None,
         estado_id: Optional[uuid.UUID] = None,
     ) -> ActividadType:
-        return await ActividadService(info.context.session).cerrar_actividad(
-            id, valoracion=valoracion, objetivos_cumplidos=objetivos_cumplidos,
+        return await ActividadService(info.context.session).cerrar(
+            id, estado_id=estado_id, valoracion=valoracion,
+            objetivos_cumplidos=objetivos_cumplidos,
             asistencia_real=asistencia_real, presupuesto_ejecutado=presupuesto_ejecutado,
-            estado_id=estado_id,
         )
