@@ -43,6 +43,7 @@ from app.modules.membresia.models.historial_nombramiento import HistorialNombram
 from app.modules.membresia.models.miembro import Miembro, TipoMiembro
 from app.modules.economico.models.cobro.forma_pago import FormaPago  # noqa: F401 — registra mapper
 from app.scripts.seeding.seed_init_accesos import seed as seed_roles_funcionales
+from app.scripts.seeding.seed_comunicacion import seed_comunicacion
 
 
 INITIAL_DATA_DIR = Path(__file__).resolve().parents[2] / "initial_data"
@@ -825,6 +826,7 @@ async def main() -> None:
             await ensure_temas_ui(session)
             await ensure_catalogos_iniciales(session)
             await ensure_plantillas_email(session)
+            await seed_comunicacion(session)
             await seed_roles_funcionales(session, transacciones)
             await ensure_coordinadores_usuarios(session)
             await session.commit()
