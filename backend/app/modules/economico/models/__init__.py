@@ -15,7 +15,7 @@ from .recibos import Recibo
 from .justificantes_gasto import JustificanteGasto, JustificanteGastoLinea, JustificanteGastoDocumento
 from .cuentas_anuales import CuentasAnuales, APARTADOS_MEMORIA, memoria_vacia
 from .modelo_182 import Presentacion182
-from .presupuesto import EstadoPlanificacion, CategoriaPartida, PartidaPresupuestaria, CompromisoPresupuestario, PlanificacionAnual
+from .presupuesto import EstadoPlanificacion, CategoriaPartida, PartidaPresupuestaria, CompromisoPresupuestario, PlanificacionAnual, ModificacionPresupuestaria, TipoModificacionPresupuestaria
 from .cobro import ProveedorPago, EstadoPago, TipoEventoPago, TipoPago, Pago, EventoPago, EstadoSuscripcion, Suscripcion, FormaPago
 from .reclamaciones import EstadoReclamacion, Reclamacion, TipoAccionReclamacion, AccionReclamacion
 
@@ -62,6 +62,7 @@ __all__ = [
     'JustificanteGasto', 'JustificanteGastoLinea', 'JustificanteGastoDocumento',
     # Presupuesto
     'EstadoPlanificacion', 'CategoriaPartida', 'PartidaPresupuestaria', 'CompromisoPresupuestario', 'PlanificacionAnual',
+    'ModificacionPresupuestaria', 'TipoModificacionPresupuestaria',
     # Cobro
     'ProveedorPago', 'EstadoPago', 'TipoEventoPago', 'TipoPago', 'Pago', 'EventoPago', 'EstadoSuscripcion', 'Suscripcion', 'FormaPago',
     # Reclamaciones

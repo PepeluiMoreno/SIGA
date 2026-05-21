@@ -3,9 +3,10 @@
 import uuid
 from datetime import date
 from decimal import Decimal
+from enum import Enum as PyEnum
 from typing import Optional, List
 
-from sqlalchemy import String, ForeignKey, Date, Numeric, Boolean, Text, Integer, Uuid
+from sqlalchemy import String, ForeignKey, Date, Numeric, Boolean, Text, Integer, Uuid, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ....infrastructure.base_model import BaseModel
@@ -62,6 +63,9 @@ class PartidaPresupuestaria(BaseModel):
     categoria_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey("categorias_partida.id"), nullable=True, index=True)
 
     # Importes
+    # importe_inicial: lo aprobado, congelado al aprobar el presupuesto (Fase 2).
+    # importe_presupuestado: el VIGENTE = inicial + modificaciones presupuestarias.
+    importe_inicial: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal('0.00'), nullable=False)
     importe_presupuestado: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal('0.00'), nullable=False)
     importe_comprometido: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal('0.00'), nullable=False)  # Asignado a propuestas
     importe_ejecutado: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal('0.00'), nullable=False)  # Gastado real
@@ -109,6 +113,26 @@ class PartidaPresupuestaria(BaseModel):
         if self.importe_presupuestado == 0:
             return 0.0
         return float((self.importe_ejecutado / self.importe_presupuestado) * 100)
+
+    @property
+    def saldo_disponible_ejecucion(self) -> Decimal:
+        """Disponible real de ejecución: vigente - ejecutado (Fase 2)."""
+        return self.importe_presupuestado - self.importe_ejecutado
+
+    @property
+    def esta_sobreejecutada(self) -> bool:
+        """True si lo ejecutado supera el presupuesto vigente."""
+        return self.importe_ejecutado > self.importe_presupuestado
+
+    @property
+    def esta_agotada(self) -> bool:
+        """True si no queda disponible de ejecución (vigente totalmente consumido)."""
+        return self.importe_presupuestado > 0 and self.saldo_disponible_ejecucion <= 0
+
+    @property
+    def importe_modificaciones(self) -> Decimal:
+        """Diferencia entre el vigente y el inicial (efecto neto de las modificaciones)."""
+        return self.importe_presupuestado - self.importe_inicial
 
     def comprometer_importe(self, importe: Decimal) -> bool:
         """
@@ -178,6 +202,10 @@ class PlanificacionAnual(BaseModel):
     # Presupuesto global del ejercicio
     presupuesto_total: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal('0.00'), nullable=False)
 
+    # Control de disponibilidad (Fase 2): si está activo, imputar un gasto que supere
+    # el disponible de la partida se bloquea; si está inactivo, solo se avisa.
+    control_disponibilidad: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
     # Relaciones
     estado: Mapped["EstadoPlanificacion"] = relationship(back_populates='planificaciones', lazy='selectin')
     partidas: Mapped[List["PartidaPresupuestaria"]] = relationship(back_populates='planificacion', lazy='selectin')
@@ -237,3 +265,57 @@ class PlanificacionAnual(BaseModel):
     def cerrar(self, estado_cerrado_id: uuid.UUID) -> None:
         """Cierra la planificación."""
         self.estado_id = estado_cerrado_id
+
+
+class TipoModificacionPresupuestaria(str, PyEnum):
+    """Tipos de modificación presupuestaria."""
+    TRANSFERENCIA = "TRANSFERENCIA"  # mueve importe de una partida a otra (suma cero)
+    AMPLIACION = "AMPLIACION"        # aumenta una partida (más ingreso del previsto lo habilita)
+    SUPLEMENTO = "SUPLEMENTO"        # aumenta una partida con cargo a remanente/reservas
+
+
+class ModificacionPresupuestaria(BaseModel):
+    """Modificación formal de un presupuesto aprobado (Fase 2).
+
+    El presupuesto aprobado no se edita a mano: los cambios se registran como
+    modificaciones tipificadas y trazables que ajustan el importe vigente
+    (PartidaPresupuestaria.importe_presupuestado) sin alterar el inicial.
+    """
+    __tablename__ = "modificaciones_presupuestarias"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+
+    planificacion_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("planificaciones_anuales.id"), nullable=False, index=True
+    )
+    tipo: Mapped[TipoModificacionPresupuestaria] = mapped_column(
+        Enum(TipoModificacionPresupuestaria), nullable=False
+    )
+
+    # Partida destino (siempre). Partida origen solo en TRANSFERENCIA.
+    partida_destino_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("partidas_presupuestarias.id"), nullable=False, index=True
+    )
+    partida_origen_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("partidas_presupuestarias.id"), nullable=True, index=True
+    )
+
+    importe: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    fecha: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
+    motivo: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Quién la registró (auditoría ligera; el aprobado formal es acto de gobierno)
+    registrada_por_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("usuarios.id"), nullable=True
+    )
+
+    planificacion = relationship('PlanificacionAnual', lazy='selectin')
+    partida_destino = relationship(
+        'PartidaPresupuestaria', foreign_keys=[partida_destino_id], lazy='selectin'
+    )
+    partida_origen = relationship(
+        'PartidaPresupuestaria', foreign_keys=[partida_origen_id], lazy='selectin'
+    )
+
+    def __repr__(self) -> str:
+        return f"<ModificacionPresupuestaria(tipo={self.tipo}, importe={self.importe})>"

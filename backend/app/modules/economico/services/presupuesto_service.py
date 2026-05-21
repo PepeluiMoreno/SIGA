@@ -18,6 +18,8 @@ from ..models.presupuesto import (
     PartidaPresupuestaria,
     CategoriaPartida,
     EstadoPlanificacion,
+    ModificacionPresupuestaria,
+    TipoModificacionPresupuestaria,
 )
 
 
@@ -149,6 +151,12 @@ class PresupuestoService:
         plan.estado_id = estado_destino.id
         if codigo_destino == ESTADO_APROBADO:
             plan.fecha_aprobacion = date.today()
+            # Congelar el presupuesto inicial: el vigente de cada partida se copia al inicial.
+            # A partir de aquí, los cambios solo vía modificaciones presupuestarias.
+            partidas = await self.listar_partidas(planificacion_id)
+            for p in partidas:
+                p.importe_inicial = p.importe_presupuestado
+                self.session.add(p)
         self.session.add(plan)
         await self.session.commit()
         await self.session.refresh(plan)
@@ -347,6 +355,157 @@ class PresupuestoService:
         await self.session.commit()
         await self.session.refresh(partida)
         return partida
+
+    # ── Modificaciones presupuestarias (Fase 2) ─────────────────────────────
+
+    async def _obtener_partida(self, partida_id: UUID) -> Optional[PartidaPresupuestaria]:
+        result = await self.session.execute(
+            select(PartidaPresupuestaria).where(PartidaPresupuestaria.id == partida_id)
+        )
+        return result.scalars().first()
+
+    async def listar_modificaciones(self, planificacion_id: UUID) -> List[ModificacionPresupuestaria]:
+        result = await self.session.execute(
+            select(ModificacionPresupuestaria)
+            .where(
+                and_(
+                    ModificacionPresupuestaria.planificacion_id == planificacion_id,
+                    ModificacionPresupuestaria.eliminado == False,
+                )
+            )
+            .order_by(ModificacionPresupuestaria.fecha.desc())
+        )
+        return list(result.scalars().all())
+
+    async def registrar_modificacion(
+        self,
+        planificacion_id: UUID,
+        tipo: TipoModificacionPresupuestaria,
+        partida_destino_id: UUID,
+        importe: Decimal,
+        motivo: str,
+        partida_origen_id: Optional[UUID] = None,
+        registrada_por_id: Optional[UUID] = None,
+    ) -> ModificacionPresupuestaria:
+        """Registra una modificación y ajusta el importe vigente de las partidas.
+
+        - TRANSFERENCIA: resta de origen, suma a destino (requiere partida_origen_id).
+          El presupuesto global no cambia (suma cero).
+        - AMPLIACION / SUPLEMENTO: suma a destino. El presupuesto global crece.
+
+        Solo sobre presupuestos APROBADO o EN_EJECUCION (el borrador se edita directo).
+        """
+        if importe is None or importe <= Decimal("0"):
+            raise ValueError("El importe de la modificación debe ser positivo")
+        if not motivo or not motivo.strip():
+            raise ValueError("La modificación requiere un motivo")
+
+        plan = await self.obtener_planificacion(planificacion_id)
+        if not plan:
+            raise ValueError(f"Planificación {planificacion_id} no encontrada")
+        codigo_estado = await self._codigo_de_estado(plan.estado_id)
+        if codigo_estado not in (ESTADO_APROBADO, ESTADO_EN_EJECUCION):
+            raise ValueError(
+                "Las modificaciones presupuestarias solo aplican a presupuestos aprobados "
+                "o en ejecución. En borrador, edita las partidas directamente."
+            )
+
+        destino = await self._obtener_partida(partida_destino_id)
+        if not destino:
+            raise ValueError("Partida de destino no encontrada")
+
+        origen = None
+        if tipo == TipoModificacionPresupuestaria.TRANSFERENCIA:
+            if not partida_origen_id:
+                raise ValueError("Una transferencia requiere partida de origen")
+            origen = await self._obtener_partida(partida_origen_id)
+            if not origen:
+                raise ValueError("Partida de origen no encontrada")
+            if origen.id == destino.id:
+                raise ValueError("Origen y destino no pueden ser la misma partida")
+            if importe > origen.saldo_disponible_ejecucion:
+                raise ValueError(
+                    "La transferencia supera el disponible de la partida de origen "
+                    f"({float(origen.saldo_disponible_ejecucion):.2f} €)"
+                )
+            origen.importe_presupuestado -= importe
+            self.session.add(origen)
+
+        destino.importe_presupuestado += importe
+        self.session.add(destino)
+
+        modificacion = ModificacionPresupuestaria(
+            planificacion_id=planificacion_id,
+            tipo=tipo,
+            partida_destino_id=partida_destino_id,
+            partida_origen_id=partida_origen_id if origen else None,
+            importe=importe,
+            motivo=motivo.strip(),
+            registrada_por_id=registrada_por_id,
+        )
+        self.session.add(modificacion)
+        await self.session.commit()
+        await self.session.refresh(modificacion)
+        await self._recalcular_total(planificacion_id)
+        return modificacion
+
+    # ── Alertas (Fase 2) ─────────────────────────────────────────────────────
+
+    async def alertas(self, planificacion_id: UUID) -> List[dict]:
+        """Devuelve las partidas con alerta: sobreejecutadas o agotadas."""
+        partidas = await self.listar_partidas(planificacion_id)
+        salida = []
+        for p in partidas:
+            if p.esta_sobreejecutada:
+                salida.append({
+                    "partida_id": str(p.id), "codigo": p.codigo, "nombre": p.nombre,
+                    "tipo_alerta": "SOBREEJECUTADA",
+                    "mensaje": f"Ejecutado {float(p.importe_ejecutado):.2f} € sobre "
+                               f"{float(p.importe_presupuestado):.2f} € presupuestados",
+                })
+            elif p.esta_agotada:
+                salida.append({
+                    "partida_id": str(p.id), "codigo": p.codigo, "nombre": p.nombre,
+                    "tipo_alerta": "AGOTADA",
+                    "mensaje": "Presupuesto vigente totalmente consumido",
+                })
+        return salida
+
+    # ── Control de disponibilidad (Fase 2) ───────────────────────────────────
+
+    async def comprobar_disponibilidad(
+        self, importe: Decimal, actividad_id: Optional[UUID] = None,
+        campania_id: Optional[UUID] = None,
+    ) -> dict:
+        """Comprueba si un gasto cabe en el disponible de su partida afecta.
+
+        Devuelve {ok, bloquea, disponible, mensaje}. `bloquea` es True solo si la
+        planificación tiene control_disponibilidad activo y el gasto excede el disponible.
+        Si no hay partida afecta, ok=True (no aplica).
+        """
+        if not actividad_id and not campania_id:
+            return {"ok": True, "bloquea": False, "disponible": None, "mensaje": None}
+
+        query = select(PartidaPresupuestaria).where(PartidaPresupuestaria.eliminado == False)
+        query = query.where(
+            PartidaPresupuestaria.actividad_id == actividad_id if actividad_id
+            else PartidaPresupuestaria.campania_id == campania_id
+        )
+        partida = (await self.session.execute(query)).scalars().first()
+        if not partida:
+            return {"ok": True, "bloquea": False, "disponible": None, "mensaje": None}
+
+        disponible = partida.saldo_disponible_ejecucion
+        if importe <= disponible:
+            return {"ok": True, "bloquea": False, "disponible": float(disponible), "mensaje": None}
+
+        plan = await self.obtener_planificacion(partida.planificacion_id) if partida.planificacion_id else None
+        bloquea = bool(plan and plan.control_disponibilidad)
+        mensaje = (
+            f"El gasto ({float(importe):.2f} €) supera el disponible de la partida "
+            f"'{partida.nombre}' ({float(disponible):.2f} €)."
+        )
+        return {"ok": False, "bloquea": bloquea, "disponible": float(disponible), "mensaje": mensaje}
 
     # ── Informe de desviaciones ─────────────────────────────────────────────
 
