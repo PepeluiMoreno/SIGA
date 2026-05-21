@@ -377,6 +377,36 @@
                   frente a lo ejecutado, con la desviación y el porcentaje de ejecución, señalando en rojo
                   las partidas sobreejecutadas.
                 </p>
+
+                <p class="help-subtitle">Paso 5 — Modificar un presupuesto aprobado</p>
+                <p class="help-text">
+                  Un presupuesto aprobado no se edita a mano: los cambios se registran como
+                  <strong>modificaciones presupuestarias</strong> formales desde su panel, que ajustan el
+                  presupuesto vigente sin alterar el inicial (en las partidas se ve el vigente y, debajo,
+                  el inicial cuando difieren). Hay tres tipos: <strong>transferencia</strong> (mueve importe
+                  de una partida a otra), <strong>ampliación</strong> (aumenta una partida porque ha entrado
+                  más ingreso del previsto) y <strong>suplemento</strong> (aumenta con cargo a remanente).
+                  Cada modificación queda registrada con su importe y motivo.
+                </p>
+                <p class="help-text">
+                  De forma opcional, puedes activar el aviso de <strong>control presupuestario</strong>: cuando
+                  una partida se desvía (se sobreejecuta o se agota), se avisa a los responsables para que
+                  valoren tramitar una modificación. <strong>Nunca bloquea el gasto</strong> —un movimiento real
+                  se registra siempre—; solo avisa. Las partidas con alerta aparecen además en el panel
+                  <strong>Alertas</strong>.
+                </p>
+
+                <p class="help-subtitle">Paso 6 — Reutilizar, comparar y liquidar</p>
+                <p class="help-text">
+                  Para no empezar de cero cada año, al crear el presupuesto de un ejercicio puedes
+                  <strong>partir del anterior</strong> (copia sus partidas como punto de partida) o
+                  <strong>prorrogarlo</strong> si el nuevo no se aprueba a tiempo —en ese caso el presupuesto
+                  queda marcado como prórroga hasta que apruebes el definitivo. El panel
+                  <strong>Comparativa interanual</strong> muestra las partidas frente a las del año anterior
+                  con su variación, y el panel <strong>Liquidación del presupuesto</strong> resume lo previsto
+                  frente a lo ejecutado (ingresos, gastos, resultado y grado de ejecución), listo para
+                  incorporar a la Memoria de las cuentas anuales.
+                </p>
               </div>
             </details>
 

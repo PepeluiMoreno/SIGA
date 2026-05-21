@@ -5,7 +5,7 @@ export const GET_PLANIFICACIONES = `
     planificaciones {
       id ejercicio nombre descripcion objetivos estadoId fechaAprobacion
       presupuestoTotal presupuestoIngresos presupuestoGastos
-      saldoPresupuestado gastosEjecutados porcentajeEjecucion
+      saldoPresupuestado gastosEjecutados porcentajeEjecucion controlDisponibilidad
     }
   }
 `
@@ -15,7 +15,7 @@ export const GET_PLANIFICACION = `
     planificacion(planificacionId: $planificacionId) {
       id ejercicio nombre descripcion objetivos estadoId fechaAprobacion
       presupuestoTotal presupuestoIngresos presupuestoGastos
-      saldoPresupuestado gastosEjecutados porcentajeEjecucion
+      saldoPresupuestado gastosEjecutados porcentajeEjecucion controlDisponibilidad
     }
   }
 `
@@ -27,6 +27,7 @@ export const GET_PARTIDAS = `
       categoriaId actividadId campaniaId
       importePresupuestado importeComprometido importeEjecutado
       importeDisponible porcentajeEjecutado
+      importeInicial importeModificaciones estaSobreejecutada estaAgotada
     }
   }
 `
@@ -97,5 +98,75 @@ export const DEVOLVER_A_BORRADOR = `
 export const GET_ESTADOS_PLANIFICACION = `
   query EstadosPlanificacion {
     estadosPlanificacion { id codigo nombre orden color esFinal }
+  }
+`
+
+// ── FASE 2: modificaciones, alertas, control de disponibilidad ────────────────
+
+export const GET_MODIFICACIONES = `
+  query ModificacionesPresupuestarias($planificacionId: UUID!) {
+    modificacionesPresupuestarias(planificacionId: $planificacionId) {
+      id tipo partidaDestinoId partidaOrigenId importe fecha motivo
+    }
+  }
+`
+
+export const GET_ALERTAS = `
+  query AlertasPresupuestarias($planificacionId: UUID!) {
+    alertasPresupuestarias(planificacionId: $planificacionId) {
+      partidaId codigo nombre tipoAlerta mensaje
+    }
+  }
+`
+
+export const REGISTRAR_MODIFICACION = `
+  mutation RegistrarModificacion($data: RegistrarModificacionInput!) {
+    registrarModificacionPresupuestaria(data: $data) {
+      id tipo importe fecha motivo
+    }
+  }
+`
+
+export const ESTABLECER_CONTROL_DISPONIBILIDAD = `
+  mutation EstablecerControl($planificacionId: UUID!, $activo: Boolean!) {
+    establecerControlDisponibilidad(planificacionId: $planificacionId, activo: $activo) {
+      id controlDisponibilidad
+    }
+  }
+`
+
+// ── FASE 3: clonar, prórroga, comparativa, liquidación ────────────────────────
+
+export const GET_COMPARATIVA_INTERANUAL = `
+  query ComparativaInteranual($ejercicio: Int!) {
+    comparativaInteranual(ejercicio: $ejercicio) {
+      codigo nombre tipo importeActual importeAnterior variacion variacionPorcentaje
+    }
+  }
+`
+
+export const GET_LIQUIDACION = `
+  query LiquidacionPresupuestaria($ejercicio: Int!) {
+    liquidacionPresupuestaria(ejercicio: $ejercicio) {
+      ejercicio existe
+      ingresosPrevistos ingresosEjecutados gastosPrevistos gastosEjecutados
+      resultadoPrevisto resultadoEjecutado gradoEjecucionGastos
+    }
+  }
+`
+
+export const CLONAR_PRESUPUESTO = `
+  mutation ClonarPresupuesto($ejercicioOrigen: Int!, $ejercicioNuevo: Int!, $nombre: String) {
+    clonarPresupuesto(ejercicioOrigen: $ejercicioOrigen, ejercicioNuevo: $ejercicioNuevo, nombre: $nombre) {
+      id ejercicio nombre estadoId
+    }
+  }
+`
+
+export const PRORROGAR_PRESUPUESTO = `
+  mutation ProrrogarPresupuesto($ejercicioOrigen: Int!, $ejercicioNuevo: Int!) {
+    prorrogarPresupuesto(ejercicioOrigen: $ejercicioOrigen, ejercicioNuevo: $ejercicioNuevo) {
+      id ejercicio nombre estadoId esProrroga
+    }
   }
 `

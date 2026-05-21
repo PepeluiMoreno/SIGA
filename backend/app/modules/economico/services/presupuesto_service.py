@@ -18,6 +18,8 @@ from ..models.presupuesto import (
     PartidaPresupuestaria,
     CategoriaPartida,
     EstadoPlanificacion,
+    ModificacionPresupuestaria,
+    TipoModificacionPresupuestaria,
 )
 
 
@@ -111,6 +113,134 @@ class PresupuestoService:
         await self.session.refresh(planificacion)
         return planificacion
 
+    # ── Fase 3: clonado, prórroga, comparativa, liquidación ──────────────────
+
+    async def clonar_planificacion(
+        self,
+        ejercicio_origen: int,
+        ejercicio_nuevo: int,
+        nombre: Optional[str] = None,
+        es_prorroga: bool = False,
+    ) -> PlanificacionAnual:
+        """Crea el presupuesto de un ejercicio copiando las partidas de otro.
+
+        Las partidas se copian con su importe presupuestado como punto de partida; el
+        ejecutado y comprometido arrancan a cero. El nuevo nace en BORRADOR.
+        Si es_prorroga=True, queda marcado como prórroga del ejercicio origen.
+        """
+        origen = await self.obtener_planificacion_por_ejercicio(ejercicio_origen)
+        if not origen:
+            raise ValueError(f"No existe presupuesto del ejercicio {ejercicio_origen} para copiar")
+        if await self.obtener_planificacion_por_ejercicio(ejercicio_nuevo):
+            raise ValueError(f"Ya existe un presupuesto para el ejercicio {ejercicio_nuevo}")
+
+        estado_borrador = await self._estado_por_codigo(ESTADO_BORRADOR)
+        if not estado_borrador:
+            raise ValueError("No está configurado el estado BORRADOR")
+
+        nuevo = PlanificacionAnual(
+            ejercicio=ejercicio_nuevo,
+            nombre=nombre or (f"Prórroga {ejercicio_nuevo}" if es_prorroga else f"Presupuesto {ejercicio_nuevo}"),
+            descripcion=origen.descripcion,
+            objetivos=origen.objetivos,
+            estado_id=estado_borrador.id,
+            es_prorroga=es_prorroga,
+            ejercicio_origen_prorroga=ejercicio_origen if es_prorroga else None,
+        )
+        self.session.add(nuevo)
+        await self.session.commit()
+        await self.session.refresh(nuevo)
+
+        # Copiar las partidas (importe presupuestado como base; ejecución a cero)
+        partidas_origen = await self.listar_partidas(origen.id)
+        for po in partidas_origen:
+            self.session.add(PartidaPresupuestaria(
+                planificacion_id=nuevo.id,
+                ejercicio=ejercicio_nuevo,
+                codigo=f"{ejercicio_nuevo}-{po.codigo.split('-', 1)[-1]}" if "-" in po.codigo else f"{ejercicio_nuevo}-{po.codigo}",
+                nombre=po.nombre,
+                tipo=po.tipo,
+                importe_presupuestado=po.importe_presupuestado,
+                categoria_id=po.categoria_id,
+                actividad_id=po.actividad_id,
+                campania_id=po.campania_id,
+                descripcion=po.descripcion,
+            ))
+        await self.session.commit()
+        await self._recalcular_total(nuevo.id)
+        return nuevo
+
+    async def prorrogar(self, ejercicio_origen: int, ejercicio_nuevo: int) -> PlanificacionAnual:
+        """Prorroga el presupuesto del ejercicio anterior al nuevo (caso especial de clonado).
+
+        Se usa cuando el presupuesto del nuevo ejercicio no se aprueba a tiempo: rige el
+        anterior hasta que se apruebe el definitivo.
+        """
+        origen = await self.obtener_planificacion_por_ejercicio(ejercicio_origen)
+        if not origen:
+            raise ValueError(f"No existe presupuesto del ejercicio {ejercicio_origen} para prorrogar")
+        codigo_estado = await self._codigo_de_estado(origen.estado_id)
+        if codigo_estado not in (ESTADO_APROBADO, ESTADO_EN_EJECUCION, ESTADO_CERRADO):
+            raise ValueError("Solo se puede prorrogar un presupuesto que llegó a aprobarse")
+        return await self.clonar_planificacion(
+            ejercicio_origen, ejercicio_nuevo, es_prorroga=True
+        )
+
+    async def comparativa_interanual(self, ejercicio: int) -> List[dict]:
+        """Compara las partidas de un ejercicio con las del anterior, emparejadas por
+        categoría + nombre. Devuelve filas con importe de ambos años y variación."""
+        actual = await self.obtener_planificacion_por_ejercicio(ejercicio)
+        anterior = await self.obtener_planificacion_por_ejercicio(ejercicio - 1)
+        if not actual:
+            return []
+
+        partidas_act = await self.listar_partidas(actual.id)
+        partidas_ant = await self.listar_partidas(anterior.id) if anterior else []
+
+        def clave(p):
+            return (p.tipo, (p.nombre or "").strip().lower())
+        mapa_ant = {clave(p): p for p in partidas_ant}
+
+        filas = []
+        for p in partidas_act:
+            ant = mapa_ant.get(clave(p))
+            imp_act = float(p.importe_presupuestado or 0)
+            imp_ant = float(ant.importe_presupuestado or 0) if ant else 0.0
+            variacion = imp_act - imp_ant
+            pct = (variacion / imp_ant * 100) if imp_ant else None
+            filas.append({
+                "codigo": p.codigo, "nombre": p.nombre, "tipo": p.tipo,
+                "importe_actual": imp_act, "importe_anterior": imp_ant,
+                "variacion": variacion,
+                "variacion_porcentaje": round(pct, 1) if pct is not None else None,
+            })
+        return filas
+
+    async def liquidacion_presupuestaria(self, ejercicio: int) -> dict:
+        """Liquidación del presupuesto de un ejercicio (previsto vs ejecutado), lista para
+        incorporar a la Memoria de cuentas anuales. Resumen global y por categoría."""
+        plan = await self.obtener_planificacion_por_ejercicio(ejercicio)
+        if not plan:
+            return {"ejercicio": ejercicio, "existe": False}
+
+        partidas = await self.listar_partidas(plan.id)
+        ingresos_prev = sum((p.importe_presupuestado for p in partidas if p.tipo == "INGRESO"), Decimal("0"))
+        ingresos_ejec = sum((p.importe_ejecutado for p in partidas if p.tipo == "INGRESO"), Decimal("0"))
+        gastos_prev = sum((p.importe_presupuestado for p in partidas if p.tipo == "GASTO"), Decimal("0"))
+        gastos_ejec = sum((p.importe_ejecutado for p in partidas if p.tipo == "GASTO"), Decimal("0"))
+
+        return {
+            "ejercicio": ejercicio,
+            "existe": True,
+            "ingresos_previstos": float(ingresos_prev),
+            "ingresos_ejecutados": float(ingresos_ejec),
+            "gastos_previstos": float(gastos_prev),
+            "gastos_ejecutados": float(gastos_ejec),
+            "resultado_previsto": float(ingresos_prev - gastos_prev),
+            "resultado_ejecutado": float(ingresos_ejec - gastos_ejec),
+            "grado_ejecucion_gastos": round(float(gastos_ejec / gastos_prev * 100), 1) if gastos_prev else 0.0,
+        }
+
     async def actualizar_planificacion(self, planificacion_id: UUID, **kwargs) -> PlanificacionAnual:
         plan = await self.obtener_planificacion(planificacion_id)
         if not plan:
@@ -149,6 +279,12 @@ class PresupuestoService:
         plan.estado_id = estado_destino.id
         if codigo_destino == ESTADO_APROBADO:
             plan.fecha_aprobacion = date.today()
+            # Congelar el presupuesto inicial: el vigente de cada partida se copia al inicial.
+            # A partir de aquí, los cambios solo vía modificaciones presupuestarias.
+            partidas = await self.listar_partidas(planificacion_id)
+            for p in partidas:
+                p.importe_inicial = p.importe_presupuestado
+                self.session.add(p)
         self.session.add(plan)
         await self.session.commit()
         await self.session.refresh(plan)
@@ -301,8 +437,13 @@ class PresupuestoService:
 
         Busca la partida del presupuesto en ejecución cuya actividad/campaña coincida.
         Si no hay partida afecta, no hace nada (el apunte simplemente no imputa a presupuesto).
+        Tras imputar, dispara el aviso de desviación si la partida queda desviada
+        (control blando: avisa, no bloquea).
         """
-        return await self._ajustar_ejecucion(importe, actividad_id, campania_id)
+        partida = await self._ajustar_ejecucion(importe, actividad_id, campania_id)
+        if partida is not None:
+            await self.avisar_desviacion(partida)
+        return partida
 
     async def revertir_ejecucion(
         self,
@@ -347,6 +488,227 @@ class PresupuestoService:
         await self.session.commit()
         await self.session.refresh(partida)
         return partida
+
+    # ── Modificaciones presupuestarias (Fase 2) ─────────────────────────────
+
+    async def _obtener_partida(self, partida_id: UUID) -> Optional[PartidaPresupuestaria]:
+        result = await self.session.execute(
+            select(PartidaPresupuestaria).where(PartidaPresupuestaria.id == partida_id)
+        )
+        return result.scalars().first()
+
+    async def listar_modificaciones(self, planificacion_id: UUID) -> List[ModificacionPresupuestaria]:
+        result = await self.session.execute(
+            select(ModificacionPresupuestaria)
+            .where(
+                and_(
+                    ModificacionPresupuestaria.planificacion_id == planificacion_id,
+                    ModificacionPresupuestaria.eliminado == False,
+                )
+            )
+            .order_by(ModificacionPresupuestaria.fecha.desc())
+        )
+        return list(result.scalars().all())
+
+    async def registrar_modificacion(
+        self,
+        planificacion_id: UUID,
+        tipo: TipoModificacionPresupuestaria,
+        partida_destino_id: UUID,
+        importe: Decimal,
+        motivo: str,
+        partida_origen_id: Optional[UUID] = None,
+        registrada_por_id: Optional[UUID] = None,
+    ) -> ModificacionPresupuestaria:
+        """Registra una modificación y ajusta el importe vigente de las partidas.
+
+        - TRANSFERENCIA: resta de origen, suma a destino (requiere partida_origen_id).
+          El presupuesto global no cambia (suma cero).
+        - AMPLIACION / SUPLEMENTO: suma a destino. El presupuesto global crece.
+
+        Solo sobre presupuestos APROBADO o EN_EJECUCION (el borrador se edita directo).
+        """
+        if importe is None or importe <= Decimal("0"):
+            raise ValueError("El importe de la modificación debe ser positivo")
+        if not motivo or not motivo.strip():
+            raise ValueError("La modificación requiere un motivo")
+
+        plan = await self.obtener_planificacion(planificacion_id)
+        if not plan:
+            raise ValueError(f"Planificación {planificacion_id} no encontrada")
+        codigo_estado = await self._codigo_de_estado(plan.estado_id)
+        if codigo_estado not in (ESTADO_APROBADO, ESTADO_EN_EJECUCION):
+            raise ValueError(
+                "Las modificaciones presupuestarias solo aplican a presupuestos aprobados "
+                "o en ejecución. En borrador, edita las partidas directamente."
+            )
+
+        destino = await self._obtener_partida(partida_destino_id)
+        if not destino:
+            raise ValueError("Partida de destino no encontrada")
+
+        origen = None
+        if tipo == TipoModificacionPresupuestaria.TRANSFERENCIA:
+            if not partida_origen_id:
+                raise ValueError("Una transferencia requiere partida de origen")
+            origen = await self._obtener_partida(partida_origen_id)
+            if not origen:
+                raise ValueError("Partida de origen no encontrada")
+            if origen.id == destino.id:
+                raise ValueError("Origen y destino no pueden ser la misma partida")
+            if importe > origen.saldo_disponible_ejecucion:
+                raise ValueError(
+                    "La transferencia supera el disponible de la partida de origen "
+                    f"({float(origen.saldo_disponible_ejecucion):.2f} €)"
+                )
+            origen.importe_presupuestado -= importe
+            self.session.add(origen)
+
+        destino.importe_presupuestado += importe
+        self.session.add(destino)
+
+        modificacion = ModificacionPresupuestaria(
+            planificacion_id=planificacion_id,
+            tipo=tipo,
+            partida_destino_id=partida_destino_id,
+            partida_origen_id=partida_origen_id if origen else None,
+            importe=importe,
+            motivo=motivo.strip(),
+            registrada_por_id=registrada_por_id,
+        )
+        self.session.add(modificacion)
+        await self.session.commit()
+        await self.session.refresh(modificacion)
+        await self._recalcular_total(planificacion_id)
+        return modificacion
+
+    # ── Alertas (Fase 2) ─────────────────────────────────────────────────────
+
+    async def alertas(self, planificacion_id: UUID) -> List[dict]:
+        """Devuelve las partidas con alerta: sobreejecutadas o agotadas."""
+        partidas = await self.listar_partidas(planificacion_id)
+        salida = []
+        for p in partidas:
+            if p.esta_sobreejecutada:
+                salida.append({
+                    "partida_id": str(p.id), "codigo": p.codigo, "nombre": p.nombre,
+                    "tipo_alerta": "SOBREEJECUTADA",
+                    "mensaje": f"Ejecutado {float(p.importe_ejecutado):.2f} € sobre "
+                               f"{float(p.importe_presupuestado):.2f} € presupuestados",
+                })
+            elif p.esta_agotada:
+                salida.append({
+                    "partida_id": str(p.id), "codigo": p.codigo, "nombre": p.nombre,
+                    "tipo_alerta": "AGOTADA",
+                    "mensaje": "Presupuesto vigente totalmente consumido",
+                })
+        return salida
+
+    # ── Aviso de desviación presupuestaria (Fase 2 — enganche preparado) ──────
+    #
+    # PENDIENTE DE CONEXIÓN: requiere el sistema de notificaciones del frontend
+    # (rama feature/notificaciones), aún no construido. Este método ya resuelve
+    # QUÉ avisar y A QUIÉN (usuarios con permiso ECO_PRESUPUESTO_APROBAR), pero el
+    # envío real está desactivado tras el flag `_NOTIFICACIONES_ACTIVAS`. Cuando el
+    # sistema de notificaciones exista, basta con poner el flag a True (y crear el
+    # tipo de notificación 'PRESUPUESTO_DESVIACION' en su seed). No hay que tocar la
+    # lógica de detección ni el punto de llamada en tesorería.
+
+    _NOTIFICACIONES_ACTIVAS = False  # se activará con la rama feature/notificaciones
+
+    async def _usuarios_control_presupuestario(self) -> List[UUID]:
+        """Resuelve los usuarios con permiso de control presupuestario
+        (ECO_PRESUPUESTO_APROBAR), destinatarios del aviso de desviación."""
+        from app.modules.acceso.models.usuario import Usuario, UsuarioRol
+        from app.modules.acceso.models.rol_transaccion import RolTransaccion
+        from app.modules.acceso.models.transaccion import Transaccion
+
+        result = await self.session.execute(
+            select(UsuarioRol.usuario_id)
+            .join(RolTransaccion, RolTransaccion.rol_id == UsuarioRol.rol_id)
+            .join(Transaccion, Transaccion.id == RolTransaccion.transaccion_id)
+            .where(Transaccion.codigo == "ECO_PRESUPUESTO_APROBAR")
+            .distinct()
+        )
+        return [row[0] for row in result.all()]
+
+    async def avisar_desviacion(self, partida: PartidaPresupuestaria) -> None:
+        """Avisa a los responsables de control presupuestario de una desviación.
+
+        Control BLANDO: nunca bloquea nada; solo notifica para que el responsable
+        decida si tramita una modificación presupuestaria. Hoy preparado y desactivado.
+        """
+        if not partida or not (partida.esta_sobreejecutada or partida.esta_agotada):
+            return
+
+        titulo = "Desviación presupuestaria"
+        estado = "sobreejecutada" if partida.esta_sobreejecutada else "agotada"
+        mensaje = (
+            f"La partida «{partida.nombre}» ({partida.codigo}) está {estado}: "
+            f"ejecutado {float(partida.importe_ejecutado):.2f} € sobre "
+            f"{float(partida.importe_presupuestado):.2f} € vigentes. "
+            f"Valora si procede una modificación presupuestaria."
+        )
+
+        if not self._NOTIFICACIONES_ACTIVAS:
+            # Enganche preparado: cuando exista el sistema de notificaciones, activar.
+            return
+
+        # — Código listo para cuando _NOTIFICACIONES_ACTIVAS = True —
+        from app.infrastructure.services.notificacion_service import NotificacionService
+        destinatarios = await self._usuarios_control_presupuestario()
+        if not destinatarios:
+            return
+        notif = NotificacionService(self.session)
+        for usuario_id in destinatarios:
+            try:
+                await notif.crear_notificacion(
+                    tipo_codigo="PRESUPUESTO_DESVIACION",
+                    usuario_id=usuario_id,
+                    titulo=titulo,
+                    mensaje=mensaje,
+                    canal="INAPP",
+                    entidad_tipo="partida_presupuestaria",
+                    entidad_id=str(partida.id),
+                )
+            except Exception:
+                pass  # un fallo de aviso nunca afecta al registro del gasto
+
+    # ── Control de disponibilidad (Fase 2) ───────────────────────────────────
+
+    async def comprobar_disponibilidad(
+        self, importe: Decimal, actividad_id: Optional[UUID] = None,
+        campania_id: Optional[UUID] = None,
+    ) -> dict:
+        """Comprueba si un gasto cabe en el disponible de su partida afecta.
+
+        Devuelve {ok, bloquea, disponible, mensaje}. `bloquea` es True solo si la
+        planificación tiene control_disponibilidad activo y el gasto excede el disponible.
+        Si no hay partida afecta, ok=True (no aplica).
+        """
+        if not actividad_id and not campania_id:
+            return {"ok": True, "bloquea": False, "disponible": None, "mensaje": None}
+
+        query = select(PartidaPresupuestaria).where(PartidaPresupuestaria.eliminado == False)
+        query = query.where(
+            PartidaPresupuestaria.actividad_id == actividad_id if actividad_id
+            else PartidaPresupuestaria.campania_id == campania_id
+        )
+        partida = (await self.session.execute(query)).scalars().first()
+        if not partida:
+            return {"ok": True, "bloquea": False, "disponible": None, "mensaje": None}
+
+        disponible = partida.saldo_disponible_ejecucion
+        if importe <= disponible:
+            return {"ok": True, "bloquea": False, "disponible": float(disponible), "mensaje": None}
+
+        plan = await self.obtener_planificacion(partida.planificacion_id) if partida.planificacion_id else None
+        bloquea = bool(plan and plan.control_disponibilidad)
+        mensaje = (
+            f"El gasto ({float(importe):.2f} €) supera el disponible de la partida "
+            f"'{partida.nombre}' ({float(disponible):.2f} €)."
+        )
+        return {"ok": False, "bloquea": bloquea, "disponible": float(disponible), "mensaje": mensaje}
 
     # ── Informe de desviaciones ─────────────────────────────────────────────
 

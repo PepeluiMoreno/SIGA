@@ -14,6 +14,17 @@
           Crear presupuesto {{ nuevoEjercicio }}
         </button>
       </div>
+      <div v-if="puedeCrear" class="mt-3 text-sm text-gray-500">
+        o
+        <button @click="clonarDelAnterior" class="text-purple-600 hover:underline ml-1">
+          partir del presupuesto de {{ nuevoEjercicio - 1 }}
+        </button>
+        <span v-if="puedeAprobar"> ·
+          <button @click="prorrogarDelAnterior" class="text-purple-600 hover:underline">
+            prorrogar el de {{ nuevoEjercicio - 1 }}
+          </button>
+        </span>
+      </div>
     </div>
 
     <AccordionGroup v-else>
@@ -24,6 +35,10 @@
             <h2 class="text-sm font-semibold text-slate-800">Presupuesto {{ planificacion.ejercicio }}</h2>
             <span class="text-xs px-2 py-0.5 rounded-full text-white" :style="{ backgroundColor: estadoColor }">
               {{ estadoNombre }}
+            </span>
+            <span v-if="planificacion.esProrroga"
+              class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+              Prórroga de {{ planificacion.ejercicioOrigenProrroga }}
             </span>
           </div>
         </template>
@@ -73,6 +88,16 @@
           <p v-if="planificacion.fechaAprobacion" class="text-xs text-gray-400 mt-2">
             Aprobado el {{ planificacion.fechaAprobacion }}
           </p>
+
+          <!-- Control de disponibilidad (aprobado/ejecución) -->
+          <label v-if="esAprobadoOEjecucion && puedeAprobar"
+            class="flex items-center gap-2 mt-3 cursor-pointer select-none text-sm text-gray-600">
+            <input type="checkbox" :checked="planificacion.controlDisponibilidad"
+              @change="toggleControl($event.target.checked)"
+              class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
+            Avisar al control presupuestario cuando una partida se desvíe
+            <span class="text-xs text-gray-400">(no bloquea el gasto)</span>
+          </label>
         </div>
       </AccordionPanel>
 
@@ -99,6 +124,29 @@
           @crear="crearPartida"
           @actualizar="actualizarPartida"
           @eliminar="eliminarPartida"
+        />
+      </AccordionPanel>
+
+      <!-- Panel: Alertas (solo si hay) -->
+      <AccordionPanel v-if="esAprobadoOEjecucion && alertas.length" title="Alertas" :count="alertas.length" :default-open="true">
+        <div class="px-5 py-4 space-y-2">
+          <div v-for="a in alertas" :key="a.partidaId"
+            class="flex items-start gap-2 text-sm rounded-lg px-3 py-2"
+            :class="a.tipoAlerta === 'SOBREEJECUTADA' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'">
+            <span class="font-medium">{{ a.codigo }} — {{ a.nombre }}:</span>
+            <span>{{ a.mensaje }}</span>
+          </div>
+        </div>
+      </AccordionPanel>
+
+      <!-- Panel: Modificaciones presupuestarias (solo aprobado/ejecución) -->
+      <AccordionPanel v-if="esAprobadoOEjecucion" title="Modificaciones presupuestarias"
+        :count="modificaciones.length" :default-open="false">
+        <ModificacionesPresupuestarias
+          :modificaciones="modificaciones"
+          :partidas="partidas"
+          :puede-modificar="puedeAprobar && esAprobadoOEjecucion"
+          @registrar="registrarModificacion"
         />
       </AccordionPanel>
 
@@ -144,6 +192,74 @@
           </div>
         </div>
       </AccordionPanel>
+
+      <!-- Panel: Comparativa interanual -->
+      <AccordionPanel title="Comparativa interanual" :default-open="false">
+        <div class="px-5 py-4">
+          <p class="text-sm text-gray-500 mb-3">
+            Partidas de {{ planificacion.ejercicio }} frente a {{ planificacion.ejercicio - 1 }}.
+          </p>
+          <div v-if="!comparativa.length" class="text-center text-gray-400 py-6 text-sm">
+            No hay presupuesto del ejercicio anterior para comparar.
+          </div>
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 text-xs text-gray-500">
+                <tr>
+                  <th class="px-3 py-2 text-left">Partida</th>
+                  <th class="px-3 py-2 text-right">{{ planificacion.ejercicio - 1 }}</th>
+                  <th class="px-3 py-2 text-right">{{ planificacion.ejercicio }}</th>
+                  <th class="px-3 py-2 text-right">Variación</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr v-for="c in comparativa" :key="c.codigo" class="hover:bg-gray-50">
+                  <td class="px-3 py-2">
+                    <span class="text-xs text-gray-400 font-mono mr-1">{{ c.codigo }}</span>{{ c.nombre }}
+                  </td>
+                  <td class="px-3 py-2 text-right text-gray-500">{{ eur(c.importeAnterior) }}</td>
+                  <td class="px-3 py-2 text-right">{{ eur(c.importeActual) }}</td>
+                  <td class="px-3 py-2 text-right" :class="c.variacion > 0 ? 'text-green-600' : c.variacion < 0 ? 'text-red-600' : 'text-gray-400'">
+                    {{ c.variacion >= 0 ? '+' : '' }}{{ eur(c.variacion) }}
+                    <span v-if="c.variacionPorcentaje !== null" class="text-xs">({{ c.variacionPorcentaje >= 0 ? '+' : '' }}{{ c.variacionPorcentaje }}%)</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </AccordionPanel>
+
+      <!-- Panel: Liquidación (para la Memoria de cuentas anuales) -->
+      <AccordionPanel title="Liquidación del presupuesto" :default-open="false">
+        <div class="px-5 py-4">
+          <p class="text-sm text-gray-500 mb-3">
+            Resumen previsto frente a ejecutado del ejercicio, para incorporar a la Memoria
+            de las cuentas anuales.
+          </p>
+          <div v-if="liquidacion" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="bg-gray-50 rounded-lg p-3">
+              <p class="text-xs text-gray-500 mb-1">Ingresos</p>
+              <p class="text-sm">Previsto: {{ eur(liquidacion.ingresosPrevistos) }}</p>
+              <p class="text-sm">Ejecutado: <strong>{{ eur(liquidacion.ingresosEjecutados) }}</strong></p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3">
+              <p class="text-xs text-gray-500 mb-1">Gastos</p>
+              <p class="text-sm">Previsto: {{ eur(liquidacion.gastosPrevistos) }}</p>
+              <p class="text-sm">Ejecutado: <strong>{{ eur(liquidacion.gastosEjecutados) }}</strong></p>
+            </div>
+            <div class="bg-blue-50 rounded-lg p-3">
+              <p class="text-xs text-blue-700 mb-1">Resultado</p>
+              <p class="text-sm">Previsto: {{ eur(liquidacion.resultadoPrevisto) }}</p>
+              <p class="text-sm">Ejecutado: <strong>{{ eur(liquidacion.resultadoEjecutado) }}</strong></p>
+            </div>
+            <div class="bg-purple-50 rounded-lg p-3 flex flex-col justify-center">
+              <p class="text-xs text-purple-700 mb-1">Grado de ejecución de gastos</p>
+              <p class="text-2xl font-semibold text-purple-800">{{ liquidacion.gradoEjecucionGastos }}%</p>
+            </div>
+          </div>
+        </div>
+      </AccordionPanel>
     </AccordionGroup>
   </AppLayout>
 </template>
@@ -155,6 +271,7 @@ import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
 import LoadSpinner from '@/components/common/LoadSpinner.vue'
 import PartidasPorCategoria from '@/modules/economico/components/PartidasPorCategoria.vue'
+import ModificacionesPresupuestarias from '@/modules/economico/components/ModificacionesPresupuestarias.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import { usePermisos } from '@/composables/usePermisos.js'
 import {
@@ -162,6 +279,8 @@ import {
   CREAR_PLANIFICACION, CREAR_PARTIDA, ACTUALIZAR_PARTIDA, ELIMINAR_PARTIDA,
   PROPONER_PRESUPUESTO, APROBAR_PRESUPUESTO, INICIAR_EJECUCION_PRESUPUESTO,
   CERRAR_PRESUPUESTO, DEVOLVER_A_BORRADOR,
+  GET_MODIFICACIONES, GET_ALERTAS, REGISTRAR_MODIFICACION, ESTABLECER_CONTROL_DISPONIBILIDAD,
+  GET_COMPARATIVA_INTERANUAL, GET_LIQUIDACION, CLONAR_PRESUPUESTO, PRORROGAR_PRESUPUESTO,
 } from '@/graphql/queries/presupuestos.js'
 
 const { query, mutation } = useGraphQL()
@@ -178,6 +297,10 @@ const partidas = ref([])
 const desviaciones = ref([])
 const estados = ref([])
 const categorias = ref([])
+const modificaciones = ref([])
+const alertas = ref([])
+const comparativa = ref([])
+const liquidacion = ref(null)
 
 const ejercicioActual = new Date().getFullYear()
 const nuevoEjercicio = ref(ejercicioActual)
@@ -191,6 +314,7 @@ const estadoNombre = computed(() => estadoActual.value?.nombre ?? '—')
 const estadoColor = computed(() => estadoActual.value?.color ?? '#9ca3af')
 // Solo se editan partidas mientras el presupuesto no está aprobado
 const editable = computed(() => puedeGestionar.value && ['BORRADOR', 'PROPUESTO'].includes(estadoCodigo.value))
+const esAprobadoOEjecucion = computed(() => ['APROBADO', 'EN_EJECUCION'].includes(estadoCodigo.value))
 
 const eur = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0)
 
@@ -214,12 +338,23 @@ const cargar = async () => {
 }
 
 const cargarDetalle = async () => {
-  const [dataPart, dataDesv] = await Promise.all([
-    query(GET_PARTIDAS, { planificacionId: planificacion.value.id }),
-    query(GET_INFORME_DESVIACIONES, { planificacionId: planificacion.value.id }),
+  const id = planificacion.value.id
+  const ej = planificacion.value.ejercicio
+  const [dataPart, dataDesv, dataMod, dataAlert, dataComp, dataLiq] = await Promise.all([
+    query(GET_PARTIDAS, { planificacionId: id }),
+    query(GET_INFORME_DESVIACIONES, { planificacionId: id }),
+    query(GET_MODIFICACIONES, { planificacionId: id }),
+    query(GET_ALERTAS, { planificacionId: id }),
+    query(GET_COMPARATIVA_INTERANUAL, { ejercicio: ej }),
+    query(GET_LIQUIDACION, { ejercicio: ej }),
   ])
   partidas.value = dataPart?.partidasPresupuestarias ?? []
   desviaciones.value = dataDesv?.informeDesviaciones ?? []
+  modificaciones.value = dataMod?.modificacionesPresupuestarias ?? []
+  alertas.value = dataAlert?.alertasPresupuestarias ?? []
+  comparativa.value = dataComp?.comparativaInteranual ?? []
+  const liq = dataLiq?.liquidacionPresupuestaria
+  liquidacion.value = liq?.existe ? liq : null
 }
 
 const recargarPlan = async () => {
@@ -272,6 +407,49 @@ const transicion = async (cual) => {
   try {
     await mutation(mut, { planificacionId: planificacion.value.id })
     await recargarPlan()
+  } catch (e) {
+    console.error(e?.message || e)
+  } finally {
+    ocupado.value = false
+  }
+}
+
+const registrarModificacion = async (datos) => {
+  await mutation(REGISTRAR_MODIFICACION, {
+    data: { planificacionId: planificacion.value.id, ...datos },
+  })
+  await cargarDetalle()
+  await recargarPlan()
+}
+
+const toggleControl = async (activo) => {
+  await mutation(ESTABLECER_CONTROL_DISPONIBILIDAD, {
+    planificacionId: planificacion.value.id, activo,
+  })
+  await recargarPlan()
+}
+
+const clonarDelAnterior = async () => {
+  ocupado.value = true
+  try {
+    await mutation(CLONAR_PRESUPUESTO, {
+      ejercicioOrigen: nuevoEjercicio.value - 1, ejercicioNuevo: nuevoEjercicio.value,
+    })
+    await cargar()
+  } catch (e) {
+    console.error(e?.message || e)
+  } finally {
+    ocupado.value = false
+  }
+}
+
+const prorrogarDelAnterior = async () => {
+  ocupado.value = true
+  try {
+    await mutation(PRORROGAR_PRESUPUESTO, {
+      ejercicioOrigen: nuevoEjercicio.value - 1, ejercicioNuevo: nuevoEjercicio.value,
+    })
+    await cargar()
   } catch (e) {
     console.error(e?.message || e)
   } finally {
