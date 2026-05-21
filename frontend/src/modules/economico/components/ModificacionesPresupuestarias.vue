@@ -45,7 +45,7 @@
           <label class="block text-xs font-medium text-gray-600 mb-1">Motivo</label>
           <input v-model="form.motivo" type="text" placeholder="Justificación de la modificación" class="input-sm w-full" />
         </div>
-        <p v-if="errorForm" class="text-xs text-red-600">{{ errorForm }}</p>
+        <ErrorAlert v-if="errorForm" :message="errorForm" />
         <div class="flex justify-end gap-2">
           <button @click="mostrarForm = false" class="text-sm text-gray-500 hover:underline">Cancelar</button>
           <button @click="registrar" :disabled="guardando"
@@ -80,6 +80,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref } from 'vue'
 
 const props = defineProps({

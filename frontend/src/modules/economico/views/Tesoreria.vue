@@ -329,7 +329,7 @@
             <textarea v-model="formMovimiento.observaciones" rows="2" class="input" />
           </div>
 
-          <p v-if="formMovimiento.error" class="text-red-600 text-sm bg-red-50 p-2 rounded">{{ formMovimiento.error }}</p>
+          <ErrorAlert v-if="formMovimiento.error" :message="formMovimiento.error" />
           <p class="text-xs text-slate-500">
             Se generan automáticamente el apunte de caja y el asiento contable correspondiente.
           </p>
@@ -361,6 +361,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted, h } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'

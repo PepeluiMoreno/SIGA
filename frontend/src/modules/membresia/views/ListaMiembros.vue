@@ -205,6 +205,7 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
 import { ref, onMounted, computed, watch } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
@@ -216,6 +217,7 @@ import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_MIEMBROS, GET_AGRUPACIONES, GET_TIPOS_MIEMBRO, GET_ESTADOS_MIEMBRO, GET_MOTIVOS_BAJA, GET_NOMBRAMIENTOS_ACTIVOS } from '@/graphql/queries/miembros.js'
 import AgrupacionCascada from '@/components/common/AgrupacionCascada.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
+const toast = useToast()
 const { loading, error, query, mutation } = useGraphQL()
 const orgConfig = useOrgConfigStore()
 const { tienePermiso } = usePermisos()
@@ -784,7 +786,7 @@ const exportarExcel = async () => {
     URL.revokeObjectURL(url)
   } catch (e) {
     console.error('Error exportando:', e)
-    alert(e?.response?.errors?.[0]?.message || 'No se pudo exportar el listado.')
+    toast.error(e?.response?.errors?.[0]?.message || 'No se pudo exportar el listado.')
   } finally {
     exportando.value = false
   }

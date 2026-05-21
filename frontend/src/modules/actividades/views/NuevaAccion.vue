@@ -165,7 +165,7 @@
       </div>
 
       <!-- Error -->
-      <div v-if="error" class="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{{ error }}</div>
+      <ErrorAlert v-if="error" :message="error" />
 
       <!-- Botones -->
       <div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
@@ -190,6 +190,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'

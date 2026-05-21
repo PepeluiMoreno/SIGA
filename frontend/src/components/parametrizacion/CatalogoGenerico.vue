@@ -370,9 +370,11 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
 import { ref, onMounted, watch } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { useGraphQL } from '@/composables/useGraphQL.js'
+const toast = useToast()
 
 const props = defineProps({
   titulo: { type: String, required: true },
@@ -487,7 +489,7 @@ const guardar = async () => {
     await cargarDatos()
   } catch (err) {
     console.error('Error guardando:', err)
-    alert('Error al guardar: ' + err.message)
+    toast.error('Error al guardar: ' + err.message)
   } finally {
     guardando.value = false
   }

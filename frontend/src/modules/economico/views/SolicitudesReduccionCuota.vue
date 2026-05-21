@@ -120,7 +120,7 @@
               placeholder="Indica por qué se rechaza la solicitud…"></textarea>
           </div>
 
-          <p v-if="error" class="text-red-600 text-sm bg-red-50 border border-red-200 px-3 py-2 rounded-lg">{{ error }}</p>
+          <ErrorAlert v-if="error" :message="error" />
         </div>
         <div class="flex justify-end gap-3 px-6 py-4 border-t border-slate-200">
           <button @click="cerrarDetalle"
@@ -154,6 +154,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted } from 'vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import { useGraphQL } from '@/composables/useGraphQL'

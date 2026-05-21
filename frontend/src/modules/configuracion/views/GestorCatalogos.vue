@@ -371,7 +371,7 @@
             </p>
           </div>
         </div>
-        <p v-if="errorEliminar" class="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 mb-4">{{ errorEliminar }}</p>
+        <ErrorAlert v-if="errorEliminar" :message="errorEliminar" />
         <p v-else class="text-sm text-gray-500 mb-5">
           Esta acción eliminará el registro permanentemente y no se puede deshacer.
         </p>
@@ -392,6 +392,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'

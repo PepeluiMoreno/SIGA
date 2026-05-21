@@ -42,14 +42,7 @@
 
     <template v-else-if="rol">
       <!-- Mensaje de éxito -->
-      <div
-        v-if="savedMsg"
-        class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 flex items-center gap-2"
-      >
-        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-        </svg>
-        {{ savedMsg }}
+              {{ savedMsg }}
       </div>
 
       <!-- TAB: FUNCIONALIDADES -->
@@ -322,11 +315,13 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
 import {
+const toast = useToast()
   GET_ROL_CON_FUNCIONALIDADES,
   GET_FUNCIONALIDADES_TODAS,
   ASIGNAR_FUNCIONALIDAD,
@@ -485,8 +480,7 @@ async function guardarFunc() {
       }),
     ])
     await cargar()
-    savedMsg.value = `Cambios guardados: ${pendingFuncAdd.value.length} añadidas, ${pendingFuncRemove.value.length} revocadas.`
-    setTimeout(() => { savedMsg.value = '' }, 4000)
+    toast.success(`Cambios guardados: ${pendingFuncAdd.value.length} añadidas, ${pendingFuncRemove.value.length} revocadas.`) => { savedMsg.value = '' }, 4000)
   } catch (err) {
     console.error('Error guardando funcionalidades:', err)
     error.value = err?.response?.errors?.[0]?.message || 'Error al guardar'

@@ -99,7 +99,7 @@
             </div>
           </div>
         </div>
-        <p v-if="error" class="text-red-600 text-sm mt-3">{{ error }}</p>
+        <ErrorAlert v-if="error" :message="error" />
         <div class="flex justify-end gap-3 mt-5">
           <button @click="modal = false" class="btn-secondary">Cancelar</button>
           <button @click="guardar" :disabled="guardando" class="btn-primary">
@@ -112,6 +112,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { useGraphQL } from '@/composables/useGraphQL'

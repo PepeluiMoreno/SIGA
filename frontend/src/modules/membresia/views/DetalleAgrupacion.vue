@@ -207,7 +207,7 @@
             <textarea v-model="modal.observaciones" rows="2" :class="inpTa"
               placeholder="Notas sobre el cargo…"></textarea>
           </div>
-          <p v-if="modal.error" class="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{{ modal.error }}</p>
+          <ErrorAlert v-if="modal.error" :message="modal.error" />
         </div>
         <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
           <button @click="modal.visible = false"
@@ -228,6 +228,8 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { useConfirm } from '@/composables/useConfirm'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import {
@@ -236,6 +238,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
+const confirmDialog = useConfirm()
 
 const route = useRoute()
 const agrupacionId = computed(() => route.params.id)
@@ -488,7 +491,7 @@ async function guardarRegistro() {
 }
 
 async function cesarRegistro(reg) {
-  if (!confirm(`¿Dar de baja a ${reg.miembro?.nombre} ${reg.miembro?.apellido1} en el cargo?`)) return
+  if (!(await confirmDialog({ titulo: '¿Confirmar acción?', mensaje: `¿Dar de baja a ${reg.miembro?.nombre} ${reg.miembro?.apellido1} en el cargo?`, variante: 'aviso' }))) return
   await executeMutation(
     `mutation CesarRegistro($data: HistorialNombramientoUpdateInput!) {
        actualizarHistorialNombramiento(data: $data) { id }

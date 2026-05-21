@@ -82,7 +82,7 @@
       {{ modo === 'PROPIO' ? 'Todavía no has presentado ningún gasto.' : 'No hay justificantes con los filtros aplicados.' }}
     </p>
 
-    <p v-if="error" class="text-red-600 text-sm bg-red-50 p-3 rounded-lg mt-4">{{ error }}</p>
+    <ErrorAlert v-if="error" :message="error" />
 
     <!-- Modal: presentar justificante -->
     <div v-if="modalPresentar" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" @click.self="modalPresentar = false">
@@ -194,7 +194,7 @@
             <label class="label">Observaciones</label>
             <textarea v-model="formPres.observaciones" class="input h-16" />
           </div>
-          <p v-if="formPres.error" class="text-red-600 text-sm bg-red-50 p-2 rounded">{{ formPres.error }}</p>
+          <ErrorAlert v-if="formPres.error" :message="formPres.error" />
         </div>
         <div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-2">
           <button @click="modalPresentar = false" class="btn-secondary text-sm">Cancelar</button>
@@ -359,7 +359,7 @@
               <input v-model="formPagar.referencia" class="input"
                      placeholder="Núm. transferencia, ticket, etc. (opcional)" />
             </div>
-            <p v-if="formPagar.error" class="text-red-600 text-xs bg-red-50 p-2 rounded">{{ formPagar.error }}</p>
+            <ErrorAlert v-if="formPagar.error" :message="formPagar.error" />
           </div>
         </div>
 
@@ -391,6 +391,8 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { useConfirm } from '@/composables/useConfirm'
 import { ref, computed, onMounted, watch } from 'vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import RowActions from '@/components/common/RowActions.vue'
@@ -411,6 +413,7 @@ import {
   GET_MIEMBROS_ELEGIBLES_JUSTIFICANTE,
 } from '@/graphql/queries/financiero'
 import { GET_CAMPANIAS } from '@/graphql/queries/campanias'
+const confirmDialog = useConfirm()
 
 const props = defineProps({
   // PROPIO: justificantes de un socio (autoservicio en Mis Datos).
@@ -747,7 +750,7 @@ const errMsg = (e, fallback = 'Error') => {
 const abrirDetalle = (j) => { justDetalle.value = j; modalPagar.value = false }
 
 const aceptar = async (j) => {
-  if (!confirm(`¿Aceptar el justificante ${j.numeroJustificante}?`)) return
+  if (!(await confirmDialog({ titulo: '¿Confirmar acción?', mensaje: `¿Aceptar el justificante ${j.numeroJustificante}?`, variante: 'aviso' }))) return
   ocupado.value = true
   try {
     await mutation(ACEPTAR_JUSTIFICANTE, { justificanteId: j.id, aceptadorId: miembroIdLogueado.value })
@@ -757,7 +760,7 @@ const aceptar = async (j) => {
 }
 
 const aprobar = async (j) => {
-  if (!confirm(`¿Aprobar el justificante ${j.numeroJustificante}?`)) return
+  if (!(await confirmDialog({ titulo: '¿Confirmar acción?', mensaje: `¿Aprobar el justificante ${j.numeroJustificante}?`, variante: 'aviso' }))) return
   ocupado.value = true
   try {
     await mutation(APROBAR_JUSTIFICANTE, { justificanteId: j.id, aprobadorId: miembroIdLogueado.value })

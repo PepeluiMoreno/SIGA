@@ -478,7 +478,7 @@
                 </label>
               </div>
             </div>
-            <div v-if="errorParticipacion" class="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{{ errorParticipacion }}</div>
+            <ErrorAlert v-if="errorParticipacion" :message="errorParticipacion" />
             <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
               <button type="button" @click="cancelarParticipacion"
                 class="h-10 px-4 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
@@ -710,6 +710,8 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
@@ -722,6 +724,7 @@ import AvatarImg from '@/components/common/AvatarImg.vue'
 import LoadSpinner from '@/components/common/LoadSpinner.vue'
 import { graphqlClient } from '@/graphql/client'
 import {
+const toast = useToast()
   GET_ACCION_BY_ID, ACTUALIZAR_ACCION, ELIMINAR_ACCION, SOFT_DELETE_ACCION,
   REGISTRAR_PARTICIPACION, ACTUALIZAR_PARTICIPACION, ELIMINAR_PARTICIPACION,
   CREAR_TAREA, ACTUALIZAR_TAREA, ELIMINAR_TAREA,
@@ -856,7 +859,7 @@ async function ejecutarTransicion(t) {
       await graphqlClient.request(TRANSICIONAR_ACTIVIDAD, { id: accion.value.id, estadoId: t.estado.id })
       await recargarAccion()
     } catch (e) {
-      alert(e?.response?.errors?.[0]?.message || 'Error en la transición')
+      toast.error(e?.response?.errors?.[0]?.message || 'Error en la transición')
     } finally {
       cargandoTransicion.value = false
     }
@@ -875,7 +878,7 @@ async function confirmarAprobacion() {
     modalAprobacion.value.visible = false
     await recargarAccion()
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error en la operación')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error en la operación')
   } finally {
     cargandoTransicion.value = false
   }
@@ -895,7 +898,7 @@ async function confirmarCierre() {
     modalCierre.value.visible = false
     await recargarAccion()
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error al cerrar')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error al cerrar')
   } finally {
     cargandoTransicion.value = false
   }
@@ -928,7 +931,7 @@ async function guardarValoracion() {
     await recargarAccion()
     editandoValoracion.value = false
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error guardando valoración')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error guardando valoración')
   }
 }
 
@@ -966,7 +969,7 @@ async function guardarEditAccion() {
     await recargarAccion()
     editandoAccion.value = false
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error guardando actividad')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error guardando actividad')
   }
 }
 
@@ -979,7 +982,7 @@ async function eliminarAccion({ hardDelete } = {}) {
     }
     router.push('/actividades')
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error eliminando actividad')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error eliminando actividad')
   }
 }
 
@@ -1018,7 +1021,7 @@ async function crearTarea() {
     await recargarAccion()
     formTareaNew.value = { ...emptyTareaForm(), visible: false, guardando: false }
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error creando tarea')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error creando tarea')
   } finally {
     formTareaNew.value.guardando = false
   }
@@ -1048,7 +1051,7 @@ async function guardarEditTarea(id) {
     await recargarAccion()
     editTareaId.value = null
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error guardando tarea')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error guardando tarea')
   }
 }
 
@@ -1057,7 +1060,7 @@ async function eliminarTarea(id) {
     await graphqlClient.request(ELIMINAR_TAREA, { id })
     await recargarAccion()
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error eliminando tarea')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error eliminando tarea')
   }
 }
 
@@ -1086,7 +1089,7 @@ async function guardarEditParticipacion(id) {
     await recargarAccion()
     editParticipacionId.value = null
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error guardando participación')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error guardando participación')
   }
 }
 
@@ -1095,7 +1098,7 @@ async function eliminarParticipacion(id) {
     await graphqlClient.request(ELIMINAR_PARTICIPACION, { id })
     await recargarAccion()
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error eliminando participación')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error eliminando participación')
   }
 }
 

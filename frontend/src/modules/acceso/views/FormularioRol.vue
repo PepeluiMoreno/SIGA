@@ -276,6 +276,7 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
@@ -284,6 +285,7 @@ import { graphqlClient } from '@/graphql/client.js'
 import { GET_ROLES, CREAR_ROL, ACTUALIZAR_ROL, GET_FUNCIONALIDADES_TODAS } from '@/graphql/queries/administracion.js'
 // GET_AGRUPACIONES_TERRITORIALES ya no se usa para niveles — los derivamos del config org
 import { CheckIcon, MagnifyingGlassIcon, ChevronDownIcon, ChevronRightIcon, InformationCircleIcon, ExclamationTriangleIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline'
+const toast = useToast()
 
 const route  = useRoute()
 const router = useRouter()
@@ -535,8 +537,7 @@ async function guardar() {
           ...(!rolOriginal.value.sistema && { codigo: form.codigo.toUpperCase() }),
         },
       })
-      guardadoOk.value = true
-      setTimeout(() => window.history.state?.back ? router.back() : router.push('/roles'), 1200)
+      toast.success('Cambios guardados correctamente') => window.history.state?.back ? router.back() : router.push('/roles'), 1200)
     } else {
       await graphqlClient.request(CREAR_ROL, {
         data: {

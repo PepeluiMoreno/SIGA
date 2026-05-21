@@ -195,7 +195,7 @@
           </div>
         </div>
 
-        <p v-if="errorConfirmar" class="text-red-600 text-sm">{{ errorConfirmar }}</p>
+        <ErrorAlert v-if="errorConfirmar" :message="errorConfirmar" />
 
         <div class="flex justify-between gap-2 pt-3 border-t border-slate-100">
           <button @click="paso = 'cargar'" class="btn-secondary">← Volver</button>
@@ -230,9 +230,12 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { useToast } from '@/composables/useToast'
 import { ref, computed } from 'vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
+const toast = useToast()
   PREVISUALIZAR_LIQUIDACION_REMESA,
   LIQUIDAR_REMESA,
 } from '@/graphql/queries/financiero'
@@ -325,7 +328,7 @@ const previsualizar = async () => {
     preview.value = data.previsualizarLiquidacionRemesa
     paso.value = 'preview'
   } catch (e) {
-    alert(e.message || 'Error al previsualizar')
+    toast.error(e.message || 'Error al previsualizar')
   } finally {
     cargando.value = false
   }

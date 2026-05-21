@@ -62,7 +62,7 @@
       No hay recibos con los filtros aplicados.
     </p>
 
-    <p v-if="error" class="text-red-600 text-sm bg-red-50 p-3 rounded-lg mt-4">{{ error }}</p>
+    <ErrorAlert v-if="error" :message="error" />
 
     <!-- Modal: emitir lote -->
     <div v-if="modalLote" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" @click.self="modalLote = false">
@@ -92,7 +92,7 @@
             <label class="label">Fecha vencimiento</label>
             <input type="date" v-model="formLote.fechaVencimiento" class="input" />
           </div>
-          <p v-if="formLote.error" class="text-red-600 text-sm bg-red-50 p-2 rounded">{{ formLote.error }}</p>
+          <ErrorAlert v-if="formLote.error" :message="formLote.error" />
         </div>
         <div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-2">
           <button @click="modalLote = false" class="btn-secondary text-sm">Cancelar</button>
@@ -196,7 +196,7 @@
               <input v-model="formCobrar.referencia" class="input"
                      placeholder="Núm. transferencia, ticket, etc. (opcional)" />
             </div>
-            <p v-if="formCobrar.error" class="text-red-600 text-xs bg-red-50 p-2 rounded">{{ formCobrar.error }}</p>
+            <ErrorAlert v-if="formCobrar.error" :message="formCobrar.error" />
             <p class="text-xs text-slate-500">
               Al confirmar se registra el cobro en el recibo y en la cuota, y se genera el apunte
               de caja con su asiento contable.
@@ -216,7 +216,7 @@
                 No hay plantillas configuradas para el módulo Económico. Crea una en Comunicación Interna.
               </p>
             </div>
-            <p v-if="formEmail.error" class="text-red-600 text-xs bg-red-50 p-2 rounded">{{ formEmail.error }}</p>
+            <ErrorAlert v-if="formEmail.error" :message="formEmail.error" />
           </div>
         </div>
         <div class="px-6 py-4 border-t border-slate-200 flex flex-wrap justify-end gap-2">
@@ -250,11 +250,14 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
+const toast = useToast()
   GET_RECIBOS,
   EMITIR_RECIBOS_LOTE,
   MARCAR_RECIBO_COBRADO,
@@ -508,7 +511,7 @@ const confirmarEmail = async () => {
     })
     modalEmail.value = false
     reciboDetalle.value = null
-    alert('Solicitud de envío registrada. El envío real se procesará por el módulo de Comunicación Interna.')
+    toast.error('Solicitud de envío registrada. El envío real se procesará por el módulo de Comunicación Interna.')
   } catch (e) {
     formEmail.value.error = e.message || 'Error al enviar'
   } finally { ocupado.value = false }

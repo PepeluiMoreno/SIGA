@@ -62,7 +62,7 @@
                 <option value="">— Seleccionar —</option>
                 <option v-for="t in tiposCampania" :key="t.id" :value="t.id">{{ t.nombre }}</option>
               </select>
-              <p v-if="errors.tipo_campania_id" class="mt-1 text-xs text-red-500">{{ errors.tipo_campania_id }}</p>
+              <ErrorAlert v-if="errors.tipo_campania_id" :message="errors.tipo_campania_id" />
             </div>
 
             <!-- Plantilla (si origen = plantilla) -->
@@ -123,7 +123,7 @@
               <input v-model="campania.nombre" type="text" :class="fieldInp('nombre')"
                 placeholder="Nombre de la campaña" maxlength="200" autofocus
                 @blur="validateField('nombre', campania.nombre, campania)" />
-              <p v-if="errors.nombre" class="mt-1 text-xs text-red-500">{{ errors.nombre }}</p>
+              <ErrorAlert v-if="errors.nombre" :message="errors.nombre" />
             </div>
             <div class="col-span-2">
               <label :class="lbl">Estado<span v-if="isEdit" class="text-red-400"> *</span></label>
@@ -140,7 +140,7 @@
                 <option value="">—</option>
                 <option v-for="e in estadosCampania" :key="e.id" :value="e.id">{{ e.nombre }}</option>
               </select>
-              <p v-if="errors.estado_campania_id" class="mt-1 text-xs text-red-500">{{ errors.estado_campania_id }}</p>
+              <ErrorAlert v-if="errors.estado_campania_id" :message="errors.estado_campania_id" />
             </div>
 
             <!-- Tipo (solo en modo edición; en creación está en "Punto de partida") -->
@@ -151,7 +151,7 @@
                 <option value="">— Seleccionar —</option>
                 <option v-for="t in tiposCampania" :key="t.id" :value="t.id">{{ t.nombre }}</option>
               </select>
-              <p v-if="errors.tipo_campania_id" class="mt-1 text-xs text-red-500">{{ errors.tipo_campania_id }}</p>
+              <ErrorAlert v-if="errors.tipo_campania_id" :message="errors.tipo_campania_id" />
             </div>
             <div class="col-span-4">
               <label :class="lbl">Ámbito</label>
@@ -652,6 +652,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {

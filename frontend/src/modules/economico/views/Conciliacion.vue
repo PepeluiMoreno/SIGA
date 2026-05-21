@@ -32,7 +32,7 @@
       <em class="block mt-1 text-xs">Integración en desarrollo: por ahora sigue activa la importación manual como respaldo.</em>
     </div>
 
-    <p v-if="error" class="text-red-600 text-sm bg-red-50 p-3 rounded-lg mb-4">{{ error }}</p>
+    <ErrorAlert v-if="error" :message="error" />
     <p v-if="info" class="text-green-700 text-sm bg-green-50 p-3 rounded-lg mb-4">{{ info }}</p>
 
     <!-- Tarjeta de info de la cuenta seleccionada -->
@@ -176,10 +176,13 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { useConfirm } from '@/composables/useConfirm'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
+const confirmDialog = useConfirm()
   GET_CUENTAS_BANCARIAS_ACTIVAS,
   GET_APUNTES_PARA_CONCILIAR,
   GET_EXTRACTOS_PARA_CONCILIAR,
@@ -260,7 +263,7 @@ const cargarPendientes = async () => {
 const conciliar = async () => {
   if (!apunteSel.value || !extractoSel.value) return
   if (!importesCuadran.value) {
-    if (!confirm('Los importes no cuadran exactamente. ¿Conciliar de todos modos?')) return
+    if (!(await confirmDialog({ titulo: '¿Confirmar acción?', mensaje: 'Los importes no cuadran exactamente. ¿Conciliar de todos modos?', variante: 'aviso' }))) return
   }
   ocupado.value = true
   error.value = ''

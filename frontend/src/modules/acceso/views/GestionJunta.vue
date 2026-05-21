@@ -196,7 +196,7 @@
               <div v-if="junta" class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-800">
                 {{ orgConfig.OrganoGobierno }} actual <strong>{{ junta.nombre }}</strong> quedará desactivado.
               </div>
-              <div v-if="modalError" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">{{ modalError }}</div>
+              <ErrorAlert v-if="modalError" :message="modalError" />
             </div>
             <div class="flex gap-3 mt-6">
               <button @click="modalJunta = false" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">Cancelar</button>
@@ -258,7 +258,7 @@
                 <input v-model="formCargo.fechaInicio" type="date"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"/>
               </div>
-              <div v-if="modalError" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">{{ modalError }}</div>
+              <ErrorAlert v-if="modalError" :message="modalError" />
             </div>
             <div class="flex gap-3 mt-6">
               <button @click="modalCargo = false" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">Cancelar</button>
@@ -296,7 +296,7 @@
                 <input v-model="formRevocar.motivo" type="text" placeholder="Opcional..."
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-400"/>
               </div>
-              <div v-if="modalError" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">{{ modalError }}</div>
+              <ErrorAlert v-if="modalError" :message="modalError" />
             </div>
             <div class="flex gap-3 mt-5">
               <button @click="modalRevocar = false" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">Cancelar</button>
@@ -317,6 +317,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'

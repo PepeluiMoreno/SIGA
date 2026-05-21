@@ -161,7 +161,7 @@
           "{{ unidadAEliminar.nombre }}" quedará archivada y no aparecerá en el árbol.
           Se puede restaurar desde la papelera.
         </p>
-        <p v-if="errorEliminar" class="text-sm text-red-600 bg-red-50 rounded p-2 mb-3">{{ errorEliminar }}</p>
+        <ErrorAlert v-if="errorEliminar" :message="errorEliminar" />
         <div class="flex gap-3 justify-end">
           <button @click="unidadAEliminar = null; errorEliminar = ''"
             class="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Cancelar</button>
@@ -177,6 +177,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, reactive, computed, watch, onMounted, onActivated, provide } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'

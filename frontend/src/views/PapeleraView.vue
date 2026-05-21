@@ -74,10 +74,12 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted, watch } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import { graphqlClient } from '@/graphql/client'
+const toast = useToast()
 
 const tabs = [
   { key: 'miembros', label: 'Miembros' },
@@ -146,7 +148,7 @@ async function restaurar(item) {
     await graphqlClient.request(RESTORE_QUERY[tabActivo.value], { id: item.id })
     items.value[tabActivo.value] = items.value[tabActivo.value].filter(i => i.id !== item.id)
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error restaurando')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error restaurando')
   }
 }
 
@@ -158,7 +160,7 @@ async function confirmarEliminar() {
     await graphqlClient.request(HARD_DELETE_QUERY[tabActivo.value], { id: item.id })
     items.value[tabActivo.value] = items.value[tabActivo.value].filter(i => i.id !== item.id)
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error eliminando')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error eliminando')
   }
 }
 

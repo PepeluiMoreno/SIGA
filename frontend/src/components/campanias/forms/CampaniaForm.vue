@@ -165,6 +165,7 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '../../layouts/AppLayout.vue'
@@ -179,6 +180,7 @@ import ResultsTab from './form/ResultsTab.vue'
 import ObjectiveModal from './form/modals/ObjectiveModal.vue'
 import ActivityModal from './form/modals/ActivityModal.vue'
 import ResourceModal from './form/modals/ResourceModal.vue'
+const toast = useToast()
 
 const route = useRoute()
 const router = useRouter()
@@ -481,7 +483,7 @@ const handleSubmit = async () => {
   try {
     // Validación básica
     if (!campania.value.codigo || !campania.value.nombre || !campania.value.tipo_campania_id || !campania.value.estado_campania_id) {
-      alert('Por favor, completa los campos obligatorios en la pestaña de Información Básica')
+      toast.error('Por favor, completa los campos obligatorios en la pestaña de Información Básica')
       activeTab.value = 'basic'
       return
     }
@@ -506,7 +508,7 @@ const handleSubmit = async () => {
     
   } catch (error) {
     console.error('Error guardando campaña:', error)
-    alert('Error al guardar la campaña. Por favor, inténtalo de nuevo.')
+    toast.error('Error al guardar la campaña. Por favor, inténtalo de nuevo.')
   } finally {
     submitting.value = false
   }

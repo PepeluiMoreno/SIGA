@@ -335,6 +335,7 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
@@ -343,6 +344,7 @@ import { graphqlClient, executeQuery } from '@/graphql/client'
 import { GET_EVENTOS, GET_TIPOS_EVENTO, GET_ESTADOS_EVENTO, ELIMINAR_EVENTO, SOFT_DELETE_EVENTO } from '@/graphql/queries/eventos.js'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
+const toast = useToast()
 
 // ---------- datos ----------
 const loading = ref(false)
@@ -570,7 +572,7 @@ async function eliminarEvento(evento, { hardDelete } = {}) {
     }
     eventos.value = eventos.value.filter(e => e.id !== evento.id)
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error eliminando evento')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error eliminando evento')
   }
 }
 

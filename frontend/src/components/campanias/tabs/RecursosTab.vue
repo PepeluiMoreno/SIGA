@@ -171,7 +171,7 @@
               class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
         </div>
-        <p v-if="errorComp" class="text-xs text-red-600">{{ errorComp }}</p>
+        <ErrorAlert v-if="errorComp" :message="errorComp" />
         <button @click="crearCompromiso" :disabled="!formComp.partidaId || !formComp.importe || formComp.guardando"
           class="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
           {{ formComp.guardando ? 'Guardando…' : 'Registrar compromiso' }}
@@ -237,6 +237,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted } from 'vue'
 import { graphqlClient } from '@/graphql/client.js'
 

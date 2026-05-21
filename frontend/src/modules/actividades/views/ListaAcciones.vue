@@ -96,6 +96,7 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
@@ -104,6 +105,7 @@ import ActividadRow from './ActividadRow.vue'
 import { graphqlClient } from '@/graphql/client'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_ACCIONES, GET_TIPOS_ACCION, GET_ESTADOS_ACCION, ELIMINAR_ACCION, SOFT_DELETE_ACCION } from '../graphql/queries.js'
+const toast = useToast()
 
 const { tienePermiso } = usePermisos()
 const loading = ref(true)
@@ -207,7 +209,7 @@ async function eliminarActividad(actividad, { hardDelete } = {}) {
     }
     actividades.value = actividades.value.filter(a => a.id !== actividad.id)
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error eliminando actividad')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error eliminando actividad')
   }
 }
 

@@ -18,14 +18,7 @@
 
     <template v-else-if="rol">
       <!-- Mensaje de guardado -->
-      <div
-        v-if="savedMsg"
-        class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 flex items-center gap-2"
-      >
-        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-        </svg>
-        {{ savedMsg }}
+              {{ savedMsg }}
       </div>
 
       <!-- Dual-list principal -->
@@ -257,12 +250,14 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import DetailHeader from '@/components/common/DetailHeader.vue'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
 import {
+const toast = useToast()
   GET_ROL_CON_PERMISOS,
   GET_TRANSACCIONES_TODAS,
   ASIGNAR_TRANSACCION_ROL,
@@ -426,8 +421,7 @@ async function guardar() {
     ])
 
     await cargar()
-    savedMsg.value = `Cambios guardados: ${adds.length} añadidos, ${removes.length} revocados.`
-    setTimeout(() => { savedMsg.value = '' }, 4000)
+    toast.success(`Cambios guardados: ${adds.length} añadidos, ${removes.length} revocados.`) => { savedMsg.value = '' }, 4000)
   } catch (err) {
     console.error('Error guardando permisos:', err)
     error.value = err?.response?.errors?.[0]?.message || 'Error al guardar los permisos'

@@ -120,7 +120,7 @@
               <input type="text" v-model="form.descripcion"
                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
             </div>
-            <p v-if="errorModal" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{{ errorModal }}</p>
+            <ErrorAlert v-if="errorModal" :message="errorModal" />
           </div>
           <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
             <button @click="modal = false" class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
@@ -153,6 +153,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted } from 'vue'
 import LoadSpinner from '@/components/common/LoadSpinner.vue'
 import { useGraphQL } from '@/composables/useGraphQL'

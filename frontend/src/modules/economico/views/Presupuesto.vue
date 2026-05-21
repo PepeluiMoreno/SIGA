@@ -383,6 +383,7 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
 import { ref, computed, watch, onMounted } from 'vue'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
@@ -405,6 +406,7 @@ import {
 } from '@/graphql/queries/presupuestos.js'
 import { GET_CONFIG_CUOTA_EJERCICIO } from '@/graphql/queries/financiero'
 import ConfirmActionModal from '@/components/common/ConfirmActionModal.vue'
+const toast = useToast()
 
 const { query, mutation } = useGraphQL()
 const { tienePermiso } = usePermisos()
@@ -608,7 +610,7 @@ const crearOtroBorrador = async () => {
     await cargar()
   } catch (e) {
     console.error(e?.message || e)
-    alert(e?.message || 'No se pudo crear el borrador')
+    toast.error(e?.message || 'No se pudo crear el borrador')
   } finally {
     ocupado.value = false
   }

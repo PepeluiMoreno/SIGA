@@ -862,7 +862,7 @@
                 <p v-if="!modalCuenta.enviarEmail" class="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
                   Sin email de bienvenida, el miembro no podrá acceder hasta que se le asigne una contraseña manualmente.
                 </p>
-                <p v-if="modalCuenta.error" class="text-xs text-red-600">{{ modalCuenta.error }}</p>
+                <ErrorAlert v-if="modalCuenta.error" :message="modalCuenta.error" />
                 <div class="flex gap-2 pt-1">
                   <button type="button" @click="crearCuentaDesdeTab"
                     :disabled="!modalCuenta.email || modalCuenta.cargando"
@@ -928,7 +928,7 @@
                             class="h-9 w-full px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white" />
                         </div>
                       </div>
-                      <p v-if="cambioPass.error" class="text-xs text-red-600">{{ cambioPass.error }}</p>
+                      <ErrorAlert v-if="cambioPass.error" :message="cambioPass.error" />
                       <p v-if="cambioPass.ok" class="text-xs text-green-600">{{ cambioPass.ok }}</p>
                       <div class="flex justify-end gap-2">
                         <button type="button" @click="cambioPass.activo = false; cambioPass.error = ''; cambioPass.ok = ''"
@@ -1000,7 +1000,7 @@
                       Asignar
                     </button>
                   </div>
-                  <p v-if="errorRol" class="text-xs text-red-600">{{ errorRol }}</p>
+                  <ErrorAlert v-if="errorRol" :message="errorRol" />
                 </div>
               </section>
             </template>
@@ -1152,6 +1152,8 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { useToast } from '@/composables/useToast'
 import { computed, defineComponent, h, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
@@ -1166,6 +1168,7 @@ import { badgeStyle, bandStyle } from '@/utils/badge'
 import { useOrgConfigStore } from '@/stores/orgConfig'
 import { useAuthStore } from '@/stores/auth.js'
 import { usePermisos } from '@/composables/usePermisos.js'
+const toast = useToast()
 
 const props = defineProps({
   miembroIdProp: { type: String, default: null },
@@ -1602,7 +1605,7 @@ async function anularReduccion(solicitud) {
     await graphqlClient.request(MUTATION_ANULAR_REDUCCION, { id: solicitud.id })
     await cargarSolicitudReduccion()
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'No se pudo anular la solicitud.')
+    toast.error(e?.response?.errors?.[0]?.message || 'No se pudo anular la solicitud.')
   }
 }
 

@@ -449,7 +449,7 @@
             <textarea v-model="formCuenta.descripcion" class="input h-16" />
           </div>
         </div>
-        <p v-if="errorModal" class="text-red-600 text-sm mt-2">{{ errorModal }}</p>
+        <ErrorAlert v-if="errorModal" :message="errorModal" />
         <div class="flex justify-end gap-3 mt-5">
           <button @click="modalCuenta = false" class="btn-secondary">Cancelar</button>
           <button @click="guardarCuenta" :disabled="guardando" class="btn-primary">
@@ -493,7 +493,7 @@
           </div>
           <p class="text-xs text-gray-500">El asiento se crea en estado BORRADOR. Añade los apuntes debe/haber y luego confírmalo.</p>
         </div>
-        <p v-if="errorModal" class="text-red-600 text-sm mt-2">{{ errorModal }}</p>
+        <ErrorAlert v-if="errorModal" :message="errorModal" />
         <div class="flex justify-end gap-3 mt-5">
           <button @click="modalAsiento = false" class="btn-secondary">Cancelar</button>
           <button @click="guardarAsiento" :disabled="guardando" class="btn-primary">
@@ -534,7 +534,7 @@
             :allow-sin-imputar="true"
             :required="false"
           />
-          <p v-if="formApunte.error" class="text-red-600 text-sm bg-red-50 p-2 rounded">{{ formApunte.error }}</p>
+          <ErrorAlert v-if="formApunte.error" :message="formApunte.error" />
         </div>
         <div class="flex justify-end gap-3 px-6 py-4 border-t border-slate-200">
           <button @click="modalEditApunte = false" class="btn-secondary">Cancelar</button>
@@ -566,7 +566,7 @@
             <textarea v-model="formAnular.motivo" rows="3" class="input"
                       placeholder="Ej.: importe equivocado, duplicado, error de fecha…" />
           </div>
-          <p v-if="formAnular.error" class="text-red-600 text-sm bg-red-50 p-2 rounded">{{ formAnular.error }}</p>
+          <ErrorAlert v-if="formAnular.error" :message="formAnular.error" />
         </div>
         <div class="flex justify-end gap-3 px-6 py-4 border-t border-slate-200">
           <button @click="modalAnularApunte = false" class="btn-secondary">Cancelar</button>
@@ -582,6 +582,9 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
 import { ref, reactive, computed, onMounted, provide, watch } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import LoadSpinner from '@/components/common/LoadSpinner.vue'
@@ -602,6 +605,8 @@ import {
 import { GET_ACTIVIDADES_PARA_GASTO } from '@/graphql/queries/financiero'
 import { GET_CAMPANIAS } from '@/graphql/queries/campanias'
 import {
+const toast = useToast()
+const confirmDialog = useConfirm()
   ASIGNAR_CATEGORIA_MASIVA,
   CLASIFICAR_APUNTES_PENDIENTES,
 } from '@/graphql/queries/categorias_fiscales.js'
@@ -1024,7 +1029,7 @@ const toggleConciliado = async (m) => {
     }
     await cargarBitacora()
   } catch (e) {
-    alert(errMsgApunte(e, 'Error al cambiar el estado de conciliación'))
+    toast.error(errMsgApunte(e, 'Error al cambiar el estado de conciliación'))
   }
 }
 
@@ -1276,22 +1281,22 @@ const guardarAsiento = async () => {
 }
 
 const confirmarAsiento = async (asientoId) => {
-  if (!confirm('¿Confirmar este asiento? Verifica que debe = haber.')) return
+  if (!(await confirmDialog({ titulo: '¿Confirmar acción?', mensaje: '¿Confirmar este asiento? Verifica que debe = haber.', variante: 'aviso' }))) return
   try {
     await confirmarAsientoContable(asientoId)
     await recargarAsientos()
   } catch (e) {
-    alert(e.message || 'Error: el asiento no cuadra o ya está confirmado')
+    toast.error(e.message || 'Error: el asiento no cuadra o ya está confirmado')
   }
 }
 
 const anularAsiento = async (asientoId) => {
-  if (!confirm('¿Anular este asiento? Esta acción no se puede deshacer.')) return
+  if (!(await confirmDialog({ titulo: '¿Confirmar acción?', mensaje: '¿Anular este asiento? Esta acción no se puede deshacer.', variante: 'critica' }))) return
   try {
     await anularAsientoContable(asientoId)
     await recargarAsientos()
   } catch (e) {
-    alert(e.message || 'Error al anular el asiento')
+    toast.error(e.message || 'Error al anular el asiento')
   }
 }
 
@@ -1304,7 +1309,7 @@ const calcularBalance = async () => {
       balanceSoloConSaldo.value,
     )
   } catch (e) {
-    alert(e.message || 'Error al calcular el balance')
+    toast.error(e.message || 'Error al calcular el balance')
   } finally {
     calculandoBalance.value = false
   }

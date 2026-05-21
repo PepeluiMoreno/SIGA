@@ -634,7 +634,7 @@
             class="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50"
             placeholder="Cuerpo HTML del correo"></textarea>
         </div>
-        <p v-if="modalNotif.error" class="text-xs text-red-600">{{ modalNotif.error }}</p>
+        <ErrorAlert v-if="modalNotif.error" :message="modalNotif.error" />
       </div>
       <div v-if="!modalNotif.resultado" class="flex justify-end gap-2 px-6 py-4 border-t border-slate-100">
         <button @click="modalNotif.visible = false"
@@ -746,6 +746,8 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
@@ -761,6 +763,7 @@ import { graphqlClient } from '@/graphql/client'
 import { GET_CAMPANIA, GET_PLANTILLAS_CAMPANIA, PREVISUALIZAR_NOTIFICACION_CAMPANIA, ENVIAR_NOTIFICACION_CAMPANIA, CERRAR_CAMPANIA, CLONAR_CAMPANIA } from '@/modules/comunicaciones/graphql/queries.js'
 import { TRANSICIONAR_CAMPANIA, APROBAR_CAMPANIA } from '@/modules/actividades/graphql/queries.js'
 import { usePermisos } from '@/composables/usePermisos.js'
+const toast = useToast()
 
 const { tienePermiso } = usePermisos()
 const route  = useRoute()
@@ -990,7 +993,7 @@ async function ejecutarTransicion(t) {
     try {
       await graphqlClient.request(TRANSICIONAR_CAMPANIA, { id: campania.value.id, estadoId: t.estado.id })
       await cargarCampania()
-    } catch (e) { alert(e?.response?.errors?.[0]?.message || 'Error') }
+    } catch (e) { toast.error(e?.response?.errors?.[0]?.message || 'Error') }
     finally { cargandoTransicion.value = false }
   }
 }
@@ -1002,7 +1005,7 @@ async function confirmarAprobacion() {
     await graphqlClient.request(mut, { id: campania.value.id, estadoId: modalAprobacion.value.estadoId, notas: modalAprobacion.value.notas || null })
     modalAprobacion.value.visible = false
     await cargarCampania()
-  } catch (e) { alert(e?.response?.errors?.[0]?.message || 'Error') }
+  } catch (e) { toast.error(e?.response?.errors?.[0]?.message || 'Error') }
   finally { cargandoTransicion.value = false }
 }
 
@@ -1025,7 +1028,7 @@ async function confirmarCierre() {
     })
     modalCierre.value.visible = false
     await cargarCampania()
-  } catch (e) { alert(e?.response?.errors?.[0]?.message || 'Error') }
+  } catch (e) { toast.error(e?.response?.errors?.[0]?.message || 'Error') }
   finally { cargandoTransicion.value = false }
 }
 
@@ -1060,7 +1063,7 @@ async function eliminarCampania() {
     await graphqlClient.request(GQL_ELIMINAR, { id: campania.value.id })
     router.push('/campanias')
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error al eliminar la campaña')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error al eliminar la campaña')
   } finally {
     eliminando.value = false
     confirmarEliminar.value = false

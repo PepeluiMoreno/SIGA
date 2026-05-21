@@ -156,12 +156,12 @@
             </div>
 
             <!-- Error de acceso -->
-            <p v-if="errorAcceso" class="text-xs text-red-600">{{ errorAcceso }}</p>
+            <ErrorAlert v-if="errorAcceso" :message="errorAcceso" />
           </div>
         </div>
 
         <!-- Error general -->
-        <div v-if="error" class="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-800">{{ error }}</div>
+        <ErrorAlert v-if="error" :message="error" />
 
       </form>
 
@@ -179,6 +179,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { gql } from 'graphql-request'
