@@ -1,16 +1,11 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4">
-      <p class="text-sm text-gray-500 max-w-2xl">
-        Las categorías fiscales clasifican los ingresos y gastos de la organización
-        y determinan su tratamiento en los modelos tributarios. Equivalen al plan de
-        cuentas en la contabilidad por partida doble.
-      </p>
-      <button v-if="puedeGestionar" @click="abrirNueva"
-        class="px-3 py-1.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 flex-shrink-0 ml-4">
-        + Nueva categoría
-      </button>
-    </div>
+    <p class="text-sm text-gray-500 max-w-2xl mb-4">
+      Las categorías fiscales clasifican los ingresos y gastos de la organización
+      y determinan su tratamiento en los modelos tributarios. Equivalen al plan de
+      cuentas en la contabilidad por partida doble. Edita cualquier campo directamente
+      sobre la fila.
+    </p>
 
     <LoadSpinner v-if="loading" />
 
@@ -29,123 +24,90 @@
             <span class="text-xs font-normal text-gray-400">({{ grupo.items.length }})</span>
           </h3>
 
-          <div v-if="grupo.items.length === 0"
-            class="text-center text-gray-400 py-8 border border-dashed border-gray-200 rounded-lg text-sm">
-            No hay categorías de {{ grupo.tipo === 'INGRESO' ? 'ingreso' : 'gasto' }}.
-          </div>
-
-          <div v-else class="bg-white border border-gray-200 rounded-lg divide-y divide-gray-100">
+          <div class="bg-white border border-gray-200 rounded-lg divide-y divide-gray-100">
+            <!-- Filas de categorías -->
             <div v-for="c in grupo.items" :key="c.id"
-              class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
-              :class="c.activa ? '' : 'opacity-50'">
-              <span class="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                :style="{ backgroundColor: c.color || '#cbd5e1' }"></span>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="font-medium text-gray-900 text-sm">{{ c.nombre }}</span>
-                  <span class="text-xs text-gray-400 font-mono">{{ c.codigo }}</span>
-                  <span v-if="!c.activa" class="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">inactiva</span>
-                </div>
-                <div class="flex flex-wrap gap-1.5 mt-1">
-                  <span v-if="c.computaModelo182"
-                    class="text-xs px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100">Modelo 182</span>
-                  <span v-if="c.computaModelo347"
-                    class="text-xs px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 border border-purple-100">Modelo 347</span>
-                  <span v-if="c.casillaModelo"
-                    class="text-xs px-1.5 py-0.5 rounded bg-gray-50 text-gray-500 border border-gray-100">Casilla {{ c.casillaModelo }}</span>
-                </div>
+              class="px-3 py-2.5 hover:bg-gray-50 transition-colors group"
+              :class="c.activa ? '' : 'opacity-60'">
+              <div class="flex items-center gap-2">
+                <!-- Color editable inline -->
+                <input v-if="puedeGestionar" type="color" :value="c.color || '#cbd5e1'"
+                  @change="commit(c, 'color', $event.target.value)"
+                  class="w-5 h-5 rounded cursor-pointer border-0 bg-transparent p-0 flex-shrink-0"
+                  title="Color" />
+                <span v-else class="w-3 h-3 rounded-full flex-shrink-0" :style="{ backgroundColor: c.color || '#cbd5e1' }"></span>
+
+                <!-- Nombre editable inline -->
+                <input v-if="puedeGestionar" :value="c.nombre"
+                  @blur="commit(c, 'nombre', $event.target.value)"
+                  @keydown.enter="$event.target.blur()"
+                  class="inline-edit flex-1 font-medium text-gray-900" />
+                <span v-else class="flex-1 font-medium text-gray-900 text-sm">{{ c.nombre }}</span>
+
+                <span class="text-xs text-gray-400 font-mono flex-shrink-0">{{ c.codigo }}</span>
+
+                <button v-if="puedeGestionar" @click="confirmarEliminar(c)"
+                  class="text-xs px-2 py-1 rounded text-red-500 opacity-0 group-hover:opacity-100 hover:bg-red-50 transition-all flex-shrink-0">
+                  Eliminar
+                </button>
               </div>
-              <div v-if="puedeGestionar" class="flex items-center gap-1 flex-shrink-0">
-                <button @click="abrirEditar(c)"
-                  class="text-xs px-2 py-1 rounded text-gray-600 hover:bg-gray-100 transition-colors">Editar</button>
-                <button @click="confirmarEliminar(c)"
-                  class="text-xs px-2 py-1 rounded text-red-600 hover:bg-red-50 transition-colors">Eliminar</button>
+
+              <!-- Segunda línea: toggles fiscales + casilla + activa, todo inline -->
+              <div class="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1.5 ml-7 text-xs">
+                <label class="flex items-center gap-1 cursor-pointer select-none"
+                  :class="c.computaModelo182 ? 'text-blue-600' : 'text-gray-400'">
+                  <input type="checkbox" :checked="c.computaModelo182" :disabled="!puedeGestionar"
+                    @change="commit(c, 'computaModelo182', $event.target.checked)"
+                    class="w-3.5 h-3.5 text-blue-600 rounded focus:ring-blue-500" />
+                  Modelo 182
+                </label>
+                <label class="flex items-center gap-1 cursor-pointer select-none"
+                  :class="c.computaModelo347 ? 'text-purple-600' : 'text-gray-400'">
+                  <input type="checkbox" :checked="c.computaModelo347" :disabled="!puedeGestionar"
+                    @change="commit(c, 'computaModelo347', $event.target.checked)"
+                    class="w-3.5 h-3.5 text-purple-600 rounded focus:ring-purple-500" />
+                  Modelo 347
+                </label>
+                <span class="flex items-center gap-1 text-gray-400">
+                  Casilla:
+                  <input v-if="puedeGestionar" :value="c.casillaModelo"
+                    @blur="commit(c, 'casillaModelo', $event.target.value)"
+                    @keydown.enter="$event.target.blur()"
+                    placeholder="—"
+                    class="inline-edit w-16 text-gray-600" />
+                  <span v-else>{{ c.casillaModelo || '—' }}</span>
+                </span>
+                <label v-if="puedeGestionar" class="flex items-center gap-1 cursor-pointer select-none ml-auto"
+                  :class="c.activa ? 'text-green-600' : 'text-gray-400'">
+                  <input type="checkbox" :checked="c.activa"
+                    @change="commit(c, 'activa', $event.target.checked)"
+                    class="w-3.5 h-3.5 text-green-600 rounded focus:ring-green-500" />
+                  {{ c.activa ? 'Activa' : 'Inactiva' }}
+                </label>
               </div>
+            </div>
+
+            <!-- Fila de alta inline -->
+            <div v-if="puedeGestionar" class="px-3 py-2">
+              <div v-if="altaTipo === grupo.tipo" class="flex items-center gap-2 bg-purple-50/40 rounded p-2">
+                <input v-model="nueva.codigo" placeholder="CÓDIGO"
+                  class="inline-edit font-mono text-xs w-28 uppercase" />
+                <input v-model="nueva.nombre" placeholder="Nombre de la categoría"
+                  class="inline-edit flex-1" @keydown.enter="confirmarAlta(grupo.tipo)" />
+                <button @click="confirmarAlta(grupo.tipo)" class="text-xs text-purple-700 font-medium hover:underline">Añadir</button>
+                <button @click="altaTipo = null" class="text-xs text-gray-400 hover:underline">Cancelar</button>
+              </div>
+              <button v-else @click="abrirAlta(grupo.tipo)"
+                class="text-xs text-purple-600 hover:underline">
+                + Nueva categoría de {{ grupo.tipo === 'INGRESO' ? 'ingreso' : 'gasto' }}
+              </button>
             </div>
           </div>
         </section>
       </div>
     </template>
 
-    <!-- Modal crear/editar -->
-    <Teleport to="body">
-      <div v-if="modal"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-        @click.self="modal = false">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-          <div class="px-6 pt-6 pb-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-gray-900">
-              {{ modoEdicion ? 'Editar categoría' : 'Nueva categoría fiscal' }}
-            </h2>
-            <button @click="modal = false" class="p-1 text-gray-400 hover:text-gray-600 rounded">✕</button>
-          </div>
-          <div class="p-6 space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Código <span class="text-red-500">*</span></label>
-                <input type="text" v-model="form.codigo" placeholder="ING_CUOTAS" :disabled="modoEdicion"
-                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 disabled:bg-gray-50 disabled:text-gray-400 font-mono" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo <span class="text-red-500">*</span></label>
-                <select v-model="form.tipo" :disabled="modoEdicion"
-                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 disabled:bg-gray-50 disabled:text-gray-400">
-                  <option value="INGRESO">Ingreso</option>
-                  <option value="GASTO">Gasto</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Nombre <span class="text-red-500">*</span></label>
-              <input type="text" v-model="form.nombre" placeholder="Cuotas de asociados"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-              <textarea v-model="form.descripcion" rows="2"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 resize-none" />
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Casilla modelo</label>
-                <input type="text" v-model="form.casillaModelo" placeholder="130-01"
-                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
-                <input type="color" v-model="form.color"
-                  class="w-full h-[38px] border border-gray-300 rounded-lg px-1 cursor-pointer" />
-              </div>
-            </div>
-            <div class="space-y-2 pt-1">
-              <label class="flex items-center gap-3 cursor-pointer select-none">
-                <input type="checkbox" v-model="form.computaModelo182" class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
-                <span class="text-sm text-gray-700">Computa en Modelo 182 <span class="text-gray-400 text-xs">(donativos deducibles)</span></span>
-              </label>
-              <label class="flex items-center gap-3 cursor-pointer select-none">
-                <input type="checkbox" v-model="form.computaModelo347" class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
-                <span class="text-sm text-gray-700">Computa en Modelo 347 <span class="text-gray-400 text-xs">(operaciones > 3.005,06 €)</span></span>
-              </label>
-              <label v-if="modoEdicion" class="flex items-center gap-3 cursor-pointer select-none">
-                <input type="checkbox" v-model="form.activa" class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
-                <span class="text-sm text-gray-700">Categoría activa</span>
-              </label>
-            </div>
-            <p v-if="errorModal" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{{ errorModal }}</p>
-          </div>
-          <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-            <button @click="modal = false"
-              class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
-            <button @click="guardar" :disabled="guardando"
-              class="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50">
-              {{ guardando ? 'Guardando…' : 'Guardar' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- Modal confirmar eliminar -->
+    <!-- Modal confirmar eliminar (la única acción que merece confirmación) -->
     <Teleport to="body">
       <div v-if="modalEliminar"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
@@ -154,7 +116,7 @@
           <h2 class="text-base font-semibold text-gray-900">¿Eliminar esta categoría?</h2>
           <p class="text-sm text-gray-600">
             «{{ categoriaActiva?.nombre }}» se eliminará. Si tiene apuntes asociados no se podrá
-            eliminar; en ese caso desactívala desde el botón Editar.
+            eliminar; en ese caso desactívala con el interruptor de la fila.
           </p>
           <p v-if="errorEliminar" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{{ errorEliminar }}</p>
           <div class="flex justify-end gap-3">
@@ -192,20 +154,13 @@ const loading = ref(false)
 const error = ref('')
 const categorias = ref([])
 
-const modal = ref(false)
 const modalEliminar = ref(false)
-const modoEdicion = ref(false)
-const guardando = ref(false)
 const eliminando = ref(false)
-const errorModal = ref('')
 const errorEliminar = ref('')
 const categoriaActiva = ref(null)
 
-const form = ref({
-  id: null, codigo: '', nombre: '', tipo: 'INGRESO', descripcion: '',
-  casillaModelo: '', color: '#6366f1',
-  computaModelo182: false, computaModelo347: false, activa: true,
-})
+const altaTipo = ref(null)  // 'INGRESO' | 'GASTO' | null
+const nueva = ref({ codigo: '', nombre: '' })
 
 const grupos = computed(() => [
   { tipo: 'INGRESO', items: categorias.value.filter(c => c.tipo === 'INGRESO') },
@@ -224,71 +179,47 @@ const cargar = async () => {
   }
 }
 
-const abrirNueva = () => {
-  modoEdicion.value = false
-  form.value = {
-    id: null, codigo: '', nombre: '', tipo: 'INGRESO', descripcion: '',
-    casillaModelo: '', color: '#6366f1',
-    computaModelo182: false, computaModelo347: false, activa: true,
+// Edición inline: actualiza un único campo. Optimista con recarga al final.
+const commit = async (categoria, campo, valor) => {
+  // Normalizar
+  if (campo === 'casillaModelo') valor = (valor || '').trim()  // '' permite borrarla
+  if (campo === 'nombre') {
+    valor = (valor || '').trim()
+    if (!valor) { await cargar(); return }  // no permitir nombre vacío
   }
-  errorModal.value = ''
-  modal.value = true
-}
+  if (categoria[campo] === valor) return  // sin cambios
 
-const abrirEditar = (c) => {
-  modoEdicion.value = true
-  form.value = {
-    id: c.id, codigo: c.codigo, nombre: c.nombre, tipo: c.tipo,
-    descripcion: c.descripcion ?? '', casillaModelo: c.casillaModelo ?? '',
-    color: c.color ?? '#6366f1',
-    computaModelo182: c.computaModelo182, computaModelo347: c.computaModelo347,
-    activa: c.activa,
-  }
-  errorModal.value = ''
-  modal.value = true
-}
-
-const guardar = async () => {
-  errorModal.value = ''
-  if (!form.value.codigo || !form.value.nombre) {
-    errorModal.value = 'El código y el nombre son obligatorios'
-    return
-  }
-  guardando.value = true
+  // Aplicar localmente (optimista)
+  const previo = categoria[campo]
+  categoria[campo] = valor
   try {
-    if (modoEdicion.value) {
-      await mutation(ACTUALIZAR_CATEGORIA_FISCAL, {
-        data: {
-          id: form.value.id,
-          nombre: form.value.nombre,
-          descripcion: form.value.descripcion || null,
-          casillaModelo: form.value.casillaModelo || null,
-          color: form.value.color || null,
-          computaModelo182: form.value.computaModelo182,
-          computaModelo347: form.value.computaModelo347,
-          activa: form.value.activa,
-        },
-      })
-    } else {
-      await mutation(CREAR_CATEGORIA_FISCAL, {
-        data: {
-          codigo: form.value.codigo,
-          nombre: form.value.nombre,
-          tipo: form.value.tipo,
-          descripcion: form.value.descripcion || null,
-          casillaModelo: form.value.casillaModelo || null,
-          color: form.value.color || null,
-          computaModelo182: form.value.computaModelo182,
-          computaModelo347: form.value.computaModelo347,
-        },
-      })
-    }
-    modal.value = false
+    await mutation(ACTUALIZAR_CATEGORIA_FISCAL, {
+      data: { id: categoria.id, [campo]: valor },
+    })
+  } catch (e) {
+    categoria[campo] = previo  // revertir si falla
+    error.value = e?.message ?? 'No se pudo guardar el cambio'
+  }
+}
+
+const abrirAlta = (tipo) => {
+  altaTipo.value = tipo
+  nueva.value = { codigo: '', nombre: '' }
+}
+
+const confirmarAlta = async (tipo) => {
+  const codigo = (nueva.value.codigo || '').trim().toUpperCase()
+  const nombre = (nueva.value.nombre || '').trim()
+  if (!codigo || !nombre) return
+  try {
+    await mutation(CREAR_CATEGORIA_FISCAL, {
+      data: { codigo, nombre, tipo },
+    })
+    altaTipo.value = null
+    nueva.value = { codigo: '', nombre: '' }
     await cargar()
   } catch (e) {
-    errorModal.value = e?.message ?? 'Error al guardar la categoría'
-  } finally {
-    guardando.value = false
+    error.value = e?.message ?? 'No se pudo crear la categoría'
   }
 }
 
@@ -314,3 +245,10 @@ const ejecutarEliminar = async () => {
 
 onMounted(cargar)
 </script>
+
+<style scoped>
+.inline-edit {
+  @apply bg-transparent border border-transparent rounded px-2 py-1 text-sm
+         hover:border-gray-200 focus:border-purple-400 focus:bg-white focus:outline-none transition-colors;
+}
+</style>
