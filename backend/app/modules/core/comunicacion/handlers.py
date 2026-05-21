@@ -27,6 +27,7 @@ from app.core.events import (
     NombramientoPendienteAprobacion,
     TrasladoSolicitado,
     TrasladoResuelto,
+    RemesaDevolucion,
 )
 
 logger = logging.getLogger(__name__)
@@ -135,6 +136,21 @@ def wire_comunicacion_handlers(session_factory: Callable) -> None:
             entidad_tipo="solicitud_traslado", entidad_id=ev.solicitud_id,
         )
 
+    # ── Económico ─────────────────────────────────────────────────────────
+
+    async def _on_remesa_devolucion(ev: RemesaDevolucion) -> None:
+        n = ev.num_devoluciones
+        plural = "adeudos" if n != 1 else "adeudo"
+        await _emitir(
+            tipo_codigo="REMESA_DEVOLUCION",
+            audiencia=EspecificacionAudiencia.por_permiso(
+                "ECO_REMESA_ENVIAR", _uuid(ev.agrupacion_id)),
+            titulo="Devolución de remesa",
+            mensaje=f"El banco ha devuelto {n} {plural} de la remesa. "
+                    f"Revisa las órdenes fallidas para gestionar el cobro.",
+            entidad_tipo="remesa", entidad_id=ev.remesa_id,
+        )
+
     # ── Suscripciones ─────────────────────────────────────────────────────
 
     event_bus.subscribe(ReunionConvocada, _on_reunion_convocada)
@@ -143,5 +159,6 @@ def wire_comunicacion_handlers(session_factory: Callable) -> None:
     event_bus.subscribe(NombramientoPendienteAprobacion, _on_nombramiento_pendiente)
     event_bus.subscribe(TrasladoSolicitado, _on_traslado_solicitado)
     event_bus.subscribe(TrasladoResuelto, _on_traslado_resuelto)
+    event_bus.subscribe(RemesaDevolucion, _on_remesa_devolucion)
 
-    logger.info("Comunicación: 6 handlers de eventos suscritos al event bus.")
+    logger.info("Comunicación: 7 handlers de eventos suscritos al event bus.")

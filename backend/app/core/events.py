@@ -130,6 +130,13 @@ class TrasladoResuelto(DomainEvent):
     miembro_id: str = ""
     aprobado: bool = False
 
+@dataclass(frozen=True)
+class RemesaDevolucion(DomainEvent):
+    """El banco ha devuelto uno o varios adeudos de una remesa."""
+    remesa_id: str = ""
+    num_devoluciones: int = 0
+    agrupacion_id: Optional[str] = None
+
 
 # -----------------------------------------------------------------------
 # Event Bus

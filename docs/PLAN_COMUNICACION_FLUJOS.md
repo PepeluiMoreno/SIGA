@@ -87,10 +87,13 @@ Prioridad del tipo: `URGENTE`/`ALTA` ⇒ también email; `NORMAL`/`BAJA` ⇒ sol
   y el método propio `_usuarios_control_presupuestario` (solo miraba el camino
   RBAC directo); `por_permiso` cubre además el permiso concedido vía funcionalidad.
 
-### 3.2 Económico — Remesas y cobro
-- **Punto:** generación de remesa lista para envío; devoluciones SEPA (pain.002).
-- **Tipos:** `REMESA_LISTA_ENVIO` (ALTA→email), `REMESA_DEVOLUCION` (ALTA→email).
-- **Audiencia:** `por_permiso("ECO_REMESA_ENVIAR")` global o por agrupación.
+### 3.2 Económico — Remesas y cobro  *(devolución ACTIVA)*
+- **Evento:** `RemesaDevolucion` (en `core/events.py`).
+- **Emisión conectada:** `remesa_service.importar_fallidos_banco()` publica
+  `RemesaDevolucion` tras el commit cuando hay órdenes devueltas.
+- **Handler:** `REMESA_DEVOLUCION` (ALTA→email), audiencia `por_permiso("ECO_REMESA_ENVIAR")`.
+- **Pendiente:** `REMESA_LISTA_ENVIO` (menor valor: quien genera la remesa ya lo
+  sabe; se deja para cuando haya separación de roles generar/enviar).
 
 ### 3.3 Económico — Reducción/exención de cuota
 - **Punto:** solicitud creada (al tesorero) y resolución (al solicitante).
