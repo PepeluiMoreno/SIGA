@@ -256,6 +256,7 @@ from ..modules.economico.models import (
     PartidaPresupuestaria,
     CompromisoPresupuestario,
     PlanificacionAnual,
+    ModificacionPresupuestaria,
     FormaPago,
     CuentaBancaria,
     ApunteCaja,
@@ -345,6 +346,10 @@ class ReglaCategorizacionType:
 
 @strawchemy.type(FormaPago, include="all", override=True)
 class FormaPagoType:
+    pass
+
+@strawchemy.type(ModificacionPresupuestaria, include="all", override=True)
+class ModificacionPresupuestariaType:
     pass
 
 @strawchemy.type(EstadoPlanificacion, include="all", override=True)

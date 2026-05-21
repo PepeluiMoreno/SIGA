@@ -113,7 +113,7 @@ class DesviacionPartidaType:
 
 
 @strawberry.type
-class ModificacionPresupuestariaType:
+class ModificacionPresupuestariaDetailType:
     id: uuid.UUID
     tipo: str
     partida_destino_id: uuid.UUID
@@ -123,8 +123,8 @@ class ModificacionPresupuestariaType:
     motivo: str
 
     @staticmethod
-    def from_model(m) -> "ModificacionPresupuestariaType":
-        return ModificacionPresupuestariaType(
+    def from_model(m) -> "ModificacionPresupuestariaDetailType":
+        return ModificacionPresupuestariaDetailType(
             id=m.id,
             tipo=m.tipo.value if hasattr(m.tipo, "value") else m.tipo,
             partida_destino_id=m.partida_destino_id,
@@ -246,10 +246,10 @@ class PresupuestoQuery:
     @strawberry.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")])
     async def modificaciones_presupuestarias(
         self, info: strawberry.Info, planificacion_id: uuid.UUID
-    ) -> List[ModificacionPresupuestariaType]:
+    ) -> List[ModificacionPresupuestariaDetailType]:
         service = PresupuestoService(info.context.session)
         items = await service.listar_modificaciones(planificacion_id)
-        return [ModificacionPresupuestariaType.from_model(m) for m in items]
+        return [ModificacionPresupuestariaDetailType.from_model(m) for m in items]
 
     @strawberry.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")])
     async def alertas_presupuestarias(
@@ -372,7 +372,7 @@ class PresupuestoMutation:
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_APROBAR")])
     async def registrar_modificacion_presupuestaria(
         self, info: strawberry.Info, data: RegistrarModificacionInput
-    ) -> ModificacionPresupuestariaType:
+    ) -> ModificacionPresupuestariaDetailType:
         service = PresupuestoService(info.context.session)
         usuario_id = info.context.current_user.id if info.context.current_user else None
         m = await service.registrar_modificacion(
@@ -384,7 +384,7 @@ class PresupuestoMutation:
             partida_origen_id=data.partida_origen_id,
             registrada_por_id=usuario_id,
         )
-        return ModificacionPresupuestariaType.from_model(m)
+        return ModificacionPresupuestariaDetailType.from_model(m)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_APROBAR")])
     async def establecer_control_disponibilidad(
