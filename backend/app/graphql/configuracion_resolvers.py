@@ -26,6 +26,7 @@ class ParametrosOrganizacion:
     numero_registro: str
     tipo_entidad: str
     contabilidad_compleja: bool
+    usa_presupuesto: bool
     sede_social: str
     localidad: str
     cp: str
@@ -93,6 +94,7 @@ class ParametrosOrganizacionInput:
     numero_registro: Optional[str] = ''
     tipo_entidad: Optional[str] = 'ASOCIACION'
     contabilidad_compleja: Optional[bool] = False
+    usa_presupuesto: Optional[bool] = False
     sede_social: Optional[str] = ''
     localidad: Optional[str] = ''
     cp: Optional[str] = ''
@@ -159,6 +161,7 @@ _MAPPING = [
     ('org.numero_registro',     'string', 'numero_registro'),
     ('org.tipo_entidad',        'string', 'tipo_entidad'),
     ('org.contabilidad_compleja','bool',  'contabilidad_compleja'),
+    ('org.usa_presupuesto',     'bool',  'usa_presupuesto'),
     ('org.sede_social',         'string', 'sede_social'),
     ('org.localidad',           'string', 'localidad'),
     ('org.cp',                  'string', 'cp'),
@@ -233,6 +236,7 @@ async def _load_org_params(session) -> ParametrosOrganizacion:
         numero_registro=cfg.get('org.numero_registro', ''),
         tipo_entidad=cfg.get('org.tipo_entidad', 'ASOCIACION'),
         contabilidad_compleja=bool(cfg.get('org.contabilidad_compleja', False)),
+        usa_presupuesto=bool(cfg.get('org.usa_presupuesto', False)),
         sede_social=cfg.get('org.sede_social', ''),
         localidad=cfg.get('org.localidad', ''),
         cp=cfg.get('org.cp', ''),
@@ -352,6 +356,7 @@ class ConfiguracionOrganizacionMutation:
             'numero_registro': datos.numero_registro or '',
             'tipo_entidad': datos.tipo_entidad or 'ASOCIACION',
             'contabilidad_compleja': datos.contabilidad_compleja or False,
+            'usa_presupuesto': datos.usa_presupuesto or False,
             'sede_social': datos.sede_social or '',
             'localidad': datos.localidad or '',
             'cp': datos.cp or '',

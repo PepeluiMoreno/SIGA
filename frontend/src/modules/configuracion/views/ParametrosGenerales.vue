@@ -220,6 +220,35 @@
               </p>
             </div>
 
+            <!-- Presupuesto anual -->
+            <div class="mb-6 pb-6 border-b border-slate-100">
+              <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                Presupuesto anual
+              </h3>
+              <p class="text-xs text-slate-400 mb-3">
+                Habilita la elaboración y el seguimiento del presupuesto anual por partidas.
+              </p>
+              <label class="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  v-model="form.usa_presupuesto"
+                  :disabled="esObligatorioPresupuesto"
+                  class="h-4 w-4 mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                />
+                <span class="text-sm text-slate-700">
+                  Usar gestión presupuestaria
+                  <span class="text-slate-400 text-xs block mt-0.5">
+                    Planificación anual de ingresos y gastos por partidas, ciclo de aprobación y
+                    seguimiento de ejecución. Para asociaciones es opcional (según estatutos).
+                  </span>
+                </span>
+              </label>
+              <p v-if="esObligatorioPresupuesto" class="text-xs text-amber-600 mt-2">
+                El plan de actuación (presupuesto) es obligatorio para fundaciones (Ley 50/2002)
+                y no puede desactivarse.
+              </p>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <div v-for="feat in catalogoFuncionalidades" :key="feat.clave" class="space-y-3">
                 <label class="flex items-start gap-3 cursor-pointer"
@@ -386,6 +415,7 @@ const form = reactive({
   nif: '',
   tipo_entidad: 'ASOCIACION',
   contabilidad_compleja: false,
+  usa_presupuesto: false,
   sede_social: '',
   localidad: '',
   cp: '',
@@ -473,6 +503,10 @@ const esObligatorioContabilidad = computed(() => {
 })
 watch(esObligatorioContabilidad, (val) => { if (val) form.contabilidad_compleja = true })
 
+// El presupuesto (plan de actuación) es obligatorio para fundaciones (Ley 50/2002)
+const esObligatorioPresupuesto = computed(() => esObligatorioContabilidad.value)
+watch(esObligatorioPresupuesto, (val) => { if (val) form.usa_presupuesto = true })
+
 watch(() => form.fuente_principal, (font) => {
   const t = orgConfigStore.temas.find(t => t.slug === form.tema) ?? form.tema
   orgConfigStore.applyTheme(t, font)
@@ -514,7 +548,7 @@ const redesSociales = [
 const QUERY_PARAMETROS = `
   query {
     parametrosOrganizacion {
-      nombre nif numeroRegistro tipoEntidad contabilidadCompleja
+      nombre nif numeroRegistro tipoEntidad contabilidadCompleja usaPresupuesto
       sedeSocial localidad cp provincia pais
       telefono email web
       rrssTwitter rrssFacebook rrssInstagram rrssLinkedin rrssYoutube rrssTelegram
@@ -570,9 +604,11 @@ onMounted(async () => {
     form.numero_registro                 = p.numeroRegistro                   ?? ''
     form.tipo_entidad                    = p.tipoEntidad                      ?? 'ASOCIACION'
     form.contabilidad_compleja           = p.contabilidadCompleja             ?? false
-    // Defensivo: si la entidad es fundación, el PCESFL es obligatorio aunque
-    // en BD viniera desactivado (datos inconsistentes). Se normaliza al cargar.
+    form.usa_presupuesto                 = p.usaPresupuesto                   ?? false
+    // Defensivo: si la entidad es fundación, contabilidad PCESFL y presupuesto son
+    // obligatorios aunque en BD vinieran desactivados (datos inconsistentes).
     if (esObligatorioContabilidad.value) form.contabilidad_compleja = true
+    if (esObligatorioPresupuesto.value)  form.usa_presupuesto = true
     form.sede_social                     = p.sedeSocial                       ?? ''
     form.localidad                       = p.localidad                        ?? ''
     form.cp                              = p.cp                               ?? ''
@@ -635,6 +671,7 @@ async function guardar() {
         numeroRegistro:                  form.numero_registro,
         tipoEntidad:                     form.tipo_entidad,
         contabilidadCompleja:            form.contabilidad_compleja,
+        usaPresupuesto:                  form.usa_presupuesto,
         sedeSocial:                      form.sede_social,
         localidad:                       form.localidad,
         cp:                              form.cp,

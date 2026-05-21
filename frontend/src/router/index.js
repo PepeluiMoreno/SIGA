@@ -352,7 +352,7 @@ const routes = [
     path: '/economico/presupuesto',
     component: Presupuesto,
     name: 'Presupuesto',
-    meta: { requiresAuth: true, requiredPermission: 'FIN_REPORTS' }
+    meta: { requiresAuth: true, requiredPermission: 'FIN_REPORTS', requiereFeature: 'usaPresupuesto' }
   },
   {
     path: '/economico/donaciones',
@@ -565,6 +565,15 @@ router.beforeEach(async (to, from, next) => {
   if (to.meta.guest && isAuthenticated) {
     next('/')
     return
+  }
+
+  // Comprobación de funcionalidad activada (feature flag de organización)
+  if (to.meta.requiereFeature && isAuthenticated) {
+    await orgConfigStore.fetchConfig()
+    if (!orgConfigStore[to.meta.requiereFeature]) {
+      next('/')
+      return
+    }
   }
 
   // Comprobación de permisos

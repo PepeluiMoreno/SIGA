@@ -81,6 +81,29 @@ Lo mínimo para que el presupuesto sea usable de punta a punta.
 
 ## Decisiones de diseño
 
+### El presupuesto es una funcionalidad opcional (feature flag), no dos modos
+
+A diferencia de la contabilidad (que siempre existe en una de dos formas, simplificada o
+completa), el presupuesto es una funcionalidad que para algunas entidades **sobra** y para
+otras es **obligatoria**. Por eso el patrón correcto no es "dos modos" sino un flag de
+activación: `org.usa_presupuesto`.
+
+**Base legal (verificar con asesor; conocimiento a inicio de 2026):**
+- *Asociaciones (LO 1/2002):* la ley estatal no impone un presupuesto formal; la obligación
+  suele venir de los **estatutos** (la asamblea aprueba el presupuesto anual). Por tanto,
+  opcional a nivel de aplicación, activable según los estatutos de cada asociación.
+- *Fundaciones (Ley 50/2002):* **obligatorio**. El Patronato aprueba y remite al Protectorado
+  el plan de actuación con la previsión económica. El presupuesto no puede desactivarse.
+
+**Implementación (análoga al forzado de PCESFL para fundaciones, commit a531f04):**
+- Flag `usa_presupuesto` en `ParametrosGenerales`, bloque Funcionalidades.
+- Si `tipo_entidad` es Fundación → forzado a activado y bloqueado, con aviso.
+- Si está desactivado → el ítem "Presupuesto" no aparece en el menú ni es accesible la ruta.
+- Por defecto: desactivado para asociaciones (lo activan si sus estatutos lo piden),
+  activado e inmutable para fundaciones.
+
+
+
 - **No romper lo existente.** Se amplía `presupuesto.py`, no se reescribe. Los campos
   y propiedades ya presentes se conservan.
 - **Estados al catálogo**, como en Secretaría: `EstadoPlanificacion` ya es tabla; las
@@ -89,6 +112,25 @@ Lo mínimo para que el presupuesto sea usable de punta a punta.
   `ApunteCaja.actividad_id` / `campania_id`, que ya existen, vía el compromiso/partida.
 - **Aprobación enlazable con Secretaría** en Fase 1 solo se registra fecha; el vínculo
   formal con acuerdo de reunión se valora en fase posterior.
+
+## Activación del módulo (feature flag)
+
+**Decisión.** El presupuesto no es un modo (como la contabilidad simplificada/completa)
+sino una funcionalidad activable. Con la contabilidad siempre hay que llevarla de alguna
+forma (dos modos); con el presupuesto, para algunas entidades el módulo sobra por completo
+y para otras es obligatorio.
+
+**Base legal** (verificar con asesoría; conocimiento a inicio de 2026):
+- Asociaciones (LO 1/2002): la ley no impone presupuesto formal. Suele ser obligación
+  estatutaria (la asamblea aprueba el presupuesto anual), no legal. Por tanto, opcional.
+- Fundaciones (Ley 50/2002): el Patronato debe aprobar y remitir al Protectorado el plan
+  de actuación con la previsión económica del ejercicio. Por tanto, obligatorio.
+
+**Implementación** (análoga al forzado de PCESFL para fundaciones):
+- Flag `org.usa_presupuesto` en Configuración -> Parámetros generales -> Funcionalidades.
+- Tipo de entidad Fundación: forzado a activado y bloqueado, con aviso (mismo patrón que
+  contabilidad_compleja para fundaciones).
+- Desactivado: el ítem Presupuesto no aparece en el menú y la ruta queda inaccesible.
 
 ## Patrón de UI (vista de presupuesto)
 
