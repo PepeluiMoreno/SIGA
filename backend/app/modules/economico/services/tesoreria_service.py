@@ -155,6 +155,19 @@ class TesoreriaService:
         self.session.add(cuenta)
         await self.session.commit()
         await self.session.refresh(apunte)
+
+        # Imputar a presupuesto si el apunte está afecto a una actividad o campaña
+        # con partida presupuestaria. Defensivo: si no hay partida, no hace nada.
+        if (actividad_id or campania_id) and tipo in (TipoApunte.INGRESO, TipoApunte.GASTO):
+            try:
+                from .presupuesto_service import PresupuestoService
+                await PresupuestoService(self.session).imputar_ejecucion(
+                    importe=importe, actividad_id=actividad_id, campania_id=campania_id,
+                )
+            except Exception:
+                # La imputación a presupuesto nunca debe impedir registrar el movimiento real
+                pass
+
         return apunte
 
     # Alias para compatibilidad con el nombre antiguo

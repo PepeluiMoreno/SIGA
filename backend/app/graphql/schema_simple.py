@@ -15,13 +15,14 @@ from .configuracion_resolvers import ConfiguracionOrganizacionQuery
 from .economico_resolvers import EconomicoQuery
 from .categoria_fiscal_resolvers import CategoriaFiscalQuery
 from .categorizacion_resolvers import CategorizacionQuery
+from .presupuesto_resolvers import PresupuestoQuery
 from .secretaria_resolvers import SecretariaQuery, SecretariaResolverMutation
 from .types_auto import *  # Importar todos los tipos generados
 from .inputs_auto import *  # Importar inputs y filtros
 
 
 @strawberry.type
-class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, CategoriaFiscalQuery, CategorizacionQuery, SecretariaQuery):
+class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, CategoriaFiscalQuery, CategorizacionQuery, PresupuestoQuery, SecretariaQuery):
     """Queries GraphQL del sistema SIGA con generación automática.
 
     IMPORTANTE: Todos los nombres usan camelCase para consistencia con GraphQL.
