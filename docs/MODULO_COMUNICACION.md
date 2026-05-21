@@ -108,6 +108,20 @@ in-process; los handlers (`handlers.py`) lo traducen a `emitir(...)`. El emisor
 no conoce al consumidor. Registro: `wire_comunicacion_handlers(async_session)` en
 el lifespan de `main.py`, junto a la invalidación de la PermissionMatrix.
 
+**Dispatch no bloqueante.** Al publicar, los handlers se lanzan como tareas en
+background (`asyncio.create_task`): quien publica no espera a que terminen, así el
+emisor queda desacoplado también en el tiempo (aprobar un acta no espera al envío
+de avisos). Excepción: handlers críticos que se suscriben con `sync=True` se
+ejecutan en línea y `publish` sí los espera — es el caso de la invalidación de la
+PermissionMatrix, donde servir permisos obsoletos sería un fallo de seguridad.
+Cada handler aísla sus errores: uno que falle no afecta a los demás ni al emisor.
+
+**Limitación (sin durabilidad):** si el proceso muere antes de despachar, los
+eventos en vuelo se pierden. La evolución hacia entrega garantizada es un
+*transactional outbox* (evento escrito en tabla dentro de la transacción de
+negocio + worker con reintentos), puente natural hacia Redis/RabbitMQ. No
+implementado; se hará solo si un aviso perdido llega a ser un problema real.
+
 7 eventos con handler suscrito: `ReunionConvocada`, `ActaEnBorrador`,
 `ActaAprobada`, `NombramientoPendienteAprobacion`, `TrasladoSolicitado`,
 `TrasladoResuelto`, `RemesaDevolucion`.

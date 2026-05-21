@@ -146,25 +146,74 @@ AsyncHandler = Callable[[Any], Coroutine[Any, Any, None]]
 
 
 class EventBus:
-    """Bus in-process. Handlers son coroutines; se lanzan en background tasks."""
+    """Bus de eventos in-process.
+
+    Dispatch NO bloqueante por defecto: al publicar, los handlers se lanzan como
+    tareas en background (`asyncio.create_task`), de modo que quien publica no
+    espera a que terminen. Esto desacopla temporalmente al emisor del consumidor
+    (p. ej. aprobar un acta no espera al envío de avisos).
+
+    Handlers SÍNCRONOS (opt-in con `subscribe(..., sync=True)`): se ejecutan en
+    línea y `publish` espera a que completen antes de retornar. Reservado para
+    handlers cuyo efecto debe estar garantizado al continuar — caso de la
+    invalidación de la PermissionMatrix, donde servir permisos obsoletos sería un
+    fallo de seguridad.
+
+    Cada handler captura sus propias excepciones: un fallo en uno no afecta a los
+    demás ni a quien publica. Limitaciones conocidas (sin durabilidad): si el
+    proceso muere antes del dispatch, los eventos en vuelo se pierden. La
+    evolución natural hacia entrega garantizada es un transactional outbox; ver
+    docs/MODULO_COMUNICACION.md (no implementado).
+    """
 
     def __init__(self) -> None:
         self._handlers: Dict[Type[DomainEvent], List[AsyncHandler]] = defaultdict(list)
+        self._sync_handlers: Dict[Type[DomainEvent], List[AsyncHandler]] = defaultdict(list)
+        # Mantener referencia fuerte a las tareas en vuelo para que el GC no las
+        # cancele antes de completarse (asyncio solo guarda weakrefs).
+        self._tasks: set[asyncio.Task] = set()
 
-    def subscribe(self, event_type: Type[DomainEvent], handler: AsyncHandler) -> None:
-        self._handlers[event_type].append(handler)
+    def subscribe(
+        self,
+        event_type: Type[DomainEvent],
+        handler: AsyncHandler,
+        *,
+        sync: bool = False,
+    ) -> None:
+        """Suscribe un handler. `sync=True` lo ejecuta en línea (publish espera)."""
+        if sync:
+            self._sync_handlers[event_type].append(handler)
+        else:
+            self._handlers[event_type].append(handler)
 
     async def publish(self, event: DomainEvent) -> None:
-        handlers = self._handlers.get(type(event), [])
-        for h in handlers:
+        event_type = type(event)
+
+        # 1) Handlers síncronos: en línea, publish espera a que completen.
+        for h in self._sync_handlers.get(event_type, []):
             try:
                 await h(event)
             except Exception:
                 logger.exception(
-                    "Error en handler %s para evento %s",
-                    h.__name__,
-                    type(event).__name__,
+                    "Error en handler síncrono %s para evento %s",
+                    getattr(h, "__name__", repr(h)), event_type.__name__,
                 )
+
+        # 2) Handlers asíncronos: en background, publish NO espera.
+        for h in self._handlers.get(event_type, []):
+            task = asyncio.create_task(self._run_background(h, event))
+            self._tasks.add(task)
+            task.add_done_callback(self._tasks.discard)
+
+    @staticmethod
+    async def _run_background(handler: AsyncHandler, event: DomainEvent) -> None:
+        try:
+            await handler(event)
+        except Exception:
+            logger.exception(
+                "Error en handler %s para evento %s",
+                getattr(handler, "__name__", repr(handler)), type(event).__name__,
+            )
 
 
 # Instancia global
@@ -198,4 +247,4 @@ def wire_matrix_invalidation(session_factory: Callable) -> None:
             await invalidate_and_rebuild(session)
 
     for event_type in _PERMISSION_INVALIDATING_EVENTS:
-        event_bus.subscribe(event_type, _invalidate)
+        event_bus.subscribe(event_type, _invalidate, sync=True)
