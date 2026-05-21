@@ -79,13 +79,13 @@ modelado el rol/cargo, solo de quién tiene el permiso de la acción siguiente).
 
 Prioridad del tipo: `URGENTE`/`ALTA` ⇒ también email; `NORMAL`/`BAJA` ⇒ solo in-app.
 
-### 3.1 Económico — Presupuestos  *(enganche YA preparado)*
+### 3.1 Económico — Presupuestos  *(ACTIVO)*
 - **Punto:** `presupuesto_service.avisar_desviacion()` tras imputar gasto.
 - **Tipo:** `PRESUPUESTO_DESVIACION` · prioridad NORMAL (control blando, in-app).
 - **Audiencia:** `por_permiso("ECO_PRESUPUESTO_APROBAR")`.
-- **Acción:** quitar el flag `_NOTIFICACIONES_ACTIVAS`, migrar la llamada a
-  `emitir()` (hoy itera `crear_notificacion` con resolución propia que solo mira
-  `RolTransaccion`; `por_permiso` además cubre el camino por funcionalidad).
+- **Estado:** conectado a `emitir()`. Se eliminó el flag `_NOTIFICACIONES_ACTIVAS`
+  y el método propio `_usuarios_control_presupuestario` (solo miraba el camino
+  RBAC directo); `por_permiso` cubre además el permiso concedido vía funcionalidad.
 
 ### 3.2 Económico — Remesas y cobro
 - **Punto:** generación de remesa lista para envío; devoluciones SEPA (pain.002).
