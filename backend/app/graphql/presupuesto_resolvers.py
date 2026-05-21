@@ -1,4 +1,4 @@
-"""Resolvers GraphQL del módulo de presupuestos (Fase 1)."""
+"""Resolvers GraphQL del módulo de presupuestos (Fases 1 y 2)."""
 
 import uuid
 from decimal import Decimal
@@ -9,6 +9,7 @@ import strawberry
 
 from app.graphql.permissions import RequireTransaction
 from app.modules.economico.services.presupuesto_service import PresupuestoService
+from app.modules.economico.models.presupuesto import TipoModificacionPresupuestaria
 
 
 @strawberry.type
@@ -27,6 +28,10 @@ class PartidaPresupuestariaDetailType:
     importe_ejecutado: float
     importe_disponible: float
     porcentaje_ejecutado: float
+    importe_inicial: float
+    importe_modificaciones: float
+    esta_sobreejecutada: bool
+    esta_agotada: bool
 
     @staticmethod
     def from_model(p) -> "PartidaPresupuestariaDetailType":
@@ -45,6 +50,10 @@ class PartidaPresupuestariaDetailType:
             importe_ejecutado=float(p.importe_ejecutado or 0),
             importe_disponible=float(p.importe_disponible),
             porcentaje_ejecutado=round(p.porcentaje_ejecutado, 1),
+            importe_inicial=float(p.importe_inicial or 0),
+            importe_modificaciones=float(p.importe_modificaciones),
+            esta_sobreejecutada=p.esta_sobreejecutada,
+            esta_agotada=p.esta_agotada,
         )
 
 
@@ -63,6 +72,7 @@ class PlanificacionAnualDetailType:
     saldo_presupuestado: float
     gastos_ejecutados: float
     porcentaje_ejecucion: float
+    control_disponibilidad: bool
 
     @staticmethod
     def from_model(pl) -> "PlanificacionAnualDetailType":
@@ -80,6 +90,7 @@ class PlanificacionAnualDetailType:
             saldo_presupuestado=float(pl.saldo_presupuestado or 0),
             gastos_ejecutados=float(pl.gastos_ejecutados or 0),
             porcentaje_ejecucion=round(pl.porcentaje_ejecucion, 1),
+            control_disponibilidad=pl.control_disponibilidad,
         )
 
 
@@ -95,6 +106,48 @@ class DesviacionPartidaType:
     disponible: float
     desviacion: float
     porcentaje_ejecucion: float
+
+
+@strawberry.type
+class ModificacionPresupuestariaType:
+    id: uuid.UUID
+    tipo: str
+    partida_destino_id: uuid.UUID
+    partida_origen_id: Optional[uuid.UUID]
+    importe: float
+    fecha: date
+    motivo: str
+
+    @staticmethod
+    def from_model(m) -> "ModificacionPresupuestariaType":
+        return ModificacionPresupuestariaType(
+            id=m.id,
+            tipo=m.tipo.value if hasattr(m.tipo, "value") else m.tipo,
+            partida_destino_id=m.partida_destino_id,
+            partida_origen_id=m.partida_origen_id,
+            importe=float(m.importe or 0),
+            fecha=m.fecha,
+            motivo=m.motivo,
+        )
+
+
+@strawberry.type
+class AlertaPresupuestariaType:
+    partida_id: str
+    codigo: str
+    nombre: str
+    tipo_alerta: str
+    mensaje: str
+
+
+@strawberry.input
+class RegistrarModificacionInput:
+    planificacion_id: uuid.UUID
+    tipo: str  # TRANSFERENCIA | AMPLIACION | SUPLEMENTO
+    partida_destino_id: uuid.UUID
+    importe: float
+    motivo: str
+    partida_origen_id: Optional[uuid.UUID] = None
 
 
 @strawberry.input
@@ -161,6 +214,22 @@ class PresupuestoQuery:
         service = PresupuestoService(info.context.session)
         filas = await service.informe_desviaciones(planificacion_id)
         return [DesviacionPartidaType(**f) for f in filas]
+
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")])
+    async def modificaciones_presupuestarias(
+        self, info: strawberry.Info, planificacion_id: uuid.UUID
+    ) -> List[ModificacionPresupuestariaType]:
+        service = PresupuestoService(info.context.session)
+        items = await service.listar_modificaciones(planificacion_id)
+        return [ModificacionPresupuestariaType.from_model(m) for m in items]
+
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")])
+    async def alertas_presupuestarias(
+        self, info: strawberry.Info, planificacion_id: uuid.UUID
+    ) -> List[AlertaPresupuestariaType]:
+        service = PresupuestoService(info.context.session)
+        filas = await service.alertas(planificacion_id)
+        return [AlertaPresupuestariaType(**f) for f in filas]
 
 
 @strawberry.type
@@ -253,3 +322,36 @@ class PresupuestoMutation:
         service = PresupuestoService(info.context.session)
         p = await service.devolver_a_borrador(planificacion_id)
         return PlanificacionAnualDetailType.from_model(p)
+
+    # ── Fase 2 ───────────────────────────────────────────────────────────────
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_APROBAR")])
+    async def registrar_modificacion_presupuestaria(
+        self, info: strawberry.Info, data: RegistrarModificacionInput
+    ) -> ModificacionPresupuestariaType:
+        service = PresupuestoService(info.context.session)
+        usuario_id = info.context.current_user.id if info.context.current_user else None
+        m = await service.registrar_modificacion(
+            planificacion_id=data.planificacion_id,
+            tipo=TipoModificacionPresupuestaria[data.tipo],
+            partida_destino_id=data.partida_destino_id,
+            importe=Decimal(str(data.importe)),
+            motivo=data.motivo,
+            partida_origen_id=data.partida_origen_id,
+            registrada_por_id=usuario_id,
+        )
+        return ModificacionPresupuestariaType.from_model(m)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_APROBAR")])
+    async def establecer_control_disponibilidad(
+        self, info: strawberry.Info, planificacion_id: uuid.UUID, activo: bool
+    ) -> PlanificacionAnualDetailType:
+        service = PresupuestoService(info.context.session)
+        plan = await service.obtener_planificacion(planificacion_id)
+        if not plan:
+            raise ValueError("Planificación no encontrada")
+        plan.control_disponibilidad = activo
+        service.session.add(plan)
+        await service.session.commit()
+        await service.session.refresh(plan)
+        return PlanificacionAnualDetailType.from_model(plan)

@@ -309,8 +309,13 @@ class PresupuestoService:
 
         Busca la partida del presupuesto en ejecución cuya actividad/campaña coincida.
         Si no hay partida afecta, no hace nada (el apunte simplemente no imputa a presupuesto).
+        Tras imputar, dispara el aviso de desviación si la partida queda desviada
+        (control blando: avisa, no bloquea).
         """
-        return await self._ajustar_ejecucion(importe, actividad_id, campania_id)
+        partida = await self._ajustar_ejecucion(importe, actividad_id, campania_id)
+        if partida is not None:
+            await self.avisar_desviacion(partida)
+        return partida
 
     async def revertir_ejecucion(
         self,
@@ -470,6 +475,76 @@ class PresupuestoService:
                     "mensaje": "Presupuesto vigente totalmente consumido",
                 })
         return salida
+
+    # ── Aviso de desviación presupuestaria (Fase 2 — enganche preparado) ──────
+    #
+    # PENDIENTE DE CONEXIÓN: requiere el sistema de notificaciones del frontend
+    # (rama feature/notificaciones), aún no construido. Este método ya resuelve
+    # QUÉ avisar y A QUIÉN (usuarios con permiso ECO_PRESUPUESTO_APROBAR), pero el
+    # envío real está desactivado tras el flag `_NOTIFICACIONES_ACTIVAS`. Cuando el
+    # sistema de notificaciones exista, basta con poner el flag a True (y crear el
+    # tipo de notificación 'PRESUPUESTO_DESVIACION' en su seed). No hay que tocar la
+    # lógica de detección ni el punto de llamada en tesorería.
+
+    _NOTIFICACIONES_ACTIVAS = False  # se activará con la rama feature/notificaciones
+
+    async def _usuarios_control_presupuestario(self) -> List[UUID]:
+        """Resuelve los usuarios con permiso de control presupuestario
+        (ECO_PRESUPUESTO_APROBAR), destinatarios del aviso de desviación."""
+        from app.modules.acceso.models.usuario import Usuario, UsuarioRol
+        from app.modules.acceso.models.rol_transaccion import RolTransaccion
+        from app.modules.acceso.models.transaccion import Transaccion
+
+        result = await self.session.execute(
+            select(UsuarioRol.usuario_id)
+            .join(RolTransaccion, RolTransaccion.rol_id == UsuarioRol.rol_id)
+            .join(Transaccion, Transaccion.id == RolTransaccion.transaccion_id)
+            .where(Transaccion.codigo == "ECO_PRESUPUESTO_APROBAR")
+            .distinct()
+        )
+        return [row[0] for row in result.all()]
+
+    async def avisar_desviacion(self, partida: PartidaPresupuestaria) -> None:
+        """Avisa a los responsables de control presupuestario de una desviación.
+
+        Control BLANDO: nunca bloquea nada; solo notifica para que el responsable
+        decida si tramita una modificación presupuestaria. Hoy preparado y desactivado.
+        """
+        if not partida or not (partida.esta_sobreejecutada or partida.esta_agotada):
+            return
+
+        titulo = "Desviación presupuestaria"
+        estado = "sobreejecutada" if partida.esta_sobreejecutada else "agotada"
+        mensaje = (
+            f"La partida «{partida.nombre}» ({partida.codigo}) está {estado}: "
+            f"ejecutado {float(partida.importe_ejecutado):.2f} € sobre "
+            f"{float(partida.importe_presupuestado):.2f} € vigentes. "
+            f"Valora si procede una modificación presupuestaria."
+        )
+
+        if not self._NOTIFICACIONES_ACTIVAS:
+            # Enganche preparado: cuando exista el sistema de notificaciones, activar.
+            return
+
+        # — Código listo para cuando _NOTIFICACIONES_ACTIVAS = True —
+        from app.infrastructure.services.notificacion_service import NotificacionService
+        destinatarios = await self._usuarios_control_presupuestario()
+        if not destinatarios:
+            return
+        notif = NotificacionService(self.session)
+        for usuario_id in destinatarios:
+            try:
+                await notif.crear_notificacion(
+                    tipo_codigo="PRESUPUESTO_DESVIACION",
+                    usuario_id=usuario_id,
+                    titulo=titulo,
+                    mensaje=mensaje,
+                    canal="INAPP",
+                    entidad_tipo="partida_presupuestaria",
+                    entidad_id=str(partida.id),
+                )
+            except Exception:
+                pass  # un fallo de aviso nunca afecta al registro del gasto
 
     # ── Control de disponibilidad (Fase 2) ───────────────────────────────────
 
