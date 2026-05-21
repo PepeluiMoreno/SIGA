@@ -54,8 +54,13 @@ async def lifespan(app: FastAPI):
         logger.info("Catálogos sincronizados")
 
         # 1b. Enlazar SUPERADMIN con las transacciones añadidas por catalog.py
-        from app.scripts.bootstrap import sync_superadmin_all_transactions
+        from app.scripts.bootstrap import (
+            sync_superadmin_all_transactions,
+            sync_roles_funcionales_catalog,
+        )
         await sync_superadmin_all_transactions(session)
+        # 1c. Re-enlazar roles funcionales con transacciones de catalog.py
+        await sync_roles_funcionales_catalog(session)
         await session.commit()
 
         # 2. Construir la PermissionMatrix en memoria

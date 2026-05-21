@@ -65,6 +65,12 @@ export const ELIMINAR_PARTIDA = `
   }
 `
 
+export const ELIMINAR_PLANIFICACION = `
+  mutation EliminarPlanificacion($planificacionId: UUID!) {
+    eliminarPlanificacion(planificacionId: $planificacionId)
+  }
+`
+
 export const PROPONER_PRESUPUESTO = `
   mutation ProponerPresupuesto($planificacionId: UUID!) {
     proponerPresupuesto(planificacionId: $planificacionId) { id estadoId }
@@ -155,11 +161,21 @@ export const GET_LIQUIDACION = `
   }
 `
 
+export const GET_LIQUIDACIONES_TODAS = `
+  query LiquidacionesPresupuestarias {
+    liquidacionesPresupuestarias {
+      ejercicio existe
+      ingresosPrevistos ingresosEjecutados gastosPrevistos gastosEjecutados
+      resultadoPrevisto resultadoEjecutado gradoEjecucionGastos
+    }
+  }
+`
+
 export const GET_RATIO_VARIACION_CUOTA = `
   query RatioVariacionCuota($ejercicioOrigen: Int!, $ejercicioNuevo: Int!) {
     ratioVariacionCuota(ejercicioOrigen: $ejercicioOrigen, ejercicioNuevo: $ejercicioNuevo) {
       ejercicioOrigen ejercicioNuevo
-      totalOrigen totalNuevo
+      totalOrigen totalNuevo collectionRate
       ratio variacionPorcentaje disponible
     }
   }

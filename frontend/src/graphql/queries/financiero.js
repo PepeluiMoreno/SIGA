@@ -986,6 +986,20 @@ export const CONFIGURAR_CUOTA_EJERCICIO = `
   }
 `
 
+export const ELIMINAR_CUOTA_EJERCICIO = `
+  mutation EliminarCuotaEjercicio($ejercicio: Int!) {
+    eliminarCuotaEjercicio(ejercicio: $ejercicio)
+  }
+`
+
+export const GET_HISTORIAL_CUOTAS = `
+  query HistorialCuotas {
+    importesCuotaAnio(filter: { codigoCuota: { eq: "BASE" } }) {
+      id ejercicio importe nombreCuota observaciones activo
+    }
+  }
+`
+
 export const PREVISUALIZAR_GENERACION_CUOTAS = `
   mutation PrevisualizarGeneracionCuotas($ejercicio: Int!) {
     previsualizarGeneracionCuotas(ejercicio: $ejercicio) {

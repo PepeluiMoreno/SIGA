@@ -52,6 +52,11 @@
               {{ guardando ? 'Guardando…' : 'Guardar configuración' }}
             </button>
           </div>
+          <div v-if="config" class="pt-1 border-t border-slate-100 mt-1">
+            <button @click="anularConfig" class="text-sm text-red-600 hover:text-red-700 hover:underline" :disabled="anulando">
+              {{ anulando ? 'Anulando…' : '✕ Anular establecimiento de cuota' }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -158,20 +163,26 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
   GET_CONFIG_CUOTA_EJERCICIO,
   CONFIGURAR_CUOTA_EJERCICIO,
+  ELIMINAR_CUOTA_EJERCICIO,
   PREVISUALIZAR_GENERACION_CUOTAS,
   GENERAR_CUOTAS_INDIVIDUALES,
 } from '@/graphql/queries/financiero'
 
 const { query, mutation } = useGraphQL()
+const route = useRoute()
 
 const anoActual = new Date().getFullYear()
-const ejercicios = [anoActual - 1, anoActual, anoActual + 1]
-const ejercicio = ref(anoActual)
+const _mes = new Date().getMonth() + 1
+const ejercicios = _mes >= 10
+  ? [anoActual - 1, anoActual, anoActual + 1]
+  : [anoActual - 1, anoActual]
+const ejercicio = ref(route.query.ejercicio ? parseInt(route.query.ejercicio) : anoActual)
 const importeBase = ref(0)
 const observaciones = ref('')
 const config = ref(null)
@@ -180,6 +191,7 @@ const resultadoGeneracion = ref(null)
 const fechaVencimiento = ref('')
 
 const guardando = ref(false)
+const anulando = ref(false)
 const calculando = ref(false)
 const generando = ref(false)
 const errorConfig = ref('')
@@ -241,6 +253,19 @@ const previsualizar = async () => {
     alert(e.message || 'Error al previsualizar')
   } finally {
     calculando.value = false
+  }
+}
+
+const anularConfig = async () => {
+  if (!confirm(`¿Anular la configuración de cuota para el ejercicio ${ejercicio.value}? Esta acción no se puede deshacer.`)) return
+  anulando.value = true
+  try {
+    await mutation(ELIMINAR_CUOTA_EJERCICIO, { ejercicio: ejercicio.value })
+    await cargarConfig()
+  } catch (e) {
+    errorConfig.value = e.message || 'Error al anular'
+  } finally {
+    anulando.value = false
   }
 }
 

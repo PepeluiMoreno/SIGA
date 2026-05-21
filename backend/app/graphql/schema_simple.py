@@ -112,7 +112,8 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
     solicitudesReduccionCuota: list[SolicitudReduccionCuotaType] = strawchemy.field(filter_input=SolicitudReduccionCuotaFilter)
     estadosPlanificacion: list[EstadoPlanificacionType] = strawchemy.field()
     categoriasPartida: list[CategoriaPartidaType] = strawchemy.field()
-    partidasPresupuestarias: list[PartidaPresupuestariaType] = strawchemy.field()
+    # `partidasPresupuestarias` lo sirve el resolver de PresupuestoQuery (filtra por
+    # planificacionId y tipo); no se declara aquí para no tapar ese resolver.
     compromisos_presupuestarios: list[CompromisoPresupuestarioType] = strawchemy.field(filter_input=CompromisoPresupuestarioFilter)
     planificacionesAnuales: list[PlanificacionAnualType] = strawchemy.field()
 

@@ -1,78 +1,154 @@
 <template>
-  <AppLayout title="Presupuesto" subtitle="Planificación presupuestaria anual y partidas">
-    <LoadSpinner v-if="loading" />
+  <AppLayout title="Presupuestos" subtitle="Planificación presupuestaria anual y partidas">
 
-    <!-- Sin presupuesto del ejercicio: ofrecer crearlo -->
-    <div v-else-if="!planificacion" class="bg-white rounded-lg shadow border border-gray-200 p-8">
-      <div class="text-center">
-        <p class="font-medium text-gray-700 mb-1">No hay presupuesto para {{ ejercicioActual }}</p>
-        <p class="text-sm text-gray-500 mb-4">Crea la planificación anual para empezar a presupuestar.</p>
-        <div v-if="puedeCrear" class="flex items-center justify-center gap-2">
-          <input v-model.number="nuevoEjercicio" type="number"
-            class="input-sm w-28 text-center" @change="onCambioEjercicio" />
-          <button @click="crearPlanificacion"
-            class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700">
-            Crear presupuesto {{ nuevoEjercicio }}
-          </button>
-        </div>
-        <div v-if="puedeCrear" class="mt-3 text-sm text-gray-500">
-          o
-          <button @click="mostrarPanelClonar = true" class="text-purple-600 hover:underline ml-1">
-            partir del presupuesto de {{ nuevoEjercicio - 1 }}
-          </button>
-          <span v-if="puedeAprobar"> ·
-            <button @click="prorrogarDelAnterior" class="text-purple-600 hover:underline">
-              prorrogar el de {{ nuevoEjercicio - 1 }}
-            </button>
-          </span>
-        </div>
+    <!-- Navegador de ejercicios -->
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2">
+        <button @click="cambiarEjercicio(-1)"
+          class="p-1.5 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-700">
+          <ChevronLeftIcon class="w-5 h-5" />
+        </button>
+        <span class="text-lg font-semibold text-slate-800 w-14 text-center">{{ ejercicioActual }}</span>
+        <button @click="cambiarEjercicio(+1)"
+          :disabled="ejercicioActual >= anioMaximo"
+          class="p-1.5 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-700 disabled:opacity-30">
+          <ChevronRightIcon class="w-5 h-5" />
+        </button>
       </div>
-
-      <!-- Panel de clonado con factor de cuota -->
-      <div v-if="mostrarPanelClonar" class="mt-6 border border-indigo-200 rounded-lg bg-indigo-50 p-4 max-w-lg mx-auto">
-        <h3 class="text-sm font-semibold text-indigo-800 mb-3">
-          Partir del presupuesto {{ nuevoEjercicio - 1 }}
-        </h3>
-
-        <!-- Ratio de cuota -->
-        <div v-if="ratioCuota === null" class="text-xs text-slate-500 mb-3 italic">
-          Cargando variación de cuota…
-        </div>
-        <div v-else-if="ratioCuota.disponible" class="mb-3">
-          <div class="flex items-center justify-between text-sm mb-1">
-            <span class="text-slate-700">Variación de cuota {{ nuevoEjercicio - 1 }} → {{ nuevoEjercicio }}</span>
-            <span :class="ratioCuota.variacionPorcentaje >= 0 ? 'text-green-700 font-semibold' : 'text-red-600 font-semibold'">
-              {{ ratioCuota.variacionPorcentaje >= 0 ? '+' : '' }}{{ ratioCuota.variacionPorcentaje.toFixed(1) }}%
-            </span>
-          </div>
-          <div class="text-xs text-slate-500 mb-2">
-            Cuota {{ nuevoEjercicio - 1 }}: {{ ratioCuota.totalOrigen.toFixed(2) }} € →
-            Cuota {{ nuevoEjercicio }}: {{ ratioCuota.totalNuevo.toFixed(2) }} €
-          </div>
-          <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none">
-            <input type="checkbox" v-model="aplicarFactorCuota" class="rounded" />
-            Escalar todas las partidas con este factor (×{{ ratioCuota.ratio.toFixed(4) }})
-          </label>
-        </div>
-        <div v-else class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
-          No hay cuotas definidas para {{ nuevoEjercicio - 1 }} o {{ nuevoEjercicio }}.
-          Los importes se copiarán tal cual.
-        </div>
-
-        <div class="flex gap-2 justify-end mt-2">
-          <button @click="mostrarPanelClonar = false"
-            class="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-800">
-            Cancelar
-          </button>
-          <button @click="clonarDelAnterior" :disabled="ocupado"
-            class="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-            {{ ocupado ? 'Creando…' : 'Crear borrador' }}
+      <div class="flex items-center gap-3">
+        <div v-if="todosEjercicios.length > 1" class="flex gap-1">
+          <button v-for="ej in todosEjercicios" :key="ej"
+            @click="irAEjercicio(ej)"
+            :class="['text-xs px-2 py-0.5 rounded-full', ej === ejercicioActual
+              ? 'bg-indigo-600 text-white'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200']">
+            {{ ej }}
           </button>
         </div>
+        <router-link to="/economico/presupuesto-evolucion"
+          class="text-xs text-indigo-600 hover:underline whitespace-nowrap">
+          Ver evolución ↗
+        </router-link>
       </div>
     </div>
 
-    <AccordionGroup v-else>
+    <!-- Selector de borradores del ejercicio (varios borradores posibles) -->
+    <div v-if="!loading && planificacion && puedeCrear && !hayDefinitiva"
+      class="flex items-center gap-2 mb-3 flex-wrap">
+      <span class="text-xs font-medium text-slate-500">Borradores:</span>
+      <button v-for="p in planesEjercicio" :key="p.id"
+        @click="seleccionarPlan(p.id)"
+        :class="['text-xs px-2.5 py-1 rounded border', p.id === planificacion.id
+          ? 'bg-indigo-600 text-white border-indigo-600'
+          : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50']">
+        {{ p.nombre }}
+      </button>
+      <button @click="crearOtroBorrador" :disabled="ocupado"
+        class="text-xs px-2.5 py-1 rounded border border-dashed border-slate-300 text-slate-500 hover:bg-slate-50 disabled:opacity-50">
+        + nuevo
+      </button>
+      <button @click="mostrarPanelClonar = true"
+        class="text-xs px-2.5 py-1 rounded border border-dashed border-slate-300 text-slate-500 hover:bg-slate-50">
+        + clonar otro
+      </button>
+    </div>
+
+    <LoadSpinner v-if="loading" />
+
+    <!-- Panel de clonado con factor de cuota (compartido: estado vacío y vista con borradores) -->
+    <div v-if="!loading && mostrarPanelClonar"
+      class="mb-4 border border-indigo-200 rounded-lg bg-indigo-50 p-4 max-w-lg mx-auto">
+      <h3 class="text-sm font-semibold text-indigo-800 mb-3">
+        Clonar del presupuesto {{ ejercicioActual - 1 }}
+      </h3>
+      <div v-if="ratioCuota === null" class="text-xs text-slate-500 mb-3 italic">
+        Cargando previsión de ingresos…
+      </div>
+      <div v-else-if="ratioCuota.disponible" class="mb-3">
+        <div class="flex items-center justify-between text-sm mb-1">
+          <span class="text-slate-700">Variación prevista de ingresos por cuotas</span>
+          <span :class="ratioCuota.variacionPorcentaje >= 0 ? 'text-green-700 font-semibold' : 'text-red-600 font-semibold'">
+            {{ ratioCuota.variacionPorcentaje >= 0 ? '+' : '' }}{{ ratioCuota.variacionPorcentaje.toFixed(1) }}%
+          </span>
+        </div>
+        <div class="text-xs text-slate-500 mb-1">
+          <span v-if="ratioCuota.collectionRate !== null">
+            Real cobrado {{ ejercicioActual - 1 }}: {{ eur(ratioCuota.totalOrigen) }} ·
+            Proyección {{ ejercicioActual }}: {{ eur(ratioCuota.totalNuevo) }}
+            (tasa cobro {{ (ratioCuota.collectionRate * 100).toFixed(1) }}%)
+          </span>
+          <span v-else>
+            Cuota base {{ ejercicioActual - 1 }}: {{ eur(ratioCuota.totalOrigen) }} →
+            {{ ejercicioActual }}: {{ eur(ratioCuota.totalNuevo) }}
+          </span>
+        </div>
+        <p v-if="ratioCuota.collectionRate !== null" class="text-xs text-slate-400 mb-2 italic">
+          Proyección = socios activos × tarifa {{ ejercicioActual }} × tasa histórica de cobro {{ ejercicioActual - 1 }}
+        </p>
+        <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none">
+          <input type="checkbox" v-model="aplicarFactorCuota" class="rounded" />
+          Ajustar todas las partidas con este factor (×{{ ratioCuota.ratio.toFixed(4) }})
+        </label>
+      </div>
+      <div v-else class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
+        No hay datos suficientes para calcular el factor de variación.
+        Los importes se copiarán tal cual.
+      </div>
+      <div class="flex gap-2 justify-end mt-2">
+        <button @click="mostrarPanelClonar = false"
+          class="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-800">
+          Cancelar
+        </button>
+        <button @click="clonarDelAnterior" :disabled="ocupado"
+          class="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+          {{ ocupado ? 'Creando…' : 'Crear borrador' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Sin presupuesto del ejercicio: ofrecer crearlo -->
+    <div v-if="!loading && !planificacion" class="bg-white rounded-lg shadow border border-gray-200 p-8">
+
+      <!-- Aviso si no hay cuota configurada para el ejercicio -->
+      <div v-if="puedeCrear && cuotaEjercicio === null"
+        class="mb-5 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+        <p class="font-semibold mb-1">No hay cuota establecida para {{ ejercicioActual }}</p>
+        <p>Para elaborar el presupuesto de ingresos primero debes
+          <router-link to="/economico/cuotas-ejercicio" class="underline font-medium hover:text-amber-900">
+            configurar la cuota del ejercicio {{ ejercicioActual }}
+          </router-link>.
+        </p>
+      </div>
+
+      <div class="text-center">
+        <p class="font-medium text-gray-700 mb-1">No hay presupuesto para {{ ejercicioActual }}</p>
+        <p class="text-sm text-gray-500 mb-4">Crea la planificación anual para empezar a presupuestar.</p>
+        <template v-if="puedeCrear && cuotaEjercicio !== null">
+          <div class="flex items-center justify-center gap-2">
+            <button @click="crearPlanificacion"
+              class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700">
+              Crear presupuesto {{ ejercicioActual }}
+            </button>
+          </div>
+          <div class="mt-3 text-sm text-gray-500">
+            o
+            <button @click="mostrarPanelClonar = true" class="text-purple-600 hover:underline ml-1">
+              clonar del {{ ejercicioActual - 1 }}
+            </button>
+            <span v-if="puedeAprobar"> ·
+              <button @click="prorrogarDelAnterior" class="text-purple-600 hover:underline">
+                prorrogar el de {{ ejercicioActual - 1 }}
+              </button>
+            </span>
+          </div>
+        </template>
+        <p v-else-if="puedeCrear && cuotaEjercicio === null" class="text-xs text-slate-500 mt-2">
+          Establece la cuota para poder crear el presupuesto.
+        </p>
+      </div>
+    </div>
+
+    <AccordionGroup v-if="!loading && planificacion">
       <!-- Panel 1: Cabecera y estado -->
       <AccordionPanel :default-open="true">
         <template #title>
@@ -110,13 +186,6 @@
             </div>
           </div>
 
-          <p v-if="planificacion.saldoPresupuestado !== 0" class="text-xs mb-3"
-            :class="planificacion.saldoPresupuestado > 0 ? 'text-blue-600' : 'text-amber-600'">
-            {{ planificacion.saldoPresupuestado > 0
-              ? 'El presupuesto prevé superávit (más ingresos que gastos).'
-              : 'El presupuesto prevé déficit (más gastos que ingresos).' }}
-          </p>
-
           <!-- Botones de transición según el estado -->
           <div v-if="puedeGestionar" class="flex flex-wrap gap-2">
             <button v-if="estadoCodigo === 'BORRADOR'" @click="transicion('proponer')" :disabled="ocupado"
@@ -129,20 +198,13 @@
               class="btn-estado bg-purple-600 hover:bg-purple-700">Iniciar ejecución</button>
             <button v-if="estadoCodigo === 'EN_EJECUCION' && puedeAprobar" @click="transicion('cerrar')" :disabled="ocupado"
               class="btn-estado bg-gray-800 hover:bg-gray-900">Cerrar ejercicio</button>
+            <button v-if="esBorradorEliminable" @click="eliminarBorrador" :disabled="ocupado"
+              class="btn-estado bg-red-600 hover:bg-red-700 ml-auto">Eliminar borrador</button>
           </div>
           <p v-if="planificacion.fechaAprobacion" class="text-xs text-gray-400 mt-2">
             Aprobado el {{ planificacion.fechaAprobacion }}
           </p>
 
-          <!-- Control de disponibilidad (aprobado/ejecución) -->
-          <label v-if="esAprobadoOEjecucion && puedeAprobar"
-            class="flex items-center gap-2 mt-3 cursor-pointer select-none text-sm text-gray-600">
-            <input type="checkbox" :checked="planificacion.controlDisponibilidad"
-              @change="toggleControl($event.target.checked)"
-              class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
-            Avisar al control presupuestario cuando una partida se desvíe
-            <span class="text-xs text-gray-400">(no bloquea el gasto)</span>
-          </label>
         </div>
       </AccordionPanel>
 
@@ -172,7 +234,7 @@
         />
       </AccordionPanel>
 
-      <!-- Panel: Alertas (solo si hay) -->
+      <!-- Panel: Alertas (solo en aprobado/ejecución, no en cerrado) -->
       <AccordionPanel v-if="esAprobadoOEjecucion && alertas.length" title="Alertas" :count="alertas.length" :default-open="true">
         <div class="px-5 py-4 space-y-2">
           <div v-for="a in alertas" :key="a.partidaId"
@@ -184,7 +246,7 @@
         </div>
       </AccordionPanel>
 
-      <!-- Panel: Modificaciones presupuestarias (solo aprobado/ejecución) -->
+      <!-- Panel: Modificaciones presupuestarias (solo aprobado/ejecución, no en cerrado) -->
       <AccordionPanel v-if="esAprobadoOEjecucion" title="Modificaciones presupuestarias"
         :count="modificaciones.length" :default-open="false">
         <ModificacionesPresupuestarias
@@ -195,8 +257,8 @@
         />
       </AccordionPanel>
 
-      <!-- Panel 4: Seguimiento de ejecución (desviaciones) -->
-      <AccordionPanel title="Seguimiento de ejecución" :default-open="false">
+      <!-- Panel 4: Seguimiento de ejecución — abierto por defecto en CERRADO -->
+      <AccordionPanel title="Seguimiento de ejecución" :default-open="estadoCodigo === 'CERRADO'">
         <div class="px-5 py-4">
           <p class="text-sm text-gray-500 mb-3">
             Comparativa de lo presupuestado frente a lo ejecutado realmente, por partida.
@@ -275,8 +337,8 @@
         </div>
       </AccordionPanel>
 
-      <!-- Panel: Liquidación (para la Memoria de cuentas anuales) -->
-      <AccordionPanel title="Liquidación del presupuesto" :default-open="false">
+      <!-- Panel: Liquidación — abierto por defecto en CERRADO -->
+      <AccordionPanel title="Liquidación del presupuesto" :default-open="estadoCodigo === 'CERRADO'">
         <div class="px-5 py-4">
           <p class="text-sm text-gray-500 mb-3">
             Resumen previsto frente a ejecutado del ejercicio, para incorporar a la Memoria
@@ -306,11 +368,23 @@
         </div>
       </AccordionPanel>
     </AccordionGroup>
+
+    <!-- Modal de confirmación reutilizable -->
+    <ConfirmActionModal
+      v-model="modal.abierto"
+      :titulo="modal.titulo"
+      :mensaje="modal.mensaje"
+      :etiqueta-confirmar="modal.etiquetaConfirmar"
+      :variante="modal.variante"
+      @confirm="onConfirmModal"
+      @cancel="onCancelModal"
+    />
   </AppLayout>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
@@ -322,15 +396,36 @@ import { usePermisos } from '@/composables/usePermisos.js'
 import {
   GET_PLANIFICACIONES, GET_PARTIDAS, GET_INFORME_DESVIACIONES, GET_ESTADOS_PLANIFICACION,
   CREAR_PLANIFICACION, CREAR_PARTIDA, ACTUALIZAR_PARTIDA, ELIMINAR_PARTIDA,
+  ELIMINAR_PLANIFICACION,
   PROPONER_PRESUPUESTO, APROBAR_PRESUPUESTO, INICIAR_EJECUCION_PRESUPUESTO,
   CERRAR_PRESUPUESTO, DEVOLVER_A_BORRADOR,
-  GET_MODIFICACIONES, GET_ALERTAS, REGISTRAR_MODIFICACION, ESTABLECER_CONTROL_DISPONIBILIDAD,
+  GET_MODIFICACIONES, GET_ALERTAS, REGISTRAR_MODIFICACION,
   GET_COMPARATIVA_INTERANUAL, GET_LIQUIDACION, CLONAR_PRESUPUESTO, PRORROGAR_PRESUPUESTO,
   GET_RATIO_VARIACION_CUOTA,
 } from '@/graphql/queries/presupuestos.js'
+import { GET_CONFIG_CUOTA_EJERCICIO } from '@/graphql/queries/financiero'
+import ConfirmActionModal from '@/components/common/ConfirmActionModal.vue'
 
 const { query, mutation } = useGraphQL()
 const { tienePermiso } = usePermisos()
+
+// ── Modal de confirmación genérico ──────────────────────────────────────────
+const modal = ref({
+  abierto: false, titulo: '', mensaje: '',
+  etiquetaConfirmar: 'Confirmar', variante: 'aviso', _resolver: null,
+})
+const confirmarAccion = (opts) => new Promise((resolve) => {
+  modal.value = {
+    abierto: true,
+    titulo: opts.titulo,
+    mensaje: opts.mensaje,
+    etiquetaConfirmar: opts.etiquetaConfirmar || 'Confirmar',
+    variante: opts.variante || 'aviso',
+    _resolver: resolve,
+  }
+})
+const onConfirmModal = () => { const r = modal.value._resolver; modal.value.abierto = false; r?.(true) }
+const onCancelModal  = () => { const r = modal.value._resolver; modal.value.abierto = false; r?.(false) }
 
 const puedeCrear = computed(() => tienePermiso('ECO_PRESUPUESTO_CREAR'))
 const puedeGestionar = computed(() => tienePermiso('ECO_PRESUPUESTO_CREAR'))
@@ -339,6 +434,7 @@ const puedeAprobar = computed(() => tienePermiso('ECO_PRESUPUESTO_APROBAR'))
 const loading = ref(false)
 const ocupado = ref(false)
 const planificacion = ref(null)
+const planesEjercicio = ref([])   // todos los presupuestos (borradores incl.) del ejercicio
 const partidas = ref([])
 const desviaciones = ref([])
 const estados = ref([])
@@ -348,11 +444,16 @@ const alertas = ref([])
 const comparativa = ref([])
 const liquidacion = ref(null)
 
-const ejercicioActual = new Date().getFullYear()
-const nuevoEjercicio = ref(ejercicioActual)
+const _hoy = new Date().getFullYear()
+const _mes  = new Date().getMonth() + 1   // 1-12
+const ejercicioActual = ref(_hoy)
+const anioMaximo = _mes >= 10 ? _hoy + 1 : _hoy  // siguiente año solo desde octubre
+const todosEjercicios = ref([])
+const nuevoEjercicio = computed(() => ejercicioActual.value)
 const mostrarPanelClonar = ref(false)
 const ratioCuota = ref(null)
 const aplicarFactorCuota = ref(false)
+const cuotaEjercicio = ref(undefined)  // undefined=cargando, null=no existe, objeto=existe
 
 async function cargarRatioCuota() {
   ratioCuota.value = null
@@ -381,23 +482,53 @@ const estadoActual = computed(() => estados.value.find(e => e.id === planificaci
 const estadoCodigo = computed(() => estadoActual.value?.codigo ?? 'BORRADOR')
 const estadoNombre = computed(() => estadoActual.value?.nombre ?? '—')
 const estadoColor = computed(() => estadoActual.value?.color ?? '#9ca3af')
+
+const codigoEstadoDe = (plan) =>
+  estados.value.find(e => e.id === plan?.estadoId)?.codigo ?? 'BORRADOR'
+// ¿El ejercicio ya tiene un presupuesto definitivo (aprobado o posterior)?
+const hayDefinitiva = computed(() =>
+  planesEjercicio.value.some(p => ['APROBADO', 'EN_EJECUCION', 'CERRADO'].includes(codigoEstadoDe(p))))
+// El plan mostrado es un borrador eliminable
+const esBorradorEliminable = computed(() =>
+  planificacion.value && ['BORRADOR', 'PROPUESTO'].includes(estadoCodigo.value))
 // Solo se editan partidas mientras el presupuesto no está aprobado
 const editable = computed(() => puedeGestionar.value && ['BORRADOR', 'PROPUESTO'].includes(estadoCodigo.value))
 const esAprobadoOEjecucion = computed(() => ['APROBADO', 'EN_EJECUCION'].includes(estadoCodigo.value))
 
 const eur = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0)
 
+const cambiarEjercicio = async (delta) => {
+  ejercicioActual.value += delta
+  mostrarPanelClonar.value = false
+  await cargar()
+}
+
+const irAEjercicio = async (ej) => {
+  ejercicioActual.value = ej
+  mostrarPanelClonar.value = false
+  await cargar()
+}
+
 const cargar = async () => {
   loading.value = true
+  cuotaEjercicio.value = undefined
   try {
-    const [dataEstados, dataPlanes] = await Promise.all([
+    const [dataEstados, dataPlanes, dataCuota] = await Promise.all([
       query(GET_ESTADOS_PLANIFICACION),
       query(GET_PLANIFICACIONES),
+      query(GET_CONFIG_CUOTA_EJERCICIO, { ejercicio: ejercicioActual.value }),
     ])
     estados.value = dataEstados?.estadosPlanificacion ?? []
     const planes = dataPlanes?.planificaciones ?? []
-    // Tomar el del ejercicio actual, o el más reciente
-    planificacion.value = planes.find(p => p.ejercicio === ejercicioActual) ?? planes[0] ?? null
+    cuotaEjercicio.value = (dataCuota?.importesCuotaAnio ?? [])[0] ?? null
+    // Construir lista de ejercicios disponibles (existentes + año actual; siguiente solo desde oct.)
+    const ejerciciosExistentes = planes.map(p => p.ejercicio)
+    const base = _mes >= 10 ? [_hoy, _hoy + 1] : [_hoy]
+    const conjunto = new Set([...ejerciciosExistentes, ...base])
+    todosEjercicios.value = [...conjunto].sort((a, b) => a - b)
+    // Todos los presupuestos del ejercicio (puede haber varios borradores)
+    planesEjercicio.value = planes.filter(p => p.ejercicio === ejercicioActual.value)
+    planificacion.value = elegirPlanRelevante(planesEjercicio.value)
     if (planificacion.value) await cargarDetalle()
   } catch (e) {
     console.error('Error cargando presupuesto:', e?.message || e)
@@ -430,6 +561,57 @@ const recargarPlan = async () => {
   const data = await query(GET_PLANIFICACIONES)
   const planes = data?.planificaciones ?? []
   planificacion.value = planes.find(p => p.id === planificacion.value?.id) ?? planificacion.value
+}
+
+// De entre los presupuestos del ejercicio, elige el definitivo (aprobado+) o el primer borrador.
+function elegirPlanRelevante(lista) {
+  if (!lista.length) return null
+  const definitiva = lista.find(p =>
+    ['APROBADO', 'EN_EJECUCION', 'CERRADO'].includes(codigoEstadoDe(p)))
+  return definitiva ?? lista[0]
+}
+
+const seleccionarPlan = async (planId) => {
+  const elegido = planesEjercicio.value.find(p => p.id === planId)
+  if (!elegido) return
+  planificacion.value = elegido
+  await cargarDetalle()
+}
+
+const eliminarBorrador = async () => {
+  if (!planificacion.value) return
+  const ok = await confirmarAccion({
+    titulo: 'Eliminar borrador',
+    mensaje: `¿Eliminar el borrador «${planificacion.value.nombre}»? Esta acción no se puede deshacer.`,
+    etiquetaConfirmar: 'Eliminar',
+    variante: 'critica',
+  })
+  if (!ok) return
+  ocupado.value = true
+  try {
+    await mutation(ELIMINAR_PLANIFICACION, { planificacionId: planificacion.value.id })
+    await cargar()
+  } catch (e) {
+    console.error(e?.message || e)
+  } finally {
+    ocupado.value = false
+  }
+}
+
+const crearOtroBorrador = async () => {
+  ocupado.value = true
+  try {
+    const n = planesEjercicio.value.length + 1
+    await mutation(CREAR_PLANIFICACION, {
+      data: { ejercicio: ejercicioActual.value, nombre: `Presupuesto ${ejercicioActual.value} — borrador ${n}` },
+    })
+    await cargar()
+  } catch (e) {
+    console.error(e?.message || e)
+    alert(e?.message || 'No se pudo crear el borrador')
+  } finally {
+    ocupado.value = false
+  }
 }
 
 const crearPlanificacion = async () => {
@@ -488,13 +670,6 @@ const registrarModificacion = async (datos) => {
     data: { planificacionId: planificacion.value.id, ...datos },
   })
   await cargarDetalle()
-  await recargarPlan()
-}
-
-const toggleControl = async (activo) => {
-  await mutation(ESTABLECER_CONTROL_DISPONIBILIDAD, {
-    planificacionId: planificacion.value.id, activo,
-  })
   await recargarPlan()
 }
 

@@ -39,6 +39,9 @@ from app.modules.configuracion.models.estados import EstadoCuota
 
 CODIGO_CUOTA_BASE = "BASE"  # codigo_cuota reservado para la cuota base del ejercicio
 
+# Estados de planificación en los que los importes de ingresos son editables
+_ESTADOS_EDITABLES_PRESUPUESTO = ("BORRADOR", "PROPUESTO")
+
 
 class CuotaService:
     """Servicio del Flujo 1."""
@@ -69,14 +72,22 @@ class CuotaService:
         Si `clonar_de` es un ejercicio previo con configuración, su importe base
         se ignora (la decisión final la da el parámetro `importe_base`); sirve
         de referencia para la UI.
+
+        Cuando actualiza un registro existente, recalcula proporcionalmente los
+        importes de todas las partidas INGRESO de planificaciones BORRADOR/PROPUESTO
+        del mismo ejercicio.
         """
         existente = await self.obtener_configuracion(ejercicio)
         if existente:
+            anterior = existente.importe
             existente.importe = importe_base
             existente.observaciones = observaciones
             self.session.add(existente)
             await self.session.commit()
             await self.session.refresh(existente)
+            if anterior and anterior != importe_base and anterior > 0:
+                ratio = (importe_base / anterior).quantize(Decimal("0.00001"))
+                await self._recalcular_partidas_ingreso(ejercicio, ratio)
             return existente
 
         nueva = ImporteCuotaAnio(
@@ -91,6 +102,47 @@ class CuotaService:
         await self.session.commit()
         await self.session.refresh(nueva)
         return nueva
+
+    async def eliminar_cuota_ejercicio(self, ejercicio: int) -> bool:
+        """Elimina la configuración BASE del ejercicio. Devuelve True si había algo que borrar."""
+        existente = await self.obtener_configuracion(ejercicio)
+        if not existente:
+            return False
+        await self.session.delete(existente)
+        await self.session.commit()
+        return True
+
+    async def _recalcular_partidas_ingreso(self, ejercicio: int, ratio: Decimal) -> None:
+        """Escala los importes presupuestados de las partidas INGRESO en planificaciones
+        BORRADOR/PROPUESTO del ejercicio dado, aplicando el ratio indicado."""
+        from ..models.presupuesto import PlanificacionAnual, PartidaPresupuestaria, EstadoPlanificacion
+
+        r = await self.session.execute(
+            select(PlanificacionAnual)
+            .join(EstadoPlanificacion, PlanificacionAnual.estado_id == EstadoPlanificacion.id)
+            .where(
+                PlanificacionAnual.ejercicio == ejercicio,
+                PlanificacionAnual.eliminado == False,
+                EstadoPlanificacion.codigo.in_(_ESTADOS_EDITABLES_PRESUPUESTO),
+            )
+        )
+        planificaciones = r.scalars().all()
+
+        for plan in planificaciones:
+            rp = await self.session.execute(
+                select(PartidaPresupuestaria).where(
+                    PartidaPresupuestaria.planificacion_id == plan.id,
+                    PartidaPresupuestaria.tipo == "INGRESO",
+                    PartidaPresupuestaria.eliminado == False,
+                )
+            )
+            for partida in rp.scalars().all():
+                nuevo = (partida.importe_presupuestado * ratio).quantize(Decimal("0.01"))
+                partida.importe_presupuestado = nuevo
+                partida.importe_inicial = partida.importe_inicial  # keep original
+                self.session.add(partida)
+
+        await self.session.commit()
 
     # ── Previsualización y generación ─────────────────────────────────────────
 

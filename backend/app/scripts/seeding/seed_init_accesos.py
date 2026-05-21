@@ -7,6 +7,8 @@ bootstrap.py en cada arranque.
 Roles que crea:
 - PLANIFICADOR: diseña, crea y gestiona campañas, eventos y grupos de actividad.
 - GESTOR_MIEMBROS: gestión operativa del padrón (sin acceso a administración del sistema).
+- INTERVENTOR: control presupuestario — fija la cuota, elabora, aprueba y supervisa
+  el presupuesto y su liquidación. No ejecuta pagos ni cobros (eso es de tesorería).
 """
 
 import uuid
@@ -74,6 +76,25 @@ _ROLES = [
             "MBR_HISTORY",
             "AGR_LIST", "AGR_VIEW",
             "RPT_MEMBERS",
+        ],
+    },
+    {
+        "codigo": "INTERVENTOR",
+        "nombre": "Interventor/a",
+        "descripcion": (
+            "Control presupuestario de la entidad. Fija la cuota del ejercicio, "
+            "elabora, aprueba y supervisa el presupuesto y su liquidación. "
+            "No ejecuta cobros ni pagos: esa función es de tesorería."
+        ),
+        "nivel": 30,
+        "es_territorial": True,
+        "transacciones": [
+            # Presupuesto: ciclo completo de planificación y control
+            "ECO_PRESUPUESTO_CREAR", "ECO_PRESUPUESTO_APROBAR", "ECO_PRESUPUESTO_CONSULTAR",
+            # Cuota del ejercicio: establecimiento y anulación (condición previa al presupuesto)
+            "CUOT_EJERCICIO_CONFIG", "CUOT_LIST", "CUOT_MOTIVO_LIST",
+            # Consulta financiera de apoyo al control
+            "ECO_BALANCE_CONSULTAR", "ECO_ESTRUCTURA_CONTABLE_LISTAR",
         ],
     },
 ]

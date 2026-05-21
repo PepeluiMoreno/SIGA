@@ -1291,6 +1291,8 @@ class EconomicoFlujosMutation:
         observaciones: Optional[str] = None,
     ) -> UUID:
         """Crea o actualiza la configuración de cuota base del ejercicio (D1.3 paso 1).
+        Al actualizar, recalcula proporcionalmente los importes de las partidas INGRESO
+        de presupuestos en estado BORRADOR/PROPUESTO del mismo ejercicio.
         Devuelve el id del ImporteCuotaAnio (registro BASE)."""
         from ..modules.economico.services.cuota_service import CuotaService
         session = info.context.session
@@ -1302,6 +1304,18 @@ class EconomicoFlujosMutation:
             observaciones=observaciones,
         )
         return cfg.id
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("CUOT_EJERCICIO_CONFIG")])
+    async def eliminar_cuota_ejercicio(
+        self,
+        info: strawberry.Info,
+        ejercicio: int,
+    ) -> bool:
+        """Elimina la configuración BASE de cuota del ejercicio (anular establecimiento)."""
+        from ..modules.economico.services.cuota_service import CuotaService
+        session = info.context.session
+        service = CuotaService(session)
+        return await service.eliminar_cuota_ejercicio(ejercicio)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CUOT_GENERATE")])
     async def previsualizar_generacion_cuotas(

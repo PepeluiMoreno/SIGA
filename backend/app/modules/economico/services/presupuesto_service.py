@@ -85,6 +85,33 @@ class PresupuestoService:
         )
         return result.scalars().first()
 
+    async def obtener_planificacion_definitiva(self, ejercicio: int) -> Optional[PlanificacionAnual]:
+        """Devuelve la planificación oficial del ejercicio: la que está en APROBADO,
+        EN_EJECUCION o CERRADO. Solo puede haber una. None si solo hay borradores."""
+        result = await self.session.execute(
+            select(PlanificacionAnual)
+            .join(EstadoPlanificacion, PlanificacionAnual.estado_id == EstadoPlanificacion.id)
+            .where(
+                PlanificacionAnual.ejercicio == ejercicio,
+                PlanificacionAnual.eliminado == False,
+                EstadoPlanificacion.codigo.in_([ESTADO_APROBADO, ESTADO_EN_EJECUCION, ESTADO_CERRADO]),
+            )
+        )
+        return result.scalars().first()
+
+    async def _planificacion_relevante(self, ejercicio: int) -> Optional[PlanificacionAnual]:
+        """La planificación a mostrar para un ejercicio: la definitiva si existe;
+        en su defecto, el borrador más reciente."""
+        definitiva = await self.obtener_planificacion_definitiva(ejercicio)
+        if definitiva:
+            return definitiva
+        result = await self.session.execute(
+            select(PlanificacionAnual)
+            .where(PlanificacionAnual.ejercicio == ejercicio, PlanificacionAnual.eliminado == False)
+            .order_by(PlanificacionAnual.fecha_creacion.desc())
+        )
+        return result.scalars().first()
+
     async def crear_planificacion(
         self,
         ejercicio: int,
@@ -92,10 +119,14 @@ class PresupuestoService:
         descripcion: Optional[str] = None,
         objetivos: Optional[str] = None,
     ) -> PlanificacionAnual:
-        # Un ejercicio solo puede tener una planificación
-        existente = await self.obtener_planificacion_por_ejercicio(ejercicio)
-        if existente:
-            raise ValueError(f"Ya existe un presupuesto para el ejercicio {ejercicio}")
+        # Se permiten varios borradores por ejercicio, pero solo una planificación
+        # definitiva (aprobada o posterior). Si ya existe, no se admiten más borradores.
+        definitiva = await self.obtener_planificacion_definitiva(ejercicio)
+        if definitiva:
+            raise ValueError(
+                f"El ejercicio {ejercicio} ya tiene un presupuesto aprobado; "
+                f"no se pueden crear más borradores."
+            )
 
         estado_borrador = await self._estado_por_codigo(ESTADO_BORRADOR)
         if not estado_borrador:
@@ -119,31 +150,118 @@ class PresupuestoService:
         self,
         ejercicio_origen: int,
         ejercicio_nuevo: int,
-    ) -> Optional[Decimal]:
-        """Devuelve el ratio cuota_nuevo/cuota_origen o None si alguno no está definido.
+    ) -> Optional[dict]:
+        """Calcula el ratio real de variación de ingresos por cuotas entre ejercicios.
 
-        Suma todos los importes de ImporteCuotaAnio de cada ejercicio (puede haber varios
-        tipos de miembro). Si el total origen es cero devuelve None.
+        Fórmula:
+          total_real_origen  = sum(CuotaAnual.importe_pagado) para ejercicio_origen
+          collection_rate    = sum(importe_pagado) / sum(importe) en ejercicio_origen
+          total_nuevo        = sum(miembro_activo × tarifa_nuevo_año) × collection_rate
+          ratio              = total_nuevo / total_real_origen
+
+        Si no hay datos de CuotaAnual para el origen, aplica fallback nominal
+        (ratio de importes BASE de ImporteCuotaAnio).
         """
+        from sqlalchemy import func
+        from ..models.cuotas import CuotaAnual, ImporteCuotaAnio
+        from app.modules.membresia.models.miembro import Miembro
+
+        # ── Datos reales del ejercicio origen ───────────────────────────────
+        r = await self.session.execute(
+            select(
+                func.sum(CuotaAnual.importe_pagado),
+                func.sum(CuotaAnual.importe),
+            ).where(
+                CuotaAnual.ejercicio == ejercicio_origen,
+                CuotaAnual.eliminado == False,
+            )
+        )
+        sum_paid, sum_total = r.one()
+        sum_paid  = sum_paid  or Decimal("0")
+        sum_total = sum_total or Decimal("0")
+
+        if sum_total == 0:
+            # Sin datos reales → fallback nominal (solo cuota BASE)
+            return await self._ratio_nominal(ejercicio_origen, ejercicio_nuevo)
+
+        collection_rate    = sum_paid / sum_total
+        total_real_origen  = sum_paid
+
+        # ── Tarifas del ejercicio nuevo ──────────────────────────────────────
+        r_fees = await self.session.execute(
+            select(ImporteCuotaAnio).where(
+                ImporteCuotaAnio.ejercicio == ejercicio_nuevo,
+                ImporteCuotaAnio.eliminado == False,
+            )
+        )
+        fees = r_fees.scalars().all()
+        fee_base: Optional[Decimal] = None
+        fee_por_tipo: dict = {}
+        for f in fees:
+            if f.tipo_miembro_id is None and f.codigo_cuota == "BASE":
+                fee_base = f.importe
+            elif f.tipo_miembro_id is not None:
+                fee_por_tipo[f.tipo_miembro_id] = f.importe
+
+        if fee_base is None and not fee_por_tipo:
+            return None  # sin tarifas del nuevo ejercicio
+
+        # ── Proyección: socios activos × tarifa nueva ────────────────────────
+        r_members = await self.session.execute(
+            select(Miembro.tipo_miembro_id, func.count(Miembro.id))
+            .where(Miembro.activo == True, Miembro.eliminado == False)
+            .group_by(Miembro.tipo_miembro_id)
+        )
+        total_nominal_nuevo = Decimal("0")
+        for tipo_id, count in r_members.all():
+            fee = fee_por_tipo.get(tipo_id) or fee_base
+            if fee:
+                total_nominal_nuevo += fee * count
+
+        if total_nominal_nuevo == 0:
+            return None
+
+        # Proyección neta = nominal × tasa histórica de cobro
+        total_projected = (total_nominal_nuevo * collection_rate).quantize(Decimal("0.01"))
+
+        if total_real_origen == 0:
+            return None
+
+        ratio = (total_projected / total_real_origen).quantize(Decimal("0.0001"))
+        return {
+            "total_origen":      float(total_real_origen),
+            "total_nuevo":       float(total_projected),
+            "collection_rate":   float(collection_rate),
+            "ratio":             float(ratio),
+        }
+
+    async def _ratio_nominal(
+        self, ejercicio_origen: int, ejercicio_nuevo: int
+    ) -> Optional[dict]:
+        """Fallback: ratio entre importes BASE de ImporteCuotaAnio (sin datos reales)."""
         from sqlalchemy import func
         from ..models.cuotas import ImporteCuotaAnio
 
         async def _total(ejercicio: int) -> Decimal:
-            result = await self.session.execute(
+            r = await self.session.execute(
                 select(func.sum(ImporteCuotaAnio.importe)).where(
-                    ImporteCuotaAnio.ejercicio == ejercicio
+                    ImporteCuotaAnio.ejercicio == ejercicio,
+                    ImporteCuotaAnio.codigo_cuota == "BASE",
                 )
             )
-            return result.scalar_one_or_none() or Decimal("0")
+            return r.scalar_one_or_none() or Decimal("0")
 
-        total_origen = await _total(ejercicio_origen)
-        total_nuevo  = await _total(ejercicio_nuevo)
-
-        if not total_origen:
+        t_o = await _total(ejercicio_origen)
+        t_n = await _total(ejercicio_nuevo)
+        if not t_o or not t_n:
             return None
-        if not total_nuevo:
-            return None
-        return (total_nuevo / total_origen).quantize(Decimal("0.0001"))
+        ratio = (t_n / t_o).quantize(Decimal("0.0001"))
+        return {
+            "total_origen":    float(t_o),
+            "total_nuevo":     float(t_n),
+            "collection_rate": None,
+            "ratio":           float(ratio),
+        }
 
     async def clonar_planificacion(
         self,
@@ -162,11 +280,15 @@ class PresupuestoService:
         ejecutado y comprometido arrancan a cero. El nuevo nace en BORRADOR.
         Si es_prorroga=True, queda marcado como prórroga del ejercicio origen.
         """
-        origen = await self.obtener_planificacion_por_ejercicio(ejercicio_origen)
+        # Se clona desde la planificación relevante del origen (la definitiva si la hay).
+        origen = await self._planificacion_relevante(ejercicio_origen)
         if not origen:
             raise ValueError(f"No existe presupuesto del ejercicio {ejercicio_origen} para copiar")
-        if await self.obtener_planificacion_por_ejercicio(ejercicio_nuevo):
-            raise ValueError(f"Ya existe un presupuesto para el ejercicio {ejercicio_nuevo}")
+        # Solo se bloquea si el destino ya tiene un presupuesto definitivo (aprobado+).
+        if await self.obtener_planificacion_definitiva(ejercicio_nuevo):
+            raise ValueError(
+                f"El ejercicio {ejercicio_nuevo} ya tiene un presupuesto aprobado."
+            )
 
         estado_borrador = await self._estado_por_codigo(ESTADO_BORRADOR)
         if not estado_borrador:
@@ -212,12 +334,11 @@ class PresupuestoService:
         Se usa cuando el presupuesto del nuevo ejercicio no se aprueba a tiempo: rige el
         anterior hasta que se apruebe el definitivo.
         """
-        origen = await self.obtener_planificacion_por_ejercicio(ejercicio_origen)
+        origen = await self.obtener_planificacion_definitiva(ejercicio_origen)
         if not origen:
-            raise ValueError(f"No existe presupuesto del ejercicio {ejercicio_origen} para prorrogar")
-        codigo_estado = await self._codigo_de_estado(origen.estado_id)
-        if codigo_estado not in (ESTADO_APROBADO, ESTADO_EN_EJECUCION, ESTADO_CERRADO):
-            raise ValueError("Solo se puede prorrogar un presupuesto que llegó a aprobarse")
+            raise ValueError(
+                f"El ejercicio {ejercicio_origen} no tiene un presupuesto aprobado que prorrogar"
+            )
         return await self.clonar_planificacion(
             ejercicio_origen, ejercicio_nuevo, es_prorroga=True
         )
@@ -225,8 +346,8 @@ class PresupuestoService:
     async def comparativa_interanual(self, ejercicio: int) -> List[dict]:
         """Compara las partidas de un ejercicio con las del anterior, emparejadas por
         categoría + nombre. Devuelve filas con importe de ambos años y variación."""
-        actual = await self.obtener_planificacion_por_ejercicio(ejercicio)
-        anterior = await self.obtener_planificacion_por_ejercicio(ejercicio - 1)
+        actual = await self._planificacion_relevante(ejercicio)
+        anterior = await self._planificacion_relevante(ejercicio - 1)
         if not actual:
             return []
 
@@ -255,7 +376,7 @@ class PresupuestoService:
     async def liquidacion_presupuestaria(self, ejercicio: int) -> dict:
         """Liquidación del presupuesto de un ejercicio (previsto vs ejecutado), lista para
         incorporar a la Memoria de cuentas anuales. Resumen global y por categoría."""
-        plan = await self.obtener_planificacion_por_ejercicio(ejercicio)
+        plan = await self._planificacion_relevante(ejercicio)
         if not plan:
             return {"ejercicio": ejercicio, "existe": False}
 
@@ -276,6 +397,23 @@ class PresupuestoService:
             "resultado_ejecutado": float(ingresos_ejec - gastos_ejec),
             "grado_ejecucion_gastos": round(float(gastos_ejec / gastos_prev * 100), 1) if gastos_prev else 0.0,
         }
+
+    async def liquidaciones_todas(self) -> List[dict]:
+        """Liquidación (previsto vs ejecutado) de todos los ejercicios con presupuesto,
+        ordenadas por ejercicio. Base del informe comparativo multi-ejercicio."""
+        result = await self.session.execute(
+            select(PlanificacionAnual.ejercicio)
+            .where(PlanificacionAnual.eliminado == False)
+            .distinct()
+            .order_by(PlanificacionAnual.ejercicio)
+        )
+        ejercicios = [row[0] for row in result.all()]
+        salida = []
+        for ej in ejercicios:
+            liq = await self.liquidacion_presupuestaria(ej)
+            if liq.get("existe"):
+                salida.append(liq)
+        return salida
 
     async def actualizar_planificacion(self, planificacion_id: UUID, **kwargs) -> PlanificacionAnual:
         plan = await self.obtener_planificacion(planificacion_id)
@@ -321,10 +459,42 @@ class PresupuestoService:
             for p in partidas:
                 p.importe_inicial = p.importe_presupuestado
                 self.session.add(p)
+            # Al aprobar uno, los demás borradores/propuestas del mismo ejercicio se descartan.
+            hermanos = await self.session.execute(
+                select(PlanificacionAnual)
+                .join(EstadoPlanificacion, PlanificacionAnual.estado_id == EstadoPlanificacion.id)
+                .where(
+                    PlanificacionAnual.ejercicio == plan.ejercicio,
+                    PlanificacionAnual.id != plan.id,
+                    PlanificacionAnual.eliminado == False,
+                    EstadoPlanificacion.codigo.in_([ESTADO_BORRADOR, ESTADO_PROPUESTO]),
+                )
+            )
+            for h in hermanos.scalars().all():
+                h.eliminado = True
+                self.session.add(h)
         self.session.add(plan)
         await self.session.commit()
         await self.session.refresh(plan)
         return plan
+
+    async def eliminar_planificacion(self, planificacion_id: UUID) -> None:
+        """Soft-delete de un presupuesto. Solo se permite en BORRADOR o PROPUESTO:
+        un presupuesto aprobado, en ejecución o cerrado no se puede borrar."""
+        plan = await self.obtener_planificacion(planificacion_id)
+        if not plan:
+            raise ValueError(f"Planificación {planificacion_id} no encontrada")
+        codigo = await self._codigo_de_estado(plan.estado_id)
+        if codigo not in (ESTADO_BORRADOR, ESTADO_PROPUESTO):
+            raise ValueError(
+                "Solo se pueden eliminar presupuestos en borrador o propuestos."
+            )
+        plan.eliminado = True
+        self.session.add(plan)
+        for p in await self.listar_partidas(planificacion_id):
+            p.eliminado = True
+            self.session.add(p)
+        await self.session.commit()
 
     async def proponer(self, planificacion_id: UUID) -> PlanificacionAnual:
         """Borrador → Propuesto. Valida que el presupuesto esté equilibrado."""

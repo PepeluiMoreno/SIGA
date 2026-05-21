@@ -172,8 +172,9 @@ class LiquidacionPresupuestariaType:
 class RatioVariacionCuotaType:
     ejercicio_origen: int
     ejercicio_nuevo: int
-    total_origen: float
-    total_nuevo: float
+    total_origen: float       # ingresos reales cobrados en ejercicio_origen
+    total_nuevo: float        # proyección neta para ejercicio_nuevo
+    collection_rate: Optional[float]  # tasa de cobro histórica (None = fallback nominal)
     ratio: float
     variacion_porcentaje: float
     disponible: bool
@@ -287,40 +288,34 @@ class PresupuestoQuery:
         return LiquidacionPresupuestariaType(**d)
 
     @strawberry.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")])
+    async def liquidaciones_presupuestarias(
+        self, info: strawberry.Info
+    ) -> List[LiquidacionPresupuestariaType]:
+        """Liquidación previsto/ejecutado de todos los ejercicios — informe comparativo."""
+        service = PresupuestoService(info.context.session)
+        items = await service.liquidaciones_todas()
+        return [LiquidacionPresupuestariaType(**d) for d in items]
+
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")])
     async def ratio_variacion_cuota(
         self, info: strawberry.Info, ejercicio_origen: int, ejercicio_nuevo: int
     ) -> RatioVariacionCuotaType:
         service = PresupuestoService(info.context.session)
-        ratio = await service.calcular_ratio_cuota(ejercicio_origen, ejercicio_nuevo)
-        if ratio is None:
+        d = await service.calcular_ratio_cuota(ejercicio_origen, ejercicio_nuevo)
+        if d is None:
             return RatioVariacionCuotaType(
-                ejercicio_origen=ejercicio_origen,
-                ejercicio_nuevo=ejercicio_nuevo,
-                total_origen=0.0, total_nuevo=0.0,
-                ratio=1.0, variacion_porcentaje=0.0,
-                disponible=False,
+                ejercicio_origen=ejercicio_origen, ejercicio_nuevo=ejercicio_nuevo,
+                total_origen=0.0, total_nuevo=0.0, collection_rate=None,
+                ratio=1.0, variacion_porcentaje=0.0, disponible=False,
             )
-        from decimal import Decimal
-        from sqlalchemy import select, func
-        from app.modules.economico.models.cuotas import ImporteCuotaAnio
-
-        async def _total(ejercicio):
-            r = await info.context.session.execute(
-                select(func.sum(ImporteCuotaAnio.importe)).where(
-                    ImporteCuotaAnio.ejercicio == ejercicio
-                )
-            )
-            return float(r.scalar_one_or_none() or 0)
-
-        t_origen = await _total(ejercicio_origen)
-        t_nuevo  = await _total(ejercicio_nuevo)
         return RatioVariacionCuotaType(
             ejercicio_origen=ejercicio_origen,
             ejercicio_nuevo=ejercicio_nuevo,
-            total_origen=t_origen,
-            total_nuevo=t_nuevo,
-            ratio=float(ratio),
-            variacion_porcentaje=round((float(ratio) - 1) * 100, 2),
+            total_origen=d["total_origen"],
+            total_nuevo=d["total_nuevo"],
+            collection_rate=d.get("collection_rate"),
+            ratio=d["ratio"],
+            variacion_porcentaje=round((d["ratio"] - 1) * 100, 2),
             disponible=True,
         )
 
@@ -372,6 +367,15 @@ class PresupuestoMutation:
     async def eliminar_partida(self, info: strawberry.Info, partida_id: uuid.UUID) -> bool:
         service = PresupuestoService(info.context.session)
         await service.eliminar_partida(partida_id)
+        return True
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CREAR")])
+    async def eliminar_planificacion(
+        self, info: strawberry.Info, planificacion_id: uuid.UUID
+    ) -> bool:
+        """Elimina un borrador o propuesta de presupuesto. No permite borrar uno aprobado."""
+        service = PresupuestoService(info.context.session)
+        await service.eliminar_planificacion(planificacion_id)
         return True
 
     # ── Transiciones del ciclo de vida ──────────────────────────────────────

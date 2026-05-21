@@ -7,7 +7,10 @@
         <template #title>
           <div class="flex items-center justify-between w-full pr-2">
             <span class="text-sm font-medium text-slate-700">{{ grupo.nombre }}</span>
-            <span class="text-xs text-gray-500">{{ eur(grupo.total) }}</span>
+            <span class="text-xs text-gray-500">
+              {{ eur(grupo.total) }}
+              <span class="text-gray-400">· ejec. {{ eur(grupo.totalEjecutado) }}</span>
+            </span>
           </div>
         </template>
 
@@ -18,6 +21,8 @@
               <th class="px-3 py-2 text-left">Nombre</th>
               <th class="px-3 py-2 text-right w-32">Presupuestado</th>
               <th class="px-3 py-2 text-right w-28">Ejecutado</th>
+              <th class="px-3 py-2 text-right w-24">Desviación</th>
+              <th class="px-3 py-2 text-center w-16">%</th>
               <th v-if="editable" class="px-3 py-2 text-center w-20"></th>
             </tr>
           </thead>
@@ -50,6 +55,16 @@
                 :class="p.estaSobreejecutada ? 'text-red-600 font-medium' : 'text-gray-500'">
                 {{ eur(p.importeEjecutado) }}
               </td>
+              <td class="px-3 py-1.5 text-right text-xs"
+                :class="desviacion(p) > 0 ? 'text-red-600' : desviacion(p) < 0 ? 'text-green-600' : 'text-gray-400'">
+                {{ desviacion(p) >= 0 ? '+' : '' }}{{ eur(desviacion(p)) }}
+              </td>
+              <td class="px-3 py-1.5 text-center">
+                <span class="text-xs px-1.5 py-0.5 rounded"
+                  :class="p.estaSobreejecutada ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'">
+                  {{ Math.round(p.porcentajeEjecutado || 0) }}%
+                </span>
+              </td>
               <td v-if="editable" class="px-3 py-1.5 text-center">
                 <button @click="$emit('eliminar', p.id)"
                   class="text-xs text-red-500 opacity-0 group-hover:opacity-100 hover:underline transition-opacity">
@@ -70,7 +85,7 @@
                 <input v-model.number="nueva.importe" type="number" step="0.01" placeholder="0,00"
                   class="inline-edit text-right w-28" @keydown.enter="confirmarAlta(grupo)" />
               </td>
-              <td colspan="2" class="px-3 py-1.5 text-center">
+              <td colspan="4" class="px-3 py-1.5 text-center">
                 <button @click="confirmarAlta(grupo)" class="text-xs text-purple-700 font-medium hover:underline mr-2">Añadir</button>
                 <button @click="filaAltaCategoria = null" class="text-xs text-gray-400 hover:underline">Cancelar</button>
               </td>
@@ -116,6 +131,10 @@ const nueva = ref({ codigo: '', nombre: '', importe: null, categoriaId: null })
 
 const eur = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0)
 
+// Desviación de una partida: ejecutado − presupuestado (positivo = se ha pasado)
+const desviacion = (p) =>
+  Number(p.importeEjecutado || 0) - Number(p.importePresupuestado || 0)
+
 // Agrupar partidas por categoría
 const grupos = computed(() => {
   const mapa = new Map()
@@ -123,11 +142,12 @@ const grupos = computed(() => {
     const clave = p.categoriaId || '__sin_categoria__'
     if (!mapa.has(clave)) {
       const cat = props.categorias.find(c => c.id === p.categoriaId)
-      mapa.set(clave, { clave, nombre: cat?.nombre || 'Sin categoría', categoriaId: p.categoriaId || null, partidas: [], total: 0 })
+      mapa.set(clave, { clave, nombre: cat?.nombre || 'Sin categoría', categoriaId: p.categoriaId || null, partidas: [], total: 0, totalEjecutado: 0 })
     }
     const g = mapa.get(clave)
     g.partidas.push(p)
     g.total += Number(p.importePresupuestado || 0)
+    g.totalEjecutado += Number(p.importeEjecutado || 0)
   }
   return Array.from(mapa.values())
 })

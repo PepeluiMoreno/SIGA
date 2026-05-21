@@ -355,6 +355,12 @@ const routes = [
     meta: { requiresAuth: true, requiredPermission: 'FIN_REPORTS', requiereFeature: 'usaPresupuesto' }
   },
   {
+    path: '/economico/presupuesto-evolucion',
+    component: () => import('@/modules/economico/views/EvolucionPresupuestaria.vue'),
+    name: 'EvolucionPresupuestaria',
+    meta: { requiresAuth: true, requiredPermission: 'FIN_REPORTS', requiereFeature: 'usaPresupuesto' }
+  },
+  {
     path: '/economico/donaciones',
     component: Donaciones,
     name: 'Donaciones',

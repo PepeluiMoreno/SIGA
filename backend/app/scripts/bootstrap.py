@@ -719,6 +719,21 @@ async def sync_superadmin_all_transactions(session) -> None:
     print(f"[lifespan] SUPERADMIN: +{len(missing)} transacciones enlazadas")
 
 
+async def sync_roles_funcionales_catalog(session) -> None:
+    """Re-enlaza los roles funcionales con las transacciones de catalog.py.
+
+    seed_roles_funcionales() corre en bootstrap antes de que CatalogSyncService
+    sincronice las transacciones declaradas en los catalog.py de cada módulo
+    (p. ej. ECO_PRESUPUESTO_*). Esta función vuelve a ejecutar el seed con el
+    catálogo ya completo en la BD. Es idempotente.
+    """
+    todas = {
+        t.codigo: t
+        for t in (await session.execute(select(Transaccion))).scalars()
+    }
+    await seed_roles_funcionales(session, todas)
+
+
 _PLANIFICADOR_CODE = "PLANIFICADOR"
 
 
