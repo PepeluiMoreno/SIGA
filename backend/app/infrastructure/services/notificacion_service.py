@@ -1,17 +1,72 @@
-"""Servicio de gestión de notificaciones."""
+"""Servicio de gestión de notificaciones.
+
+Responsabilidades:
+  - Crear notificaciones in-app (fila `Notificacion`) de forma individual o en lote.
+  - Resolver el `estado_id` por código (PENDIENTE/ENVIADA/LEIDA/ERROR), con cache.
+  - Enviar por email cuando procede, según la PRIORIDAD del tipo de notificación.
+  - Gestionar lectura, archivado, recuento de no leídas y preferencias.
+  - Punto de entrada de alto nivel para flujos de trabajo: `emitir(...)`, que
+    resuelve la audiencia (rol/cargo/usuario) con DestinatarioResolver, crea las
+    notificaciones in-app y dispara los emails que correspondan.
+
+Regla de canal email (decisión por prioridad del tipo)
+------------------------------------------------------
+El in-app se crea SIEMPRE. El email se añade solo si se cumplen TODAS:
+  1. La prioridad del tipo es ALTA o URGENTE.
+  2. El tipo admite email (`TipoNotificacion.permite_email`).
+  3. La preferencia del usuario no lo veta (`PreferenciaNotificacion.email_habilitado`,
+     que por defecto es True si el usuario no tiene preferencia registrada).
+  4. SMTP está configurado. Si no lo está, el envío se marca como SIMULADO
+     (coherente con el comportamiento de las notificaciones de campaña).
+La prioridad PROPONE el email; el tipo y la preferencia pueden RETIRARLO.
+"""
 
 import uuid
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Iterable
 
 from sqlalchemy import select, and_, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...modules.core.comunicacion import TipoNotificacion, Notificacion, PreferenciaNotificacion
-from .cache_service import CacheService, get_cache_service, generar_cache_key
+from ...modules.core.comunicacion import (
+    TipoNotificacion,
+    Notificacion,
+    PreferenciaNotificacion,
+)
+from ...modules.configuracion.models.estados import EstadoNotificacion
+from ...modules.acceso.models.usuario import Usuario
+from ...core.email_service import EmailService, _load_smtp_config
+from .cache_service import get_cache_service, generar_cache_key
 
 logger = logging.getLogger(__name__)
+
+# Prioridades del tipo que proponen envío por email.
+_PRIORIDADES_EMAIL = frozenset({"ALTA", "URGENTE"})
+
+
+class ResultadoEmision:
+    """Resultado agregado de una emisión de aviso a una audiencia."""
+
+    def __init__(self) -> None:
+        self.inapp_creadas: int = 0
+        self.email_enviados: int = 0
+        self.email_fallidos: int = 0
+        self.email_simulados: int = 0
+        self.sin_email: int = 0
+        self.destinatarios: int = 0
+        self.mensaje: str = ""
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "destinatarios": self.destinatarios,
+            "inapp_creadas": self.inapp_creadas,
+            "email_enviados": self.email_enviados,
+            "email_fallidos": self.email_fallidos,
+            "email_simulados": self.email_simulados,
+            "sin_email": self.sin_email,
+            "mensaje": self.mensaje,
+        }
 
 
 class NotificacionService:
@@ -20,6 +75,35 @@ class NotificacionService:
     def __init__(self, session: AsyncSession):
         self.session = session
         self.cache = get_cache_service()
+        # Cache local (por instancia/request) del mapeo código → estado_id.
+        self._estado_ids: Dict[str, uuid.UUID] = {}
+
+    # ------------------------------------------------------------------
+    # Resolución de estados por código
+    # ------------------------------------------------------------------
+
+    async def _estado_id(self, codigo: str) -> uuid.UUID:
+        """Devuelve el id del EstadoNotificacion por código, cacheado por request."""
+        if codigo in self._estado_ids:
+            return self._estado_ids[codigo]
+        result = await self.session.execute(
+            select(EstadoNotificacion.id).where(
+                EstadoNotificacion.codigo == codigo,
+                EstadoNotificacion.eliminado == False,  # noqa: E712
+            )
+        )
+        estado_id = result.scalar_one_or_none()
+        if estado_id is None:
+            raise ValueError(
+                f"EstadoNotificacion '{codigo}' no existe. "
+                f"¿Se han sembrado los estados de notificación?"
+            )
+        self._estado_ids[codigo] = estado_id
+        return estado_id
+
+    # ------------------------------------------------------------------
+    # Creación in-app
+    # ------------------------------------------------------------------
 
     async def crear_notificacion(
         self,
@@ -27,61 +111,24 @@ class NotificacionService:
         usuario_id: uuid.UUID,
         titulo: str,
         mensaje: str,
-        canal: str = 'INAPP',
+        canal: str = "INAPP",
         datos_adicionales: Optional[Dict[str, Any]] = None,
         entidad_tipo: Optional[str] = None,
         entidad_id: Optional[str] = None,
         url_accion: Optional[str] = None,
-        fecha_expiracion: Optional[datetime] = None
+        fecha_expiracion: Optional[datetime] = None,
+        commit: bool = True,
     ) -> Notificacion:
+        """Crea una notificación in-app para un usuario.
+
+        Con `commit=False` la notificación se añade a la sesión sin hacer commit,
+        útil para creación en lote (un único commit al final).
         """
-        Crea una nueva notificación para un usuario.
+        tipo = await self._obtener_tipo(tipo_codigo)
 
-        Args:
-            tipo_codigo: Código del tipo de notificación
-            usuario_id: ID del usuario destinatario
-            titulo: Título de la notificación
-            mensaje: Mensaje de la notificación
-            canal: Canal de envío (EMAIL, SMS, PUSH, INAPP)
-            datos_adicionales: Datos extra en formato dict
-            entidad_tipo: Tipo de entidad relacionada
-            entidad_id: ID de entidad relacionada
-            url_accion: URL para acción opcional
-            fecha_expiracion: Fecha de expiración de la notificación
+        # Verificar que el canal solicitado está permitido por el tipo
+        canal = self._canal_permitido(tipo, canal)
 
-        Returns:
-            Notificación creada
-        """
-        # Obtener tipo de notificación
-        result = await self.session.execute(
-            select(TipoNotificacion).where(
-                TipoNotificacion.codigo == tipo_codigo,
-                TipoNotificacion.activo == True,
-                TipoNotificacion.eliminado == False
-            )
-        )
-        tipo = result.scalar_one_or_none()
-
-        if not tipo:
-            logger.error(f"Tipo de notificación no encontrado: {tipo_codigo}")
-            raise ValueError(f"Tipo de notificación no encontrado: {tipo_codigo}")
-
-        # Verificar que el canal está permitido
-        canal_permitido = False
-        if canal == 'EMAIL' and tipo.permite_email:
-            canal_permitido = True
-        elif canal == 'SMS' and tipo.permite_sms:
-            canal_permitido = True
-        elif canal == 'PUSH' and tipo.permite_push:
-            canal_permitido = True
-        elif canal == 'INAPP' and tipo.permite_inapp:
-            canal_permitido = True
-
-        if not canal_permitido:
-            logger.warning(f"Canal {canal} no permitido para tipo {tipo_codigo}, usando INAPP por defecto")
-            canal = 'INAPP'
-
-        # Crear notificación
         notificacion = Notificacion(
             id=uuid.uuid4(),
             tipo_id=tipo.id,
@@ -95,20 +142,132 @@ class NotificacionService:
             url_accion=url_accion,
             fecha_expiracion=fecha_expiracion,
             requiere_accion=tipo.requiere_accion,
-            estado='PENDIENTE'
+            estado_id=await self._estado_id("PENDIENTE"),
         )
 
         self.session.add(notificacion)
-        await self.session.commit()
-        await self.session.refresh(notificacion)
+        if commit:
+            await self.session.commit()
+            await self.session.refresh(notificacion)
 
-        logger.info(f"Notificación creada: {notificacion.id} para usuario {usuario_id}")
-
-        # Invalidar caché de notificaciones no leídas
-        cache_key = generar_cache_key("notificaciones_no_leidas", str(usuario_id))
-        self.cache.delete(cache_key)
-
+        self._invalidar_cache_no_leidas(usuario_id)
+        logger.info("Notificación creada: %s para usuario %s", notificacion.id, usuario_id)
         return notificacion
+
+    # ------------------------------------------------------------------
+    # Punto de entrada de alto nivel para flujos de trabajo
+    # ------------------------------------------------------------------
+
+    async def emitir(
+        self,
+        *,
+        tipo_codigo: str,
+        audiencia,  # EspecificacionAudiencia | Iterable[EspecificacionAudiencia]
+        titulo: str,
+        mensaje: str,
+        entidad_tipo: Optional[str] = None,
+        entidad_id: Optional[str] = None,
+        url_accion: Optional[str] = None,
+        datos_adicionales: Optional[Dict[str, Any]] = None,
+        cuerpo_html_email: Optional[str] = None,
+    ) -> ResultadoEmision:
+        """Emite un aviso a una audiencia resuelta por rol/cargo/usuario.
+
+        Crea in-app para todos los destinatarios y, según la prioridad del tipo,
+        envía además por email a quienes proceda. Es el método que invocan los
+        handlers de eventos de dominio.
+        """
+        from ...modules.core.comunicacion.services.destinatario_resolver import (
+            DestinatarioResolver,
+            EspecificacionAudiencia,
+        )
+
+        if isinstance(audiencia, EspecificacionAudiencia):
+            specs: Iterable[EspecificacionAudiencia] = [audiencia]
+        else:
+            specs = list(audiencia)
+
+        resolver = DestinatarioResolver(self.session)
+        destinatarios = await resolver.resolver(specs)
+
+        resultado = ResultadoEmision()
+        resultado.destinatarios = len(destinatarios)
+        if not destinatarios:
+            resultado.mensaje = "Sin destinatarios para la audiencia indicada."
+            return resultado
+
+        tipo = await self._obtener_tipo(tipo_codigo)
+        quiere_email = (
+            tipo.prioridad in _PRIORIDADES_EMAIL and bool(tipo.permite_email)
+        )
+
+        # 1) Crear todas las notificaciones in-app en lote (un solo commit)
+        for d in destinatarios:
+            await self.crear_notificacion(
+                tipo_codigo=tipo_codigo,
+                usuario_id=d.usuario_id,
+                titulo=titulo,
+                mensaje=mensaje,
+                canal="INAPP",
+                datos_adicionales=datos_adicionales,
+                entidad_tipo=entidad_tipo,
+                entidad_id=entidad_id,
+                url_accion=url_accion,
+                commit=False,
+            )
+            resultado.inapp_creadas += 1
+        await self.session.commit()
+        for d in destinatarios:
+            self._invalidar_cache_no_leidas(d.usuario_id)
+
+        # 2) Email, si la prioridad del tipo lo propone
+        if not quiere_email:
+            resultado.mensaje = (
+                f"{resultado.inapp_creadas} avisos in-app creados "
+                f"(prioridad {tipo.prioridad}: sin email)."
+            )
+            return resultado
+
+        smtp = await _load_smtp_config(self.session)
+        email_svc = EmailService(self.session)
+        asunto = titulo
+        cuerpo = cuerpo_html_email or f"<p>{mensaje}</p>"
+
+        for d in destinatarios:
+            if not await self._email_permitido_para(d.usuario_id, tipo.id):
+                resultado.sin_email += 1
+                continue
+            if not smtp.configured:
+                resultado.email_simulados += 1
+                continue
+            try:
+                await email_svc.enviar(
+                    destinatario=d.email,
+                    asunto=asunto,
+                    cuerpo_html=cuerpo.replace("{{ nombre_miembro }}", d.nombre),
+                )
+                resultado.email_enviados += 1
+            except Exception as exc:  # noqa: BLE001
+                logger.error("Fallo al enviar email a %s: %s", d.email, exc)
+                resultado.email_fallidos += 1
+
+        if not smtp.configured:
+            resultado.mensaje = (
+                f"{resultado.inapp_creadas} avisos in-app creados. "
+                f"Email SIMULADO ({resultado.email_simulados}): SMTP no configurado."
+            )
+        else:
+            resultado.mensaje = (
+                f"{resultado.inapp_creadas} avisos in-app; "
+                f"{resultado.email_enviados} emails enviados, "
+                f"{resultado.email_fallidos} fallidos, "
+                f"{resultado.sin_email} sin email (vetado por tipo/preferencia)."
+            )
+        return resultado
+
+    # ------------------------------------------------------------------
+    # Consultas
+    # ------------------------------------------------------------------
 
     async def obtener_notificaciones_usuario(
         self,
@@ -116,31 +275,17 @@ class NotificacionService:
         solo_no_leidas: bool = False,
         solo_no_archivadas: bool = True,
         limite: int = 50,
-        offset: int = 0
+        offset: int = 0,
     ) -> List[Notificacion]:
-        """
-        Obtiene las notificaciones de un usuario.
-
-        Args:
-            usuario_id: ID del usuario
-            solo_no_leidas: Filtrar solo no leídas
-            solo_no_archivadas: Filtrar solo no archivadas
-            limite: Número máximo de resultados
-            offset: Desplazamiento para paginación
-
-        Returns:
-            Lista de notificaciones
-        """
+        """Obtiene las notificaciones de un usuario (más recientes primero)."""
         filtros = [
             Notificacion.usuario_id == usuario_id,
-            Notificacion.eliminado == False
+            Notificacion.eliminado == False,  # noqa: E712
         ]
-
         if solo_no_leidas:
-            filtros.append(Notificacion.leida == False)
-
+            filtros.append(Notificacion.leida == False)  # noqa: E712
         if solo_no_archivadas:
-            filtros.append(Notificacion.archivada == False)
+            filtros.append(Notificacion.archivada == False)  # noqa: E712
 
         stmt = (
             select(Notificacion)
@@ -149,245 +294,112 @@ class NotificacionService:
             .limit(limite)
             .offset(offset)
         )
-
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
     async def contar_no_leidas(self, usuario_id: uuid.UUID) -> int:
-        """
-        Cuenta las notificaciones no leídas de un usuario.
-
-        Args:
-            usuario_id: ID del usuario
-
-        Returns:
-            Número de notificaciones no leídas
-        """
+        """Cuenta notificaciones no leídas y no archivadas (cacheado 5 min)."""
         cache_key = generar_cache_key("notificaciones_no_leidas", str(usuario_id))
         count = self.cache.get(cache_key)
-
         if count is not None:
             return count
 
         stmt = select(func.count(Notificacion.id)).where(
             and_(
                 Notificacion.usuario_id == usuario_id,
-                Notificacion.leida == False,
-                Notificacion.archivada == False,
-                Notificacion.eliminado == False
+                Notificacion.leida == False,       # noqa: E712
+                Notificacion.archivada == False,   # noqa: E712
+                Notificacion.eliminado == False,   # noqa: E712
             )
         )
-
         result = await self.session.execute(stmt)
         count = result.scalar() or 0
-
-        # Cachear por 5 minutos
         self.cache.set(cache_key, count, ttl=300)
-
         return count
 
+    # ------------------------------------------------------------------
+    # Mutaciones de estado de lectura/archivado
+    # ------------------------------------------------------------------
+
     async def marcar_como_leida(self, notificacion_id: uuid.UUID, usuario_id: uuid.UUID) -> bool:
-        """
-        Marca una notificación como leída.
-
-        Args:
-            notificacion_id: ID de la notificación
-            usuario_id: ID del usuario (para validación)
-
-        Returns:
-            True si se marcó correctamente
-        """
-        result = await self.session.execute(
-            select(Notificacion).where(
-                Notificacion.id == notificacion_id,
-                Notificacion.usuario_id == usuario_id
-            )
-        )
-        notificacion = result.scalar_one_or_none()
-
+        notificacion = await self._obtener_propia(notificacion_id, usuario_id)
         if not notificacion:
-            logger.warning(f"Notificación {notificacion_id} no encontrada para usuario {usuario_id}")
             return False
-
         notificacion.marcar_como_leida()
+        notificacion.estado_id = await self._estado_id("LEIDA")
         await self.session.commit()
-
-        # Invalidar caché
-        cache_key = generar_cache_key("notificaciones_no_leidas", str(usuario_id))
-        self.cache.delete(cache_key)
-
-        logger.info(f"Notificación {notificacion_id} marcada como leída")
+        self._invalidar_cache_no_leidas(usuario_id)
         return True
 
     async def marcar_todas_como_leidas(self, usuario_id: uuid.UUID) -> int:
-        """
-        Marca todas las notificaciones de un usuario como leídas.
-
-        Args:
-            usuario_id: ID del usuario
-
-        Returns:
-            Número de notificaciones marcadas
-        """
         stmt = select(Notificacion).where(
             and_(
                 Notificacion.usuario_id == usuario_id,
-                Notificacion.leida == False,
-                Notificacion.eliminado == False
+                Notificacion.leida == False,       # noqa: E712
+                Notificacion.eliminado == False,   # noqa: E712
             )
         )
-
         result = await self.session.execute(stmt)
         notificaciones = result.scalars().all()
-
+        estado_leida = await self._estado_id("LEIDA")
         count = 0
-        for notificacion in notificaciones:
-            notificacion.marcar_como_leida()
+        for n in notificaciones:
+            n.marcar_como_leida()
+            n.estado_id = estado_leida
             count += 1
-
         await self.session.commit()
-
-        # Invalidar caché
-        cache_key = generar_cache_key("notificaciones_no_leidas", str(usuario_id))
-        self.cache.delete(cache_key)
-
-        logger.info(f"{count} notificaciones marcadas como leídas para usuario {usuario_id}")
+        self._invalidar_cache_no_leidas(usuario_id)
         return count
 
     async def archivar_notificacion(self, notificacion_id: uuid.UUID, usuario_id: uuid.UUID) -> bool:
-        """
-        Archiva una notificación.
-
-        Args:
-            notificacion_id: ID de la notificación
-            usuario_id: ID del usuario (para validación)
-
-        Returns:
-            True si se archivó correctamente
-        """
-        result = await self.session.execute(
-            select(Notificacion).where(
-                Notificacion.id == notificacion_id,
-                Notificacion.usuario_id == usuario_id
-            )
-        )
-        notificacion = result.scalar_one_or_none()
-
+        notificacion = await self._obtener_propia(notificacion_id, usuario_id)
         if not notificacion:
             return False
-
         notificacion.archivar()
         await self.session.commit()
-
-        logger.info(f"Notificación {notificacion_id} archivada")
+        self._invalidar_cache_no_leidas(usuario_id)
         return True
 
     async def limpiar_notificaciones_antiguas(self, dias: int = 90) -> int:
-        """
-        Elimina notificaciones antiguas (soft delete).
-
-        Args:
-            dias: Días de antigüedad para considerar
-
-        Returns:
-            Número de notificaciones eliminadas
-        """
+        """Soft-delete de notificaciones leídas/archivadas más antiguas que `dias`."""
         fecha_limite = datetime.utcnow() - timedelta(days=dias)
-
         stmt = select(Notificacion).where(
             and_(
                 Notificacion.fecha_creacion < fecha_limite,
                 or_(
-                    Notificacion.leida == True,
-                    Notificacion.archivada == True
+                    Notificacion.leida == True,      # noqa: E712
+                    Notificacion.archivada == True,  # noqa: E712
                 ),
-                Notificacion.eliminado == False
+                Notificacion.eliminado == False,     # noqa: E712
             )
         )
-
         result = await self.session.execute(stmt)
         notificaciones = result.scalars().all()
-
         count = 0
-        for notificacion in notificaciones:
-            notificacion.soft_delete()
+        for n in notificaciones:
+            n.soft_delete()
             count += 1
-
         await self.session.commit()
-
-        logger.info(f"{count} notificaciones antiguas eliminadas")
+        logger.info("%s notificaciones antiguas eliminadas", count)
         return count
 
-    async def enviar_notificacion_batch(
-        self,
-        tipo_codigo: str,
-        usuarios_ids: List[uuid.UUID],
-        titulo: str,
-        mensaje: str,
-        canal: str = 'INAPP',
-        datos_adicionales: Optional[Dict[str, Any]] = None
-    ) -> int:
-        """
-        Envía una notificación a múltiples usuarios.
-
-        Args:
-            tipo_codigo: Código del tipo de notificación
-            usuarios_ids: Lista de IDs de usuarios
-            titulo: Título de la notificación
-            mensaje: Mensaje de la notificación
-            canal: Canal de envío
-            datos_adicionales: Datos extra
-
-        Returns:
-            Número de notificaciones creadas
-        """
-        count = 0
-        for usuario_id in usuarios_ids:
-            try:
-                await self.crear_notificacion(
-                    tipo_codigo=tipo_codigo,
-                    usuario_id=usuario_id,
-                    titulo=titulo,
-                    mensaje=mensaje,
-                    canal=canal,
-                    datos_adicionales=datos_adicionales
-                )
-                count += 1
-            except Exception as e:
-                logger.error(f"Error creando notificación para usuario {usuario_id}: {e}")
-
-        logger.info(f"{count} notificaciones creadas en batch")
-        return count
+    # ------------------------------------------------------------------
+    # Preferencias
+    # ------------------------------------------------------------------
 
     async def obtener_preferencias_usuario(
         self,
         usuario_id: uuid.UUID,
-        tipo_codigo: Optional[str] = None
+        tipo_codigo: Optional[str] = None,
     ) -> List[PreferenciaNotificacion]:
-        """
-        Obtiene las preferencias de notificación de un usuario.
-
-        Args:
-            usuario_id: ID del usuario
-            tipo_codigo: Código del tipo (opcional, para filtrar)
-
-        Returns:
-            Lista de preferencias
-        """
         filtros = [
             PreferenciaNotificacion.usuario_id == usuario_id,
-            PreferenciaNotificacion.eliminado == False
+            PreferenciaNotificacion.eliminado == False,  # noqa: E712
         ]
-
         if tipo_codigo:
-            # Obtener tipo
-            result = await self.session.execute(
-                select(TipoNotificacion).where(TipoNotificacion.codigo == tipo_codigo)
-            )
-            tipo = result.scalar_one_or_none()
+            tipo = await self._obtener_tipo(tipo_codigo, requerido=False)
             if tipo:
                 filtros.append(PreferenciaNotificacion.tipo_id == tipo.id)
-
         stmt = select(PreferenciaNotificacion).where(and_(*filtros))
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
@@ -400,54 +412,25 @@ class NotificacionService:
         sms_habilitado: Optional[bool] = None,
         push_habilitado: Optional[bool] = None,
         inapp_habilitado: Optional[bool] = None,
-        frecuencia: Optional[str] = None
+        frecuencia: Optional[str] = None,
     ) -> PreferenciaNotificacion:
-        """
-        Actualiza o crea una preferencia de notificación.
-
-        Args:
-            usuario_id: ID del usuario
-            tipo_codigo: Código del tipo de notificación
-            email_habilitado: Habilitar email
-            sms_habilitado: Habilitar SMS
-            push_habilitado: Habilitar push
-            inapp_habilitado: Habilitar in-app
-            frecuencia: Frecuencia de envío
-
-        Returns:
-            Preferencia actualizada
-        """
-        # Obtener tipo
-        result = await self.session.execute(
-            select(TipoNotificacion).where(TipoNotificacion.codigo == tipo_codigo)
-        )
-        tipo = result.scalar_one_or_none()
-
-        if not tipo:
-            raise ValueError(f"Tipo de notificación no encontrado: {tipo_codigo}")
-
-        # Buscar preferencia existente
+        tipo = await self._obtener_tipo(tipo_codigo)
         result = await self.session.execute(
             select(PreferenciaNotificacion).where(
                 and_(
                     PreferenciaNotificacion.usuario_id == usuario_id,
                     PreferenciaNotificacion.tipo_id == tipo.id,
-                    PreferenciaNotificacion.eliminado == False
+                    PreferenciaNotificacion.eliminado == False,  # noqa: E712
                 )
             )
         )
         preferencia = result.scalar_one_or_none()
-
         if not preferencia:
-            # Crear nueva
             preferencia = PreferenciaNotificacion(
-                id=uuid.uuid4(),
-                usuario_id=usuario_id,
-                tipo_id=tipo.id
+                id=uuid.uuid4(), usuario_id=usuario_id, tipo_id=tipo.id
             )
             self.session.add(preferencia)
 
-        # Actualizar campos
         if email_habilitado is not None:
             preferencia.email_habilitado = email_habilitado
         if sms_habilitado is not None:
@@ -461,6 +444,60 @@ class NotificacionService:
 
         await self.session.commit()
         await self.session.refresh(preferencia)
-
-        logger.info(f"Preferencia actualizada para usuario {usuario_id}, tipo {tipo_codigo}")
         return preferencia
+
+    # ------------------------------------------------------------------
+    # Helpers internos
+    # ------------------------------------------------------------------
+
+    async def _obtener_tipo(self, tipo_codigo: str, requerido: bool = True) -> Optional[TipoNotificacion]:
+        result = await self.session.execute(
+            select(TipoNotificacion).where(
+                TipoNotificacion.codigo == tipo_codigo,
+                TipoNotificacion.activo == True,      # noqa: E712
+                TipoNotificacion.eliminado == False,  # noqa: E712
+            )
+        )
+        tipo = result.scalar_one_or_none()
+        if tipo is None and requerido:
+            raise ValueError(f"Tipo de notificación no encontrado: {tipo_codigo}")
+        return tipo
+
+    async def _obtener_propia(
+        self, notificacion_id: uuid.UUID, usuario_id: uuid.UUID
+    ) -> Optional[Notificacion]:
+        result = await self.session.execute(
+            select(Notificacion).where(
+                Notificacion.id == notificacion_id,
+                Notificacion.usuario_id == usuario_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def _email_permitido_para(self, usuario_id: uuid.UUID, tipo_id: uuid.UUID) -> bool:
+        """La preferencia del usuario veta el email; por defecto (sin registro) permite."""
+        result = await self.session.execute(
+            select(PreferenciaNotificacion.email_habilitado).where(
+                PreferenciaNotificacion.usuario_id == usuario_id,
+                PreferenciaNotificacion.tipo_id == tipo_id,
+                PreferenciaNotificacion.eliminado == False,  # noqa: E712
+            )
+        )
+        pref = result.scalar_one_or_none()
+        return True if pref is None else bool(pref)
+
+    @staticmethod
+    def _canal_permitido(tipo: TipoNotificacion, canal: str) -> str:
+        permitido = {
+            "EMAIL": tipo.permite_email,
+            "SMS": tipo.permite_sms,
+            "PUSH": tipo.permite_push,
+            "INAPP": tipo.permite_inapp,
+        }.get(canal, False)
+        if not permitido:
+            logger.warning("Canal %s no permitido para tipo %s; se usa INAPP", canal, tipo.codigo)
+            return "INAPP"
+        return canal
+
+    def _invalidar_cache_no_leidas(self, usuario_id: uuid.UUID) -> None:
+        self.cache.delete(generar_cache_key("notificaciones_no_leidas", str(usuario_id)))
