@@ -206,6 +206,12 @@ class PlanificacionAnual(BaseModel):
     # el disponible de la partida se bloquea; si está inactivo, solo se avisa.
     control_disponibilidad: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    # Prórroga (Fase 3): si el presupuesto del ejercicio no se aprueba a tiempo, se
+    # prorroga el del ejercicio anterior. es_prorroga marca esa condición transitoria;
+    # ejercicio_origen_prorroga indica de qué ejercicio se prorrogó.
+    es_prorroga: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    ejercicio_origen_prorroga: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
     # Relaciones
     estado: Mapped["EstadoPlanificacion"] = relationship(back_populates='planificaciones', lazy='selectin')
     partidas: Mapped[List["PartidaPresupuestaria"]] = relationship(back_populates='planificacion', lazy='selectin')

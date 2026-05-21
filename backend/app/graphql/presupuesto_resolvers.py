@@ -73,6 +73,8 @@ class PlanificacionAnualDetailType:
     gastos_ejecutados: float
     porcentaje_ejecucion: float
     control_disponibilidad: bool
+    es_prorroga: bool
+    ejercicio_origen_prorroga: Optional[int]
 
     @staticmethod
     def from_model(pl) -> "PlanificacionAnualDetailType":
@@ -91,6 +93,8 @@ class PlanificacionAnualDetailType:
             gastos_ejecutados=float(pl.gastos_ejecutados or 0),
             porcentaje_ejecucion=round(pl.porcentaje_ejecucion, 1),
             control_disponibilidad=pl.control_disponibilidad,
+            es_prorroga=pl.es_prorroga,
+            ejercicio_origen_prorroga=pl.ejercicio_origen_prorroga,
         )
 
 
@@ -138,6 +142,30 @@ class AlertaPresupuestariaType:
     nombre: str
     tipo_alerta: str
     mensaje: str
+
+
+@strawberry.type
+class ComparativaInteranualType:
+    codigo: str
+    nombre: str
+    tipo: str
+    importe_actual: float
+    importe_anterior: float
+    variacion: float
+    variacion_porcentaje: Optional[float]
+
+
+@strawberry.type
+class LiquidacionPresupuestariaType:
+    ejercicio: int
+    existe: bool
+    ingresos_previstos: float = 0.0
+    ingresos_ejecutados: float = 0.0
+    gastos_previstos: float = 0.0
+    gastos_ejecutados: float = 0.0
+    resultado_previsto: float = 0.0
+    resultado_ejecutado: float = 0.0
+    grado_ejecucion_gastos: float = 0.0
 
 
 @strawberry.input
@@ -230,6 +258,22 @@ class PresupuestoQuery:
         service = PresupuestoService(info.context.session)
         filas = await service.alertas(planificacion_id)
         return [AlertaPresupuestariaType(**f) for f in filas]
+
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")])
+    async def comparativa_interanual(
+        self, info: strawberry.Info, ejercicio: int
+    ) -> List[ComparativaInteranualType]:
+        service = PresupuestoService(info.context.session)
+        filas = await service.comparativa_interanual(ejercicio)
+        return [ComparativaInteranualType(**f) for f in filas]
+
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")])
+    async def liquidacion_presupuestaria(
+        self, info: strawberry.Info, ejercicio: int
+    ) -> LiquidacionPresupuestariaType:
+        service = PresupuestoService(info.context.session)
+        d = await service.liquidacion_presupuestaria(ejercicio)
+        return LiquidacionPresupuestariaType(**d)
 
 
 @strawberry.type
@@ -355,3 +399,22 @@ class PresupuestoMutation:
         await service.session.commit()
         await service.session.refresh(plan)
         return PlanificacionAnualDetailType.from_model(plan)
+
+    # ── Fase 3 ───────────────────────────────────────────────────────────────
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CREAR")])
+    async def clonar_presupuesto(
+        self, info: strawberry.Info, ejercicio_origen: int, ejercicio_nuevo: int,
+        nombre: Optional[str] = None,
+    ) -> PlanificacionAnualDetailType:
+        service = PresupuestoService(info.context.session)
+        p = await service.clonar_planificacion(ejercicio_origen, ejercicio_nuevo, nombre=nombre)
+        return PlanificacionAnualDetailType.from_model(p)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_APROBAR")])
+    async def prorrogar_presupuesto(
+        self, info: strawberry.Info, ejercicio_origen: int, ejercicio_nuevo: int
+    ) -> PlanificacionAnualDetailType:
+        service = PresupuestoService(info.context.session)
+        p = await service.prorrogar(ejercicio_origen, ejercicio_nuevo)
+        return PlanificacionAnualDetailType.from_model(p)

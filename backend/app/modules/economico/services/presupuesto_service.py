@@ -113,6 +113,134 @@ class PresupuestoService:
         await self.session.refresh(planificacion)
         return planificacion
 
+    # ── Fase 3: clonado, prórroga, comparativa, liquidación ──────────────────
+
+    async def clonar_planificacion(
+        self,
+        ejercicio_origen: int,
+        ejercicio_nuevo: int,
+        nombre: Optional[str] = None,
+        es_prorroga: bool = False,
+    ) -> PlanificacionAnual:
+        """Crea el presupuesto de un ejercicio copiando las partidas de otro.
+
+        Las partidas se copian con su importe presupuestado como punto de partida; el
+        ejecutado y comprometido arrancan a cero. El nuevo nace en BORRADOR.
+        Si es_prorroga=True, queda marcado como prórroga del ejercicio origen.
+        """
+        origen = await self.obtener_planificacion_por_ejercicio(ejercicio_origen)
+        if not origen:
+            raise ValueError(f"No existe presupuesto del ejercicio {ejercicio_origen} para copiar")
+        if await self.obtener_planificacion_por_ejercicio(ejercicio_nuevo):
+            raise ValueError(f"Ya existe un presupuesto para el ejercicio {ejercicio_nuevo}")
+
+        estado_borrador = await self._estado_por_codigo(ESTADO_BORRADOR)
+        if not estado_borrador:
+            raise ValueError("No está configurado el estado BORRADOR")
+
+        nuevo = PlanificacionAnual(
+            ejercicio=ejercicio_nuevo,
+            nombre=nombre or (f"Prórroga {ejercicio_nuevo}" if es_prorroga else f"Presupuesto {ejercicio_nuevo}"),
+            descripcion=origen.descripcion,
+            objetivos=origen.objetivos,
+            estado_id=estado_borrador.id,
+            es_prorroga=es_prorroga,
+            ejercicio_origen_prorroga=ejercicio_origen if es_prorroga else None,
+        )
+        self.session.add(nuevo)
+        await self.session.commit()
+        await self.session.refresh(nuevo)
+
+        # Copiar las partidas (importe presupuestado como base; ejecución a cero)
+        partidas_origen = await self.listar_partidas(origen.id)
+        for po in partidas_origen:
+            self.session.add(PartidaPresupuestaria(
+                planificacion_id=nuevo.id,
+                ejercicio=ejercicio_nuevo,
+                codigo=f"{ejercicio_nuevo}-{po.codigo.split('-', 1)[-1]}" if "-" in po.codigo else f"{ejercicio_nuevo}-{po.codigo}",
+                nombre=po.nombre,
+                tipo=po.tipo,
+                importe_presupuestado=po.importe_presupuestado,
+                categoria_id=po.categoria_id,
+                actividad_id=po.actividad_id,
+                campania_id=po.campania_id,
+                descripcion=po.descripcion,
+            ))
+        await self.session.commit()
+        await self._recalcular_total(nuevo.id)
+        return nuevo
+
+    async def prorrogar(self, ejercicio_origen: int, ejercicio_nuevo: int) -> PlanificacionAnual:
+        """Prorroga el presupuesto del ejercicio anterior al nuevo (caso especial de clonado).
+
+        Se usa cuando el presupuesto del nuevo ejercicio no se aprueba a tiempo: rige el
+        anterior hasta que se apruebe el definitivo.
+        """
+        origen = await self.obtener_planificacion_por_ejercicio(ejercicio_origen)
+        if not origen:
+            raise ValueError(f"No existe presupuesto del ejercicio {ejercicio_origen} para prorrogar")
+        codigo_estado = await self._codigo_de_estado(origen.estado_id)
+        if codigo_estado not in (ESTADO_APROBADO, ESTADO_EN_EJECUCION, ESTADO_CERRADO):
+            raise ValueError("Solo se puede prorrogar un presupuesto que llegó a aprobarse")
+        return await self.clonar_planificacion(
+            ejercicio_origen, ejercicio_nuevo, es_prorroga=True
+        )
+
+    async def comparativa_interanual(self, ejercicio: int) -> List[dict]:
+        """Compara las partidas de un ejercicio con las del anterior, emparejadas por
+        categoría + nombre. Devuelve filas con importe de ambos años y variación."""
+        actual = await self.obtener_planificacion_por_ejercicio(ejercicio)
+        anterior = await self.obtener_planificacion_por_ejercicio(ejercicio - 1)
+        if not actual:
+            return []
+
+        partidas_act = await self.listar_partidas(actual.id)
+        partidas_ant = await self.listar_partidas(anterior.id) if anterior else []
+
+        def clave(p):
+            return (p.tipo, (p.nombre or "").strip().lower())
+        mapa_ant = {clave(p): p for p in partidas_ant}
+
+        filas = []
+        for p in partidas_act:
+            ant = mapa_ant.get(clave(p))
+            imp_act = float(p.importe_presupuestado or 0)
+            imp_ant = float(ant.importe_presupuestado or 0) if ant else 0.0
+            variacion = imp_act - imp_ant
+            pct = (variacion / imp_ant * 100) if imp_ant else None
+            filas.append({
+                "codigo": p.codigo, "nombre": p.nombre, "tipo": p.tipo,
+                "importe_actual": imp_act, "importe_anterior": imp_ant,
+                "variacion": variacion,
+                "variacion_porcentaje": round(pct, 1) if pct is not None else None,
+            })
+        return filas
+
+    async def liquidacion_presupuestaria(self, ejercicio: int) -> dict:
+        """Liquidación del presupuesto de un ejercicio (previsto vs ejecutado), lista para
+        incorporar a la Memoria de cuentas anuales. Resumen global y por categoría."""
+        plan = await self.obtener_planificacion_por_ejercicio(ejercicio)
+        if not plan:
+            return {"ejercicio": ejercicio, "existe": False}
+
+        partidas = await self.listar_partidas(plan.id)
+        ingresos_prev = sum((p.importe_presupuestado for p in partidas if p.tipo == "INGRESO"), Decimal("0"))
+        ingresos_ejec = sum((p.importe_ejecutado for p in partidas if p.tipo == "INGRESO"), Decimal("0"))
+        gastos_prev = sum((p.importe_presupuestado for p in partidas if p.tipo == "GASTO"), Decimal("0"))
+        gastos_ejec = sum((p.importe_ejecutado for p in partidas if p.tipo == "GASTO"), Decimal("0"))
+
+        return {
+            "ejercicio": ejercicio,
+            "existe": True,
+            "ingresos_previstos": float(ingresos_prev),
+            "ingresos_ejecutados": float(ingresos_ejec),
+            "gastos_previstos": float(gastos_prev),
+            "gastos_ejecutados": float(gastos_ejec),
+            "resultado_previsto": float(ingresos_prev - gastos_prev),
+            "resultado_ejecutado": float(ingresos_ejec - gastos_ejec),
+            "grado_ejecucion_gastos": round(float(gastos_ejec / gastos_prev * 100), 1) if gastos_prev else 0.0,
+        }
+
     async def actualizar_planificacion(self, planificacion_id: UUID, **kwargs) -> PlanificacionAnual:
         plan = await self.obtener_planificacion(planificacion_id)
         if not plan:
