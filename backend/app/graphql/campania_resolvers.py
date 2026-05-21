@@ -7,20 +7,12 @@ from decimal import Decimal
 from typing import Optional
 
 import strawberry
-from sqlalchemy import select, delete as sa_delete
+from sqlalchemy import select
 
-from app.modules.actividades.models.campana import (
-    Campania, MetaCampania, CanalDifusionCampania, PartidaPresupuestoCampania,
-    PlantillaCampania, PlantillaMeta, PlantillaPartida, PlantillaActividad, PlantillaTarea,
-)
-from app.modules.core.comunicacion.plantilla_email import PlantillaEmail
-from app.modules.actividades.models.grupo import RequisitoRecurso
-from app.modules.membresia.models.miembro import Miembro
-from app.modules.core.geografico.direccion import UnidadOrganizativa
-from app.modules.configuracion.models.configuracion import Configuracion
-from app.core.email_service import EmailService
+from app.modules.actividades.services.campania_service_p1 import CampaniaService
 from app.graphql.types_auto import CampaniaType, PlantillaCampaniaType, PlantillaActividadType, PlantillaTareaType
 from app.graphql.permissions import RequireTransaction
+from app.modules.actividades.models.campana import PlantillaActividad, PlantillaTarea
 
 
 @strawberry.input
@@ -164,6 +156,25 @@ class PlantillaTareaUpdateItemInput:
     nivel_habilidad_id: Optional[uuid.UUID] = None
 
 
+@strawberry.input
+class ClonarCampaniaInput:
+    campania_id: uuid.UUID
+    nombre: str
+    offset_dias: int = 0
+    incluir_metas: bool = True
+    incluir_partidas: bool = True
+    incluir_canales: bool = True
+    incluir_actividades: bool = True
+    incluir_subcampanias: bool = False
+    padre_id: Optional[uuid.UUID] = None
+
+
+@strawberry.input
+class PropagarACampaniasInput:
+    campania_id: uuid.UUID
+    campos: list[str]
+
+
 @strawberry.type
 class NotificacionCampaniaPreview:
     asunto: str
@@ -181,624 +192,158 @@ class ResultadoEnvioNotificacion:
     mensaje: Optional[str] = None
 
 
-def _renderizar_plantilla(asunto: str, cuerpo_html: str, **variables) -> tuple[str, str]:
-    """Sustituye {{ variable }} en asunto y cuerpo_html con los valores dados.
-
-    También procesa bloques {% if var %}…{% endif %} eliminando el bloque entero
-    cuando la variable es falsa/vacía.
-    """
-    import re
-
-    def _render(texto: str) -> str:
-        # {% if var %}…{% endif %} — elimina el bloque si var es falso/vacío
-        def repl_if(m):
-            key = m.group(1).strip()
-            val = variables.get(key)
-            if val and (not isinstance(val, (list, str)) or val):
-                inner = m.group(2)
-                return inner
-            return ""
-        texto = re.sub(r'\{%\s*if\s+(\w+)\s*%\}(.*?)\{%\s*endif\s*%\}', repl_if, texto, flags=re.DOTALL)
-
-        # {% for req in requisitos_recursos %}…{% endfor %}
-        def repl_for(m):
-            lista = variables.get("requisitos_recursos") or []
-            item_tmpl = m.group(1)
-            parts = []
-            for item in lista:
-                line = item_tmpl
-                for k, v in item.items():
-                    line = line.replace(f"{{{{ req.{k} }}}}", str(v))
-                parts.append(line)
-            return "".join(parts)
-        texto = re.sub(r'\{%\s*for\s+req\s+in\s+requisitos_recursos\s*%\}(.*?)\{%\s*endfor\s*%\}', repl_for, texto, flags=re.DOTALL)
-
-        # {{ variable }}
-        for key, val in variables.items():
-            if isinstance(val, list):
-                continue
-            texto = texto.replace(f"{{{{ {key} }}}}", str(val) if val else "")
-
-        return texto
-
-    return _render(asunto), _render(cuerpo_html)
-
-
-async def _fetch_campania(session, campania_id: uuid.UUID) -> Campania:
-    stmt = select(Campania).where(Campania.id == campania_id)
-    result = await session.execute(stmt)
-    return result.scalar_one()
-
-
-async def _fetch_plantilla(session, plantilla_id: uuid.UUID) -> PlantillaCampania:
-    stmt = select(PlantillaCampania).where(PlantillaCampania.id == plantilla_id)
-    result = await session.execute(stmt)
-    return result.scalar_one()
-
-
 @strawberry.type
 class CampaniaResolverMutation:
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_CREATE")])
-    async def crear_campania(
-        self,
-        info: strawberry.Info,
-        data: CampaniaCreateInput,
-    ) -> CampaniaType:
-        session = info.context.session
-        campania = Campania(
-            nombre=data.nombre,
-            tipo_campania_id=data.tipo_campania_id,
-            estado_id=data.estado_id,
-            fecha_inicio_plan=data.fecha_inicio_plan,
-            fecha_fin_plan=data.fecha_fin_plan,
-            responsable_id=data.responsable_id,
-            agrupacion_id=data.agrupacion_id,
-            lema=data.lema,
-            descripcion_corta=data.descripcion_corta,
-            descripcion_larga=data.descripcion_larga,
-            url_externa=data.url_externa,
-            foto_url=data.foto_url,
-            objetivo_principal=data.objetivo_principal,
-            es_recurrente=data.es_recurrente or False,
-            periodicidad=data.periodicidad,
-        )
-        session.add(campania)
-        await session.commit()
-        return await _fetch_campania(session, campania.id)
-
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
-    async def actualizar_campania(
-        self,
-        info: strawberry.Info,
-        data: CampaniaUpdateInput,
-    ) -> CampaniaType:
-        session = info.context.session
-        campania = await _fetch_campania(session, data.campania_id)
-        campos = [
-            'nombre', 'tipo_campania_id', 'estado_id',
-            'fecha_inicio_plan', 'fecha_fin_plan',
-            'responsable_id', 'agrupacion_id',
+    async def crear_campania(self, info: strawberry.Info, data: CampaniaCreateInput) -> CampaniaType:
+        kwargs = {k: getattr(data, k) for k in [
+            'fecha_inicio_plan', 'fecha_fin_plan', 'responsable_id', 'agrupacion_id',
             'lema', 'descripcion_corta', 'descripcion_larga', 'url_externa', 'foto_url',
             'objetivo_principal', 'es_recurrente', 'periodicidad',
-        ]
-        for campo in campos:
-            valor = getattr(data, campo, None)
-            if valor is not None:
-                setattr(campania, campo, valor)
-        await session.commit()
-        return await _fetch_campania(session, campania.id)
+        ] if getattr(data, k) is not None}
+        return await CampaniaService(info.context.session).crear(
+            nombre=data.nombre, tipo_campania_id=data.tipo_campania_id,
+            estado_id=data.estado_id, **kwargs,
+        )
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    async def actualizar_campania(self, info: strawberry.Info, data: CampaniaUpdateInput) -> CampaniaType:
+        campos = {k: getattr(data, k) for k in [
+            'nombre', 'tipo_campania_id', 'estado_id', 'fecha_inicio_plan', 'fecha_fin_plan',
+            'responsable_id', 'agrupacion_id', 'lema', 'descripcion_corta', 'descripcion_larga',
+            'url_externa', 'foto_url', 'objetivo_principal', 'es_recurrente', 'periodicidad',
+        ]}
+        return await CampaniaService(info.context.session).actualizar(data.campania_id, campos)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
     async def transicionar_campania(
-        self, info: strawberry.Info,
-        id: uuid.UUID,
-        estado_id: uuid.UUID,
-        notas: Optional[str] = None,
+        self, info: strawberry.Info, id: uuid.UUID, estado_id: uuid.UUID, notas: Optional[str] = None,
     ) -> CampaniaType:
-        """Cambia el estado de una campaña."""
-        session = info.context.session
-        campania = await _fetch_campania(session, id)
-        campania.estado_id = estado_id
-        if notas:
-            campania.notas_aprobacion = notas
-        await session.commit()
-        return await _fetch_campania(session, id)
+        return await CampaniaService(info.context.session).transicionar_estado(id, estado_id, notas)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_APPROVE")])
     async def aprobar_campania(
-        self, info: strawberry.Info,
-        id: uuid.UUID,
-        estado_id: uuid.UUID,
-        notas: Optional[str] = None,
+        self, info: strawberry.Info, id: uuid.UUID, estado_id: uuid.UUID, notas: Optional[str] = None,
     ) -> CampaniaType:
-        """Aprueba o rechaza una campaña (requiere CAMP_APPROVE)."""
-        session = info.context.session
-        campania = await _fetch_campania(session, id)
-        campania.estado_id = estado_id
-        user_id = getattr(info.context, 'user_id', None)
-        if user_id:
-            campania.aprobado_por_id = user_id
-            campania.fecha_aprobacion = date.today()
-        if notas is not None:
-            campania.notas_aprobacion = notas
-        await session.commit()
-        return await _fetch_campania(session, id)
+        return await CampaniaService(info.context.session).aprobar(
+            id, estado_id, aprobado_por_id=getattr(info.context, 'user_id', None), notas=notas,
+        )
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
     async def previsualizar_notificacion_campania(
-        self, info: strawberry.Info,
-        campania_id: uuid.UUID,
-        plantilla_codigo: Optional[str] = None,
-    ) -> "NotificacionCampaniaPreview":
-        """Carga la plantilla indicada y sustituye las variables con los datos reales.
-
-        Si no se indica `plantilla_codigo`, usa `CAMP_APROBACION` por defecto.
-        Devuelve asunto, cuerpo HTML renderizado y total de destinatarios.
-        No envía nada — sólo genera la previsualización.
-        """
-        session = info.context.session
-        campania = await _fetch_campania(session, campania_id)
-
-        codigo = plantilla_codigo or 'CAMP_APROBACION'
-        plantilla = (
-            await session.execute(
-                select(PlantillaEmail).where(
-                    PlantillaEmail.codigo == codigo,
-                    PlantillaEmail.activo == True,
-                )
-            )
-        ).scalar_one_or_none()
-        if plantilla is None:
-            raise ValueError(f"Plantilla '{codigo}' no encontrada o desactivada.")
-
-        # Nombre organización
-        cfg_nombre = (
-            await session.execute(
-                select(Configuracion).where(Configuracion.clave == 'org.nombre')
-            )
-        ).scalar_one_or_none()
-        nombre_org = cfg_nombre.valor if cfg_nombre else "La organización"
-
-        # URL base de la app para el enlace
-        cfg_url = (
-            await session.execute(
-                select(Configuracion).where(Configuracion.clave == 'org.web')
-            )
-        ).scalar_one_or_none()
-        url_base = cfg_url.valor.rstrip('/') if cfg_url and cfg_url.valor else ""
-        url_campanias = f"{url_base}/campanias" if url_base else "/campanias"
-
-        # Requisitos de recursos del primer grupo vinculado a la campaña
-        # (usamos RequisitoRecurso de los grupos de campaña)
-        req_rows = (
-            await session.execute(
-                select(RequisitoRecurso).where(
-                    RequisitoRecurso.grupo_id.in_(
-                        select(RequisitoRecurso.grupo_id)
-                    )
-                )
-            )
-        ).scalars().all()
-        # Simplificado: buscar requisitos cuyos grupos estén vinculados a la campaña
-        from app.modules.actividades.models.grupo import GrupoIniciativa
-        gi_rows = (
-            await session.execute(
-                select(GrupoIniciativa).where(GrupoIniciativa.campania_id == campania_id)
-            )
-        ).scalars().all()
-        grupo_ids = {gi.grupo_id for gi in gi_rows}
-        requisitos = []
-        if grupo_ids:
-            req_rows = (
-                await session.execute(
-                    select(RequisitoRecurso).where(
-                        RequisitoRecurso.grupo_id.in_(grupo_ids)
-                    )
-                )
-            ).scalars().all()
-            requisitos = [
-                {
-                    "habilidad": str(r.especialidad_id),
-                    "nivel": str(r.nivel_id) if r.nivel_id else "—",
-                    "horas": str(r.horas_necesarias),
-                }
-                for r in req_rows
-            ]
-
-        # Total de destinatarios: miembros activos con email de la agrupación
-        total_destinatarios = 0
-        if campania.agrupacion_id:
-            count = (
-                await session.execute(
-                    select(Miembro).where(
-                        Miembro.agrupacion_id == campania.agrupacion_id,
-                        Miembro.email.isnot(None),
-                        Miembro.eliminado == False,
-                    )
-                )
-            ).scalars().all()
-            total_destinatarios = len(count)
-
-        # Renderizar con Jinja2-lite (sustitución simple de variables {{ }})
-        asunto, cuerpo_html = _renderizar_plantilla(
-            plantilla.asunto,
-            plantilla.cuerpo_html,
-            nombre_miembro="[nombre destinatario]",
-            nombre_campania=campania.nombre,
-            lema=campania.lema or "",
-            objetivo_principal=campania.objetivo_principal or "",
-            presupuesto_estimado=str(campania.presupuesto_estimado or ""),
-            requisitos_recursos=requisitos,
-            url_campanias=url_campanias,
-            nombre_organizacion=nombre_org,
-        )
-
-        return NotificacionCampaniaPreview(
-            asunto=asunto,
-            cuerpo_html=cuerpo_html,
-            total_destinatarios=total_destinatarios,
-        )
+        self, info: strawberry.Info, campania_id: uuid.UUID, plantilla_codigo: Optional[str] = None,
+    ) -> NotificacionCampaniaPreview:
+        r = await CampaniaService(info.context.session).previsualizar_notificacion(campania_id, plantilla_codigo)
+        return NotificacionCampaniaPreview(**r)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
     async def enviar_notificacion_campania(
-        self, info: strawberry.Info,
-        campania_id: uuid.UUID,
-        asunto: str,
-        cuerpo_html: str,
-    ) -> "ResultadoEnvioNotificacion":
-        """Envía el correo personalizado a todos los miembros activos con email de la agrupación.
-
-        Si SMTP no está configurado, marca igualmente la campaña como notificada y
-        devuelve un resultado simulado (no se puede volver a notificar).
-        Marca `campania.notificacion_enviada = True` al finalizar.
-        """
-        session = info.context.session
-        campania = await _fetch_campania(session, campania_id)
-
-        if campania.notificacion_enviada:
-            raise ValueError("Esta campaña ya fue notificada a la membresía.")
-
-        if not campania.agrupacion_id:
-            campania.notificacion_enviada = True
-            await session.commit()
-            return ResultadoEnvioNotificacion(
-                enviados=0, fallidos=0, sin_email=0, total=0,
-                simulado=True,
-                mensaje="La campaña no tiene agrupación asignada — sin destinatarios.",
-            )
-
-        miembros = (
-            await session.execute(
-                select(Miembro).where(
-                    Miembro.agrupacion_id == campania.agrupacion_id,
-                    Miembro.eliminado == False,
-                )
-            )
-        ).scalars().all()
-
-        # Comprobar si SMTP está configurado antes de iterar.
-        from app.core.email_service import _load_smtp_config
-        smtp_cfg = await _load_smtp_config(session)
-        if not smtp_cfg.configured:
-            # Modo simulado: contar destinatarios potenciales y marcar flag.
-            con_email = sum(1 for m in miembros if m.email)
-            sin_email = len(miembros) - con_email
-            campania.notificacion_enviada = True
-            await session.commit()
-            faltantes = ', '.join(smtp_cfg.campos_faltantes) if smtp_cfg.campos_faltantes else 'parámetros incompletos'
-            return ResultadoEnvioNotificacion(
-                enviados=con_email,
-                fallidos=0,
-                sin_email=sin_email,
-                total=len(miembros),
-                simulado=True,
-                mensaje=f"Envío simulado: SMTP no configurado ({faltantes}). Se habrían notificado {con_email} miembros.",
-            )
-
-        email_svc = EmailService(session)
-        enviados = fallidos = sin_email = 0
-
-        for m in miembros:
-            if not m.email:
-                sin_email += 1
-                continue
-            nombre_destinatario = f"{m.nombre} {m.apellido1}".strip()
-            cuerpo_personalizado = cuerpo_html.replace("[nombre destinatario]", nombre_destinatario)
-            try:
-                await email_svc.enviar(
-                    destinatario=m.email,
-                    asunto=asunto,
-                    cuerpo_html=cuerpo_personalizado,
-                )
-                enviados += 1
-            except Exception:
-                fallidos += 1
-
-        campania.notificacion_enviada = True
-        await session.commit()
-
-        return ResultadoEnvioNotificacion(
-            enviados=enviados,
-            fallidos=fallidos,
-            sin_email=sin_email,
-            total=len(miembros),
-            simulado=False,
-            mensaje=None,
-        )
+        self, info: strawberry.Info, campania_id: uuid.UUID, asunto: str, cuerpo_html: str,
+    ) -> ResultadoEnvioNotificacion:
+        r = await CampaniaService(info.context.session).enviar_notificacion(campania_id, asunto, cuerpo_html)
+        return ResultadoEnvioNotificacion(**r)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
     async def cerrar_campania(
-        self, info: strawberry.Info,
-        id: uuid.UUID,
-        estado_id: uuid.UUID,
-        presupuesto_ejecutado: Decimal,
-        resultados_metas: list[ResultadoMetaInput],
-        resultados_partidas: list[ResultadoPartidaInput],
-        valoracion: Optional[str] = None,
+        self, info: strawberry.Info, id: uuid.UUID, estado_id: uuid.UUID,
+        presupuesto_ejecutado: Decimal, resultados_metas: list[ResultadoMetaInput],
+        resultados_partidas: list[ResultadoPartidaInput], valoracion: Optional[str] = None,
     ) -> CampaniaType:
-        """Cierra una campaña. Requiere presupuesto ejecutado + valor real de cada meta y partida."""
-        from sqlalchemy import select as sa_select
-        session = info.context.session
-        campania = await _fetch_campania(session, id)
-
-        # Cierre financiero
-        campania.presupuesto_ejecutado = presupuesto_ejecutado
-
-        # Resultados por meta (cierre operativo)
-        for r in resultados_metas:
-            meta = (await session.execute(
-                sa_select(MetaCampania).where(MetaCampania.id == r.meta_id)
-            )).scalar_one()
-            meta.valor_real = r.valor_real
-
-        # Resultados por partida
-        for r in resultados_partidas:
-            partida = (await session.execute(
-                sa_select(PartidaPresupuestoCampania).where(PartidaPresupuestoCampania.id == r.partida_id)
-            )).scalar_one()
-            partida.importe_real = r.importe_real
-
-        campania.estado_id = estado_id
-        if valoracion is not None:
-            campania.valoracion = valoracion
-
-        await session.commit()
-        return await _fetch_campania(session, id)
+        return await CampaniaService(info.context.session).cerrar(
+            id, estado_id=estado_id, presupuesto_ejecutado=presupuesto_ejecutado,
+            resultados_metas=[{"meta_id": r.meta_id, "valor_real": r.valor_real} for r in resultados_metas],
+            resultados_partidas=[{"partida_id": r.partida_id, "importe_real": r.importe_real} for r in resultados_partidas],
+            valoracion=valoracion,
+        )
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
     async def guardar_metas_campania(
-        self, info: strawberry.Info,
-        campania_id: uuid.UUID,
-        metas: list[MetaInput],
+        self, info: strawberry.Info, campania_id: uuid.UUID, metas: list[MetaInput],
     ) -> CampaniaType:
-        """Reemplaza todas las metas de una campaña (delete + insert)."""
-        session = info.context.session
-        await session.execute(sa_delete(MetaCampania).where(MetaCampania.campania_id == campania_id))
-        for m in metas:
-            session.add(MetaCampania(
-                campania_id=campania_id,
-                tipo_meta_id=m.tipo_meta_id,
-                valor_planificado=m.valor_planificado,
-                notas=m.notas,
-                orden=m.orden,
-            ))
-        await session.commit()
-        return await _fetch_campania(session, campania_id)
+        return await CampaniaService(info.context.session).guardar_metas(
+            campania_id, [{"tipo_meta_id": m.tipo_meta_id, "valor_planificado": m.valor_planificado,
+                           "notas": m.notas, "orden": m.orden} for m in metas],
+        )
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
     async def guardar_canales_campania(
-        self, info: strawberry.Info,
-        campania_id: uuid.UUID,
-        canal_ids: list[uuid.UUID],
+        self, info: strawberry.Info, campania_id: uuid.UUID, canal_ids: list[uuid.UUID],
     ) -> CampaniaType:
-        """Reemplaza todos los canales de difusión de una campaña."""
-        from app.modules.actividades.models.campana import CanalDifusionCampania
-        session = info.context.session
-        await session.execute(sa_delete(CanalDifusionCampania).where(CanalDifusionCampania.campania_id == campania_id))
-        for canal_id in canal_ids:
-            session.add(CanalDifusionCampania(campania_id=campania_id, canal_id=canal_id))
-        await session.commit()
-        return await _fetch_campania(session, campania_id)
+        return await CampaniaService(info.context.session).guardar_canales(campania_id, canal_ids)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
     async def guardar_partidas_campania(
-        self, info: strawberry.Info,
-        campania_id: uuid.UUID,
-        partidas: list[PartidaInput],
+        self, info: strawberry.Info, campania_id: uuid.UUID, partidas: list[PartidaInput],
     ) -> CampaniaType:
-        """Reemplaza todas las partidas de presupuesto de una campaña."""
-        session = info.context.session
-        await session.execute(sa_delete(PartidaPresupuestoCampania).where(PartidaPresupuestoCampania.campania_id == campania_id))
-        for p in partidas:
-            session.add(PartidaPresupuestoCampania(
-                campania_id=campania_id,
-                concepto=p.concepto,
-                importe_estimado=p.importe_estimado,
-                tipo_partida=p.tipo_partida,
-                orden=p.orden,
-            ))
-        await session.commit()
-        return await _fetch_campania(session, campania_id)
+        return await CampaniaService(info.context.session).guardar_partidas(
+            campania_id, [{"concepto": p.concepto, "importe_estimado": p.importe_estimado,
+                           "tipo_partida": p.tipo_partida, "orden": p.orden} for p in partidas],
+        )
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
     async def aplicar_plantilla(
-        self, info: strawberry.Info,
-        campania_id: uuid.UUID,
-        plantilla_id: uuid.UUID,
+        self, info: strawberry.Info, campania_id: uuid.UUID, plantilla_id: uuid.UUID,
     ) -> CampaniaType:
-        """Clona las metas, partidas, actividades y tareas de una plantilla a una campaña."""
-        from sqlalchemy import select as sa_select
-        from app.modules.actividades.models.campana import CanalDifusionCampania
-        from app.modules.actividades.models.actividad import Actividad, TipoActividad
-        from app.modules.actividades.models.tarea import Tarea
-        from app.modules.configuracion.models.estados import EstadoAccion, EstadoTarea
-        session = info.context.session
-
-        plantilla = (await session.execute(
-            sa_select(PlantillaCampania).where(PlantillaCampania.id == plantilla_id)
-        )).scalar_one()
-
-        campania = await _fetch_campania(session, campania_id)
-
-        # Cargar defaults para campos NOT NULL que la plantilla no cubre
-        default_tipo = (await session.execute(
-            sa_select(TipoActividad).order_by(TipoActividad.nombre).limit(1)
-        )).scalar_one_or_none()
-        default_estado_act = (await session.execute(
-            sa_select(EstadoAccion).order_by(EstadoAccion.orden.asc().nulls_last()).limit(1)
-        )).scalar_one_or_none()
-        default_estado_tarea = (await session.execute(
-            sa_select(EstadoTarea).order_by(EstadoTarea.orden.asc().nulls_last()).limit(1)
-        )).scalar_one_or_none()
-
-        # Clonar metas
-        for pm in plantilla.metas:
-            session.add(MetaCampania(
-                campania_id=campania_id,
-                tipo_meta_id=pm.tipo_meta_id,
-                valor_planificado=pm.valor_sugerido,
-                notas=pm.notas,
-                orden=pm.orden,
-            ))
-
-        # Clonar partidas de presupuesto
-        for pp in plantilla.partidas:
-            session.add(PartidaPresupuestoCampania(
-                campania_id=campania_id,
-                concepto=pp.concepto,
-                importe_estimado=pp.importe_estimado,
-                tipo_partida=pp.tipo_partida,
-                orden=pp.orden,
-            ))
-
-        # Clonar actividades y sus tareas
-        for pa in plantilla.actividades:
-            actividad = Actividad(
-                nombre=pa.nombre,
-                descripcion=pa.descripcion,
-                tipo_actividad_id=pa.tipo_actividad_id or (default_tipo.id if default_tipo else None),
-                estado_id=default_estado_act.id if default_estado_act else None,
-                campania_id=campania_id,
-            )
-            # Calcular fecha si la campaña tiene fecha de inicio y el offset está definido
-            if campania.fecha_inicio_plan and pa.duracion_dias is not None:
-                from datetime import timedelta
-                actividad.fecha_inicio = campania.fecha_inicio_plan + timedelta(days=pa.duracion_dias)
-            session.add(actividad)
-            await session.flush()  # obtener actividad.id
-
-            for pt in pa.tareas:
-                session.add(Tarea(
-                    titulo=pt.titulo,
-                    descripcion=pt.descripcion,
-                    horas_estimadas=pt.horas_estimadas,
-                    orden=pt.orden,
-                    actividad_id=actividad.id,
-                    estado_id=default_estado_tarea.id if default_estado_tarea else None,
-                ))
-
-        await session.commit()
-        return await _fetch_campania(session, campania_id)
+        return await CampaniaService(info.context.session).aplicar_plantilla(campania_id, plantilla_id)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
-    async def crear_plantilla(
-        self, info: strawberry.Info, data: PlantillaCreateInput,
-    ) -> PlantillaCampaniaType:
-        session = info.context.session
-        plantilla = PlantillaCampania(
-            tipo_campania_id=data.tipo_campania_id,
-            nombre=data.nombre,
-            descripcion=data.descripcion,
-            activo=data.activo,
+    async def crear_plantilla(self, info: strawberry.Info, data: PlantillaCreateInput) -> PlantillaCampaniaType:
+        return await CampaniaService(info.context.session).crear_plantilla(
+            data.tipo_campania_id, data.nombre, data.descripcion, data.activo,
         )
-        session.add(plantilla)
-        await session.commit()
-        return await _fetch_plantilla(session, plantilla.id)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
-    async def actualizar_plantilla(
-        self, info: strawberry.Info, data: PlantillaUpdateInput,
-    ) -> PlantillaCampaniaType:
-        session = info.context.session
-        plantilla = await _fetch_plantilla(session, data.plantilla_id)
-        for campo in ('nombre', 'descripcion', 'activo'):
-            valor = getattr(data, campo, None)
-            if valor is not None:
-                setattr(plantilla, campo, valor)
-        await session.commit()
-        return await _fetch_plantilla(session, plantilla.id)
+    async def actualizar_plantilla(self, info: strawberry.Info, data: PlantillaUpdateInput) -> PlantillaCampaniaType:
+        return await CampaniaService(info.context.session).actualizar_plantilla(
+            data.plantilla_id, {"nombre": data.nombre, "descripcion": data.descripcion, "activo": data.activo},
+        )
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
     async def guardar_metas_plantilla(
-        self, info: strawberry.Info,
-        plantilla_id: uuid.UUID,
-        metas: list[PlantillaMetaItemInput],
+        self, info: strawberry.Info, plantilla_id: uuid.UUID, metas: list[PlantillaMetaItemInput],
     ) -> PlantillaCampaniaType:
-        session = info.context.session
-        await session.execute(sa_delete(PlantillaMeta).where(PlantillaMeta.plantilla_id == plantilla_id))
-        for m in metas:
-            session.add(PlantillaMeta(
-                plantilla_id=plantilla_id,
-                tipo_meta_id=m.tipo_meta_id,
-                valor_sugerido=m.valor_sugerido,
-                notas=m.notas,
-                orden=m.orden,
-            ))
-        await session.commit()
-        return await _fetch_plantilla(session, plantilla_id)
+        return await CampaniaService(info.context.session).guardar_metas_plantilla(
+            plantilla_id, [{"tipo_meta_id": m.tipo_meta_id, "valor_sugerido": m.valor_sugerido,
+                            "notas": m.notas, "orden": m.orden} for m in metas],
+        )
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
     async def guardar_partidas_plantilla(
-        self, info: strawberry.Info,
-        plantilla_id: uuid.UUID,
-        partidas: list[PlantillaPartidaItemInput],
+        self, info: strawberry.Info, plantilla_id: uuid.UUID, partidas: list[PlantillaPartidaItemInput],
     ) -> PlantillaCampaniaType:
-        session = info.context.session
-        await session.execute(sa_delete(PlantillaPartida).where(PlantillaPartida.plantilla_id == plantilla_id))
-        for p in partidas:
-            session.add(PlantillaPartida(
-                plantilla_id=plantilla_id,
-                concepto=p.concepto,
-                importe_estimado=p.importe_estimado,
-                tipo_partida=p.tipo_partida,
-                orden=p.orden,
-            ))
-        await session.commit()
-        return await _fetch_plantilla(session, plantilla_id)
+        return await CampaniaService(info.context.session).guardar_partidas_plantilla(
+            plantilla_id, [{"concepto": p.concepto, "importe_estimado": p.importe_estimado,
+                            "tipo_partida": p.tipo_partida, "orden": p.orden} for p in partidas],
+        )
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
     async def crear_plantilla_actividad(
         self, info: strawberry.Info, data: PlantillaActividadItemInput,
     ) -> PlantillaActividadType:
         session = info.context.session
-        actividad = PlantillaActividad(
-            plantilla_id=data.plantilla_id,
-            nombre=data.nombre,
-            descripcion=data.descripcion,
-            duracion_dias=data.duracion_dias,
-            orden=data.orden,
-            tipo_actividad_id=data.tipo_actividad_id,
+        act = PlantillaActividad(
+            plantilla_id=data.plantilla_id, nombre=data.nombre, descripcion=data.descripcion,
+            duracion_dias=data.duracion_dias, orden=data.orden, tipo_actividad_id=data.tipo_actividad_id,
         )
-        session.add(actividad)
+        session.add(act)
         await session.commit()
-        await session.refresh(actividad)
-        return actividad
+        await session.refresh(act)
+        return act
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
     async def actualizar_plantilla_actividad(
         self, info: strawberry.Info, data: PlantillaActividadUpdateItemInput,
     ) -> PlantillaActividadType:
         session = info.context.session
-        stmt = select(PlantillaActividad).where(PlantillaActividad.id == data.actividad_id)
-        actividad = (await session.execute(stmt)).scalar_one()
+        act = (await session.execute(select(PlantillaActividad).where(PlantillaActividad.id == data.actividad_id))).scalar_one()
         for campo in ('nombre', 'descripcion', 'duracion_dias', 'orden', 'tipo_actividad_id'):
-            valor = getattr(data, campo, None)
-            if valor is not None:
-                setattr(actividad, campo, valor)
+            v = getattr(data, campo, None)
+            if v is not None:
+                setattr(act, campo, v)
         await session.commit()
-        await session.refresh(actividad)
-        return actividad
+        await session.refresh(act)
+        return act
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
     async def crear_plantilla_tarea(
@@ -806,13 +351,9 @@ class CampaniaResolverMutation:
     ) -> PlantillaTareaType:
         session = info.context.session
         tarea = PlantillaTarea(
-            actividad_id=data.actividad_id,
-            titulo=data.titulo,
-            descripcion=data.descripcion,
-            horas_estimadas=data.horas_estimadas,
-            orden=data.orden,
-            habilidad_id=data.habilidad_id,
-            nivel_habilidad_id=data.nivel_habilidad_id,
+            actividad_id=data.actividad_id, titulo=data.titulo, descripcion=data.descripcion,
+            horas_estimadas=data.horas_estimadas, orden=data.orden,
+            habilidad_id=data.habilidad_id, nivel_habilidad_id=data.nivel_habilidad_id,
         )
         session.add(tarea)
         await session.commit()
@@ -824,212 +365,32 @@ class CampaniaResolverMutation:
         self, info: strawberry.Info, data: PlantillaTareaUpdateItemInput,
     ) -> PlantillaTareaType:
         session = info.context.session
-        stmt = select(PlantillaTarea).where(PlantillaTarea.id == data.tarea_id)
-        tarea = (await session.execute(stmt)).scalar_one()
+        tarea = (await session.execute(select(PlantillaTarea).where(PlantillaTarea.id == data.tarea_id))).scalar_one()
         for campo in ('titulo', 'descripcion', 'horas_estimadas', 'orden', 'habilidad_id', 'nivel_habilidad_id'):
-            valor = getattr(data, campo, None)
-            if valor is not None:
-                setattr(tarea, campo, valor)
+            v = getattr(data, campo, None)
+            if v is not None:
+                setattr(tarea, campo, v)
         await session.commit()
         await session.refresh(tarea)
         return tarea
-
-
-# ── Inputs para clonar y propagar ────────────────────────────────────────────
-
-@strawberry.input
-class ClonarCampaniaInput:
-    campania_id: uuid.UUID
-    nombre: str
-    offset_dias: int = 0
-    incluir_metas: bool = True
-    incluir_partidas: bool = True
-    incluir_canales: bool = True
-    incluir_actividades: bool = True
-    incluir_subcampanias: bool = False
-    padre_id: Optional[uuid.UUID] = None  # uso interno para recursión
-
-
-@strawberry.input
-class PropagarACampaniasInput:
-    campania_id: uuid.UUID
-    campos: list[str]  # nombres de columna a propagar a hijas
 
 
 @strawberry.type
 class CampaniaClonarMutation:
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
-    async def clonar_campania(
-        self, info: strawberry.Info, data: ClonarCampaniaInput,
-    ) -> CampaniaType:
-        from app.modules.actividades.models.actividad import Actividad
-        from app.modules.actividades.models.tarea import Tarea
-        from app.modules.configuracion.models.estados import EstadoAccion, EstadoTarea, EstadoCampania
-        from datetime import timedelta
-        from sqlalchemy import select as sa_select
-
-        session = info.context.session
-
-        stmt = sa_select(Campania).where(Campania.id == data.campania_id)
-        origen = (await session.execute(stmt)).scalar_one()
-
-        stmt_estado = sa_select(EstadoCampania).order_by(EstadoCampania.orden.asc().nulls_last()).limit(1)
-        estado_inicial = (await session.execute(stmt_estado)).scalar_one_or_none()
-
-        nueva = Campania(
-            nombre=data.nombre,
-            tipo_campania_id=origen.tipo_campania_id,
-            estado_id=estado_inicial.id if estado_inicial else origen.estado_id,
-            lema=origen.lema,
-            descripcion_corta=origen.descripcion_corta,
-            descripcion_larga=origen.descripcion_larga,
-            url_externa=origen.url_externa,
-            foto_url=origen.foto_url,
-            objetivo_principal=origen.objetivo_principal,
-            responsable_id=origen.responsable_id,
-            agrupacion_id=origen.agrupacion_id,
-            es_recurrente=origen.es_recurrente,
-            periodicidad=origen.periodicidad,
-            padre_id=data.padre_id,
-            fecha_inicio_plan=(
-                origen.fecha_inicio_plan + timedelta(days=data.offset_dias)
-                if origen.fecha_inicio_plan else None
-            ),
-            fecha_fin_plan=(
-                origen.fecha_fin_plan + timedelta(days=data.offset_dias)
-                if origen.fecha_fin_plan else None
-            ),
+    async def clonar_campania(self, info: strawberry.Info, data: ClonarCampaniaInput) -> CampaniaType:
+        return await CampaniaService(info.context.session).clonar(
+            campania_id=data.campania_id, nombre=data.nombre, offset_dias=data.offset_dias,
+            incluir_metas=data.incluir_metas, incluir_partidas=data.incluir_partidas,
+            incluir_canales=data.incluir_canales, incluir_actividades=data.incluir_actividades,
+            incluir_subcampanias=data.incluir_subcampanias, padre_id=data.padre_id,
         )
-        session.add(nueva)
-        await session.flush()
-
-        if data.incluir_metas:
-            for m in origen.metas:
-                session.add(MetaCampania(
-                    campania_id=nueva.id,
-                    tipo_meta_id=m.tipo_meta_id,
-                    unidad=m.unidad,
-                    valor_planificado=m.valor_planificado,
-                ))
-
-        if data.incluir_canales:
-            for c in origen.canales:
-                session.add(CanalDifusionCampania(
-                    campania_id=nueva.id,
-                    canal_id=c.canal_id,
-                    notas=c.notas,
-                ))
-
-        if data.incluir_partidas:
-            for p in origen.partidas_presupuesto:
-                session.add(PartidaPresupuestoCampania(
-                    campania_id=nueva.id,
-                    concepto=p.concepto,
-                    importe_estimado=p.importe_estimado,
-                    tipo_partida=p.tipo_partida,
-                    orden=p.orden,
-                ))
-
-        if data.incluir_actividades:
-            stmt_ea = sa_select(EstadoAccion).order_by(EstadoAccion.orden.asc().nulls_last()).limit(1)
-            default_estado_act = (await session.execute(stmt_ea)).scalar_one_or_none()
-            stmt_et = sa_select(EstadoTarea).order_by(EstadoTarea.orden.asc().nulls_last()).limit(1)
-            default_estado_tarea = (await session.execute(stmt_et)).scalar_one_or_none()
-
-            stmt_acts = sa_select(Actividad).where(Actividad.campania_id == origen.id)
-            actividades_origen = (await session.execute(stmt_acts)).scalars().all()
-
-            for act in actividades_origen:
-                nueva_act = Actividad(
-                    nombre=act.nombre,
-                    descripcion=act.descripcion,
-                    tipo_actividad_id=act.tipo_actividad_id,
-                    estado_id=default_estado_act.id if default_estado_act else act.estado_id,
-                    campania_id=nueva.id,
-                    grupo_id=act.grupo_id,
-                    responsable_id=act.responsable_id,
-                    lugar=act.lugar,
-                    aforo=act.aforo,
-                    es_online=act.es_online,
-                    url_online=act.url_online,
-                    presupuesto_estimado=act.presupuesto_estimado,
-                    fecha_inicio=(
-                        act.fecha_inicio + timedelta(days=data.offset_dias)
-                        if act.fecha_inicio else None
-                    ),
-                    fecha_fin=(
-                        act.fecha_fin + timedelta(days=data.offset_dias)
-                        if act.fecha_fin else None
-                    ),
-                )
-                session.add(nueva_act)
-                await session.flush()
-
-                stmt_tareas = sa_select(Tarea).where(Tarea.actividad_id == act.id)
-                for t in (await session.execute(stmt_tareas)).scalars().all():
-                    session.add(Tarea(
-                        titulo=t.titulo,
-                        descripcion=t.descripcion,
-                        horas_estimadas=t.horas_estimadas,
-                        orden=t.orden,
-                        actividad_id=nueva_act.id,
-                        estado_id=default_estado_tarea.id if default_estado_tarea else t.estado_id,
-                    ))
-
-        if data.incluir_subcampanias:
-            stmt_hijas = sa_select(Campania).where(Campania.padre_id == origen.id)
-            for hija in (await session.execute(stmt_hijas)).scalars().all():
-                await self.clonar_campania(info, ClonarCampaniaInput(
-                    campania_id=hija.id,
-                    nombre=f"{data.nombre} — {hija.nombre}",
-                    offset_dias=data.offset_dias,
-                    incluir_metas=data.incluir_metas,
-                    incluir_partidas=data.incluir_partidas,
-                    incluir_canales=data.incluir_canales,
-                    incluir_actividades=data.incluir_actividades,
-                    incluir_subcampanias=True,
-                    padre_id=nueva.id,
-                ))
-
-        await session.commit()
-        await session.refresh(nueva)
-        return nueva
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
     async def propagar_a_subcampanias(
         self, info: strawberry.Info, data: PropagarACampaniasInput,
     ) -> list[CampaniaType]:
-        from sqlalchemy import select as sa_select
-
-        session = info.context.session
-
-        CAMPOS_PERMITIDOS = {
-            'tipo_campania_id', 'responsable_id', 'agrupacion_id',
-            'objetivo_principal', 'periodicidad', 'es_recurrente',
-        }
-        campos_validos = [c for c in data.campos if c in CAMPOS_PERMITIDOS]
-        if not campos_validos:
-            return []
-
-        stmt_padre = sa_select(Campania).where(Campania.id == data.campania_id)
-        padre = (await session.execute(stmt_padre)).scalar_one()
-        valores = {c: getattr(padre, c) for c in campos_validos}
-
-        procesadas: list[uuid.UUID] = []
-        cola = [data.campania_id]
-        while cola:
-            pid = cola.pop(0)
-            stmt_hijas = sa_select(Campania).where(Campania.padre_id == pid)
-            for h in (await session.execute(stmt_hijas)).scalars().all():
-                for campo, valor in valores.items():
-                    setattr(h, campo, valor)
-                procesadas.append(h.id)
-                cola.append(h.id)
-
-        await session.commit()
-
-        if not procesadas:
-            return []
-        stmt_result = sa_select(Campania).where(Campania.id.in_(procesadas))
-        return list((await session.execute(stmt_result)).scalars().all())
+        return await CampaniaService(info.context.session).propagar_a_subcampanias(
+            data.campania_id, data.campos,
+        )
