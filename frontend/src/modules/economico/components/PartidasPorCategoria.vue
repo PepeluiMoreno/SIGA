@@ -33,14 +33,23 @@
                 <span v-else>{{ p.nombre }}</span>
               </td>
               <!-- Importe: editable inline -->
+              <!-- Importe: editable inline (vigente). Muestra inicial si hubo modificaciones -->
               <td class="px-3 py-1.5 text-right">
                 <input v-if="editable" :value="p.importePresupuestado" type="number" step="0.01"
                   @blur="commitImporte(p, $event.target.value)"
                   @keydown.enter="$event.target.blur()"
                   class="inline-edit text-right w-28" />
-                <span v-else>{{ eur(p.importePresupuestado) }}</span>
+                <template v-else>
+                  <span>{{ eur(p.importePresupuestado) }}</span>
+                  <span v-if="p.importeModificaciones" class="block text-[10px] text-gray-400">
+                    inicial {{ eur(p.importeInicial) }}
+                  </span>
+                </template>
               </td>
-              <td class="px-3 py-1.5 text-right text-gray-500">{{ eur(p.importeEjecutado) }}</td>
+              <td class="px-3 py-1.5 text-right"
+                :class="p.estaSobreejecutada ? 'text-red-600 font-medium' : 'text-gray-500'">
+                {{ eur(p.importeEjecutado) }}
+              </td>
               <td v-if="editable" class="px-3 py-1.5 text-center">
                 <button @click="$emit('eliminar', p.id)"
                   class="text-xs text-red-500 opacity-0 group-hover:opacity-100 hover:underline transition-opacity">

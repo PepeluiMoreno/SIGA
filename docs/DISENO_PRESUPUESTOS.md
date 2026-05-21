@@ -64,7 +64,7 @@ Lo mínimo para que el presupuesto sea usable de punta a punta.
 - RBAC: transacciones del módulo
 - Ayuda y DEPLOY
 
-### Fase 2 — Modificaciones y control
+### Fase 2 — Modificaciones y control  ✅ COMPLETADA
 - Modelo `ModificacionPresupuestaria` (transferencia / ampliación / suplemento)
 - Presupuesto inicial vs vigente
 - Alertas de partida agotada / sobreejecutada

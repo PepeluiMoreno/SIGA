@@ -73,6 +73,16 @@
           <p v-if="planificacion.fechaAprobacion" class="text-xs text-gray-400 mt-2">
             Aprobado el {{ planificacion.fechaAprobacion }}
           </p>
+
+          <!-- Control de disponibilidad (aprobado/ejecución) -->
+          <label v-if="esAprobadoOEjecucion && puedeAprobar"
+            class="flex items-center gap-2 mt-3 cursor-pointer select-none text-sm text-gray-600">
+            <input type="checkbox" :checked="planificacion.controlDisponibilidad"
+              @change="toggleControl($event.target.checked)"
+              class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
+            Avisar al control presupuestario cuando una partida se desvíe
+            <span class="text-xs text-gray-400">(no bloquea el gasto)</span>
+          </label>
         </div>
       </AccordionPanel>
 
@@ -99,6 +109,29 @@
           @crear="crearPartida"
           @actualizar="actualizarPartida"
           @eliminar="eliminarPartida"
+        />
+      </AccordionPanel>
+
+      <!-- Panel: Alertas (solo si hay) -->
+      <AccordionPanel v-if="esAprobadoOEjecucion && alertas.length" title="Alertas" :count="alertas.length" :default-open="true">
+        <div class="px-5 py-4 space-y-2">
+          <div v-for="a in alertas" :key="a.partidaId"
+            class="flex items-start gap-2 text-sm rounded-lg px-3 py-2"
+            :class="a.tipoAlerta === 'SOBREEJECUTADA' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'">
+            <span class="font-medium">{{ a.codigo }} — {{ a.nombre }}:</span>
+            <span>{{ a.mensaje }}</span>
+          </div>
+        </div>
+      </AccordionPanel>
+
+      <!-- Panel: Modificaciones presupuestarias (solo aprobado/ejecución) -->
+      <AccordionPanel v-if="esAprobadoOEjecucion" title="Modificaciones presupuestarias"
+        :count="modificaciones.length" :default-open="false">
+        <ModificacionesPresupuestarias
+          :modificaciones="modificaciones"
+          :partidas="partidas"
+          :puede-modificar="puedeAprobar && esAprobadoOEjecucion"
+          @registrar="registrarModificacion"
         />
       </AccordionPanel>
 
@@ -155,6 +188,7 @@ import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
 import LoadSpinner from '@/components/common/LoadSpinner.vue'
 import PartidasPorCategoria from '@/modules/economico/components/PartidasPorCategoria.vue'
+import ModificacionesPresupuestarias from '@/modules/economico/components/ModificacionesPresupuestarias.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import { usePermisos } from '@/composables/usePermisos.js'
 import {
@@ -162,6 +196,7 @@ import {
   CREAR_PLANIFICACION, CREAR_PARTIDA, ACTUALIZAR_PARTIDA, ELIMINAR_PARTIDA,
   PROPONER_PRESUPUESTO, APROBAR_PRESUPUESTO, INICIAR_EJECUCION_PRESUPUESTO,
   CERRAR_PRESUPUESTO, DEVOLVER_A_BORRADOR,
+  GET_MODIFICACIONES, GET_ALERTAS, REGISTRAR_MODIFICACION, ESTABLECER_CONTROL_DISPONIBILIDAD,
 } from '@/graphql/queries/presupuestos.js'
 
 const { query, mutation } = useGraphQL()
@@ -178,6 +213,8 @@ const partidas = ref([])
 const desviaciones = ref([])
 const estados = ref([])
 const categorias = ref([])
+const modificaciones = ref([])
+const alertas = ref([])
 
 const ejercicioActual = new Date().getFullYear()
 const nuevoEjercicio = ref(ejercicioActual)
@@ -191,6 +228,7 @@ const estadoNombre = computed(() => estadoActual.value?.nombre ?? '—')
 const estadoColor = computed(() => estadoActual.value?.color ?? '#9ca3af')
 // Solo se editan partidas mientras el presupuesto no está aprobado
 const editable = computed(() => puedeGestionar.value && ['BORRADOR', 'PROPUESTO'].includes(estadoCodigo.value))
+const esAprobadoOEjecucion = computed(() => ['APROBADO', 'EN_EJECUCION'].includes(estadoCodigo.value))
 
 const eur = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0)
 
@@ -214,12 +252,17 @@ const cargar = async () => {
 }
 
 const cargarDetalle = async () => {
-  const [dataPart, dataDesv] = await Promise.all([
-    query(GET_PARTIDAS, { planificacionId: planificacion.value.id }),
-    query(GET_INFORME_DESVIACIONES, { planificacionId: planificacion.value.id }),
+  const id = planificacion.value.id
+  const [dataPart, dataDesv, dataMod, dataAlert] = await Promise.all([
+    query(GET_PARTIDAS, { planificacionId: id }),
+    query(GET_INFORME_DESVIACIONES, { planificacionId: id }),
+    query(GET_MODIFICACIONES, { planificacionId: id }),
+    query(GET_ALERTAS, { planificacionId: id }),
   ])
   partidas.value = dataPart?.partidasPresupuestarias ?? []
   desviaciones.value = dataDesv?.informeDesviaciones ?? []
+  modificaciones.value = dataMod?.modificacionesPresupuestarias ?? []
+  alertas.value = dataAlert?.alertasPresupuestarias ?? []
 }
 
 const recargarPlan = async () => {
@@ -277,6 +320,21 @@ const transicion = async (cual) => {
   } finally {
     ocupado.value = false
   }
+}
+
+const registrarModificacion = async (datos) => {
+  await mutation(REGISTRAR_MODIFICACION, {
+    data: { planificacionId: planificacion.value.id, ...datos },
+  })
+  await cargarDetalle()
+  await recargarPlan()
+}
+
+const toggleControl = async (activo) => {
+  await mutation(ESTABLECER_CONTROL_DISPONIBILIDAD, {
+    planificacionId: planificacion.value.id, activo,
+  })
+  await recargarPlan()
 }
 
 onMounted(cargar)

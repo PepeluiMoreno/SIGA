@@ -377,6 +377,24 @@
                   frente a lo ejecutado, con la desviación y el porcentaje de ejecución, señalando en rojo
                   las partidas sobreejecutadas.
                 </p>
+
+                <p class="help-subtitle">Paso 5 — Modificar un presupuesto aprobado</p>
+                <p class="help-text">
+                  Un presupuesto aprobado no se edita a mano: los cambios se registran como
+                  <strong>modificaciones presupuestarias</strong> formales desde su panel, que ajustan el
+                  presupuesto vigente sin alterar el inicial (en las partidas se ve el vigente y, debajo,
+                  el inicial cuando difieren). Hay tres tipos: <strong>transferencia</strong> (mueve importe
+                  de una partida a otra), <strong>ampliación</strong> (aumenta una partida porque ha entrado
+                  más ingreso del previsto) y <strong>suplemento</strong> (aumenta con cargo a remanente).
+                  Cada modificación queda registrada con su importe y motivo.
+                </p>
+                <p class="help-text">
+                  De forma opcional, puedes activar el aviso de <strong>control presupuestario</strong>: cuando
+                  una partida se desvía (se sobreejecuta o se agota), se avisa a los responsables para que
+                  valoren tramitar una modificación. <strong>Nunca bloquea el gasto</strong> —un movimiento real
+                  se registra siempre—; solo avisa. Las partidas con alerta aparecen además en el panel
+                  <strong>Alertas</strong>.
+                </p>
               </div>
             </details>
 
