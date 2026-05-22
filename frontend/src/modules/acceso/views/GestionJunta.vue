@@ -3,22 +3,19 @@
 
     <DetailHeader fallback="/agrupaciones" />
 
-    <!-- Loading agrupación -->
     <div v-if="loadingAgrupacion" class="text-center py-16">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      <EstadoCarga />
     </div>
 
     <template v-else>
-      <!-- Header: info agrupación + constitución -->
+      <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h2 class="text-xl font-bold text-gray-900">{{ agrupacion?.nombre }}</h2>
           <p class="text-sm text-gray-500 mt-0.5">{{ agrupacion?.tipo }} · {{ agrupacion?.provincia?.nombre }}</p>
         </div>
-        <button
-          @click="abrirModalJunta"
-          class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition shadow-sm"
-        >
+        <button @click="abrirDrawerJunta"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition shadow-sm">
           <PlusIcon class="w-4 h-4" />
           Constituir {{ orgConfig.organoGobierno }}
         </button>
@@ -26,7 +23,7 @@
 
       <!-- Sin junta -->
       <div v-if="!junta && !loadingJunta" class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
-        <UsersIcon class="w-12 h-12 mx-auto   text-gray-300 mb-3" />
+        <UsersIcon class="w-12 h-12 mx-auto text-gray-300 mb-3" />
         <p class="text-gray-500 font-medium">Esta agrupación no tiene {{ orgConfig.organoGobierno }} activo</p>
         <p class="text-sm text-gray-400 mt-1">Usa el botón superior para constituirla</p>
       </div>
@@ -36,20 +33,14 @@
         <!-- Tabs -->
         <div class="border-b border-gray-200 mb-6">
           <nav class="-mb-px flex gap-6">
-            <button
-              v-for="tab in tabs"
-              :key="tab.id"
-              @click="activeTab = tab.id"
+            <button v-for="tab in tabs" :key="tab.id" @click="activeTab = tab.id"
               class="pb-3 text-sm font-medium border-b-2 transition-colors"
-              :class="activeTab === tab.id
-                ? 'border-purple-600 text-purple-700'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-            >
+              :class="activeTab === tab.id ? 'border-purple-600 text-purple-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
               {{ tab.label }}
-              <span v-if="tab.count !== undefined"
-                class="ml-2 px-2 py-0.5 rounded-full text-xs"
-                :class="activeTab === tab.id ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'"
-              >{{ tab.count }}</span>
+              <span v-if="tab.count !== undefined" class="ml-2 px-2 py-0.5 rounded-full text-xs"
+                :class="activeTab === tab.id ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'">
+                {{ tab.count }}
+              </span>
             </button>
           </nav>
         </div>
@@ -64,10 +55,8 @@
                 <span class="text-green-600 font-medium">Activa</span>
               </p>
             </div>
-            <button
-              @click="abrirModalCargo"
-              class="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition shadow-sm"
-            >
+            <button @click="abrirDrawerCargo"
+              class="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition shadow-sm">
               <PlusIcon class="w-4 h-4 text-gray-500" />
               Asignar cargo
             </button>
@@ -78,31 +67,35 @@
           </div>
 
           <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div
-              v-for="cargo in cargosOrdenados"
-              :key="cargo.id"
-              class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col gap-3 hover:shadow-md transition-shadow"
-            >
-              <!-- Cargo header -->
+            <div v-for="cargo in cargosOrdenados" :key="cargo.id"
+              class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
+
               <div class="flex items-start justify-between">
-                <div>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                    {{ cargo.tipoCargo.nombre }}
-                    <span v-if="cargo.tipoCargo.permiteMultiples" class="ml-1 text-purple-500">#{{ cargo.posicion }}</span>
-                  </span>
-                </div>
-                <button
-                  @click="confirmarRevocacion(cargo)"
-                  class="text-gray-300 hover:text-red-500 transition-colors"
-                  title="Revocar cargo"
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  {{ cargo.tipoCargo.nombre }}
+                  <span v-if="cargo.tipoCargo.permiteMultiples" class="ml-1 text-purple-500">#{{ cargo.posicion }}</span>
+                </span>
+
+                <!-- ConfirmPopover para revocar — sin modal -->
+                <ConfirmPopover
+                  titulo="Revocar cargo"
+                  :mensaje="`¿Revocar ${cargo.tipoCargo.nombre} a ${nombreCompleto(cargo.miembro)}?`"
+                  variante="peligro"
+                  etiqueta-confirmar="Revocar"
+                  posicion="top"
+                  :cargando="revocandoId === cargo.id"
+                  @confirm="revocarCargo(cargo)"
                 >
-                  <XMarkIcon class="w-4 h-4" />
-                </button>
+                  <template #default="{ open }">
+                    <button @click="open" class="text-gray-300 hover:text-red-500 transition-colors" title="Revocar cargo">
+                      <XMarkIcon class="w-4 h-4" />
+                    </button>
+                  </template>
+                </ConfirmPopover>
               </div>
 
-              <!-- Miembro -->
               <div class="flex items-center gap-3">
-                <div class="h-10 w-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center flex-shrink-0">
+                <div class="h-10 w-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shrink-0">
                   <span class="text-white text-sm font-semibold">{{ iniciales(cargo.miembro) }}</span>
                 </div>
                 <div class="min-w-0">
@@ -111,19 +104,14 @@
                 </div>
               </div>
 
-              <!-- Fecha -->
-              <div class="text-xs text-gray-400">
-                Desde {{ formatDate(cargo.fechaInicio) }}
-              </div>
+              <div class="text-xs text-gray-400">Desde {{ formatDate(cargo.fechaInicio) }}</div>
             </div>
           </div>
         </div>
 
         <!-- Tab: Historial -->
         <div v-show="activeTab === 'historial'">
-          <div v-if="loadingHistorial" class="text-center py-8">
-            <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
-          </div>
+          <EstadoCarga v-if="loadingHistorial" />
           <div v-else-if="historial.length === 0" class="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
             <p class="text-gray-500 text-sm">No hay registros históricos</p>
           </div>
@@ -160,223 +148,177 @@
       </template>
     </template>
 
-    <!-- ===== MODAL: Constituir junta ===== -->
-    <Teleport to="body">
-      <div v-if="modalJunta" class="fixed inset-0 z-50 overflow-y-auto">
-        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" @click="modalJunta = false"/>
-        <div class="flex min-h-full items-center justify-center p-4">
-          <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">Constituir {{ orgConfig.organoGobierno }}</h3>
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre <span class="text-red-500">*</span></label>
-                <input v-model="formJunta.nombre" type="text" :placeholder="`Ej: ${orgConfig.OrganoGobierno} 2025-2027`"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"/>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de constitución <span class="text-red-500">*</span></label>
-                <input v-model="formJunta.fechaConstitucion" type="date"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"/>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
-                <textarea v-model="formJunta.observaciones" rows="3" placeholder="Notas opcionales..."
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"/>
-              </div>
-              <div v-if="junta" class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-800">
-                {{ orgConfig.OrganoGobierno }} actual <strong>{{ junta.nombre }}</strong> quedará desactivado.
-              </div>
-              <ErrorAlert v-if="modalError" :message="modalError" />
-            </div>
-            <div class="flex gap-3 mt-6">
-              <button @click="modalJunta = false" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">Cancelar</button>
-              <button @click="constituirJunta" :disabled="modalLoading"
-                class="flex-1 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-60 flex items-center justify-center gap-2">
-                <svg v-if="modalLoading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>
-                Constituir
-              </button>
-            </div>
-          </div>
+    <!-- ── DRAWER: Constituir junta ──────────────────────────────────────── -->
+    <AppDrawer
+      v-model="drawerJunta"
+      :title="`Constituir ${orgConfig.organoGobierno}`"
+      subtitle="Los datos del órgano actual quedarán como histórico"
+      size="sm"
+      @close="drawerJunta = false"
+    >
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nombre <span class="text-red-500">*</span></label>
+          <input v-model="formJunta.nombre" type="text" :placeholder="`Ej: ${orgConfig.OrganoGobierno} 2025-2027`"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"/>
         </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de constitución <span class="text-red-500">*</span></label>
+          <input v-model="formJunta.fechaConstitucion" type="date"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+          <textarea v-model="formJunta.observaciones" rows="3" placeholder="Notas opcionales..."
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"/>
+        </div>
+        <div v-if="junta" class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-800">
+          {{ orgConfig.OrganoGobierno }} actual <strong>{{ junta.nombre }}</strong> quedará desactivado.
+        </div>
+        <ErrorAlert v-if="errorJunta" :message="errorJunta" />
       </div>
 
-      <!-- ===== MODAL: Asignar cargo ===== -->
-      <div v-if="modalCargo" class="fixed inset-0 z-50 overflow-y-auto">
-        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" @click="modalCargo = false"/>
-        <div class="flex min-h-full items-center justify-center p-4">
-          <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">Asignar cargo</h3>
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de cargo <span class="text-red-500">*</span></label>
-                <select v-model="formCargo.tipoCargaId"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
-                  <option value="">Seleccionar...</option>
-                  <option v-for="tc in tiposCargo" :key="tc.id" :value="tc.id">
-                    {{ tc.nombre }}{{ tc.permiteMultiples ? ' (múltiple)' : '' }}
-                  </option>
-                </select>
-              </div>
-              <div v-if="tipoCargaSeleccionado?.permiteMultiples">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Posición (vocalía)</label>
-                <input v-model.number="formCargo.posicion" type="number" min="1"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  :placeholder="`Siguiente disponible: ${siguientePosicion}`"/>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ orgConfig.Miembro }} <span class="text-red-500">*</span></label>
-                <input v-model="busquedaMiembro" type="text" placeholder="Buscar por nombre..."
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"/>
-                <div v-if="miembrosFiltrados.length > 0 && busquedaMiembro.length > 1"
-                  class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
-                  <button v-for="m in miembrosFiltrados" :key="m.id"
-                    @click="seleccionarMiembro(m)"
-                    class="w-full text-left px-4 py-2 text-sm hover:bg-purple-50 transition-colors">
-                    {{ nombreCompleto(m) }}
-                    <span class="text-xs text-gray-400 ml-2">{{ m.email }}</span>
-                  </button>
-                </div>
-                <p v-if="formCargo.miembroId" class="mt-1 text-sm text-purple-700 font-medium">
-                  Seleccionado: {{ miembroSeleccionadoNombre }}
-                </p>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de inicio <span class="text-red-500">*</span></label>
-                <input v-model="formCargo.fechaInicio" type="date"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"/>
-              </div>
-              <ErrorAlert v-if="modalError" :message="modalError" />
-            </div>
-            <div class="flex gap-3 mt-6">
-              <button @click="modalCargo = false" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">Cancelar</button>
-              <button @click="asignarCargo" :disabled="modalLoading"
-                class="flex-1 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-60 flex items-center justify-center gap-2">
-                <svg v-if="modalLoading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>
-                Asignar
-              </button>
-            </div>
-          </div>
+      <template #footer>
+        <button @click="drawerJunta = false"
+          class="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
+          Cancelar
+        </button>
+        <button @click="constituirJunta" :disabled="guardandoJunta"
+          class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-60 flex items-center gap-2">
+          <span v-if="guardandoJunta" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>
+          Constituir
+        </button>
+      </template>
+    </AppDrawer>
+
+    <!-- ── DRAWER: Asignar cargo ─────────────────────────────────────────── -->
+    <AppDrawer
+      v-model="drawerCargo"
+      title="Asignar cargo"
+      size="sm"
+      @close="drawerCargo = false"
+    >
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de cargo <span class="text-red-500">*</span></label>
+          <select v-model="formCargo.tipoCargaId"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <option value="">Seleccionar...</option>
+            <option v-for="tc in tiposCargo" :key="tc.id" :value="tc.id">
+              {{ tc.nombre }}{{ tc.permiteMultiples ? ' (múltiple)' : '' }}
+            </option>
+          </select>
         </div>
+        <div v-if="tipoCargaSeleccionado?.permiteMultiples">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Posición (vocalía)</label>
+          <input v-model.number="formCargo.posicion" type="number" min="1"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            :placeholder="`Siguiente disponible: ${siguientePosicion}`"/>
+        </div>
+        <div class="relative">
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ orgConfig.Miembro }} <span class="text-red-500">*</span></label>
+          <input v-model="busquedaMiembro" type="text" placeholder="Buscar por nombre..."
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"/>
+          <div v-if="miembrosFiltrados.length > 0 && busquedaMiembro.length > 1"
+            class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
+            <button v-for="m in miembrosFiltrados" :key="m.id" @click="seleccionarMiembro(m)"
+              class="w-full text-left px-4 py-2 text-sm hover:bg-purple-50 transition-colors">
+              {{ nombreCompleto(m) }}
+              <span class="text-xs text-gray-400 ml-2">{{ m.email }}</span>
+            </button>
+          </div>
+          <p v-if="formCargo.miembroId" class="mt-1 text-sm text-purple-700 font-medium">
+            Seleccionado: {{ miembroSeleccionadoNombre }}
+          </p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de inicio <span class="text-red-500">*</span></label>
+          <input v-model="formCargo.fechaInicio" type="date"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"/>
+        </div>
+        <ErrorAlert v-if="errorCargo" :message="errorCargo" />
       </div>
 
-      <!-- ===== MODAL: Confirmar revocación ===== -->
-      <div v-if="modalRevocar" class="fixed inset-0 z-50 overflow-y-auto">
-        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" @click="modalRevocar = false"/>
-        <div class="flex min-h-full items-center justify-center p-4">
-          <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-2">Revocar cargo</h3>
-            <p class="text-sm text-gray-600 mb-4">
-              ¿Revocar el cargo de <strong>{{ cargoRevocar?.tipoCargo.nombre }}</strong>
-              a <strong>{{ nombreCompleto(cargoRevocar?.miembro) }}</strong>?
-            </p>
-            <div class="space-y-3">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de fin <span class="text-red-500">*</span></label>
-                <input v-model="formRevocar.fechaFin" type="date"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-400"/>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Motivo</label>
-                <input v-model="formRevocar.motivo" type="text" placeholder="Opcional..."
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-400"/>
-              </div>
-              <ErrorAlert v-if="modalError" :message="modalError" />
-            </div>
-            <div class="flex gap-3 mt-5">
-              <button @click="modalRevocar = false" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">Cancelar</button>
-              <button @click="revocarCargo" :disabled="modalLoading"
-                class="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-60 flex items-center justify-center gap-2">
-                <svg v-if="modalLoading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>
-                Revocar
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+      <template #footer>
+        <button @click="drawerCargo = false"
+          class="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
+          Cancelar
+        </button>
+        <button @click="asignarCargo" :disabled="guardandoCargo"
+          class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-60 flex items-center gap-2">
+          <span v-if="guardandoCargo" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>
+          Asignar
+        </button>
+      </template>
+    </AppDrawer>
+
   </AppLayout>
 </template>
 
 <script setup>
-import { XMarkIcon, PlusIcon, UsersIcon } from '@heroicons/vue/24/outline'
-import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import AppLayout from '@/components/common/AppLayout.vue'
-import DetailHeader from '@/components/common/DetailHeader.vue'
+import { XMarkIcon, PlusIcon, UsersIcon } from '@heroicons/vue/24/outline'
+import AppLayout      from '@/components/common/AppLayout.vue'
+import DetailHeader   from '@/components/common/DetailHeader.vue'
+import EstadoCarga    from '@/components/common/EstadoCarga.vue'
+import ErrorAlert     from '@/components/common/ErrorAlert.vue'
+import AppDrawer      from '@/components/common/AppDrawer.vue'
+import ConfirmPopover from '@/components/common/ConfirmPopover.vue'
+import { useToast }   from '@/composables/useToast'
 import { graphqlClient } from '@/graphql/client.js'
 import { useOrgConfigStore } from '@/stores/orgConfig'
 import {
-  GET_JUNTA_ACTIVA,
-  GET_HISTORIAL_JUNTA,
-  GET_TIPOS_CARGO,
-  CONSTITUIR_JUNTA,
-  ASIGNAR_CARGO,
-  REVOCAR_CARGO,
+  GET_JUNTA_ACTIVA, GET_HISTORIAL_JUNTA, GET_TIPOS_CARGO,
+  CONSTITUIR_JUNTA, ASIGNAR_CARGO, REVOCAR_CARGO,
 } from '@/graphql/queries/administracion.js'
 
 const route = useRoute()
 const agrupacionId = route.params.id
 const orgConfig = useOrgConfigStore()
+const toast = useToast()
 
 // ─── Estado ───────────────────────────────────────────────────────────────────
-const agrupacion = ref(null)
-const junta = ref(null)
-const historial = ref([])
-const tiposCargo = ref([])
-const miembros = ref([])
+const agrupacion      = ref(null)
+const junta           = ref(null)
+const historial       = ref([])
+const tiposCargo      = ref([])
+const miembros        = ref([])
+const activeTab       = ref('composicion')
 
 const loadingAgrupacion = ref(true)
-const loadingJunta = ref(false)
-const loadingHistorial = ref(false)
+const loadingJunta      = ref(false)
+const loadingHistorial  = ref(false)
 
-const activeTab = ref('composicion')
+// Drawers (reemplazan los modales inline)
+const drawerJunta    = ref(false)
+const drawerCargo    = ref(false)
+const guardandoJunta = ref(false)
+const guardandoCargo = ref(false)
+const errorJunta     = ref('')
+const errorCargo     = ref('')
+const revocandoId    = ref(null)
 
-// Modales
-const modalJunta = ref(false)
-const modalCargo = ref(false)
-const modalRevocar = ref(false)
-const modalLoading = ref(false)
-const modalError = ref('')
-
-const formJunta = ref({ nombre: '', fechaConstitucion: new Date().toISOString().slice(0, 10), observaciones: '' })
-const formCargo = ref({ tipoCargaId: '', miembroId: '', fechaInicio: new Date().toISOString().slice(0, 10), posicion: 1 })
-const formRevocar = ref({ fechaFin: new Date().toISOString().slice(0, 10), motivo: '' })
-const cargoRevocar = ref(null)
-const busquedaMiembro = ref('')
+const formJunta   = ref({ nombre: '', fechaConstitucion: new Date().toISOString().slice(0, 10), observaciones: '' })
+const formCargo   = ref({ tipoCargaId: '', miembroId: '', fechaInicio: new Date().toISOString().slice(0, 10), posicion: 1 })
+const busquedaMiembro           = ref('')
 const miembroSeleccionadoNombre = ref('')
 
 // ─── Computed ─────────────────────────────────────────────────────────────────
 const tabs = computed(() => [
   { id: 'composicion', label: 'Composición actual', count: cargosActivos.value.length },
-  { id: 'historial', label: 'Historial' },
+  { id: 'historial',   label: 'Historial' },
 ])
-
-const cargosActivos = computed(() => (junta.value?.cargos || []).filter(c => c.activo))
-
+const cargosActivos  = computed(() => (junta.value?.cargos || []).filter(c => c.activo))
 const cargosOrdenados = computed(() =>
-  [...cargosActivos.value].sort((a, b) =>
-    (a.tipoCargo.orden - b.tipoCargo.orden) || (a.posicion - b.posicion)
-  )
+  [...cargosActivos.value].sort((a, b) => (a.tipoCargo.orden - b.tipoCargo.orden) || (a.posicion - b.posicion))
 )
-
 const historialOrdenado = computed(() =>
   [...historial.value].sort((a, b) => new Date(b.fechaInicio) - new Date(a.fechaInicio))
 )
-
 const tipoCargaSeleccionado = computed(() =>
   tiposCargo.value.find(t => t.id === formCargo.value.tipoCargaId) || null
 )
-
 const siguientePosicion = computed(() => {
   if (!tipoCargaSeleccionado.value?.permiteMultiples || !junta.value) return 1
   const posiciones = cargosActivos.value
@@ -384,7 +326,6 @@ const siguientePosicion = computed(() => {
     .map(c => c.posicion)
   return posiciones.length ? Math.max(...posiciones) + 1 : 1
 })
-
 const miembrosFiltrados = computed(() => {
   if (busquedaMiembro.value.length < 2) return []
   const q = busquedaMiembro.value.toLowerCase()
@@ -398,12 +339,10 @@ function formatDate(d) {
   if (!d) return '—'
   return new Date(d).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
 }
-
 function nombreCompleto(m) {
   if (!m) return '—'
   return [m.nombre, m.apellido1, m.apellido2].filter(Boolean).join(' ')
 }
-
 function iniciales(m) {
   if (!m) return '?'
   return ((m.nombre?.[0] || '') + (m.apellido1?.[0] || '')).toUpperCase()
@@ -418,13 +357,10 @@ async function cargarDatos() {
       graphqlClient.request(GET_TIPOS_CARGO),
       graphqlClient.request(`query { miembros { id nombre apellido1 apellido2 email } }`),
     ])
-    junta.value = juntas.juntasDirectivas?.[0] || null
+    junta.value      = juntas.juntasDirectivas?.[0] || null
     tiposCargo.value = (tiposRes.tiposCargo || []).sort((a, b) => a.orden - b.orden)
-    miembros.value = miembrosRes.miembros || []
-
-    // Inferir agrupacion desde la junta (solo nombre)
+    miembros.value   = miembrosRes.miembros || []
     agrupacion.value = { nombre: `Agrupación ${agrupacionId.slice(0, 8)}…`, tipo: '', provincia: null }
-
     if (junta.value) await cargarHistorial()
   } catch (e) {
     console.error('Error cargando datos de junta:', e)
@@ -447,25 +383,18 @@ async function cargarHistorial() {
 }
 
 // ─── Acciones ─────────────────────────────────────────────────────────────────
-function abrirModalJunta() {
+function abrirDrawerJunta() {
   formJunta.value = { nombre: '', fechaConstitucion: new Date().toISOString().slice(0, 10), observaciones: '' }
-  modalError.value = ''
-  modalJunta.value = true
+  errorJunta.value = ''
+  drawerJunta.value = true
 }
 
-function abrirModalCargo() {
+function abrirDrawerCargo() {
   formCargo.value = { tipoCargaId: '', miembroId: '', fechaInicio: new Date().toISOString().slice(0, 10), posicion: 1 }
   busquedaMiembro.value = ''
   miembroSeleccionadoNombre.value = ''
-  modalError.value = ''
-  modalCargo.value = true
-}
-
-function confirmarRevocacion(cargo) {
-  cargoRevocar.value = cargo
-  formRevocar.value = { fechaFin: new Date().toISOString().slice(0, 10), motivo: '' }
-  modalError.value = ''
-  modalRevocar.value = true
+  errorCargo.value = ''
+  drawerCargo.value = true
 }
 
 function seleccionarMiembro(m) {
@@ -476,11 +405,11 @@ function seleccionarMiembro(m) {
 
 async function constituirJunta() {
   if (!formJunta.value.nombre || !formJunta.value.fechaConstitucion) {
-    modalError.value = 'Completa los campos obligatorios'
+    errorJunta.value = 'Completa los campos obligatorios'
     return
   }
-  modalLoading.value = true
-  modalError.value = ''
+  guardandoJunta.value = true
+  errorJunta.value = ''
   try {
     await graphqlClient.request(CONSTITUIR_JUNTA, {
       agrupacionId,
@@ -488,26 +417,25 @@ async function constituirJunta() {
       fechaConstitucion: formJunta.value.fechaConstitucion,
       observaciones: formJunta.value.observaciones || null,
     })
-    modalJunta.value = false
+    drawerJunta.value = false
+    toast.success(`${orgConfig.OrganoGobierno} constituido correctamente`)
     await cargarDatos()
   } catch (e) {
-    modalError.value = e?.response?.errors?.[0]?.message || 'Error al constituir la junta'
+    errorJunta.value = e?.response?.errors?.[0]?.message || 'Error al constituir la junta'
   } finally {
-    modalLoading.value = false
+    guardandoJunta.value = false
   }
 }
 
 async function asignarCargo() {
   if (!formCargo.value.tipoCargaId || !formCargo.value.miembroId || !formCargo.value.fechaInicio) {
-    modalError.value = 'Completa los campos obligatorios'
+    errorCargo.value = 'Completa los campos obligatorios'
     return
   }
   const posicion = tipoCargaSeleccionado.value?.permiteMultiples
-    ? (formCargo.value.posicion || siguientePosicion.value)
-    : 0
-
-  modalLoading.value = true
-  modalError.value = ''
+    ? (formCargo.value.posicion || siguientePosicion.value) : 0
+  guardandoCargo.value = true
+  errorCargo.value = ''
   try {
     await graphqlClient.request(ASIGNAR_CARGO, {
       juntaId: junta.value.id,
@@ -516,34 +444,30 @@ async function asignarCargo() {
       fechaInicio: formCargo.value.fechaInicio,
       posicion,
     })
-    modalCargo.value = false
+    drawerCargo.value = false
+    toast.success('Cargo asignado correctamente')
     await cargarDatos()
   } catch (e) {
-    modalError.value = e?.response?.errors?.[0]?.message || 'Error al asignar el cargo'
+    errorCargo.value = e?.response?.errors?.[0]?.message || 'Error al asignar el cargo'
   } finally {
-    modalLoading.value = false
+    guardandoCargo.value = false
   }
 }
 
-async function revocarCargo() {
-  if (!formRevocar.value.fechaFin) {
-    modalError.value = 'Indica la fecha de fin'
-    return
-  }
-  modalLoading.value = true
-  modalError.value = ''
+async function revocarCargo(cargo) {
+  revocandoId.value = cargo.id
   try {
     await graphqlClient.request(REVOCAR_CARGO, {
-      cargoJuntaId: cargoRevocar.value.id,
-      fechaFin: formRevocar.value.fechaFin,
-      motivo: formRevocar.value.motivo || null,
+      cargoJuntaId: cargo.id,
+      fechaFin: new Date().toISOString().slice(0, 10),
+      motivo: null,
     })
-    modalRevocar.value = false
+    toast.success(`Cargo de ${cargo.tipoCargo.nombre} revocado`)
     await cargarDatos()
   } catch (e) {
-    modalError.value = e?.response?.errors?.[0]?.message || 'Error al revocar el cargo'
+    toast.error(e?.response?.errors?.[0]?.message || 'Error al revocar el cargo')
   } finally {
-    modalLoading.value = false
+    revocandoId.value = null
   }
 }
 
