@@ -209,7 +209,7 @@
           <p class="text-sm text-gray-500 mt-1">No se encontraron transacciones con los filtros seleccionados.</p>
         </div>
 
-        <div class="overflow-x-auto -mx-1"><<table v-else class="min-w-full divide-y divide-gray-200">
+        <div class="overflow-x-auto -mx-1"><table v-else class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-100">
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
@@ -381,7 +381,7 @@
             + Nueva Remesa
           </button>
         </div>
-        <div class="overflow-x-auto -mx-1"><<table class="min-w-full">
+        <div class="overflow-x-auto -mx-1"><table class="min-w-full">
           <thead class="bg-gray-100">
             <tr>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>

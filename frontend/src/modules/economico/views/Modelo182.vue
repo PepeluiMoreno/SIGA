@@ -54,7 +54,7 @@
       <div class="px-4 py-3 bg-slate-50 border-b border-slate-100">
         <h3 class="font-semibold text-sm text-slate-800">Donantes incluidos en el Modelo 182</h3>
       </div>
-      <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm">
+      <div class="overflow-x-auto -mx-1"><table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
           <tr>
             <th class="px-3 py-2 text-left">NIF</th>
@@ -99,7 +99,7 @@
           Revisa si puedes completar el NIF del donante para incluirlas.
         </p>
       </div>
-      <div class="overflow-x-auto -mx-1"><<table class="w-full text-xs">
+      <div class="overflow-x-auto -mx-1"><table class="w-full text-xs">
         <thead class="bg-amber-50 text-amber-700 text-[10px] uppercase">
           <tr>
             <th class="px-3 py-2 text-left">Fecha</th>
@@ -122,7 +122,7 @@
       <div class="px-4 py-3 bg-slate-50 border-b border-slate-100">
         <h3 class="font-semibold text-sm text-slate-800">Histórico de presentaciones a la AEAT</h3>
       </div>
-      <div class="overflow-x-auto -mx-1"><<table v-if="presentaciones.length" class="w-full text-sm">
+      <div class="overflow-x-auto -mx-1"><table v-if="presentaciones.length" class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
           <tr>
             <th class="px-3 py-2 text-left">Ejercicio</th>

@@ -25,7 +25,7 @@
     <div v-if="grupos.length > 0">
       <h3 class="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide">Desglose por equipo</h3>
       <div class="rounded-lg border border-slate-200 overflow-hidden">
-        <div class="overflow-x-auto -mx-1"><<table class="min-w-full divide-y divide-slate-200 text-sm">
+        <div class="overflow-x-auto -mx-1"><table class="min-w-full divide-y divide-slate-200 text-sm">
           <thead class="bg-slate-50">
             <tr>
               <th class="px-4 py-3 text-left font-medium text-slate-600">Equipo</th>
@@ -180,7 +180,7 @@
 
       <!-- Lista compromisos -->
       <div v-if="compromisos.length" class="rounded-lg border border-slate-200 overflow-hidden">
-        <div class="overflow-x-auto -mx-1"><<table class="min-w-full divide-y divide-slate-200 text-sm">
+        <div class="overflow-x-auto -mx-1"><table class="min-w-full divide-y divide-slate-200 text-sm">
           <thead class="bg-slate-50">
             <tr>
               <th class="px-4 py-3 text-left font-medium text-slate-600">Partida</th>

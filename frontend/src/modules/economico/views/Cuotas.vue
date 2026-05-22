@@ -16,7 +16,7 @@
         <div v-else-if="!cuotas.length" class="p-8 text-center text-slate-400 text-sm">
           No hay cuotas configuradas. Usa "Configurar ejercicio" para establecer la primera.
         </div>
-        <div class="overflow-x-auto -mx-1"><<table v-else class="w-full text-sm">
+        <div class="overflow-x-auto -mx-1"><table v-else class="w-full text-sm">
           <thead class="bg-slate-50 text-slate-600 text-left">
             <tr>
               <th class="px-4 py-3 font-medium">Ejercicio</th>

@@ -26,7 +26,7 @@
       <div v-if="!plantillasFiltradas.length" class="py-16 text-center text-slate-400 text-sm">
         Ninguna plantilla coincide con los filtros.
       </div>
-      <div class="overflow-x-auto -mx-1"><<table v-else class="min-w-full divide-y divide-slate-200">
+      <div class="overflow-x-auto -mx-1"><table v-else class="min-w-full divide-y divide-slate-200">
         <thead class="bg-slate-50">
           <tr>
             <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Tipo de campaña</th>

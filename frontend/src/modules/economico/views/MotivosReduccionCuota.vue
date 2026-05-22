@@ -12,7 +12,7 @@
         <h3 class="font-semibold text-slate-800">{{ motivos.length }} motivos registrados</h3>
         <button @click="abrirModal()" class="btn-primary text-sm">+ Nuevo motivo</button>
       </div>
-      <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm">
+      <div class="overflow-x-auto -mx-1"><table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-600">
           <tr>
             <th class="px-3 py-2 text-left w-full sm:w-32">Código</th>

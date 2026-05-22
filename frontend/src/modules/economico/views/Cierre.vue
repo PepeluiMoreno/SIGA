@@ -117,7 +117,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div>
           <h4 class="font-medium text-slate-700 mb-1 text-xs uppercase">Activo</h4>
-          <div class="overflow-x-auto -mx-1"><<table class="w-full text-xs">
+          <div class="overflow-x-auto -mx-1"><table class="w-full text-xs">
             <tbody>
               <tr><td class="py-0.5">A) No corriente</td><td class="text-right font-mono">{{ fmt(sumaSecciones(balance.activoNoCorriente)) }}</td></tr>
               <tr><td class="py-0.5">B) Corriente</td><td class="text-right font-mono">{{ fmt(sumaSecciones(balance.activoCorriente)) }}</td></tr>
@@ -127,7 +127,7 @@
         </div>
         <div>
           <h4 class="font-medium text-slate-700 mb-1 text-xs uppercase">Patrimonio neto y pasivo</h4>
-          <div class="overflow-x-auto -mx-1"><<table class="w-full text-xs">
+          <div class="overflow-x-auto -mx-1"><table class="w-full text-xs">
             <tbody>
               <tr><td class="py-0.5">A) Patrimonio neto</td><td class="text-right font-mono">{{ fmt(balance.totalPatrimonioNeto) }}</td></tr>
               <tr><td class="py-0.5">B) Pasivo no corriente</td><td class="text-right font-mono">{{ fmt(balance.totalPasivoNoCorriente) }}</td></tr>
@@ -156,7 +156,7 @@
     <!-- CUENTA DE RESULTADOS -->
     <div v-if="resultados" class="bg-white border border-slate-200 rounded-xl p-4 mb-4 text-sm">
       <h3 class="font-semibold text-slate-800 mb-3">Cuenta de Resultados (Excedente) {{ resultados.ejercicio }}</h3>
-      <div class="overflow-x-auto -mx-1"><<table class="w-full text-xs">
+      <div class="overflow-x-auto -mx-1"><table class="w-full text-xs">
         <tbody>
           <tr><td class="py-0.5">Ingresos actividad propia</td><td class="text-right font-mono text-green-700">{{ fmt(resultados.ingresosActividadPropia) }}</td></tr>
           <tr><td class="py-0.5">Gastos actividad propia</td><td class="text-right font-mono text-red-600">−{{ fmt(resultados.gastosActividadPropia) }}</td></tr>

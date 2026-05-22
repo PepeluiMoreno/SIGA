@@ -101,7 +101,7 @@
 
           <!-- Tabla -->
           <div v-else class="flex-1 overflow-y-auto">
-            <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm border-collapse">
+            <div class="overflow-x-auto -mx-1"><table class="w-full text-sm border-collapse">
               <thead class="sticky top-0 bg-white z-10">
                 <tr class="border-b border-gray-100">
                   <th v-for="col in catalogoActivo.columnas" :key="col.key"

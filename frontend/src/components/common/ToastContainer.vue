@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <div
-      class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"
+      class="fixed bottom-4 right-4 left-4 sm:left-auto z-[100] flex flex-col gap-2 pointer-events-none items-end"
       aria-live="polite"
       aria-atomic="false"
     >
@@ -9,7 +9,7 @@
         <div
           v-for="t in toasts"
           :key="t.id"
-          class="pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg border max-w-sm text-sm font-medium"
+          class="pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg border w-full sm:max-w-sm text-sm font-medium"
           :class="STYLES[t.type]?.container"
         >
           <component

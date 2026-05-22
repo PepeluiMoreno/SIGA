@@ -95,7 +95,7 @@
         <div class="px-4 py-3">
           <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Presupuesto</h4>
 
-          <div class="overflow-x-auto -mx-1"><<table v-if="(local.partidas?.length || !readonly)" class="w-full text-sm mb-2">
+          <div class="overflow-x-auto -mx-1"><table v-if="(local.partidas?.length || !readonly)" class="w-full text-sm mb-2">
             <thead>
               <tr class="text-xs text-slate-400 uppercase">
                 <th class="text-left font-medium pb-1">Concepto</th>

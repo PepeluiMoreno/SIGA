@@ -14,7 +14,7 @@
       </slot>
     </div>
 
-    <div class="overflow-x-auto -mx-1"><<table class="min-w-full divide-y divide-gray-200">
+    <div class="overflow-x-auto -mx-1"><table class="min-w-full divide-y divide-gray-200">
       <thead v-if="$slots.columns" class="bg-gray-50">
         <tr>
           <slot name="columns" />

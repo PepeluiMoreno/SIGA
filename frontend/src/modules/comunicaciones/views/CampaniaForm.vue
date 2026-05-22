@@ -236,7 +236,7 @@
                 <PlusIcon class="w-3.5 h-3.5" /> Añadir partida
               </button>
             </div>
-            <div class="overflow-x-auto -mx-1"><<table class="w-full">
+            <div class="overflow-x-auto -mx-1"><table class="w-full">
               <thead>
                 <tr class="border-b border-slate-100">
                   <th class="pb-2 text-left text-xs font-semibold text-slate-400">Concepto</th>
@@ -532,7 +532,7 @@
                   <PlusIcon class="w-3.5 h-3.5" /> Añadir meta
                 </button>
               </div>
-              <div class="overflow-x-auto -mx-1"><<table class="w-full">
+              <div class="overflow-x-auto -mx-1"><table class="w-full">
                 <thead>
                   <tr class="border-b border-slate-100">
                     <th class="pb-2 text-left text-xs font-semibold text-slate-400">Tipo de meta</th>

@@ -81,7 +81,7 @@
         <div v-if="!apuntesPendientes.length" class="text-center text-slate-400 py-8 text-xs">
           Sin apuntes pendientes de conciliar.
         </div>
-        <div class="overflow-x-auto -mx-1"><<table v-else class="w-full text-xs">
+        <div class="overflow-x-auto -mx-1"><table v-else class="w-full text-xs">
           <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase">
             <tr>
               <th class="px-3 py-1.5 text-center w-8"></th>
@@ -117,7 +117,7 @@
         <div v-if="!extractosPendientes.length" class="text-center text-slate-400 py-8 text-xs">
           Sin líneas de extracto pendientes. Importa un extracto bancario para empezar.
         </div>
-        <div class="overflow-x-auto -mx-1"><<table v-else class="w-full text-xs">
+        <div class="overflow-x-auto -mx-1"><table v-else class="w-full text-xs">
           <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase">
             <tr>
               <th class="px-3 py-1.5 text-center w-8"></th>

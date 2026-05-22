@@ -116,7 +116,7 @@
             <p class="text-gray-500 text-sm">No hay registros históricos</p>
           </div>
           <div v-else class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <div class="overflow-x-auto -mx-1"><<table class="min-w-full divide-y divide-gray-100">
+            <div class="overflow-x-auto -mx-1"><table class="min-w-full divide-y divide-gray-100">
               <thead>
                 <tr class="bg-gray-50">
                   <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cargo</th>

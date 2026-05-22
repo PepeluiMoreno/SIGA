@@ -23,7 +23,7 @@
     <div v-if="loading" class="py-12 text-center text-slate-400 text-sm">Cargando…</div>
 
     <div v-else-if="recibosFiltrados.length" class="bg-white border border-slate-200 rounded-xl overflow-hidden">
-      <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm">
+      <div class="overflow-x-auto -mx-1"><table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
           <tr>
             <th class="px-3 py-2 text-left">Nº Recibo</th>

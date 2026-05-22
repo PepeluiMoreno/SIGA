@@ -128,7 +128,7 @@
           <AccordionPanel title="Presupuesto" color="emerald">
             <div class="px-5 py-4">
               <div v-if="campania.partidasPresupuesto?.length" class="space-y-3">
-                <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm">
+                <div class="overflow-x-auto -mx-1"><table class="w-full text-sm">
                   <thead>
                     <tr class="text-xs text-slate-400 uppercase border-b border-slate-100">
                       <th class="text-left font-medium pb-2">Concepto</th>
@@ -351,7 +351,7 @@
               <!-- Metas -->
               <div v-if="campania.metas?.length">
                 <label :class="lbl">Metas de la campaña</label>
-                <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm mt-1">
+                <div class="overflow-x-auto -mx-1"><table class="w-full text-sm mt-1">
                   <thead>
                     <tr class="text-xs text-slate-400 uppercase border-b border-slate-100">
                       <th class="text-left font-medium pb-2">Tipo de meta</th>

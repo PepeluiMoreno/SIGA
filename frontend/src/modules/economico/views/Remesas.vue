@@ -198,7 +198,7 @@
                     <summary class="px-3 py-2 bg-slate-50 cursor-pointer text-xs font-medium text-slate-700 hover:bg-slate-100">
                       Ver cuotas excluidas ({{ preview.excluidas.length }})
                     </summary>
-                    <div class="overflow-x-auto -mx-1"><<table class="w-full text-xs">
+                    <div class="overflow-x-auto -mx-1"><table class="w-full text-xs">
                       <thead class="bg-slate-50 border-t border-slate-100">
                         <tr>
                           <th class="px-3 py-1.5 text-left text-slate-500">Miembro</th>
