@@ -602,7 +602,7 @@ import {
   ACTUALIZAR_METADATOS_APUNTE,
   ANULAR_APUNTE_CAJA,
 } from '@/graphql/queries/tesoreria'
-import { GET_ACTIVIDADES_PARA_GASTO } from '@/graphql/queries/financiero'
+import { GET_ACTIVIDADES_PARA_GASTO } from '@/graphql/queries/economico'
 import { GET_CAMPANIAS } from '@/graphql/queries/campanias'
 import {
 const toast = useToast()

@@ -346,7 +346,7 @@ import LiquidacionRemesaModal from './LiquidacionRemesaModal.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import { useUnidadesOrganizativas } from '@/composables/useUnidadesOrganizativas'
 import { executeQuery } from '@/graphql/client'
-import { GET_REMESA_DETALLE } from '@/graphql/queries/financiero'
+import { GET_REMESA_DETALLE } from '@/graphql/queries/economico'
 const confirmDialog = useConfirm()
 
 const { query: gqlQuery, mutation: gqlMutation, loading } = useGraphQL()

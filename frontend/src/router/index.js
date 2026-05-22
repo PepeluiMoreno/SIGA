@@ -23,7 +23,7 @@ import EstructuraOrganizativa from '@/views/parametrizacion/EstructuraOrganizati
 import ListaGrupos from '@/modules/actividades/views/ListaGrupos.vue'
 
 // === Módulo: ECONOMICO ===
-import ListaFinanciero from '@/modules/economico/views/ListaFinanciero.vue'
+import ListaEconomico from '@/modules/economico/views/ListaEconomico.vue'
 import Tesoreria from '@/modules/economico/views/Tesoreria.vue'
 import Contabilidad from '@/modules/economico/views/Contabilidad.vue'
 import Cuotas from '@/modules/economico/views/Cuotas.vue'
@@ -270,6 +270,12 @@ const routes = [
 
   // ─── ECONOMICO ────────────────────────────────────────────────────────────
   { path: '/financiero', redirect: '/economico' },
+  {
+    path: '/economico',
+    name: 'Economico',
+    component: ListaEconomico,
+    meta: { requiresAuth: true },
+  },
   {
     path: '/economico/tesoreria',
     component: Tesoreria,

@@ -238,7 +238,7 @@ import {
 const toast = useToast()
   PREVISUALIZAR_LIQUIDACION_REMESA,
   LIQUIDAR_REMESA,
-} from '@/graphql/queries/financiero'
+} from '@/graphql/queries/economico'
 
 const props = defineProps({
   remesa: { type: Object, required: true },              // remesa completa con ordenes y miembros cargados

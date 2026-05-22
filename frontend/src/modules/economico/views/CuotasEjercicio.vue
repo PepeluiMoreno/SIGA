@@ -177,7 +177,7 @@ const confirmDialog = useConfirm()
   ELIMINAR_CUOTA_EJERCICIO,
   PREVISUALIZAR_GENERACION_CUOTAS,
   GENERAR_CUOTAS_INDIVIDUALES,
-} from '@/graphql/queries/financiero'
+} from '@/graphql/queries/economico'
 
 const { query, mutation } = useGraphQL()
 const route = useRoute()

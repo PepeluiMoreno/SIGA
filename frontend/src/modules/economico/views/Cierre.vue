@@ -193,7 +193,7 @@ import {
   GENERAR_ASIENTO_REGULARIZACION,
   GENERAR_ASIENTO_CIERRE,
   GENERAR_ASIENTO_APERTURA,
-} from '@/graphql/queries/financiero'
+} from '@/graphql/queries/economico'
 
 const { query, mutation } = useGraphQL()
 

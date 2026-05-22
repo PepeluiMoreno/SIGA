@@ -404,7 +404,7 @@ import {
   GET_COMPARATIVA_INTERANUAL, GET_LIQUIDACION, CLONAR_PRESUPUESTO, PRORROGAR_PRESUPUESTO,
   GET_RATIO_VARIACION_CUOTA,
 } from '@/graphql/queries/presupuestos.js'
-import { GET_CONFIG_CUOTA_EJERCICIO } from '@/graphql/queries/financiero'
+import { GET_CONFIG_CUOTA_EJERCICIO } from '@/graphql/queries/economico'
 import ConfirmActionModal from '@/components/common/ConfirmActionModal.vue'
 const toast = useToast()
 

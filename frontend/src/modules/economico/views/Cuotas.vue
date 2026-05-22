@@ -76,7 +76,7 @@
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
-import { GET_HISTORIAL_CUOTAS } from '@/graphql/queries/financiero'
+import { GET_HISTORIAL_CUOTAS } from '@/graphql/queries/economico'
 
 const { query } = useGraphQL()
 

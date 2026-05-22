@@ -18,7 +18,7 @@
 import { ref, onMounted } from 'vue'
 import CatalogoGenerico from '@/components/parametrizacion/CatalogoGenerico.vue'
 import { CREATE_TIPO_MIEMBRO, UPDATE_TIPO_MIEMBRO, DELETE_TIPO_MIEMBRO } from '@/graphql/queries/catalogos.js'
-import { GET_MOTIVOS_REDUCCION } from '@/graphql/queries/financiero.js'
+import { GET_MOTIVOS_REDUCCION } from '@/graphql/queries/economico.js'
 import { useGraphQL } from '@/composables/useGraphQL'
 
 // Query ampliada: incluye motivo_reduccion (Flujo 1, D1.2)

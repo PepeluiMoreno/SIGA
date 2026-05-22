@@ -209,51 +209,43 @@
           <p class="text-sm text-gray-500 mt-1">No se encontraron transacciones con los filtros seleccionados.</p>
         </div>
 
-        <div class="overflow-x-auto -mx-1"><table v-else class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-100">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Concepto</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ orgConfig.Miembro }}</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Importe</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="transaccion in transacciones" :key="transaccion.id" class="hover:bg-gray-50">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {{ formatDate(transaccion.fecha) }}
-              </td>
-              <td class="px-6 py-4">
-                <div class="text-sm text-gray-900">{{ transaccion.concepto }}</div>
-                <div v-if="transaccion.referencia" class="text-xs text-gray-500">Ref: {{ transaccion.referencia }}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">{{ transaccion.miembro }}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="getTipoClass(transaccion.tipo)">{{ transaccion.tipo }}</span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full border"
-                  :style="badgeStyle(transaccion.estadoColor)">{{ transaccion.estado }}</span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right">
-                <span :class="transaccion.tipo === 'GASTO' ? 'text-red-600' : 'text-green-600'" class="font-medium">
-                  {{ transaccion.tipo === 'GASTO' ? '-' : '+' }}{{ formatCurrency(transaccion.importe) }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm">
-                <button @click="verDetalle(transaccion)" class="text-purple-600 hover:text-purple-800 mr-2">Ver</button>
-                <button v-if="transaccion.estado === 'PENDIENTE'" @click="marcarCobrada(transaccion)" class="text-green-600 hover:text-green-800">
-                  Cobrar
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table></div>
+        <ResponsiveTable
+          v-else
+          :columnas="columnasTransacciones"
+          :filas="transacciones"
+          clave-fila="id"
+        >
+          <template #cell-concepto="{ fila }">
+            <div class="text-sm text-gray-900">{{ fila.concepto }}</div>
+            <div v-if="fila.referencia" class="text-xs text-gray-500">Ref: {{ fila.referencia }}</div>
+          </template>
+          <template #cell-fecha="{ fila }">
+            <span class="text-sm text-gray-900">{{ formatDate(fila.fecha) }}</span>
+          </template>
+          <template #cell-miembro="{ fila }">
+            <span class="text-sm text-gray-900">{{ fila.miembro }}</span>
+          </template>
+          <template #cell-tipo="{ fila }">
+            <span :class="getTipoClass(fila.tipo)">{{ fila.tipo }}</span>
+          </template>
+          <template #cell-estado="{ fila }">
+            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full border"
+              :style="badgeStyle(fila.estadoColor)">{{ fila.estado }}</span>
+          </template>
+          <template #cell-importe="{ fila }">
+            <span :class="fila.tipo === 'GASTO' ? 'text-red-600' : 'text-green-600'" class="font-medium">
+              {{ fila.tipo === 'GASTO' ? '-' : '+' }}{{ formatCurrency(fila.importe) }}
+            </span>
+          </template>
+          <template #cell-acciones="{ fila }">
+            <div class="flex gap-2 justify-end">
+              <button @click="verDetalle(fila)" class="text-purple-600 hover:text-purple-800">Ver</button>
+              <button v-if="fila.estado === 'PENDIENTE'" @click="marcarCobrada(fila)" class="text-green-600 hover:text-green-800">
+                Cobrar
+              </button>
+            </div>
+          </template>
+        </ResponsiveTable>
       </div>
     </div>
 
@@ -419,12 +411,23 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
+import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import { executeQuery } from '@/graphql/client'
 import { GET_CUOTAS_ANUALES, GET_DONACIONES, GET_REMESAS } from '@/graphql/queries/economico.js'
 import { badgeStyle } from '@/utils/badge'
 import { useOrgConfigStore } from '@/stores/orgConfig'
 
 const orgConfig = useOrgConfigStore()
+
+const columnasTransacciones = computed(() => [
+  { key: 'concepto', label: 'Concepto' },
+  { key: 'fecha',    label: 'Fecha' },
+  { key: 'miembro',  label: orgConfig.Miembro },
+  { key: 'tipo',     label: 'Tipo' },
+  { key: 'estado',   label: 'Estado' },
+  { key: 'importe',  label: 'Importe', align: 'right' },
+  { key: 'acciones', label: 'Acciones', align: 'right', esAcciones: true },
+])
 const loading = ref(false)
 const activeTab = ref('cobros')
 const cuotas = ref([])

@@ -121,7 +121,7 @@ import {
   CREATE_MOTIVO_REDUCCION,
   UPDATE_MOTIVO_REDUCCION,
   MOTIVO_TIENE_RECIBOS,
-} from '@/graphql/queries/financiero'
+} from '@/graphql/queries/economico'
 
 const { query, mutation } = useGraphQL()
 

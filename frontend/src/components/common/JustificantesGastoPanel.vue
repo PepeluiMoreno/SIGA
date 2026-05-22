@@ -411,7 +411,7 @@ import {
   ANULAR_JUSTIFICANTE,
   GET_CUENTAS_BANCARIAS_ACTIVAS,
   GET_MIEMBROS_ELEGIBLES_JUSTIFICANTE,
-} from '@/graphql/queries/financiero'
+} from '@/graphql/queries/economico'
 import { GET_CAMPANIAS } from '@/graphql/queries/campanias'
 const confirmDialog = useConfirm()
 

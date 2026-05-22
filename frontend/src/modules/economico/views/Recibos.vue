@@ -266,7 +266,7 @@ const toast = useToast()
   ENVIAR_RECIBO_EMAIL,
   GET_PLANTILLAS_EMAIL_ECONOMICO,
   GET_CUENTAS_BANCARIAS_ACTIVAS,
-} from '@/graphql/queries/financiero'
+} from '@/graphql/queries/economico'
 
 const { query, mutation, loading } = useGraphQL()
 

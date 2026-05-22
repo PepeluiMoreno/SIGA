@@ -35,52 +35,52 @@
 
     <div v-if="loading" class="py-12 text-center text-slate-400 text-sm">Cargando…</div>
 
-    <div v-else-if="donacionesFiltradas.length" class="bg-white border border-slate-200 rounded-xl overflow-hidden">
-      <div class="overflow-x-auto -mx-1"><table class="w-full text-sm">
-        <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
-          <tr>
-            <th class="px-3 py-2 text-left">Fecha</th>
-            <th class="px-3 py-2 text-left">Donante</th>
-            <th class="px-3 py-2 text-center">Tipo</th>
-            <th class="px-3 py-2 text-right">Importe</th>
-            <th class="px-3 py-2 text-left">Concepto</th>
-            <th class="px-3 py-2 text-center">Estado</th>
-            <th class="px-3 py-2 text-center">Cert.</th>
-            <th class="px-3 py-2 text-center w-8"></th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          <tr v-for="d in donacionesFiltradas" :key="d.id" class="hover:bg-slate-50 cursor-pointer"
-              @click="abrirDetalle(d)">
-            <td class="px-3 py-1.5 text-xs text-slate-600">{{ fechaFmt(d.fecha) }}</td>
-            <td class="px-3 py-1.5">
-              <div class="font-medium text-slate-800">{{ donanteNombre(d) || '—' }}</div>
-              <div v-if="d.donanteDni" class="text-[10px] text-slate-500 font-mono">{{ d.donanteDni }}</div>
-            </td>
-            <td class="px-3 py-1.5 text-center">
-              <span :class="badgeTipo(d.tipo)" class="text-[10px] uppercase rounded-full px-2 py-0.5">
-                {{ d.tipo === 'ESPECIE' ? 'B · Especie' : 'A · Dineraria' }}
-              </span>
-            </td>
-            <td class="px-3 py-1.5 text-right font-mono">{{ fmt(importeDonacion(d)) }}</td>
-            <td class="px-3 py-1.5 text-slate-600 text-xs truncate max-w-xs">
-              {{ d.concepto?.nombre || (d.tipo === 'ESPECIE' ? d.descripcionEspecie : '—') }}
-            </td>
-            <td class="px-3 py-1.5 text-center">
-              <span :class="badgeEstado(d.estado?.nombre)" class="text-[10px] uppercase rounded-full px-2 py-0.5">
-                {{ d.estado?.nombre || '—' }}
-              </span>
-            </td>
-            <td class="px-3 py-1.5 text-center">
-              <span v-if="d.certificadoEmitido" class="text-green-600 font-mono text-[10px]">
-                {{ d.numeroCertificado || '✓' }}
-              </span>
-              <span v-else class="text-slate-300">—</span>
-            </td>
-            <td class="px-3 py-1.5 text-center text-slate-400">›</td>
-          </tr>
-        </tbody>
-      </table></div>
+    <div v-else-if="donacionesFiltradas.length" class="bg-white border border-slate-200 rounded-xl sm:overflow-hidden p-3 sm:p-0">
+      <ResponsiveTable
+        :columnas="columnasDonaciones"
+        :filas="donacionesFiltradas"
+        clave-fila="id"
+        :row-class="() => 'cursor-pointer'"
+        @row-click="abrirDetalle"
+      >
+        <template #cell-fecha="{ fila }">
+          <span class="text-xs text-slate-600">{{ fechaFmt(fila.fecha) }}</span>
+        </template>
+
+        <template #cell-donante="{ fila }">
+          <div class="font-medium text-slate-800">{{ donanteNombre(fila) || '—' }}</div>
+          <div v-if="fila.donanteDni" class="text-[10px] text-slate-500 font-mono">{{ fila.donanteDni }}</div>
+        </template>
+
+        <template #cell-tipo="{ fila }">
+          <span :class="badgeTipo(fila.tipo)" class="text-[10px] uppercase rounded-full px-2 py-0.5">
+            {{ fila.tipo === 'ESPECIE' ? 'B · Especie' : 'A · Dineraria' }}
+          </span>
+        </template>
+
+        <template #cell-importe="{ fila }">
+          <span class="font-mono">{{ fmt(importeDonacion(fila)) }}</span>
+        </template>
+
+        <template #cell-concepto="{ fila }">
+          <span class="text-slate-600 text-xs">
+            {{ fila.concepto?.nombre || (fila.tipo === 'ESPECIE' ? fila.descripcionEspecie : '—') }}
+          </span>
+        </template>
+
+        <template #cell-estado="{ fila }">
+          <span :class="badgeEstado(fila.estado?.nombre)" class="text-[10px] uppercase rounded-full px-2 py-0.5">
+            {{ fila.estado?.nombre || '—' }}
+          </span>
+        </template>
+
+        <template #cell-cert="{ fila }">
+          <span v-if="fila.certificadoEmitido" class="text-green-600 font-mono text-[10px]">
+            {{ fila.numeroCertificado || '✓' }}
+          </span>
+          <span v-else class="text-slate-300">—</span>
+        </template>
+      </ResponsiveTable>
     </div>
 
     <p v-else class="text-center text-slate-400 py-12 text-sm border border-dashed border-slate-200 rounded-xl">
@@ -455,6 +455,7 @@ import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
+import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
 const toast = useToast()
@@ -467,11 +468,22 @@ const toast = useToast()
   EMITIR_CERTIFICADO_DONACION_ANUAL,
   GET_CUENTAS_BANCARIAS_ACTIVAS,
   GET_MIEMBROS_PARA_GASTO,
-} from '@/graphql/queries/financiero'
+} from '@/graphql/queries/economico'
 
 const { query, mutation, loading } = useGraphQL()
 
 const donaciones = ref([])
+
+// Columnas de la tabla responsive (la primera es cabecera de tarjeta en móvil)
+const columnasDonaciones = [
+  { key: 'donante',  label: 'Donante' },
+  { key: 'fecha',    label: 'Fecha' },
+  { key: 'tipo',     label: 'Tipo',     align: 'center' },
+  { key: 'importe',  label: 'Importe',  align: 'right' },
+  { key: 'concepto', label: 'Concepto', ocultaEnMovil: true },
+  { key: 'estado',   label: 'Estado',   align: 'center' },
+  { key: 'cert',     label: 'Cert.',    align: 'center' },
+]
 const conceptos = ref([])
 const cuentasBancarias = ref([])
 const miembros = ref([])

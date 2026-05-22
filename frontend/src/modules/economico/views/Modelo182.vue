@@ -196,7 +196,7 @@ import {
   DESCARGAR_FICHERO_AEAT_182,
   DESCARGAR_PDF_RESUMEN_182,
   REGISTRAR_PRESENTACION_182,
-} from '@/graphql/queries/financiero'
+} from '@/graphql/queries/economico'
 
 const { query, mutation } = useGraphQL()
 

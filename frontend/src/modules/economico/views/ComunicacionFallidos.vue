@@ -102,7 +102,7 @@ import {
   GET_RECIBOS_FALLIDOS,
   GET_PLANTILLAS_EMAIL_ECONOMICO,
   COMUNICAR_RECIBOS_FALLIDOS,
-} from '@/graphql/queries/financiero'
+} from '@/graphql/queries/economico'
 
 const { query: gqlQuery, mutation: gqlMutation } = useGraphQL()
 

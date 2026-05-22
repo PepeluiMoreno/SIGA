@@ -374,7 +374,7 @@ import SolicitudesReduccionCuota from './SolicitudesReduccionCuota.vue'
 import { useTesoreria } from '@/composables/useTesoreria'
 import { useGraphQL } from '@/composables/useGraphQL'
 import { usePermisos } from '@/composables/usePermisos'
-import { GET_ACTIVIDADES_PARA_GASTO } from '@/graphql/queries/financiero'
+import { GET_ACTIVIDADES_PARA_GASTO } from '@/graphql/queries/economico'
 import { GET_CAMPANIAS } from '@/graphql/queries/campanias'
 
 // ── Sub-componente Bloque (card con acción) ────────────────────────────────

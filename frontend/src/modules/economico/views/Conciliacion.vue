@@ -190,7 +190,7 @@ const confirmDialog = useConfirm()
   IMPORTAR_EXTRACTO_NORMA43,
   IMPORTAR_EXTRACTO_CSV,
   GET_OPENBANKING_ACTIVO,
-} from '@/graphql/queries/financiero'
+} from '@/graphql/queries/economico'
 
 const { query, mutation } = useGraphQL()
 

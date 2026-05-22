@@ -224,7 +224,7 @@ const toast = useToast()
   REABRIR_CCAA,
   EXPORTAR_CCAA_PDF,
   GET_MIEMBROS_PARA_GASTO,
-} from '@/graphql/queries/financiero'
+} from '@/graphql/queries/economico'
 
 const { query, mutation } = useGraphQL()
 
