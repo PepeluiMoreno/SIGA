@@ -20,11 +20,12 @@ branch_labels = None
 depends_on = None
 
 
+# (codigo, nombre, orden, descripcion, es_inicial, es_final)
 _ESTADOS = [
-    ('PENDIENTE', 'Pendiente', 1, 'Notificación creada pero no enviada'),
-    ('ENVIADA',   'Enviada',   2, 'Notificación enviada al canal correspondiente'),
-    ('LEIDA',     'Leída',     3, 'Notificación leída por el usuario'),
-    ('ERROR',     'Error',     4, 'Error al enviar la notificación'),
+    ('PENDIENTE', 'Pendiente', 1, 'Notificación creada pero no enviada',          True,  False),
+    ('ENVIADA',   'Enviada',   2, 'Notificación enviada al canal correspondiente', False, False),
+    ('LEIDA',     'Leída',     3, 'Notificación leída por el usuario',              False, True),
+    ('ERROR',     'Error',     4, 'Error al enviar la notificación',                False, True),
 ]
 
 
@@ -40,7 +41,7 @@ def upgrade() -> None:
     # 2) Seed idempotente de los estados. Inserta solo los que falten por código
     #    (match por nombre para filas preexistentes sembradas sin código).
     conn = op.get_bind()
-    for codigo, nombre, orden, descripcion in _ESTADOS:
+    for codigo, nombre, orden, descripcion, es_inicial, es_final in _ESTADOS:
         # ¿existe ya por código?
         existe_cod = conn.execute(
             sa.text("SELECT 1 FROM estados_notificacion WHERE codigo = :c LIMIT 1"),
@@ -63,10 +64,13 @@ def upgrade() -> None:
             conn.execute(
                 sa.text(
                     "INSERT INTO estados_notificacion "
-                    "(id, codigo, nombre, descripcion, orden, activo, es_inmutable, eliminado) "
-                    "VALUES (gen_random_uuid(), :c, :n, :d, :o, true, false, false)"
+                    "(id, codigo, nombre, descripcion, orden, es_inicial, es_final, "
+                    " activo, es_inmutable, eliminado) "
+                    "VALUES (gen_random_uuid(), :c, :n, :d, :o, :ei, :ef, "
+                    " true, false, false)"
                 ),
-                {"c": codigo, "n": nombre, "d": descripcion, "o": orden},
+                {"c": codigo, "n": nombre, "d": descripcion, "o": orden,
+                 "ei": es_inicial, "ef": es_final},
             )
 
     # 3) Ahora que todas las filas tienen código, imponer NOT NULL + UNIQUE.
