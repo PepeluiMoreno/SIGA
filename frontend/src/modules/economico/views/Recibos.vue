@@ -22,40 +22,39 @@
 
     <div v-if="loading" class="py-12 text-center text-slate-400 text-sm">Cargando…</div>
 
-    <div v-else-if="recibosFiltrados.length" class="bg-white border border-slate-200 rounded-xl overflow-hidden">
-      <div class="overflow-x-auto -mx-1"><table class="w-full text-sm">
-        <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
-          <tr>
-            <th class="px-3 py-2 text-left">Nº Recibo</th>
-            <th class="px-3 py-2 text-left">Socio</th>
-            <th class="px-3 py-2 text-left">Concepto</th>
-            <th class="px-3 py-2 text-right">Importe</th>
-            <th class="px-3 py-2 text-center">Modo</th>
-            <th class="px-3 py-2 text-center">Estado</th>
-            <th class="px-3 py-2 text-center">F. emisión</th>
-            <th class="px-3 py-2 text-center">F. cobro</th>
-            <th class="px-3 py-2 text-center w-8"></th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          <tr v-for="r in recibosFiltrados" :key="r.id" class="hover:bg-slate-50 cursor-pointer"
-              @click="abrirDetalle(r)">
-            <td class="px-3 py-1.5 font-mono text-xs text-slate-700">{{ r.numeroRecibo }}</td>
-            <td class="px-3 py-1.5">{{ socioNombre(r) }}</td>
-            <td class="px-3 py-1.5 text-slate-600 text-xs truncate max-w-xs">{{ r.concepto }}</td>
-            <td class="px-3 py-1.5 text-right font-mono">{{ fmt(r.importe) }}</td>
-            <td class="px-3 py-1.5 text-center text-[10px] uppercase">{{ r.modoCobro || '—' }}</td>
-            <td class="px-3 py-1.5 text-center">
-              <span :class="badgeEstado(r.estado)" class="text-[10px] uppercase rounded-full px-2 py-0.5">
-                {{ r.estado }}
-              </span>
-            </td>
-            <td class="px-3 py-1.5 text-center text-xs text-slate-500">{{ fechaFmt(r.fechaEmision) }}</td>
-            <td class="px-3 py-1.5 text-center text-xs text-slate-500">{{ fechaFmt(r.fechaCobro) }}</td>
-            <td class="px-3 py-1.5 text-center text-slate-400">›</td>
-          </tr>
-        </tbody>
-      </table></div>
+    <div v-else-if="recibosFiltrados.length" class="bg-white border border-slate-200 rounded-xl sm:overflow-hidden p-3 sm:p-0">
+      <ResponsiveTable
+        :columnas="columnasRecibos"
+        :filas="recibosFiltrados"
+        clave-fila="id"
+        :row-class="() => 'cursor-pointer'"
+        @row-click="abrirDetalle"
+      >
+        <template #cell-numeroRecibo="{ fila }">
+          <span class="font-mono text-xs text-slate-700">{{ fila.numeroRecibo }}</span>
+        </template>
+        <template #cell-socio="{ fila }">{{ socioNombre(fila) }}</template>
+        <template #cell-concepto="{ fila }">
+          <span class="text-slate-600 text-xs">{{ fila.concepto }}</span>
+        </template>
+        <template #cell-importe="{ fila }">
+          <span class="font-mono">{{ fmt(fila.importe) }}</span>
+        </template>
+        <template #cell-modo="{ fila }">
+          <span class="text-[10px] uppercase">{{ fila.modoCobro || '—' }}</span>
+        </template>
+        <template #cell-estado="{ fila }">
+          <span :class="badgeEstado(fila.estado)" class="text-[10px] uppercase rounded-full px-2 py-0.5">
+            {{ fila.estado }}
+          </span>
+        </template>
+        <template #cell-fechaEmision="{ fila }">
+          <span class="text-xs text-slate-500">{{ fechaFmt(fila.fechaEmision) }}</span>
+        </template>
+        <template #cell-fechaCobro="{ fila }">
+          <span class="text-xs text-slate-500">{{ fechaFmt(fila.fechaCobro) }}</span>
+        </template>
+      </ResponsiveTable>
     </div>
 
     <p v-else class="text-center text-slate-400 py-12 text-sm border border-dashed border-slate-200 rounded-xl">
@@ -255,6 +254,7 @@ import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
+import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
 const toast = useToast()
@@ -271,6 +271,18 @@ const toast = useToast()
 const { query, mutation, loading } = useGraphQL()
 
 const recibos = ref([])
+
+// Columnas de la tabla responsive (Socio = cabecera de tarjeta en móvil)
+const columnasRecibos = [
+  { key: 'socio',         label: 'Socio' },
+  { key: 'numeroRecibo',  label: 'Nº Recibo' },
+  { key: 'concepto',      label: 'Concepto', ocultaEnMovil: true },
+  { key: 'importe',       label: 'Importe', align: 'right' },
+  { key: 'modo',          label: 'Modo', align: 'center' },
+  { key: 'estado',        label: 'Estado', align: 'center' },
+  { key: 'fechaEmision',  label: 'F. emisión', align: 'center' },
+  { key: 'fechaCobro',    label: 'F. cobro', align: 'center' },
+]
 const plantillas = ref([])
 const cuentasBancarias = ref([])
 const error = ref('')
