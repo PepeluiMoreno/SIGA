@@ -16,7 +16,7 @@
       </p>
     </div>
 
-    <p v-if="error" class="text-red-600 text-sm bg-red-50 p-3 rounded-lg mb-4">{{ error }}</p>
+    <ErrorAlert v-if="error" :message="error" />
     <p v-if="info" class="text-green-700 text-sm bg-green-50 p-3 rounded-lg mb-4">{{ info }}</p>
 
     <!-- Resumen -->
@@ -173,7 +173,7 @@
             <label class="label">Observaciones</label>
             <textarea v-model="formReg.observaciones" class="input h-16" />
           </div>
-          <p v-if="formReg.error" class="text-red-600 text-xs bg-red-50 p-2 rounded">{{ formReg.error }}</p>
+          <ErrorAlert v-if="formReg.error" :message="formReg.error" />
         </div>
         <div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-2">
           <button @click="modalRegistrar = false" class="btn-secondary text-sm">Cancelar</button>
@@ -186,6 +186,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { useGraphQL } from '@/composables/useGraphQL'

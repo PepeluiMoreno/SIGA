@@ -87,7 +87,7 @@
       No hay donaciones con los filtros aplicados.
     </p>
 
-    <p v-if="error" class="text-red-600 text-sm bg-red-50 p-3 rounded-lg mt-4">{{ error }}</p>
+    <ErrorAlert v-if="error" :message="error" />
 
     <!-- ────────────────────────────────────────────────────────────────────── -->
     <!-- Modal: nueva donación                                                  -->
@@ -253,7 +253,7 @@
             <textarea v-model="formAlta.observaciones" rows="2" class="input" />
           </div>
 
-          <p v-if="formAlta.error" class="text-red-600 text-sm bg-red-50 p-2 rounded">{{ formAlta.error }}</p>
+          <ErrorAlert v-if="formAlta.error" :message="formAlta.error" />
         </div>
         <div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-2">
           <button @click="modalAlta = false" class="btn-secondary text-sm">Cancelar</button>
@@ -353,7 +353,7 @@
               <label class="label">Fecha cobro *</label>
               <input type="date" v-model="formCobrar.fechaCobro" class="input" />
             </div>
-            <p v-if="formCobrar.error" class="text-red-600 text-xs bg-red-50 p-2 rounded">{{ formCobrar.error }}</p>
+            <ErrorAlert v-if="formCobrar.error" :message="formCobrar.error" />
             <p class="text-xs text-slate-500">
               Se generan el apunte de tesorería y el asiento contable (Debe 572 / Haber 730).
             </p>
@@ -450,11 +450,14 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
+const toast = useToast()
   GET_DONACIONES,
   GET_DONACION_CONCEPTOS,
   REGISTRAR_DONACION,
@@ -775,7 +778,7 @@ const emitirCert = async (c) => {
     URL.revokeObjectURL(url)
     await Promise.all([cargar(), cargarCertificables()])
   } catch (e) {
-    alert(e.message || 'Error al emitir el certificado')
+    toast.error(e.message || 'Error al emitir el certificado')
   } finally { ocupado.value = false }
 }
 

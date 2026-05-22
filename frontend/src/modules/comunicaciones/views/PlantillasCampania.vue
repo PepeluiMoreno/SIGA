@@ -83,7 +83,7 @@
             <textarea v-model="modal.descripcion" rows="2" :class="inp" placeholder="Descripción opcional…"></textarea>
           </div>
         </div>
-        <p v-if="modal.error" class="text-xs text-red-600">{{ modal.error }}</p>
+        <ErrorAlert v-if="modal.error" :message="modal.error" />
         <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
           <button @click="modal.visible = false"
             class="h-9 px-4 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
@@ -99,6 +99,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { PencilSquareIcon } from '@heroicons/vue/24/outline'

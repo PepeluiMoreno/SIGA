@@ -5,11 +5,7 @@
         class="h-10 px-5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">
         {{ guardando ? 'Guardando…' : 'Guardar cambios' }}
       </button>
-      <span v-if="guardadoOk" class="text-sm text-green-600 flex items-center gap-1.5">
-        <CheckCircleIcon class="w-4 h-4" />
-        Guardado
-      </span>
-      <span v-if="error" class="text-sm text-red-600">{{ error }}</span>
+            <span v-if="error" class="text-sm text-red-600">{{ error }}</span>
     </template>
 
     <form @submit.prevent="guardar" class="flex flex-col"  id="parametros-form">
@@ -140,7 +136,7 @@
                 </button>
               </div>
               <p class="text-xs text-slate-400 text-center leading-tight">PNG · JPG · SVG · máx. 300 KB</p>
-              <p v-if="logoError" class="text-xs text-red-500 text-center">{{ logoError }}</p>
+              <ErrorAlert v-if="logoError" :message="logoError" />
             </div>
             <!-- Tema + Fuente -->
             <div class="flex-1 min-w-0 space-y-4">
@@ -388,6 +384,8 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
@@ -397,6 +395,7 @@ import EstructuraOrganizativaEditor from '@/components/configuracion/EstructuraO
 import { graphqlClient } from '@/graphql/client.js'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { CheckCircleIcon } from '@heroicons/vue/24/outline'
+const toast = useToast()
 
 const router = useRouter()
 const orgConfigStore = useOrgConfigStore()
@@ -713,8 +712,7 @@ async function guardar() {
     temaOriginal.value   = typeof temaObj === 'object' ? temaObj : null
     fuenteOriginal.value = form.fuente_principal
     guardadoExitoso = true
-    guardadoOk.value = true
-    setTimeout(() => { guardadoOk.value = false }, 3000)
+    toast.success('Cambios guardados correctamente') => { guardadoOk.value = false }, 3000)
   } catch (e) {
     error.value = e?.response?.errors?.[0]?.message ?? 'Error al guardar'
   } finally {

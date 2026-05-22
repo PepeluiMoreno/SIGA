@@ -118,10 +118,10 @@
             «{{ categoriaActiva?.nombre }}» se eliminará. Si tiene apuntes asociados no se podrá
             eliminar; en ese caso desactívala con el interruptor de la fila.
           </p>
-          <p v-if="errorEliminar" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{{ errorEliminar }}</p>
+          <ErrorAlert v-if="errorEliminar" :message="errorEliminar" />
           <div class="flex justify-end gap-3">
             <button @click="modalEliminar = false"
-              class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+              class="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">Cancelar</button>
             <button @click="ejecutarEliminar" :disabled="eliminando"
               class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50">
               {{ eliminando ? 'Eliminando…' : 'Eliminar' }}
@@ -134,6 +134,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted } from 'vue'
 import LoadSpinner from '@/components/common/LoadSpinner.vue'
 import { useGraphQL } from '@/composables/useGraphQL'

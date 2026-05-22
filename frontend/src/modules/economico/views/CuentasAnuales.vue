@@ -17,7 +17,7 @@
       </p>
     </div>
 
-    <p v-if="error" class="text-red-600 text-sm bg-red-50 p-3 rounded-lg mb-4">{{ error }}</p>
+    <ErrorAlert v-if="error" :message="error" />
     <p v-if="info" class="text-green-700 text-sm bg-green-50 p-3 rounded-lg mb-4">{{ info }}</p>
 
     <!-- Listado -->
@@ -171,7 +171,7 @@
             <label class="label">Fecha de aprobación</label>
             <input type="date" v-model="formApr.fechaAprobacion" class="input" />
           </div>
-          <p v-if="formApr.error" class="text-red-600 text-xs bg-red-50 p-2 rounded">{{ formApr.error }}</p>
+          <ErrorAlert v-if="formApr.error" :message="formApr.error" />
         </div>
         <div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-2">
           <button @click="modalAprobar = false" class="btn-secondary text-sm">Cancelar</button>
@@ -196,7 +196,7 @@
             <input v-model="formDep.archivoAcuseRecibo" class="input"
                    placeholder="URL del PDF firmado por el registro (opcional)" />
           </div>
-          <p v-if="formDep.error" class="text-red-600 text-xs bg-red-50 p-2 rounded">{{ formDep.error }}</p>
+          <ErrorAlert v-if="formDep.error" :message="formDep.error" />
         </div>
         <div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-2">
           <button @click="modalDepositar = false" class="btn-secondary text-sm">Cancelar</button>
@@ -209,10 +209,13 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
+const toast = useToast()
   GET_CUENTAS_ANUALES,
   GENERAR_CCAA,
   ACTUALIZAR_MEMORIA_CCAA,
@@ -319,7 +322,7 @@ const guardarApartado = async (apartado) => {
       apartado,
       texto: memoriaLocal.value[apartado] || '',
     })
-    info.value = 'Apartado guardado.'
+    toast.success('Apartado guardado')
     await cargar()
     const actualizada = ccaaList.value.find(c => c.id === seleccionada.value.id)
     if (actualizada) { seleccionada.value = actualizada }

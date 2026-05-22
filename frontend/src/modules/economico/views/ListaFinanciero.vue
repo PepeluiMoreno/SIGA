@@ -77,7 +77,7 @@
       <div class="bg-gray-50 rounded-lg shadow p-6 border border-gray-200">
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-lg font-semibold text-gray-900">Presupuesto Anual 2025</h3>
-          <button class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm">
+          <button class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700">
             Editar Presupuesto
           </button>
         </div>
@@ -146,13 +146,13 @@
             </div>
           </div>
           <div class="flex gap-2">
-            <button @click="showFilters = !showFilters" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+            <button @click="showFilters = !showFilters" class="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
               Filtros
             </button>
             <button @click="generarRemesa" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
               Generar Remesa SEPA
             </button>
-            <button class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+            <button class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700">
               + Nueva Transacción
             </button>
           </div>
@@ -262,7 +262,7 @@
       <div class="bg-gray-50 rounded-lg shadow p-6 border border-gray-200">
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-lg font-semibold text-gray-900">Plataformas y Métodos de Pago</h3>
-          <button class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm">
+          <button class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700">
             + Añadir Plataforma
           </button>
         </div>

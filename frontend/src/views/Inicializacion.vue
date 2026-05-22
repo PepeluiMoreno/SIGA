@@ -31,7 +31,7 @@
                   class="hidden" @change="handleLogoChange" />
               </label>
               <p class="text-xs text-gray-400 mt-1">PNG, JPG, SVG, WEBP · máx. 300 KB</p>
-              <p v-if="logoError" class="text-xs text-red-500 mt-0.5">{{ logoError }}</p>
+              <ErrorAlert v-if="logoError" :message="logoError" />
             </div>
           </div>
         </div>
@@ -80,6 +80,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { graphqlClient } from '@/graphql/client.js'

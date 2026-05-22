@@ -67,9 +67,7 @@
             <tr class="bg-indigo-50/60 border-y border-indigo-100">
               <td colspan="6" class="px-4 py-2">
                 <div class="flex items-center gap-2">
-                  <svg class="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
-                  </svg>
+                  <FolderIcon class="w-4 h-4 text-indigo-500 shrink-0" />
                   <span class="font-semibold text-indigo-800">{{ grupo.campania.nombre }}</span>
                   <span v-if="grupo.campania.estado"
                     class="text-xs px-2 py-0.5 rounded-full bg-white border border-indigo-200 text-indigo-600">
@@ -96,6 +94,7 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
@@ -104,6 +103,7 @@ import ActividadRow from './ActividadRow.vue'
 import { graphqlClient } from '@/graphql/client'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_ACCIONES, GET_TIPOS_ACCION, GET_ESTADOS_ACCION, ELIMINAR_ACCION, SOFT_DELETE_ACCION } from '../graphql/queries.js'
+const toast = useToast()
 
 const { tienePermiso } = usePermisos()
 const loading = ref(true)
@@ -207,7 +207,7 @@ async function eliminarActividad(actividad, { hardDelete } = {}) {
     }
     actividades.value = actividades.value.filter(a => a.id !== actividad.id)
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error eliminando actividad')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error eliminando actividad')
   }
 }
 

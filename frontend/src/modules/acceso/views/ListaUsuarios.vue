@@ -29,9 +29,7 @@
     <!-- Sin resultados -->
     <div v-else-if="usuariosFiltrados.length === 0"
       class="bg-white border border-gray-200 rounded-lg p-12 text-center text-gray-500">
-      <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-      </svg>
+      <UsersIcon class="w-16 h-16 mx-auto mb-4 text-gray-300" />
       <p class="text-lg">No hay usuarios con los filtros seleccionados</p>
     </div>
 
@@ -96,9 +94,7 @@
             :class="panelMiembro?.id === item.id
               ? 'bg-purple-600 text-white border-purple-600'
               : 'text-purple-700 border-purple-200 bg-purple-50 hover:bg-purple-100'">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-            </svg>
+            <ShieldCheckIcon class="w-3.5 h-3.5" />
             Roles
           </button>
         </td>
@@ -124,18 +120,14 @@
             </div>
           </div>
           <button @click="cerrarPanel" class="p-1.5 rounded-lg hover:bg-gray-200 transition-colors text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
+            <XMarkIcon class="w-5 h-5" />
           </button>
         </div>
 
         <!-- Buscador roles -->
         <div class="px-4 py-2.5 border-b border-gray-100 flex-shrink-0">
           <div class="relative">
-            <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
+            <MagnifyingGlassIcon class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2   text-gray-400 pointer-events-none" />
             <input v-model="busquedaRol" type="text" placeholder="Buscar rol…"
               class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-purple-500 focus:border-purple-500 focus:outline-none" />
           </div>
@@ -201,9 +193,7 @@
 
                 <div v-else-if="estaAsignado(rol.id) && agrupacionDeRolAsignado(rol.id)" class="mt-1">
                   <span class="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                    </svg>
+                    <MapPinIcon class="w-3 h-3" />
                     {{ agrupacionNombre(agrupacionDeRolAsignado(rol.id)) }}
                   </span>
                 </div>
@@ -229,6 +219,7 @@
 </template>
 
 <script setup>
+import { XMarkIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import { ref, computed, onMounted, watch } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'

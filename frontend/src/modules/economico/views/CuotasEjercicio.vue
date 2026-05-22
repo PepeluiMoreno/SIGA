@@ -42,7 +42,7 @@
             Tip: pulsa "Clonar del anterior" para tomar el importe de {{ ejercicio - 1 }}.
           </div>
 
-          <p v-if="errorConfig" class="text-red-600 text-sm">{{ errorConfig }}</p>
+          <ErrorAlert v-if="errorConfig" :message="errorConfig" />
 
           <div class="flex gap-2 pt-1">
             <button @click="clonarAnterior" class="btn-secondary text-sm flex-1" :disabled="guardando">
@@ -162,11 +162,16 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
+const toast = useToast()
+const confirmDialog = useConfirm()
   GET_CONFIG_CUOTA_EJERCICIO,
   CONFIGURAR_CUOTA_EJERCICIO,
   ELIMINAR_CUOTA_EJERCICIO,
@@ -250,14 +255,14 @@ const previsualizar = async () => {
     const data = await mutation(PREVISUALIZAR_GENERACION_CUOTAS, { ejercicio: ejercicio.value })
     preview.value = data.previsualizarGeneracionCuotas
   } catch (e) {
-    alert(e.message || 'Error al previsualizar')
+    toast.error(e.message || 'Error al previsualizar')
   } finally {
     calculando.value = false
   }
 }
 
 const anularConfig = async () => {
-  if (!confirm(`¿Anular la configuración de cuota para el ejercicio ${ejercicio.value}? Esta acción no se puede deshacer.`)) return
+  if (!(await confirmDialog({ titulo: '¿Confirmar acción?', mensaje: `¿Anular la configuración de cuota para el ejercicio ${ejercicio.value}? Esta acción no se puede deshacer.`, variante: 'critica' }))) return
   anulando.value = true
   try {
     await mutation(ELIMINAR_CUOTA_EJERCICIO, { ejercicio: ejercicio.value })
@@ -270,7 +275,7 @@ const anularConfig = async () => {
 }
 
 const generar = async () => {
-  if (!confirm(`¿Generar ${preview.value.nGenerables} cuotas individuales para el ejercicio ${ejercicio.value}?`)) return
+  if (!(await confirmDialog({ titulo: '¿Confirmar acción?', mensaje: `¿Generar ${preview.value.nGenerables} cuotas individuales para el ejercicio ${ejercicio.value}?`, variante: 'aviso' }))) return
   generando.value = true
   try {
     const data = await mutation(GENERAR_CUOTAS_INDIVIDUALES, {
@@ -280,7 +285,7 @@ const generar = async () => {
     resultadoGeneracion.value = data.generarCuotasIndividuales
     await previsualizar()
   } catch (e) {
-    alert(e.message || 'Error al generar')
+    toast.error(e.message || 'Error al generar')
   } finally {
     generando.value = false
   }

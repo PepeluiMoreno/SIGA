@@ -207,16 +207,13 @@
                 ? 'border-red-400 bg-red-50 focus:ring-red-400/30 focus:border-red-400'
                 : 'border-slate-300 focus:ring-indigo-500 focus:border-indigo-500'"
               @blur="validateEmail" />
-            <p v-if="errors.email" class="mt-1 text-xs text-red-600">{{ errors.email }}</p>
+            <ErrorAlert v-if="errors.email" :message="errors.email" />
           </div>
 
           <!-- Modo email de activación: oculta campos de contraseña -->
           <div v-if="form.enviarEmailBienvenida"
             class="flex items-start gap-2.5 px-3 py-2.5 bg-indigo-50 border border-indigo-200 rounded-lg text-xs text-indigo-700">
-            <svg class="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+            <EnvelopeIcon class="w-4 h-4 mt-0.5 shrink-0" />
             <span>Se enviará un enlace al email del usuario para que establezca su propia contraseña. No es necesario definirla aquí.</span>
           </div>
 
@@ -242,7 +239,7 @@
                   <EyeIcon v-else class="w-4 h-4" />
                 </button>
               </div>
-              <p v-if="errors.password" class="mt-1 text-xs text-red-600">{{ errors.password }}</p>
+              <ErrorAlert v-if="errors.password" :message="errors.password" />
               <div v-if="form.password" class="mt-2">
                 <div class="flex gap-1 mb-1">
                   <div v-for="i in 4" :key="i"
@@ -265,7 +262,7 @@
                   ? 'border-red-400 bg-red-50 focus:ring-red-400/30 focus:border-red-400'
                   : 'border-slate-300 focus:ring-indigo-500 focus:border-indigo-500'"
                 @blur="validateConfirm" />
-              <p v-if="errors.confirm" class="mt-1 text-xs text-red-600">{{ errors.confirm }}</p>
+              <ErrorAlert v-if="errors.confirm" :message="errors.confirm" />
             </div>
           </template>
 
@@ -348,6 +345,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {

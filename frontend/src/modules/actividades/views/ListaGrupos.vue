@@ -91,6 +91,7 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
@@ -101,6 +102,7 @@ import { GET_GRUPOS, GET_TIPOS_GRUPO, ELIMINAR_GRUPO } from '@/graphql/queries/g
 import { useOrgConfigStore } from '@/stores/orgConfig'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
+const toast = useToast()
 
 const orgConfig = useOrgConfigStore()
 const { tienePermiso } = usePermisos()
@@ -171,7 +173,7 @@ async function eliminarGrupo(grupo) {
     await graphqlClient.request(ELIMINAR_GRUPO, { id: grupo.id })
     grupos.value = grupos.value.filter(g => g.id !== grupo.id)
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error eliminando grupo')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error eliminando grupo')
   }
 }
 

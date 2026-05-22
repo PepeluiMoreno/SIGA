@@ -106,7 +106,7 @@
             <input type="number" v-model="form.orden" class="input" min="1" max="999" />
           </div>
         </div>
-        <p v-if="errorModal" class="text-red-600 text-sm mt-2">{{ errorModal }}</p>
+        <ErrorAlert v-if="errorModal" :message="errorModal" />
         <div class="flex justify-end gap-3 mt-5">
           <button @click="modalRegla = false" class="btn-secondary">Cancelar</button>
           <button @click="guardarRegla" :disabled="guardando" class="btn-primary">
@@ -120,10 +120,13 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { useConfirm } from '@/composables/useConfirm'
 import { ref, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import LoadSpinner from '@/components/common/LoadSpinner.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
+const confirmDialog = useConfirm()
 
 const { query, mutation, loading } = useGraphQL()
 
@@ -183,7 +186,7 @@ const guardarRegla = async () => {
 }
 
 const desactivarRegla = async (id) => {
-  if (!confirm('¿Desactivar esta regla?')) return
+  if (!(await confirmDialog({ titulo: '¿Confirmar acción?', mensaje: '¿Desactivar esta regla?', variante: 'aviso' }))) return
   await mutation(DESACTIVAR_REGLA, { input: { id, activa: false } })
   await cargarReglas()
 }

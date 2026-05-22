@@ -81,7 +81,7 @@
       </template>
     </div>
 
-    <p v-if="errorMsg" class="text-xs text-red-500 mt-0.5">{{ errorMsg }}</p>
+    <ErrorAlert v-if="errorMsg" :message="errorMsg" />
 
     <p class="text-xs text-gray-400 pt-0.5">
       <template v-if="arbolPlano.length <= 1">Organización simple (sin subniveles)</template>
@@ -122,6 +122,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted } from 'vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { useUnidadesOrganizativas } from '@/composables/useUnidadesOrganizativas'

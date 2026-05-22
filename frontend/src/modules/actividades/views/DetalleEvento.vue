@@ -31,7 +31,7 @@
                   <template v-if="evento.aforoMaximo"> / {{ evento.aforoMaximo }}</template>)
                 </span>
               </h2>
-              <button
+              <AppButton
                 v-if="evento.requiereInscripcion"
                 class="px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100"
               >

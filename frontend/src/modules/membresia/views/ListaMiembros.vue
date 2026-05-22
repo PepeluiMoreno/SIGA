@@ -91,9 +91,7 @@
             <button v-if="tienePermiso('SOC_EXPORT') && miembros.length"
               @click="exportarExcel" :disabled="exportando"
               class="inline-flex items-center gap-1.5 text-sm font-medium text-green-700 hover:text-green-900 disabled:opacity-50">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-              </svg>
+              <ArrowDownTrayIcon class="w-4 h-4" />
               {{ exportando ? 'Exportando…' : 'Exportar a Excel' }}
             </button>
             <button @click="limpiarFiltros" class="text-sm text-purple-600 hover:text-purple-800">Limpiar filtros</button>
@@ -112,11 +110,7 @@
               >
                 <td colspan="4" class="py-2 pr-4" :style="{ paddingLeft: (fila.depth * 20 + 16) + 'px' }">
                   <div class="flex items-center gap-2">
-                    <svg class="w-3.5 h-3.5 text-purple-400 shrink-0 transition-transform"
-                         :class="colapsadas.has(fila.agrupacion.id) ? '' : 'rotate-90'"
-                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
+                    <ChevronRightIcon class="w-3.5 h-3.5 text-purple-400 shrink-0 transition-transform" />
                     <span class="text-sm font-semibold text-purple-800">{{ fila.agrupacion.nombre }}</span>
                     <span class="text-xs text-purple-400 font-normal">{{ fila.countTotal }} miembro{{ fila.countTotal !== 1 ? 's' : '' }}</span>
                   </div>
@@ -147,9 +141,7 @@
                         <span v-if="fila.miembro.esVoluntario" class="text-xs bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full">Voluntario</span>
                         <span v-if="fila.miembro.usuario?.activo" title="Tiene acceso a la aplicación"
                           class="inline-flex items-center gap-0.5 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
-                          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                          </svg>
+                          <UserIcon class="w-3 h-3" />
                           App
                         </span>
                         <span v-for="n in (nombramientosMap[fila.miembro.id] || [])" :key="n.id"
@@ -164,15 +156,11 @@
                 <td class="px-4 py-3">
                   <p class="text-xs text-gray-400 mb-1">Datos de contacto</p>
                   <div class="flex items-center gap-1.5 text-sm text-gray-700">
-                    <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                    </svg>
+                    <EnvelopeIcon class="w-3.5 h-3.5 text-gray-400 shrink-0" />
                     <span>{{ fila.miembro.email || '—' }}</span>
                   </div>
                   <div v-if="fila.miembro.telefono" class="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
-                    <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                    </svg>
+                    <PhoneIcon class="w-3.5 h-3.5 text-gray-400 shrink-0" />
                     <span>{{ fila.miembro.telefono }}</span>
                   </div>
                 </td>
@@ -205,17 +193,19 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
 import { ref, onMounted, computed, watch } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
-import { EyeIcon, PencilIcon } from '@heroicons/vue/24/outline'
+import { EyeIcon, PencilIcon , ChevronRightIcon, UserIcon} from '@heroicons/vue/24/outline'
 import { useGraphQL } from '@/composables/useGraphQL.js'
 import { useOrgConfigStore } from '@/stores/orgConfig'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_MIEMBROS, GET_AGRUPACIONES, GET_TIPOS_MIEMBRO, GET_ESTADOS_MIEMBRO, GET_MOTIVOS_BAJA, GET_NOMBRAMIENTOS_ACTIVOS } from '@/graphql/queries/miembros.js'
 import AgrupacionCascada from '@/components/common/AgrupacionCascada.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
+const toast = useToast()
 const { loading, error, query, mutation } = useGraphQL()
 const orgConfig = useOrgConfigStore()
 const { tienePermiso } = usePermisos()
@@ -784,7 +774,7 @@ const exportarExcel = async () => {
     URL.revokeObjectURL(url)
   } catch (e) {
     console.error('Error exportando:', e)
-    alert(e?.response?.errors?.[0]?.message || 'No se pudo exportar el listado.')
+    toast.error(e?.response?.errors?.[0]?.message || 'No se pudo exportar el listado.')
   } finally {
     exportando.value = false
   }

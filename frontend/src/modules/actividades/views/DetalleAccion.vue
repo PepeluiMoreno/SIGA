@@ -14,9 +14,7 @@
       <div v-if="accion.campania" class="flex items-center gap-1.5 text-xs text-slate-500">
         <router-link :to="`/campanias/${accion.campania.id}`"
           class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 hover:underline font-medium">
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-          </svg>
+          <ChevronLeftIcon class="w-3.5 h-3.5" />
           {{ accion.campania.nombre }}
         </router-link>
         <span class="text-slate-300">/</span>
@@ -48,10 +46,7 @@
             </button>
             <button @click="showConfirmEliminarAccion = true"
               class="inline-flex items-center gap-1 h-8 px-3 text-slate-600 hover:text-red-600 hover:bg-red-50 text-xs font-medium rounded-lg transition-colors">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-              </svg>
+              <TrashIcon class="w-3.5 h-3.5" />
               Eliminar
             </button>
           </template>
@@ -223,9 +218,7 @@
           <button v-if="!formTareaNew.visible && faseActual !== 'diseno'"
             @click="formTareaNew.visible = true"
             class="inline-flex items-center gap-1 h-8 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-colors">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
+            <PlusIcon class="w-3 h-3" />
             Nueva tarea
           </button>
         </template>
@@ -412,9 +405,7 @@
           <button v-if="!formParticipacion.visible && faseActual === 'seguimiento'"
             @click="formParticipacion.visible = true"
             class="inline-flex items-center gap-1 h-8 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-colors">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
+            <PlusIcon class="w-3 h-3" />
             Añadir participante
           </button>
         </template>
@@ -478,7 +469,7 @@
                 </label>
               </div>
             </div>
-            <div v-if="errorParticipacion" class="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{{ errorParticipacion }}</div>
+            <ErrorAlert v-if="errorParticipacion" :message="errorParticipacion" />
             <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
               <button type="button" @click="cancelarParticipacion"
                 class="h-10 px-4 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
@@ -710,6 +701,9 @@
 </template>
 
 <script setup>
+import { PlusIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
@@ -722,6 +716,7 @@ import AvatarImg from '@/components/common/AvatarImg.vue'
 import LoadSpinner from '@/components/common/LoadSpinner.vue'
 import { graphqlClient } from '@/graphql/client'
 import {
+const toast = useToast()
   GET_ACCION_BY_ID, ACTUALIZAR_ACCION, ELIMINAR_ACCION, SOFT_DELETE_ACCION,
   REGISTRAR_PARTICIPACION, ACTUALIZAR_PARTICIPACION, ELIMINAR_PARTICIPACION,
   CREAR_TAREA, ACTUALIZAR_TAREA, ELIMINAR_TAREA,
@@ -856,7 +851,7 @@ async function ejecutarTransicion(t) {
       await graphqlClient.request(TRANSICIONAR_ACTIVIDAD, { id: accion.value.id, estadoId: t.estado.id })
       await recargarAccion()
     } catch (e) {
-      alert(e?.response?.errors?.[0]?.message || 'Error en la transición')
+      toast.error(e?.response?.errors?.[0]?.message || 'Error en la transición')
     } finally {
       cargandoTransicion.value = false
     }
@@ -875,7 +870,7 @@ async function confirmarAprobacion() {
     modalAprobacion.value.visible = false
     await recargarAccion()
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error en la operación')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error en la operación')
   } finally {
     cargandoTransicion.value = false
   }
@@ -895,7 +890,7 @@ async function confirmarCierre() {
     modalCierre.value.visible = false
     await recargarAccion()
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error al cerrar')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error al cerrar')
   } finally {
     cargandoTransicion.value = false
   }
@@ -928,7 +923,7 @@ async function guardarValoracion() {
     await recargarAccion()
     editandoValoracion.value = false
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error guardando valoración')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error guardando valoración')
   }
 }
 
@@ -966,7 +961,7 @@ async function guardarEditAccion() {
     await recargarAccion()
     editandoAccion.value = false
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error guardando actividad')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error guardando actividad')
   }
 }
 
@@ -979,7 +974,7 @@ async function eliminarAccion({ hardDelete } = {}) {
     }
     router.push('/actividades')
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error eliminando actividad')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error eliminando actividad')
   }
 }
 
@@ -1018,7 +1013,7 @@ async function crearTarea() {
     await recargarAccion()
     formTareaNew.value = { ...emptyTareaForm(), visible: false, guardando: false }
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error creando tarea')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error creando tarea')
   } finally {
     formTareaNew.value.guardando = false
   }
@@ -1048,7 +1043,7 @@ async function guardarEditTarea(id) {
     await recargarAccion()
     editTareaId.value = null
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error guardando tarea')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error guardando tarea')
   }
 }
 
@@ -1057,7 +1052,7 @@ async function eliminarTarea(id) {
     await graphqlClient.request(ELIMINAR_TAREA, { id })
     await recargarAccion()
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error eliminando tarea')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error eliminando tarea')
   }
 }
 
@@ -1086,7 +1081,7 @@ async function guardarEditParticipacion(id) {
     await recargarAccion()
     editParticipacionId.value = null
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error guardando participación')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error guardando participación')
   }
 }
 
@@ -1095,7 +1090,7 @@ async function eliminarParticipacion(id) {
     await graphqlClient.request(ELIMINAR_PARTICIPACION, { id })
     await recargarAccion()
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error eliminando participación')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error eliminando participación')
   }
 }
 

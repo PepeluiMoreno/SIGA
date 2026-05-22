@@ -89,7 +89,7 @@
       No hay remesas con los filtros aplicados.
     </p>
 
-    <p v-if="error" class="text-red-600 text-sm bg-red-50 p-3 rounded-lg mt-4">{{ error }}</p>
+    <ErrorAlert v-if="error" :message="error" />
 
     <!-- Asistente de nueva remesa (3 pasos) -->
     <div v-if="asistente.abierto" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" @click.self="cerrarAsistente()">
@@ -278,7 +278,7 @@
               </div>
             </template>
 
-            <p v-if="asistente.error" class="text-red-600 text-sm bg-red-50 p-2 rounded">{{ asistente.error }}</p>
+            <ErrorAlert v-if="asistente.error" :message="asistente.error" />
           </div>
 
           <!-- PASO 3: Confirmar -->
@@ -305,7 +305,7 @@
               La remesa se creará en estado <b>Borrador</b>. Después podrás generar el XML SEPA, marcarla como enviada
               y, al recibir respuesta del banco, liquidarla.
             </p>
-            <p v-if="asistente.error" class="text-red-600 text-sm bg-red-50 p-2 rounded">{{ asistente.error }}</p>
+            <ErrorAlert v-if="asistente.error" :message="asistente.error" />
           </div>
         </div>
 
@@ -337,6 +337,8 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { useConfirm } from '@/composables/useConfirm'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
@@ -345,6 +347,7 @@ import { useGraphQL } from '@/composables/useGraphQL'
 import { useUnidadesOrganizativas } from '@/composables/useUnidadesOrganizativas'
 import { executeQuery } from '@/graphql/client'
 import { GET_REMESA_DETALLE } from '@/graphql/queries/financiero'
+const confirmDialog = useConfirm()
 
 const { query: gqlQuery, mutation: gqlMutation, loading } = useGraphQL()
 const { unidades } = useUnidadesOrganizativas()
@@ -636,7 +639,7 @@ const marcarEnviada = async (remesaId) => {
 }
 
 const anularRemesa = async (r) => {
-  if (!confirm(`¿Anular la remesa ${r.referencia}? Se liberarán sus cuotas y se anularán los recibos asociados.`)) return
+  if (!(await confirmDialog({ titulo: '¿Confirmar acción?', mensaje: `¿Anular la remesa ${r.referencia}? Se liberarán sus cuotas y se anularán los recibos asociados.`, variante: 'critica' }))) return
   ocupado.value = true
   try {
     await gqlMutation(`mutation($id: UUID!) { anularRemesa(remesaId: $id) }`, { id: r.id })

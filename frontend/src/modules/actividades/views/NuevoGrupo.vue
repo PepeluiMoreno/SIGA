@@ -43,7 +43,7 @@
           </div>
         </div>
 
-        <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
+        <ErrorAlert v-if="error" :message="error" />
 
         <div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
           <router-link to="/grupos"
@@ -62,6 +62,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'

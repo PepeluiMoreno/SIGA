@@ -101,9 +101,7 @@
           <button type="button" @click="crearAcceso = !crearAcceso"
             class="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors">
             <div class="flex items-center gap-2.5">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
-              </svg>
+              <KeyIcon class="w-4 h-4" />
               <span>Crear cuenta de acceso al sistema</span>
             </div>
             <span class="text-xs px-2 py-0.5 rounded-full"
@@ -156,12 +154,12 @@
             </div>
 
             <!-- Error de acceso -->
-            <p v-if="errorAcceso" class="text-xs text-red-600">{{ errorAcceso }}</p>
+            <ErrorAlert v-if="errorAcceso" :message="errorAcceso" />
           </div>
         </div>
 
         <!-- Error general -->
-        <div v-if="error" class="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-800">{{ error }}</div>
+        <ErrorAlert v-if="error" :message="error" />
 
       </form>
 
@@ -179,6 +177,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { gql } from 'graphql-request'

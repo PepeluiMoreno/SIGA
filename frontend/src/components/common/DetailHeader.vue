@@ -1,11 +1,11 @@
 <template>
   <div class="flex items-center justify-between mb-5">
-    <button @click="goBack"
-      class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-      </svg>
-      Volver
+    <button
+      @click="goBack"
+      class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+    >
+      <ArrowLeftIcon class="w-4 h-4" />
+      {{ backText }}
     </button>
     <slot />
   </div>
@@ -13,9 +13,11 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
   fallback: { type: String, default: '/' },
+  backText: { type: String, default: 'Volver' },
 })
 
 const router = useRouter()

@@ -3,18 +3,14 @@
     <!-- Botón volver y acciones -->
     <div class="mb-6 flex justify-between items-center">
       <router-link to="/parametrizacion" class="text-gray-600 hover:text-gray-900 flex items-center gap-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-        </svg>
+        <ArrowLeftIcon class="w-5 h-5" />
         Volver a Parametrización
       </router-link>
-      <button
+      <AppButton
         @click="abrirModalCrear"
-        class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
+        class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700"
       >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-        </svg>
+        <PlusIcon class="w-5 h-5" />
         Nuevo {{ nombreSingular }}
       </button>
     </div>
@@ -75,12 +71,8 @@
             >
               <!-- Tipo checkbox (visual) -->
               <template v-if="col.type === 'checkbox'">
-                <svg v-if="item[col.key]" :class="['w-5 h-5 text-green-600', col.centered ? 'mx-auto' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                </svg>
-                <svg v-else :class="['w-5 h-5 text-gray-300', col.centered ? 'mx-auto' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
+                <CheckIcon class="w-5 h-5 ['text-green-600', col.centered ? 'mx-auto' : '']" />
+                <XMarkIcon class="w-5 h-5 ['  text-gray-300', col.centered ? 'mx-auto' : '']" />
               </template>
 
               <!-- Tipo boolean (texto Sí/No) - mantener por compatibilidad -->
@@ -108,12 +100,8 @@
 
               <!-- Tipo activo/en uso (especial) -->
               <template v-else-if="col.key === 'activo'">
-                <svg v-if="item.activo" class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                </svg>
-                <svg v-else class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
+                <CheckIcon class="w-5 h-5 text-green-600" />
+                <XMarkIcon class="w-5 h-5 text-gray-300" />
               </template>
 
               <!-- Tipo texto multilinea (para descripciones) -->
@@ -308,12 +296,8 @@
           <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div class="sm:flex sm:items-start">
               <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10" :class="errorEliminacion ? 'bg-amber-100' : 'bg-red-100'">
-                <svg v-if="errorEliminacion" class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                </svg>
-                <svg v-else class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                </svg>
+                <ExclamationTriangleIcon class="w-6 h-6 text-amber-600" />
+                <TrashIcon class="w-6 h-6 text-red-600" />
               </div>
               <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-1">
                 <h3 class="text-lg leading-6 font-medium text-gray-900">
@@ -370,9 +354,12 @@
 </template>
 
 <script setup>
+import { XMarkIcon, PlusIcon, ArrowLeftIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { useToast } from '@/composables/useToast'
 import { ref, onMounted, watch } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { useGraphQL } from '@/composables/useGraphQL.js'
+const toast = useToast()
 
 const props = defineProps({
   titulo: { type: String, required: true },
@@ -487,7 +474,7 @@ const guardar = async () => {
     await cargarDatos()
   } catch (err) {
     console.error('Error guardando:', err)
-    alert('Error al guardar: ' + err.message)
+    toast.error('Error al guardar: ' + err.message)
   } finally {
     guardando.value = false
   }

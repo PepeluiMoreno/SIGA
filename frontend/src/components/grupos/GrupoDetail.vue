@@ -159,7 +159,7 @@
               </div>
             </div>
             <p v-else-if="busqRealizada" class="text-xs text-slate-400 text-center py-2">No se encontraron voluntarios con esos criterios.</p>
-            <p v-if="errorAnadir" class="text-xs text-red-600">{{ errorAnadir }}</p>
+            <ErrorAlert v-if="errorAnadir" :message="errorAnadir" />
           </div>
 
           <!-- Lista de miembros actuales -->
@@ -181,9 +181,7 @@
                 class="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Coordinador</span>
               <button @click="pendingQuitarMgId = mg.id; showConfirmQuitarMiembro = true" title="Quitar del grupo"
                 class="p-1 text-slate-300 hover:text-red-500 transition-colors rounded">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
+                <XMarkIcon class="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -243,7 +241,7 @@
                   class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white resize-none" />
               </div>
             </div>
-            <p v-if="errorTarea" class="text-xs text-red-600">{{ errorTarea }}</p>
+            <ErrorAlert v-if="errorTarea" :message="errorTarea" />
             <div class="flex gap-2 pt-1">
               <button @click="crearTarea" :disabled="!formTarea.titulo || !formTarea.estadoId || formTarea.guardando"
                 class="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
@@ -337,7 +335,7 @@
                   class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
               </div>
             </div>
-            <p v-if="errorRequisito" class="text-xs text-red-600">{{ errorRequisito }}</p>
+            <ErrorAlert v-if="errorRequisito" :message="errorRequisito" />
             <button @click="crearRequisito" :disabled="!formRequisito.especialidadId || !formRequisito.horasNecesarias || formRequisito.guardando"
               class="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
               {{ formRequisito.guardando ? 'Guardando…' : 'Crear bolsa de horas' }}
@@ -362,9 +360,7 @@
                   </span>
                   <button @click="eliminarRequisito(req.id)" title="Eliminar bolsa"
                     class="p-1 text-slate-300 hover:text-red-500 transition-colors rounded">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
+                    <XMarkIcon class="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -420,7 +416,7 @@
                   {{ formAportacion.guardando ? '…' : 'Registrar' }}
                 </button>
                 <button @click="formAportacion.requisitoId = null" class="h-9 px-2 text-xs text-slate-500 hover:text-slate-700 self-end">✕</button>
-                <p v-if="errorAportacion" class="w-full text-xs text-red-600">{{ errorAportacion }}</p>
+                <ErrorAlert v-if="errorAportacion" :message="errorAportacion" />
               </div>
               <button v-else @click="formAportacion.requisitoId = req.id; formAportacion.miembroId = ''"
                 class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
@@ -479,6 +475,8 @@
 </template>
 
 <script setup>
+import { XMarkIcon } from '@heroicons/vue/24/outline'
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import DetailHeader from '@/components/common/DetailHeader.vue'

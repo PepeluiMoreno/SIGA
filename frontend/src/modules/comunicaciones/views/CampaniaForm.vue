@@ -62,7 +62,7 @@
                 <option value="">— Seleccionar —</option>
                 <option v-for="t in tiposCampania" :key="t.id" :value="t.id">{{ t.nombre }}</option>
               </select>
-              <p v-if="errors.tipo_campania_id" class="mt-1 text-xs text-red-500">{{ errors.tipo_campania_id }}</p>
+              <ErrorAlert v-if="errors.tipo_campania_id" :message="errors.tipo_campania_id" />
             </div>
 
             <!-- Plantilla (si origen = plantilla) -->
@@ -123,7 +123,7 @@
               <input v-model="campania.nombre" type="text" :class="fieldInp('nombre')"
                 placeholder="Nombre de la campaña" maxlength="200" autofocus
                 @blur="validateField('nombre', campania.nombre, campania)" />
-              <p v-if="errors.nombre" class="mt-1 text-xs text-red-500">{{ errors.nombre }}</p>
+              <ErrorAlert v-if="errors.nombre" :message="errors.nombre" />
             </div>
             <div class="col-span-2">
               <label :class="lbl">Estado<span v-if="isEdit" class="text-red-400"> *</span></label>
@@ -140,7 +140,7 @@
                 <option value="">—</option>
                 <option v-for="e in estadosCampania" :key="e.id" :value="e.id">{{ e.nombre }}</option>
               </select>
-              <p v-if="errors.estado_campania_id" class="mt-1 text-xs text-red-500">{{ errors.estado_campania_id }}</p>
+              <ErrorAlert v-if="errors.estado_campania_id" :message="errors.estado_campania_id" />
             </div>
 
             <!-- Tipo (solo en modo edición; en creación está en "Punto de partida") -->
@@ -151,7 +151,7 @@
                 <option value="">— Seleccionar —</option>
                 <option v-for="t in tiposCampania" :key="t.id" :value="t.id">{{ t.nombre }}</option>
               </select>
-              <p v-if="errors.tipo_campania_id" class="mt-1 text-xs text-red-500">{{ errors.tipo_campania_id }}</p>
+              <ErrorAlert v-if="errors.tipo_campania_id" :message="errors.tipo_campania_id" />
             </div>
             <div class="col-span-4">
               <label :class="lbl">Ámbito</label>
@@ -331,11 +331,7 @@
                     :class="act._open ? 'bg-indigo-50 border-b border-indigo-100' : 'bg-slate-50/70 hover:bg-slate-100/60'"
                     @click="act._open = !act._open">
                     <span class="shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">{{ idx + 1 }}</span>
-                    <svg class="w-3 h-3 transition-transform shrink-0"
-                      :class="act._open ? 'rotate-90 text-indigo-400' : 'text-slate-300'"
-                      fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                    </svg>
+                    <ChevronRightIcon class="w-3 h-3 transition-transform shrink-0" />
                     <span class="text-sm font-medium flex-1" :class="act._open ? 'text-indigo-900' : 'text-slate-800'">{{ act.nombre }}</span>
                     <span v-if="act.fechaInicio" class="text-xs text-indigo-600 font-medium tabular-nums">
                       {{ fmtFechaCorta(act.fechaInicio) }}<template v-if="act.horaInicio"> · {{ act.horaInicio.slice(0,5) }}</template>
@@ -652,6 +648,7 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {

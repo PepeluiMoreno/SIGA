@@ -200,7 +200,7 @@
                 <router-link v-if="esEditable"
                   :to="`/actividades/nueva?campaniaId=${campania.id}&campaniaNombre=${encodeURIComponent(campania.nombre)}`"
                   class="inline-flex items-center gap-1.5 h-7 px-3 text-xs font-medium text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-lg transition-colors">
-                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                  <PlusIcon class="w-3.5 h-3.5" />
                   Nueva actividad
                 </router-link>
               </div>
@@ -228,14 +228,7 @@
                     <div class="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none hover:bg-slate-50/70 transition-colors group"
                       @click="toggleActExpand(act.id)">
                       <!-- Chevron -->
-                      <svg class="w-3.5 h-3.5 shrink-0 transition-transform"
-                        :class="[
-                          expandedActs.has(act.id) ? 'rotate-90 text-indigo-400' : 'text-slate-300',
-                          act.tareas?.length ? '' : 'opacity-0'
-                        ]"
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                      </svg>
+                      <ChevronRightIcon class="w-3.5 h-3.5 shrink-0 transition-transform" />
                       <!-- Hora -->
                       <span class="shrink-0 w-[88px] text-xs text-slate-400 tabular-nums font-mono">
                         <template v-if="act.horaInicio">{{ fmtHora(act.horaInicio) }}<template v-if="act.horaFin"> – {{ fmtHora(act.horaFin) }}</template></template>
@@ -244,7 +237,7 @@
                       <span class="flex-1 text-sm font-medium text-slate-800 truncate">{{ act.nombre }}</span>
                       <!-- Meta: tareas + horas -->
                       <span v-if="act.tareas?.length" class="shrink-0 hidden sm:flex items-center gap-1 text-xs text-slate-400">
-                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        <ClipboardDocumentIcon class="w-3 h-3" />
                         {{ act.tareas.length }}
                         <template v-if="act.tareas.some(t => t.horasEstimadas)">
                           · <span class="text-amber-600 font-medium">{{ act.tareas.reduce((s, t) => s + (t.horasEstimadas || 0), 0) }}h</span>
@@ -634,7 +627,7 @@
             class="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50"
             placeholder="Cuerpo HTML del correo"></textarea>
         </div>
-        <p v-if="modalNotif.error" class="text-xs text-red-600">{{ modalNotif.error }}</p>
+        <ErrorAlert v-if="modalNotif.error" :message="modalNotif.error" />
       </div>
       <div v-if="!modalNotif.resultado" class="flex justify-end gap-2 px-6 py-4 border-t border-slate-100">
         <button @click="modalNotif.visible = false"
@@ -746,6 +739,8 @@
 </template>
 
 <script setup>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
@@ -761,6 +756,7 @@ import { graphqlClient } from '@/graphql/client'
 import { GET_CAMPANIA, GET_PLANTILLAS_CAMPANIA, PREVISUALIZAR_NOTIFICACION_CAMPANIA, ENVIAR_NOTIFICACION_CAMPANIA, CERRAR_CAMPANIA, CLONAR_CAMPANIA } from '@/modules/comunicaciones/graphql/queries.js'
 import { TRANSICIONAR_CAMPANIA, APROBAR_CAMPANIA } from '@/modules/actividades/graphql/queries.js'
 import { usePermisos } from '@/composables/usePermisos.js'
+const toast = useToast()
 
 const { tienePermiso } = usePermisos()
 const route  = useRoute()
@@ -990,7 +986,7 @@ async function ejecutarTransicion(t) {
     try {
       await graphqlClient.request(TRANSICIONAR_CAMPANIA, { id: campania.value.id, estadoId: t.estado.id })
       await cargarCampania()
-    } catch (e) { alert(e?.response?.errors?.[0]?.message || 'Error') }
+    } catch (e) { toast.error(e?.response?.errors?.[0]?.message || 'Error') }
     finally { cargandoTransicion.value = false }
   }
 }
@@ -1002,7 +998,7 @@ async function confirmarAprobacion() {
     await graphqlClient.request(mut, { id: campania.value.id, estadoId: modalAprobacion.value.estadoId, notas: modalAprobacion.value.notas || null })
     modalAprobacion.value.visible = false
     await cargarCampania()
-  } catch (e) { alert(e?.response?.errors?.[0]?.message || 'Error') }
+  } catch (e) { toast.error(e?.response?.errors?.[0]?.message || 'Error') }
   finally { cargandoTransicion.value = false }
 }
 
@@ -1025,7 +1021,7 @@ async function confirmarCierre() {
     })
     modalCierre.value.visible = false
     await cargarCampania()
-  } catch (e) { alert(e?.response?.errors?.[0]?.message || 'Error') }
+  } catch (e) { toast.error(e?.response?.errors?.[0]?.message || 'Error') }
   finally { cargandoTransicion.value = false }
 }
 
@@ -1060,7 +1056,7 @@ async function eliminarCampania() {
     await graphqlClient.request(GQL_ELIMINAR, { id: campania.value.id })
     router.push('/campanias')
   } catch (e) {
-    alert(e?.response?.errors?.[0]?.message || 'Error al eliminar la campaña')
+    toast.error(e?.response?.errors?.[0]?.message || 'Error al eliminar la campaña')
   } finally {
     eliminando.value = false
     confirmarEliminar.value = false

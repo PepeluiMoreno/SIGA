@@ -192,7 +192,7 @@
           </div>
           <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
             <button @click="modalConvenio = false"
-              class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              class="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
               Cancelar
             </button>
             <button @click="guardarConvenio" :disabled="guardando"
