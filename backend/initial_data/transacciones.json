@@ -1,6 +1,6 @@
 {
-  "version": "1.3.0",
-  "fecha_actualizacion": "2026-05-15",
+  "version": "1.4.0",
+  "fecha_actualizacion": "2026-05-22",
   "transacciones": [
     {
       "codigo": "SOL_LIST",
@@ -1430,6 +1430,456 @@
       "descripcion": "Modificar los parámetros generales de la organización, incluyendo el logotipo",
       "modulo": "administracion",
       "tipo": "configuracion",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ACCESO_FUNC_ASIGNAR",
+      "nombre": "Asignar func",
+      "descripcion": "Permite asignar func (módulo administracion).",
+      "modulo": "administracion",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ACCESO_FUNC_REVOCAR",
+      "nombre": "Revocar func",
+      "descripcion": "Permite revocar func (módulo administracion).",
+      "modulo": "administracion",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ACCESO_ROL_ASIGNAR",
+      "nombre": "Asignar rol",
+      "descripcion": "Permite asignar rol (módulo administracion).",
+      "modulo": "administracion",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ACCESO_ROL_CREAR",
+      "nombre": "Crear rol",
+      "descripcion": "Permite crear rol (módulo administracion).",
+      "modulo": "administracion",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ACCESO_ROL_EDITAR",
+      "nombre": "Editar rol",
+      "descripcion": "Permite editar rol (módulo administracion).",
+      "modulo": "administracion",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ACCESO_ROL_ELIMINAR",
+      "nombre": "Eliminar rol",
+      "descripcion": "Permite eliminar rol (módulo administracion).",
+      "modulo": "administracion",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ACCESO_ROL_REVOCAR",
+      "nombre": "Revocar rol",
+      "descripcion": "Permite revocar rol (módulo administracion).",
+      "modulo": "administracion",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ACCESO_USUARIO_CREAR",
+      "nombre": "Crear usuario",
+      "descripcion": "Permite crear usuario (módulo administracion).",
+      "modulo": "administracion",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CAMPANA_CREAR",
+      "nombre": "Crear campana",
+      "descripcion": "Permite crear campana (módulo comunicaciones).",
+      "modulo": "comunicaciones",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CAMPANA_EDITAR",
+      "nombre": "Editar campana",
+      "descripcion": "Permite editar campana (módulo comunicaciones).",
+      "modulo": "comunicaciones",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CFG_TERRITORIO_CREAR",
+      "nombre": "Crear territorio",
+      "descripcion": "Permite crear territorio (módulo administracion).",
+      "modulo": "administracion",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CFG_TERRITORIO_EDITAR",
+      "nombre": "Editar territorio",
+      "descripcion": "Permite editar territorio (módulo administracion).",
+      "modulo": "administracion",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CFG_TERRITORIO_ELIMINAR",
+      "nombre": "Eliminar territorio",
+      "descripcion": "Permite eliminar territorio (módulo administracion).",
+      "modulo": "administracion",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ECO_ASIENTO_APROBAR",
+      "nombre": "Aprobar asiento",
+      "descripcion": "Permite aprobar asiento (módulo contable).",
+      "modulo": "contable",
+      "tipo": "aprobacion",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ECO_ASIENTO_CREAR",
+      "nombre": "Crear asiento",
+      "descripcion": "Permite crear asiento (módulo contable).",
+      "modulo": "contable",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ECO_CONCILIACION_REALIZAR",
+      "nombre": "Realizar conciliacion",
+      "descripcion": "Permite realizar conciliacion (módulo contable).",
+      "modulo": "contable",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ECO_CUENTA_CREAR",
+      "nombre": "Crear cuenta",
+      "descripcion": "Permite crear cuenta (módulo contable).",
+      "modulo": "contable",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ECO_ESTRUCTURA_CONTABLE_GESTIONAR",
+      "nombre": "Gestionar estructura contable",
+      "descripcion": "Permite gestionar estructura contable (módulo contable).",
+      "modulo": "contable",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ECO_ESTRUCTURA_CONTABLE_LISTAR",
+      "nombre": "Listar estructura contable",
+      "descripcion": "Permite listar estructura contable (módulo contable).",
+      "modulo": "contable",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ECO_MOVIMIENTO_REGISTRAR",
+      "nombre": "Registrar movimiento",
+      "descripcion": "Permite registrar movimiento (módulo contable).",
+      "modulo": "contable",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ECO_PRESUPUESTO_APROBAR",
+      "nombre": "Aprobar presupuesto",
+      "descripcion": "Permite aprobar presupuesto (módulo contable).",
+      "modulo": "contable",
+      "tipo": "aprobacion",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ECO_PRESUPUESTO_CONSULTAR",
+      "nombre": "Consultar presupuesto",
+      "descripcion": "Permite consultar presupuesto (módulo contable).",
+      "modulo": "contable",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "ECO_PRESUPUESTO_CREAR",
+      "nombre": "Crear presupuesto",
+      "descripcion": "Permite crear presupuesto (módulo contable).",
+      "modulo": "contable",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "EVENTO_EDITAR",
+      "nombre": "Editar evento",
+      "descripcion": "Permite editar evento (módulo actividad).",
+      "modulo": "actividad",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "GRUPO_EDITAR",
+      "nombre": "Editar grupo",
+      "descripcion": "Permite editar grupo (módulo actividad).",
+      "modulo": "actividad",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "MEMBRESIA_CARGO_ASIGNAR",
+      "nombre": "Asignar cargo",
+      "descripcion": "Permite asignar cargo (módulo militancia).",
+      "modulo": "militancia",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "MEMBRESIA_CARGO_REVOCAR",
+      "nombre": "Revocar cargo",
+      "descripcion": "Permite revocar cargo (módulo militancia).",
+      "modulo": "militancia",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "MEMBRESIA_JUNTA_CONFIGURAR",
+      "nombre": "Configurar junta",
+      "descripcion": "Permite configurar junta (módulo militancia).",
+      "modulo": "militancia",
+      "tipo": "configuracion",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "MEMBRESIA_MIEMBRO_CREAR",
+      "nombre": "Crear miembro",
+      "descripcion": "Permite crear miembro (módulo militancia).",
+      "modulo": "militancia",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "MEMBRESIA_MIEMBRO_EDITAR",
+      "nombre": "Editar miembro",
+      "descripcion": "Permite editar miembro (módulo militancia).",
+      "modulo": "militancia",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_ACTA_APROBAR",
+      "nombre": "Aprobar acta",
+      "descripcion": "Permite aprobar acta (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "aprobacion",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_ACTA_CREAR",
+      "nombre": "Crear acta",
+      "descripcion": "Permite crear acta (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_ACTA_FIRMAR",
+      "nombre": "Firmar acta",
+      "descripcion": "Permite firmar acta (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_ACTA_LISTAR",
+      "nombre": "Listar acta",
+      "descripcion": "Permite listar acta (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_ACUERDO_CREAR",
+      "nombre": "Crear acuerdo",
+      "descripcion": "Permite crear acuerdo (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_ACUERDO_LISTAR",
+      "nombre": "Listar acuerdo",
+      "descripcion": "Permite listar acuerdo (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_ACUERDO_SEGUIMIENTO",
+      "nombre": "Hacer seguimiento de acuerdo",
+      "descripcion": "Permite hacer seguimiento de acuerdo (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_CERTIFICADO_EMITIR",
+      "nombre": "Emitir certificado",
+      "descripcion": "Permite emitir certificado (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_CERTIFICADO_LISTAR",
+      "nombre": "Listar certificado",
+      "descripcion": "Permite listar certificado (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_CONVENIO_CREAR",
+      "nombre": "Crear convenio",
+      "descripcion": "Permite crear convenio (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_CONVENIO_EDITAR",
+      "nombre": "Editar convenio",
+      "descripcion": "Permite editar convenio (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_CONVENIO_LISTAR",
+      "nombre": "Listar convenio",
+      "descripcion": "Permite listar convenio (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_DELEGACION_GESTIONAR",
+      "nombre": "Gestionar delegacion",
+      "descripcion": "Permite gestionar delegacion (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_DELEGACION_LISTAR",
+      "nombre": "Listar delegacion",
+      "descripcion": "Permite listar delegacion (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_LIBRO_SOCIOS_CONSULTAR",
+      "nombre": "Consultar libro socios",
+      "descripcion": "Permite consultar libro socios (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_LIBRO_SOCIOS_GENERAR",
+      "nombre": "Generar libro socios",
+      "descripcion": "Permite generar libro socios (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_REUNION_CANCELAR",
+      "nombre": "Cancelar reunion",
+      "descripcion": "Permite cancelar reunion (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_REUNION_CREAR",
+      "nombre": "Crear reunion",
+      "descripcion": "Permite crear reunion (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_REUNION_LISTAR",
+      "nombre": "Listar reunion",
+      "descripcion": "Permite listar reunion (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SEC_REUNION_REGISTRAR_ASIST",
+      "nombre": "Registrar asistencia a reunion",
+      "descripcion": "Permite registrar asistencia a reunion (módulo secretaria).",
+      "modulo": "secretaria",
+      "tipo": "escritura",
       "activa": true,
       "sistema": true
     }
