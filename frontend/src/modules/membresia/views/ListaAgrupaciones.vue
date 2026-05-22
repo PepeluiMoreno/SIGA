@@ -2,7 +2,7 @@
   <AppLayout title="Agrupaciones" subtitle="Estructura territorial de la organización">
 
     <!-- Resumen por nivel -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div
         v-for="nivel in nivelesResumen"
         :key="nivel.tipo"
@@ -50,7 +50,7 @@
         <p class="text-sm text-gray-500 mt-1">No se encontraron agrupaciones con los filtros seleccionados.</p>
       </div>
 
-      <table v-else-if="filtersApplied" class="min-w-full divide-y divide-gray-200">
+      <div class="overflow-x-auto -mx-1"><table v-else-if="filtersApplied" class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agrupación</th>
@@ -135,7 +135,7 @@
             </td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
 
       <div v-if="agrupacionesFiltradas.length > 0" class="px-6 py-3 border-t border-gray-100 bg-gray-50 text-xs text-gray-500">
         Mostrando {{ agrupacionesFiltradas.length }} de {{ agrupaciones.length }} agrupaciones

@@ -21,7 +21,7 @@
 
     <!-- Resumen -->
     <div v-if="agregado" class="bg-white border border-slate-200 rounded-xl p-4 mb-4">
-      <div class="grid grid-cols-3 gap-4 text-sm">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
         <div>
           <p class="text-xs text-slate-500">Donantes incluibles</p>
           <p class="text-2xl font-bold text-green-700">{{ agregado.nIncluidos }}</p>
@@ -54,7 +54,7 @@
       <div class="px-4 py-3 bg-slate-50 border-b border-slate-100">
         <h3 class="font-semibold text-sm text-slate-800">Donantes incluidos en el Modelo 182</h3>
       </div>
-      <table class="w-full text-sm">
+      <div class="overflow-x-auto -mx-1"><table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
           <tr>
             <th class="px-3 py-2 text-left">NIF</th>
@@ -86,7 +86,7 @@
             <td class="px-3 py-1.5 text-right font-mono">{{ fmt(d.importe) }}</td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <!-- Excluidos -->
@@ -99,7 +99,7 @@
           Revisa si puedes completar el NIF del donante para incluirlas.
         </p>
       </div>
-      <table class="w-full text-xs">
+      <div class="overflow-x-auto -mx-1"><table class="w-full text-xs">
         <thead class="bg-amber-50 text-amber-700 text-[10px] uppercase">
           <tr>
             <th class="px-3 py-2 text-left">Fecha</th>
@@ -114,7 +114,7 @@
             <td class="px-3 py-1.5 text-slate-600">{{ x.motivo }}</td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <!-- Histórico de presentaciones -->
@@ -122,7 +122,7 @@
       <div class="px-4 py-3 bg-slate-50 border-b border-slate-100">
         <h3 class="font-semibold text-sm text-slate-800">Histórico de presentaciones a la AEAT</h3>
       </div>
-      <table v-if="presentaciones.length" class="w-full text-sm">
+      <div class="overflow-x-auto -mx-1"><table v-if="presentaciones.length" class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
           <tr>
             <th class="px-3 py-2 text-left">Ejercicio</th>
@@ -146,7 +146,7 @@
             </td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
       <p v-else class="text-center text-slate-400 py-8 text-sm">No hay presentaciones registradas todavía.</p>
     </div>
 
@@ -196,7 +196,7 @@ import {
   DESCARGAR_FICHERO_AEAT_182,
   DESCARGAR_PDF_RESUMEN_182,
   REGISTRAR_PRESENTACION_182,
-} from '@/graphql/queries/financiero'
+} from '@/graphql/queries/economico'
 
 const { query, mutation } = useGraphQL()
 

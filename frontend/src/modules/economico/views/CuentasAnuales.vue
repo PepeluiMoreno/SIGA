@@ -85,7 +85,7 @@
 
       <!-- Tab Resumen -->
       <div v-if="tabActiva === 'resumen'" class="p-4 text-sm">
-        <dl class="grid grid-cols-2 gap-3 mb-4">
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           <div><dt class="text-xs text-slate-500">Excedente</dt>
             <dd class="font-mono">{{ fmt(seleccionada.excedente) }}</dd></div>
           <div><dt class="text-xs text-slate-500">F. aprobación</dt>
@@ -224,7 +224,7 @@ const toast = useToast()
   REABRIR_CCAA,
   EXPORTAR_CCAA_PDF,
   GET_MIEMBROS_PARA_GASTO,
-} from '@/graphql/queries/financiero'
+} from '@/graphql/queries/economico'
 
 const { query, mutation } = useGraphQL()
 

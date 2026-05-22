@@ -34,7 +34,7 @@
     <template v-else>
 
       <!-- Resumen estadístico -->
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         <div v-for="stat in estadisticas" :key="stat.label" class="bg-white rounded-xl border border-slate-200 p-4 text-center">
           <div class="text-2xl font-bold" :class="stat.color">{{ stat.valor }}</div>
           <div class="text-xs text-slate-500 mt-1">{{ stat.label }}</div>

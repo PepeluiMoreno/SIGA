@@ -2,7 +2,7 @@
   <AppLayout title="Campañas" subtitle="Gestión de campañas y actividades">
 
     <!-- KPI strip -->
-    <section v-if="allCampanias.length" class="mb-4 bg-white border border-slate-200 rounded-xl px-5 py-3 grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-2 text-sm">
+    <section v-if="allCampanias.length" class="mb-4 bg-white border border-slate-200 rounded-xl px-5 py-3 grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-2 text-sm">
       <div class="flex flex-col gap-0.5">
         <span class="text-xs text-slate-400 font-medium uppercase tracking-wide">Total</span>
         <span class="text-2xl font-bold text-slate-800 tabular-nums">{{ allCampanias.length }}</span>
@@ -83,7 +83,7 @@
         </div>
 
         <!-- Grid de tarjetas -->
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div
             v-for="c in campaniasFiltradas"
             :key="c.id"

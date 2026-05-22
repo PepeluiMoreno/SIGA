@@ -68,7 +68,7 @@
               <input type="text" v-model="form.patron" placeholder="Endesa"
                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 font-mono" />
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Coincidencia</label>
                 <select v-model="form.tipoCoincidencia"
@@ -102,7 +102,7 @@
                 </optgroup>
               </select>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Prioridad (orden)</label>
                 <input type="number" v-model.number="form.orden" min="1"

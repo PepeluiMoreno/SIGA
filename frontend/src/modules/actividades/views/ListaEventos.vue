@@ -1,7 +1,7 @@
 <template>
   <AppLayout title="Eventos" subtitle="Actos, jornadas y asambleas de Europa Laica">
     <!-- Resumen -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div class="bg-purple-50 rounded-lg shadow p-4 border border-purple-100">
         <p class="text-sm text-gray-500">Total eventos</p>
         <p class="text-xl font-bold text-purple-600">{{ eventos.length }}</p>

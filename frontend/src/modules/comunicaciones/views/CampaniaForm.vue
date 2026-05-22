@@ -18,7 +18,7 @@
         <div class="px-5 py-4 space-y-4">
 
           <!-- Fila 1: 3 botones de origen -->
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <button type="button" @click="origenTipo = 'blanco'"
               class="flex flex-col items-center gap-2 p-4 border-2 rounded-xl transition-colors text-center"
               :class="origenTipo === 'blanco' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 bg-white hover:border-slate-300'">
@@ -236,12 +236,12 @@
                 <PlusIcon class="w-3.5 h-3.5" /> Añadir partida
               </button>
             </div>
-            <table class="w-full">
+            <div class="overflow-x-auto -mx-1"><table class="w-full">
               <thead>
                 <tr class="border-b border-slate-100">
                   <th class="pb-2 text-left text-xs font-semibold text-slate-400">Concepto</th>
                   <th class="pb-2 w-24 text-left text-xs font-semibold text-slate-400">Tipo</th>
-                  <th class="pb-2 w-32 text-right text-xs font-semibold text-slate-400 pr-1">Importe estimado</th>
+                  <th class="pb-2 w-full sm:w-32 text-right text-xs font-semibold text-slate-400 pr-1">Importe estimado</th>
                   <th class="w-7"></th>
                 </tr>
               </thead>
@@ -281,7 +281,7 @@
                   <td></td>
                 </tr>
               </tbody>
-            </table>
+            </table></div>
           </div>
         </AccordionPanel>
 
@@ -301,11 +301,11 @@
                   <option v-for="p in PERIODICIDADES" :key="p.value" :value="p.value">{{ p.label }}</option>
                 </select>
               </div>
-              <div class="w-36">
+              <div class="w-full sm:w-36">
                 <label :class="lbl">{{ periInfo.labelInicio }}</label>
                 <input v-model="campania.fecha_inicio" type="date" :class="inp" />
               </div>
-              <div v-if="!periInfo.sinFin" class="w-36">
+              <div v-if="!periInfo.sinFin" class="w-full sm:w-36">
                 <label :class="lbl">{{ periInfo.labelFin }}</label>
                 <input v-model="campania.fecha_fin" type="date" :class="inp" />
               </div>
@@ -323,128 +323,15 @@
                 <span class="text-xs text-slate-400 italic">Fija las fechas antes de crear la campaña</span>
               </div>
               <div class="space-y-2">
-                <div v-for="(act, idx) in actividadesPreview" :key="act._id"
-                  class="rounded-xl border overflow-hidden transition-colors"
-                  :class="act._open ? 'border-indigo-200 shadow-sm' : 'border-slate-200 bg-white'">
-                  <!-- Cabecera actividad -->
-                  <div class="flex items-center gap-2 px-3.5 py-2.5 cursor-pointer select-none"
-                    :class="act._open ? 'bg-indigo-50 border-b border-indigo-100' : 'bg-slate-50/70 hover:bg-slate-100/60'"
-                    @click="act._open = !act._open">
-                    <span class="shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">{{ idx + 1 }}</span>
-                    <ChevronRightIcon class="w-3 h-3 transition-transform shrink-0" />
-                    <span class="text-sm font-medium flex-1" :class="act._open ? 'text-indigo-900' : 'text-slate-800'">{{ act.nombre }}</span>
-                    <span v-if="act.fechaInicio" class="text-xs text-indigo-600 font-medium tabular-nums">
-                      {{ fmtFechaCorta(act.fechaInicio) }}<template v-if="act.horaInicio"> · {{ act.horaInicio.slice(0,5) }}</template>
-                    </span>
-                    <span v-else class="text-xs text-slate-300 italic">sin fecha</span>
-                    <span v-if="act.tareas?.length" class="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500">
-                      {{ act.tareas.length }}T
-                    </span>
-                  </div>
-
-                  <!-- Cuerpo expandible -->
-                  <div v-if="act._open" class="px-4 py-3 space-y-3 bg-white">
-
-                    <!-- Fechas en una sola línea -->
-                    <div class="flex flex-wrap items-end gap-3">
-                      <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Inicio</label>
-                        <div class="flex gap-1">
-                          <input v-model="act.fechaInicio" type="date" class="px-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                          <input v-model="act.horaInicio" type="time" class="w-24 px-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                        </div>
-                      </div>
-                      <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Fin</label>
-                        <div class="flex gap-1">
-                          <input v-model="act.fechaFin" type="date" class="px-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                          <input v-model="act.horaFin" type="time" class="w-24 px-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                        </div>
-                      </div>
-                      <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Duración est.</label>
-                        <div class="flex gap-1 items-center">
-                          <input v-model.number="act.duracionDias" type="number" min="0"
-                            class="w-14 px-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                          <span class="text-xs text-slate-400">d</span>
-                          <input v-model.number="act.duracionHoras" type="number" min="0" step="0.5"
-                            class="w-14 px-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                          <span class="text-xs text-slate-400">h</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Responsable + Lugar -->
-                    <div class="grid grid-cols-2 gap-2">
-                      <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Responsable</label>
-                        <select v-model="act.responsableId" :class="inpSm">
-                          <option value="">— Sin asignar —</option>
-                          <option v-for="m in voluntariosAmbito" :key="m.id" :value="m.id">{{ m.nombre }} {{ m.apellido1 }}</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Lugar</label>
-                        <input v-model="act.lugar" type="text" :class="inpSm" placeholder="Nombre del espacio" />
-                      </div>
-                    </div>
-
-                    <!-- Dirección postal -->
-                    <div class="grid grid-cols-12 gap-2">
-                      <div class="col-span-6">
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Dirección</label>
-                        <input v-model="act.direccion" type="text" :class="inpSm" placeholder="Calle, número, piso…" />
-                      </div>
-                      <div class="col-span-3">
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Localidad</label>
-                        <input v-model="act.localidad" type="text" :class="inpSm" placeholder="Ciudad" />
-                      </div>
-                      <div class="col-span-3">
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Provincia</label>
-                        <input v-model="act.provincia" type="text" :class="inpSm" placeholder="Prov." />
-                      </div>
-                    </div>
-
-                    <!-- Tareas con edición inline -->
-                    <div v-if="act.tareas?.length" class="border-t border-slate-100 pt-2">
-                      <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Tareas</p>
-                      <div class="space-y-2">
-                        <div v-for="(t, ti) in act.tareas" :key="ti"
-                          class="rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2">
-                          <!-- Línea título -->
-                          <div class="flex items-center gap-2 mb-1.5">
-                            <span class="text-slate-300 text-xs font-mono shrink-0">{{ ti === act.tareas.length - 1 ? '└' : '├' }}</span>
-                            <span class="flex-1 text-sm font-medium text-slate-700">{{ t.titulo }}</span>
-                          </div>
-                          <!-- Fila campos editables -->
-                          <div class="flex flex-wrap gap-2 pl-4">
-                            <div>
-                              <label class="block text-[10px] font-medium text-slate-400 mb-0.5">Horas est.</label>
-                              <input v-model.number="t.horasEstimadas" type="number" min="0" step="0.5"
-                                class="w-16 px-2 py-1 text-xs border border-slate-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                            </div>
-                            <div>
-                              <label class="block text-[10px] font-medium text-slate-400 mb-0.5">Habilidad</label>
-                              <select v-model="t.habilidadId"
-                                class="px-2 py-1 text-xs border border-slate-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                <option value="">— Ninguna —</option>
-                                <option v-for="h in habilidades" :key="h.id" :value="h.id">{{ h.nombre }}</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label class="block text-[10px] font-medium text-slate-400 mb-0.5">Nivel</label>
-                              <select v-model="t.nivelHabilidadId" :disabled="!t.habilidadId"
-                                class="px-2 py-1 text-xs border border-slate-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-40">
-                                <option value="">— Cualquiera —</option>
-                                <option v-for="n in nivelesHabilidad" :key="n.id" :value="n.id">{{ n.nombre }}</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ActividadPlantillaCard
+                  v-for="(act, idx) in actividadesPreview"
+                  :key="act._id"
+                  :actividad="act"
+                  :indice="idx"
+                  :voluntarios="voluntariosAmbito"
+                  :habilidades="habilidades"
+                  :niveles-habilidad="nivelesHabilidad"
+                />
               </div>
             </div>
 
@@ -532,11 +419,11 @@
                   <PlusIcon class="w-3.5 h-3.5" /> Añadir meta
                 </button>
               </div>
-              <table class="w-full">
+              <div class="overflow-x-auto -mx-1"><table class="w-full">
                 <thead>
                   <tr class="border-b border-slate-100">
                     <th class="pb-2 text-left text-xs font-semibold text-slate-400">Tipo de meta</th>
-                    <th class="pb-2 w-32 text-right text-xs font-semibold text-slate-400 pr-1">Valor planificado</th>
+                    <th class="pb-2 w-full sm:w-32 text-right text-xs font-semibold text-slate-400 pr-1">Valor planificado</th>
                     <th class="pb-2 text-left text-xs font-semibold text-slate-400 pl-2">Notas</th>
                     <th class="w-7"></th>
                   </tr>
@@ -571,7 +458,7 @@
                     </td>
                   </tr>
                 </tbody>
-              </table>
+              </table></div>
             </div>
 
           </div>
@@ -659,6 +546,7 @@ import {
 import AppLayout from '@/components/common/AppLayout.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
+import ActividadPlantillaCard from '@/components/campanias/ActividadPlantillaCard.vue'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
 import {
   GET_CAMPANIA, GET_TIPOS_CAMPANIA, GET_ESTADOS_CAMPANIA,

@@ -12,12 +12,12 @@
         <h3 class="font-semibold text-slate-800">{{ motivos.length }} motivos registrados</h3>
         <button @click="abrirModal()" class="btn-primary text-sm">+ Nuevo motivo</button>
       </div>
-      <table class="w-full text-sm">
+      <div class="overflow-x-auto -mx-1"><table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-600">
           <tr>
-            <th class="px-3 py-2 text-left w-32">Código</th>
+            <th class="px-3 py-2 text-left w-full sm:w-32">Código</th>
             <th class="px-3 py-2 text-left">Nombre</th>
-            <th class="px-3 py-2 text-right w-32">% Reducción</th>
+            <th class="px-3 py-2 text-right w-full sm:w-32">% Reducción</th>
             <th class="px-3 py-2 text-center w-24">Efecto</th>
             <th class="px-3 py-2 text-center w-20">Activo</th>
             <th class="px-3 py-2 text-center w-20">Editar</th>
@@ -44,7 +44,7 @@
             </td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <!-- Modal alta/edición -->
@@ -54,7 +54,7 @@
           {{ form.id ? 'Editar motivo' : 'Nuevo motivo de reducción' }}
         </h3>
         <div class="space-y-3">
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="label">Código *</label>
               <input v-model="form.codigo" :disabled="!!form.id" class="input font-mono uppercase" placeholder="JOVEN" />
@@ -85,7 +85,7 @@
             <label class="label">Descripción</label>
             <textarea v-model="form.descripcion" class="input h-20" placeholder="Cuota reducida para socios menores de 30 años o estudiantes acreditados" />
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="label">Orden</label>
               <input v-model.number="form.orden" type="number" class="input" />
@@ -121,7 +121,7 @@ import {
   CREATE_MOTIVO_REDUCCION,
   UPDATE_MOTIVO_REDUCCION,
   MOTIVO_TIENE_RECIBOS,
-} from '@/graphql/queries/financiero'
+} from '@/graphql/queries/economico'
 
 const { query, mutation } = useGraphQL()
 

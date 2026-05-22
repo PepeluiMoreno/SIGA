@@ -53,7 +53,7 @@
       <div v-if="open" class="border-t border-slate-100 divide-y divide-slate-100">
 
         <!-- Detalles básicos -->
-        <div class="px-4 py-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="px-4 py-3 grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div>
             <p class="text-xs text-slate-400 mb-0.5">Descripción</p>
             <template v-if="!readonly">
@@ -62,7 +62,7 @@
             <p v-else class="text-sm text-slate-700 bg-slate-50 rounded-lg px-2.5 py-1.5 min-h-[2.5rem]">{{ actividad.descripcion || '—' }}</p>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <p class="text-xs text-slate-400 mb-0.5">Fecha inicio</p>
               <input v-if="!readonly" v-model="local.fechaInicio" type="date" class="w-full h-10 px-2.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300" @change="emitChange" />
@@ -75,7 +75,7 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <p class="text-xs text-slate-400 mb-0.5">Lugar</p>
               <input v-if="!readonly" v-model="local.lugar" type="text" class="w-full h-10 px-2.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300" @change="emitChange" />
@@ -95,7 +95,7 @@
         <div class="px-4 py-3">
           <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Presupuesto</h4>
 
-          <table v-if="(local.partidas?.length || !readonly)" class="w-full text-sm mb-2">
+          <div class="overflow-x-auto -mx-1"><table v-if="(local.partidas?.length || !readonly)" class="w-full text-sm mb-2">
             <thead>
               <tr class="text-xs text-slate-400 uppercase">
                 <th class="text-left font-medium pb-1">Concepto</th>
@@ -138,7 +138,7 @@
                 <td colspan="4" class="py-2 text-slate-400 text-sm italic">Sin partidas</td>
               </tr>
             </tbody>
-          </table>
+          </table></div>
 
           <div class="flex items-center justify-between">
             <button

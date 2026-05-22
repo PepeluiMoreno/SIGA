@@ -397,7 +397,7 @@
 
       <!-- Main content -->
       <main class="flex-1 min-w-0 overflow-hidden lg:h-[calc(100vh-64px)]">
-        <div class="h-full flex flex-col w-full mx-auto px-4 sm:px-6 lg:px-0 lg:max-w-[75%]">
+        <div class="h-full flex flex-col w-full mx-auto px-4 sm:px-6 lg:px-6 xl:px-8 max-w-screen-xl">
           <div class="pt-7 flex-shrink-0">
             <PageHeader v-if="title" :title="title" :subtitle="subtitle" :icon="icon">
               <template #actions>

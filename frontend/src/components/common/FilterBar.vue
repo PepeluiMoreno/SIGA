@@ -36,19 +36,11 @@
 
       <span class="flex-1" />
 
-      <!-- Lazy mode: Buscar + Limpiar siempre en fila 1 -->
-      <template v-if="lazy && visibleFields.length">
-        <button @click="$emit('apply')" :disabled="loading"
-          class="px-4 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 disabled:opacity-50 shrink-0">
-          {{ loading ? '...' : 'Buscar' }}
-        </button>
-        <button @click="doClear"
-          class="px-4 py-1.5 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 shrink-0">
-          Limpiar
-        </button>
-      </template>
-
-      <!-- Live mode: contador en fila 1 -->
+      <!-- Indicador de carga sutil (modo lazy con debounce) + contador -->
+      <span v-if="lazy && loading" class="flex items-center gap-1.5 text-xs text-gray-400 shrink-0">
+        <span class="w-3 h-3 border-2 border-gray-300 border-t-purple-500 rounded-full animate-spin" />
+        Buscando…
+      </span>
       <span v-else-if="countText" class="text-xs text-gray-400 shrink-0">{{ countText }}</span>
 
     </div>
@@ -165,8 +157,8 @@
         </div>
       </template>
 
-      <!-- Live mode: × Limpiar al final de las píldoras -->
-      <button v-if="!lazy && hasActive" @click="doClear"
+      <!-- Limpiar: × al final de las píldoras, solo si hay filtros activos (lazy o live) -->
+      <button v-if="hasActive" @click="doClear"
         class="flex items-center gap-1 px-3 py-1.5 rounded-full border border-gray-200 text-sm text-gray-500 hover:text-red-600 hover:border-red-300 transition-colors">
         <XMarkIcon class="w-3.5 h-3.5" />
         Limpiar
@@ -180,7 +172,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { ChevronDownIcon, XMarkIcon, MagnifyingGlassIcon, PlusIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -196,9 +188,24 @@ const props = defineProps({
   // Botón de creación
   createLabel:       { type: String,  default: '' },
   createRoute:       { type: String,  default: '' },
+  // Retardo del auto-apply en modo lazy (ms)
+  debounce:          { type: Number,  default: 400 },
 })
 
 const emit = defineEmits(['update:modelValue', 'update:search', 'apply', 'clear', 'create'])
+
+// ── Modo lazy: auto-aplicar con debounce (sin botón "Buscar") ──────────────────
+let debounceTimer = null
+function scheduleApply() {
+  if (!props.lazy) return
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => emit('apply'), props.debounce)
+}
+watch(
+  () => [props.modelValue, props.search],
+  () => scheduleApply(),
+  { deep: true }
+)
 
 const open   = ref(null)
 const timers = {}
@@ -210,7 +217,10 @@ function cancelClose(key) { clearTimeout(timers[key]) }
 
 function onKeydown(e) { if (e.key === 'Escape') open.value = null }
 onMounted(()   => document.addEventListener('keydown', onKeydown))
-onUnmounted(() => document.removeEventListener('keydown', onKeydown))
+onUnmounted(() => {
+  document.removeEventListener('keydown', onKeydown)
+  clearTimeout(debounceTimer)
+})
 
 const visibleFields = computed(() => props.fields.filter(f => !f.hidden))
 

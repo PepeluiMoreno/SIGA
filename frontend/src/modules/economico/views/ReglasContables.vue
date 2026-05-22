@@ -65,7 +65,7 @@
       <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg mx-4">
         <h3 class="text-lg font-semibold mb-4">{{ editando ? 'Editar regla' : 'Nueva regla contable' }}</h3>
         <div class="space-y-3">
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="label">Origen (vacío = comodín)</label>
               <select v-model="form.origen" class="input">
@@ -85,7 +85,7 @@
               </select>
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="label">Cuenta DEBE (código) *</label>
               <input v-model="form.cuentaDebe" class="input font-mono" placeholder="572" />

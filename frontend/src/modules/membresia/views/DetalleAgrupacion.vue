@@ -94,13 +94,13 @@
             class="py-8 text-center text-xs text-slate-400 italic">
             Sin cargos registrados para esta unidad.
           </div>
-          <table v-else class="w-full">
+          <div class="overflow-x-auto -mx-1"><table v-else class="w-full">
             <thead>
               <tr class="border-b border-slate-100">
-                <th class="pb-2 text-left text-xs font-semibold text-slate-400 w-36">Cargo</th>
+                <th class="pb-2 text-left text-xs font-semibold text-slate-400 w-full sm:w-36">Cargo</th>
                 <th class="pb-2 text-left text-xs font-semibold text-slate-400">Titular</th>
                 <th class="pb-2 text-left text-xs font-semibold text-slate-400 hidden md:table-cell">Localidad</th>
-                <th class="pb-2 text-left text-xs font-semibold text-slate-400 w-28 hidden sm:table-cell">Desde</th>
+                <th class="pb-2 text-left text-xs font-semibold text-slate-400 w-full sm:w-28 hidden sm:table-cell">Desde</th>
                 <th class="pb-2 text-left text-xs font-semibold text-slate-400 w-24 hidden lg:table-cell">Estado</th>
                 <th class="w-20"></th>
               </tr>
@@ -146,7 +146,7 @@
                 <td v-else class="py-2.5"></td>
               </tr>
             </tbody>
-          </table>
+          </table></div>
         </div>
       </section>
 
@@ -192,7 +192,7 @@
               </div>
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label :class="lbl">Fecha inicio <span class="text-red-400">*</span></label>
               <input v-model="modal.fechaInicio" type="date" :class="inp" />

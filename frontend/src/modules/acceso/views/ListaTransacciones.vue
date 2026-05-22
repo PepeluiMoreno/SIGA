@@ -26,7 +26,7 @@
     </div>
 
     <!-- Estadísticas por tipo -->
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 mb-4">
       <div v-for="t in TIPOS" :key="t.value"
         class="bg-white rounded-lg border border-gray-200 p-3 text-center cursor-pointer hover:border-purple-300 transition-colors"
         :class="filters.tipo === t.value ? 'ring-2 ring-purple-400 border-purple-300' : ''"
@@ -100,7 +100,7 @@
                 <code class="text-xs font-mono text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded w-60 flex-shrink-0 truncate"
                   :title="ft.transaccion.codigo">{{ ft.transaccion.codigo }}</code>
                 <span class="text-sm text-gray-700 flex-1 truncate" :title="ft.transaccion.nombre">{{ ft.transaccion.nombre }}</span>
-                <span class="inline-flex justify-center w-28 px-2 py-0.5 text-xs font-medium rounded-full flex-shrink-0"
+                <span class="inline-flex justify-center w-full sm:w-28 px-2 py-0.5 text-xs font-medium rounded-full flex-shrink-0"
                   :class="tipoBadge(ft.transaccion.tipo).badge">
                   {{ tipoBadge(ft.transaccion.tipo).label }}
                 </span>
@@ -124,7 +124,7 @@
               <code class="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded w-60 flex-shrink-0 truncate"
                 :title="tx.codigo">{{ tx.codigo }}</code>
               <span class="text-sm text-gray-600 flex-1 truncate" :title="tx.nombre">{{ tx.nombre }}</span>
-              <span class="inline-flex justify-center w-28 px-2 py-0.5 text-xs font-medium rounded-full flex-shrink-0"
+              <span class="inline-flex justify-center w-full sm:w-28 px-2 py-0.5 text-xs font-medium rounded-full flex-shrink-0"
                 :class="tipoBadge(tx.tipo).badge">
                 {{ tipoBadge(tx.tipo).label }}
               </span>

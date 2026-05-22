@@ -1,7 +1,7 @@
 <template>
   <AppLayout title="Dashboard" subtitle="Resumen general de Europa Laica">
     <!-- Estadísticas rápidas -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <!-- Miembros -->
       <div class="bg-purple-50 rounded-lg shadow p-6 border-l-4 border-purple-500 border border-purple-100">
         <div class="flex items-center">
@@ -75,7 +75,7 @@
           Ver detalle →
         </router-link>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <div class="text-center">
           <p class="text-sm text-gray-500">Presupuestado</p>
           <p class="text-xl font-bold text-gray-900">{{ formatCurrency(presupuesto.total) }}</p>
@@ -108,7 +108,7 @@
     </div>
 
     <!-- Contenido principal -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-1 sm:grid-cols-2 gap-8 mb-8">
       <!-- Últimas campañas -->
       <div class="bg-gray-50 rounded-lg shadow p-6 border border-gray-200">
         <div class="flex justify-between items-center mb-4">

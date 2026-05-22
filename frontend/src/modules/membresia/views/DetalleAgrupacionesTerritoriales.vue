@@ -62,7 +62,7 @@
           <button @click="cerrarFormulario" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
         </div>
         <div class="px-6 py-5 space-y-4">
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="col-span-2">
               <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
               <input v-model="form.nombre" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
@@ -126,7 +126,7 @@
           <template v-if="tipoSeleccionado && ['FILIAL','FEDERADA'].includes(tipoSeleccionado.vinculo)">
             <div class="border-t border-gray-100 pt-4">
               <h4 class="text-sm font-semibold text-gray-700 mb-3">Datos jurídicos</h4>
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">NIF / CIF</label>
                   <input v-model="form.nif" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />

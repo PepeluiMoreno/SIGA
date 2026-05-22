@@ -6,7 +6,7 @@
     <div class="bg-white border border-slate-200 rounded-xl p-4 mb-5 flex flex-wrap items-end gap-4">
       <div>
         <label class="label">Ejercicio</label>
-        <select v-model.number="ejercicio" class="input-sm w-28" @change="cargarKpis">
+        <select v-model.number="ejercicio" class="input-sm w-full sm:w-28" @change="cargarKpis">
           <option v-for="y in ejercicios" :key="y" :value="y">{{ y }}</option>
         </select>
       </div>
@@ -43,7 +43,7 @@
           </div>
         </template>
 
-        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="p-5 grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-3">
           <Bloque
             titulo="Saldos consolidados"
             :resumen="`${kpi.numCuentas} cuenta(s) activas · ${fmt(saldoTotal)}`"
@@ -78,7 +78,7 @@
           </div>
         </template>
 
-        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="p-5 grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-3">
           <Bloque
             v-if="permitido(['CUOT_GENERATE'])"
             titulo="Cuotas pendientes"
@@ -141,7 +141,7 @@
           </div>
         </template>
 
-        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="p-5 grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-3">
           <Bloque
             titulo="Justificantes de gasto de socios"
             :resumen="`${kpi.justificantesPresentados} presentados · ${kpi.justificantesAprobados} aprobados · ${kpi.justificantesPagados} pagados`"
@@ -175,7 +175,7 @@
           </div>
         </template>
 
-        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="p-5 grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-3">
           <Bloque
             v-if="permitido(['CUOT_EJERCICIO_CONFIG'])"
             titulo="Cuotas del ejercicio"
@@ -230,7 +230,7 @@
           </div>
         </template>
 
-        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="p-5 grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-3">
           <Bloque
             titulo="Libros contables"
             resumen="Libro Diario, asientos contables y plan de cuentas (Cód. Comercio art. 25.1)."
@@ -274,7 +274,7 @@
           </p>
         </div>
         <div class="px-6 py-5 space-y-3 overflow-y-auto">
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="label">Tipo *</label>
               <select v-model="formMovimiento.tipo" class="input">
@@ -298,7 +298,7 @@
             </select>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="label">Importe (€) *</label>
               <input type="number" step="0.01" min="0" v-model.number="formMovimiento.importe" class="input" />
@@ -374,7 +374,7 @@ import SolicitudesReduccionCuota from './SolicitudesReduccionCuota.vue'
 import { useTesoreria } from '@/composables/useTesoreria'
 import { useGraphQL } from '@/composables/useGraphQL'
 import { usePermisos } from '@/composables/usePermisos'
-import { GET_ACTIVIDADES_PARA_GASTO } from '@/graphql/queries/financiero'
+import { GET_ACTIVIDADES_PARA_GASTO } from '@/graphql/queries/economico'
 import { GET_CAMPANIAS } from '@/graphql/queries/campanias'
 
 // ── Sub-componente Bloque (card con acción) ────────────────────────────────

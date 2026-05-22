@@ -37,7 +37,7 @@
 
     <!-- Tarjeta de info de la cuenta seleccionada -->
     <div v-if="cuentaActual"
-      class="bg-white border border-slate-200 rounded-xl p-4 mb-4 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 text-sm">
+      class="bg-white border border-slate-200 rounded-xl p-4 mb-4 grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3 text-sm">
       <div>
         <p class="text-xs text-slate-500 mb-0.5">Cuenta</p>
         <p class="font-medium text-slate-800">{{ cuentaActual.nombre }}</p>
@@ -71,7 +71,7 @@
       Selecciona una cuenta bancaria para empezar.
     </div>
 
-    <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div v-else class="grid grid-cols-1 lg:grid-cols-1 sm:grid-cols-2 gap-4">
       <!-- Columna izquierda: apuntes del sistema -->
       <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
         <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
@@ -81,7 +81,7 @@
         <div v-if="!apuntesPendientes.length" class="text-center text-slate-400 py-8 text-xs">
           Sin apuntes pendientes de conciliar.
         </div>
-        <table v-else class="w-full text-xs">
+        <div class="overflow-x-auto -mx-1"><table v-else class="w-full text-xs">
           <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase">
             <tr>
               <th class="px-3 py-1.5 text-center w-8"></th>
@@ -105,7 +105,7 @@
               <td class="px-3 py-1 truncate max-w-[16rem]">{{ a.concepto }}</td>
             </tr>
           </tbody>
-        </table>
+        </table></div>
       </div>
 
       <!-- Columna derecha: extracto bancario -->
@@ -117,7 +117,7 @@
         <div v-if="!extractosPendientes.length" class="text-center text-slate-400 py-8 text-xs">
           Sin líneas de extracto pendientes. Importa un extracto bancario para empezar.
         </div>
-        <table v-else class="w-full text-xs">
+        <div class="overflow-x-auto -mx-1"><table v-else class="w-full text-xs">
           <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase">
             <tr>
               <th class="px-3 py-1.5 text-center w-8"></th>
@@ -144,7 +144,7 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
 
@@ -190,7 +190,7 @@ const confirmDialog = useConfirm()
   IMPORTAR_EXTRACTO_NORMA43,
   IMPORTAR_EXTRACTO_CSV,
   GET_OPENBANKING_ACTIVO,
-} from '@/graphql/queries/financiero'
+} from '@/graphql/queries/economico'
 
 const { query, mutation } = useGraphQL()
 

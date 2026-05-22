@@ -101,7 +101,7 @@
 
           <!-- Tabla -->
           <div v-else class="flex-1 overflow-y-auto">
-            <table class="w-full text-sm border-collapse">
+            <div class="overflow-x-auto -mx-1"><table class="w-full text-sm border-collapse">
               <thead class="sticky top-0 bg-white z-10">
                 <tr class="border-b border-gray-100">
                   <th v-for="col in catalogoActivo.columnas" :key="col.key"
@@ -173,11 +173,22 @@
                         title="Editar">
                         <PencilIcon class="w-3.5 h-3.5" />
                       </button>
-                      <button v-if="!item.esInmutable" @click="confirmarEliminar(item)"
-                        class="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                        title="Eliminar">
-                        <TrashIcon class="w-3.5 h-3.5" />
-                      </button>
+                      <ConfirmPopover
+                        v-if="!item.esInmutable"
+                        titulo="Eliminar registro"
+                        :mensaje="`¿Eliminar '${item.nombre}'? Esta acción no se puede deshacer.`"
+                        variante="peligro"
+                        etiqueta-confirmar="Eliminar"
+                        posicion="top"
+                        :cargando="eliminandoId === item.id"
+                        @confirm="eliminarDirecto(item)"
+                      >
+                        <template #default="{ open }">
+                          <button @click="open" class="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Eliminar">
+                            <TrashIcon class="w-3.5 h-3.5" />
+                          </button>
+                        </template>
+                      </ConfirmPopover>
                       <span v-else class="p-1.5 text-gray-300" title="Registro del sistema — no eliminable">
                         <LockClosedIcon class="w-3.5 h-3.5" />
                       </span>
@@ -185,7 +196,7 @@
                   </td>
                 </tr>
               </tbody>
-            </table>
+            </table></div>
           </div>
         </template>
       </div>
@@ -251,7 +262,7 @@
                     <input v-model="formulario[campo.name]" type="color" class="sr-only" />
                   </label>
                   <input v-model="formulario[campo.name]" type="text" placeholder="#RRGGBB"
-                    class="w-28 px-2 py-1 text-xs font-mono border border-gray-300 rounded-md
+                    class="w-full sm:w-28 px-2 py-1 text-xs font-mono border border-gray-300 rounded-md
                            focus:border-purple-400 focus:outline-none" />
                 </div>
               </div>
@@ -349,46 +360,17 @@
       </div>
     </div>
 
-    <!-- ── Modal eliminar ───────────────────────────────────────────── -->
-    <div v-if="modalEliminar" class="fixed inset-0 z-50 flex items-center justify-center px-4">
-      <div class="fixed inset-0 bg-black/25" @click="modalEliminar = false" />
-      <div class="relative bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full">
-        <div class="flex items-start gap-3 mb-4">
-          <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <TrashIcon class="w-5 h-5 text-red-600" />
-          </div>
-          <div>
-            <h3 class="font-semibold text-gray-900">Eliminar registro</h3>
-            <p class="text-sm text-gray-500 mt-0.5">
-              <strong class="text-gray-700">{{ itemAEliminar?.nombre }}</strong>
-            </p>
-          </div>
-        </div>
-        <ErrorAlert v-if="errorEliminar" :message="errorEliminar" />
-        <p v-else class="text-sm text-gray-500 mb-5">
-          Esta acción eliminará el registro permanentemente y no se puede deshacer.
-        </p>
-        <div class="flex justify-end gap-2">
-          <button @click="modalEliminar = false"
-            class="px-3 py-1.5 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
-            Cancelar
-          </button>
-          <button v-if="!errorEliminar" @click="eliminar" :disabled="eliminando"
-            class="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center gap-1.5">
-            <span v-if="eliminando" class="w-3 h-3 rounded-full border-2 border-white/40 border-t-white animate-spin"></span>
-            {{ eliminando ? 'Eliminando…' : 'Eliminar' }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <!-- Modal eliminar reemplazado por ConfirmPopover en la fila -->
   </AppLayout>
 </template>
 
 <script setup>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import ConfirmPopover from '@/components/common/ConfirmPopover.vue'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
+import { useToast } from '@/composables/useToast'
 import { graphqlClient } from '@/graphql/client.js'
 import { useOrgConfigStore } from '@/stores/orgConfig'
 import {
@@ -408,6 +390,7 @@ const COLORES_PRESET = [
 ]
 
 const orgConfig = useOrgConfigStore()
+const toast = useToast()
 
 // ── Acordeón del sidebar ──────────────────────────────────────────────────────
 const gruposColapsados = ref({})
@@ -978,6 +961,7 @@ const guardando      = ref(false)
 const errorGuardado  = ref('')
 const toggling       = ref(null)
 const modalEliminar       = ref(false)
+const eliminandoId        = ref(null)
 const itemAEliminar       = ref(null)
 const eliminando          = ref(false)
 const errorEliminar       = ref('')
@@ -1205,6 +1189,24 @@ function confirmarEliminar(item) {
   modalEliminar.value = true
 }
 
+
+async function eliminarDirecto(item) {
+  if (!catalogoActivo.value) return
+  eliminandoId.value = item.id
+  try {
+    await graphqlClient.request(catalogoActivo.value.mutations.delete, {
+      filter: { id: { eq: item.id } },
+    })
+    toast.success(`"${item.nombre}" eliminado`, {
+      accion: { label: 'Deshacer', callback: () => toast.info('Restauración no disponible — contacta con soporte') },
+    })
+    await cargarItems()
+  } catch (e) {
+    toast.error(e?.response?.errors?.[0]?.message || `"${item.nombre}" está en uso. Desactívalo en su lugar.`)
+  } finally {
+    eliminandoId.value = null
+  }
+}
 async function eliminar() {
   if (!catalogoActivo.value || !itemAEliminar.value) return
   eliminando.value = true

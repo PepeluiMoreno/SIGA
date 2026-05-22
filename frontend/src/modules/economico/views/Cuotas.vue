@@ -11,47 +11,44 @@
       </div>
 
       <!-- Tabla de historial -->
-      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div class="bg-white rounded-xl border border-slate-200 sm:overflow-hidden p-3 sm:p-0">
         <div v-if="cargando" class="p-8 text-center text-slate-400 text-sm">Cargando…</div>
         <div v-else-if="!cuotas.length" class="p-8 text-center text-slate-400 text-sm">
           No hay cuotas configuradas. Usa "Configurar ejercicio" para establecer la primera.
         </div>
-        <table v-else class="w-full text-sm">
-          <thead class="bg-slate-50 text-slate-600 text-left">
-            <tr>
-              <th class="px-4 py-3 font-medium">Ejercicio</th>
-              <th class="px-4 py-3 font-medium">Denominación</th>
-              <th class="px-4 py-3 font-medium text-right">Importe base</th>
-              <th class="px-4 py-3 font-medium">Variación</th>
-              <th class="px-4 py-3 font-medium">Observaciones</th>
-              <th class="px-4 py-3 font-medium text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr v-for="(c, i) in cuotasOrdenadas" :key="c.id" class="hover:bg-slate-50">
-              <td class="px-4 py-3 font-semibold text-slate-800">{{ c.ejercicio }}</td>
-              <td class="px-4 py-3 text-slate-600">{{ c.nombreCuota || `Cuota base ${c.ejercicio}` }}</td>
-              <td class="px-4 py-3 text-right font-mono font-medium text-slate-800">{{ fmt(c.importe) }}</td>
-              <td class="px-4 py-3">
-                <span v-if="variacion(c, i) !== null"
-                  :class="variacion(c, i) > 0 ? 'text-green-700 bg-green-50' : variacion(c, i) < 0 ? 'text-red-700 bg-red-50' : 'text-slate-500 bg-slate-100'"
-                  class="text-xs font-medium px-2 py-0.5 rounded-full">
-                  {{ variacion(c, i) > 0 ? '+' : '' }}{{ variacion(c, i).toFixed(1) }}%
-                </span>
-                <span v-else class="text-xs text-slate-400">—</span>
-              </td>
-              <td class="px-4 py-3 text-slate-500 max-w-xs truncate">{{ c.observaciones || '—' }}</td>
-              <td class="px-4 py-3 text-right">
-                <router-link
-                  :to="{ path: '/economico/cuotas-ejercicio', query: { ejercicio: c.ejercicio } }"
-                  class="text-indigo-600 hover:text-indigo-800 text-xs font-medium"
-                >
-                  Editar
-                </router-link>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <ResponsiveTable
+          v-else
+          :columnas="columnasCuotas"
+          :filas="cuotasConVariacion"
+          clave-fila="id"
+        >
+          <template #cell-ejercicio="{ fila }">
+            <span class="font-semibold text-slate-800">{{ fila.ejercicio }}</span>
+          </template>
+          <template #cell-denominacion="{ fila }">
+            <span class="text-slate-600">{{ fila.nombreCuota || `Cuota base ${fila.ejercicio}` }}</span>
+          </template>
+          <template #cell-importe="{ fila }">
+            <span class="font-mono font-medium text-slate-800">{{ fmt(fila.importe) }}</span>
+          </template>
+          <template #cell-variacion="{ fila }">
+            <span v-if="fila._variacion !== null"
+              :class="fila._variacion > 0 ? 'text-green-700 bg-green-50' : fila._variacion < 0 ? 'text-red-700 bg-red-50' : 'text-slate-500 bg-slate-100'"
+              class="text-xs font-medium px-2 py-0.5 rounded-full">
+              {{ fila._variacion > 0 ? '+' : '' }}{{ fila._variacion.toFixed(1) }}%
+            </span>
+            <span v-else class="text-xs text-slate-400">—</span>
+          </template>
+          <template #cell-observaciones="{ fila }">
+            <span class="text-slate-500">{{ fila.observaciones || '—' }}</span>
+          </template>
+          <template #cell-acciones="{ fila }">
+            <router-link
+              :to="{ path: '/economico/cuotas-ejercicio', query: { ejercicio: fila.ejercicio } }"
+              class="text-indigo-600 hover:text-indigo-800 text-xs font-medium"
+            >Editar</router-link>
+          </template>
+        </ResponsiveTable>
       </div>
 
       <!-- Resumen de cobertura de ejercicios activos -->
@@ -75,8 +72,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
+import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
-import { GET_HISTORIAL_CUOTAS } from '@/graphql/queries/financiero'
+import { GET_HISTORIAL_CUOTAS } from '@/graphql/queries/economico'
 
 const { query } = useGraphQL()
 
@@ -103,6 +101,21 @@ const variacion = (cuota, idx) => {
   if (!siguiente || !siguiente.importe) return null
   return ((parseFloat(cuota.importe) - parseFloat(siguiente.importe)) / parseFloat(siguiente.importe)) * 100
 }
+
+// Cuotas con la variación precalculada (ResponsiveTable no expone el índice en el slot)
+const cuotasConVariacion = computed(() =>
+  cuotasOrdenadas.value.map((c, i) => ({ ...c, _variacion: variacion(c, i) }))
+)
+
+// Columnas de la tabla responsive (Ejercicio = cabecera de tarjeta en móvil)
+const columnasCuotas = [
+  { key: 'ejercicio',     label: 'Ejercicio' },
+  { key: 'denominacion',  label: 'Denominación' },
+  { key: 'importe',       label: 'Importe base', align: 'right' },
+  { key: 'variacion',     label: 'Variación' },
+  { key: 'observaciones', label: 'Observaciones', ocultaEnMovil: true },
+  { key: 'acciones',      label: 'Acciones', align: 'right', esAcciones: true },
+]
 
 onMounted(async () => {
   const data = await query(GET_HISTORIAL_CUOTAS)

@@ -40,7 +40,7 @@
         <p class="text-sm text-gray-500 mt-1">Crea el primer {{ nombreSingular.toLowerCase() }}</p>
       </div>
 
-      <table v-else class="min-w-full divide-y divide-gray-200">
+      <div class="overflow-x-auto -mx-1"><table v-else class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
             <th
@@ -142,7 +142,7 @@
             </td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <!-- Modal Crear/Editar -->

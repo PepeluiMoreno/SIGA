@@ -2,7 +2,7 @@
   <AppLayout title="Seguimiento de Acuerdos" subtitle="Control ejecutivo de acuerdos adoptados en órganos de gobierno">
 
     <!-- Resumen por estado -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <button
         v-for="e in ESTADOS_EJEC" :key="e.codigo"
         @click="filtroEstado = filtroEstado === e.codigo ? '' : e.codigo"

@@ -1,35 +1,20 @@
 <template>
   <AppLayout title="Presupuestos" subtitle="Planificación presupuestaria anual y partidas">
 
-    <!-- Navegador de ejercicios -->
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-2">
-        <button @click="cambiarEjercicio(-1)"
-          class="p-1.5 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-700">
-          <ChevronLeftIcon class="w-5 h-5" />
-        </button>
-        <span class="text-lg font-semibold text-slate-800 w-14 text-center">{{ ejercicioActual }}</span>
-        <button @click="cambiarEjercicio(+1)"
-          :disabled="ejercicioActual >= anioMaximo"
-          class="p-1.5 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-700 disabled:opacity-30">
-          <ChevronRightIcon class="w-5 h-5" />
-        </button>
-      </div>
-      <div class="flex items-center gap-3">
-        <div v-if="todosEjercicios.length > 1" class="flex gap-1">
-          <button v-for="ej in todosEjercicios" :key="ej"
-            @click="irAEjercicio(ej)"
-            :class="['text-xs px-2 py-0.5 rounded-full', ej === ejercicioActual
-              ? 'bg-indigo-600 text-white'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200']">
-            {{ ej }}
-          </button>
-        </div>
+    <!-- Línea temporal de ejercicios (clicable) -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-3 mb-4">
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Ejercicios</h2>
         <router-link to="/economico/presupuesto-evolucion"
           class="text-xs text-indigo-600 hover:underline whitespace-nowrap">
           Ver evolución ↗
         </router-link>
       </div>
+      <BudgetTimeline
+        :ejercicios="ejerciciosTimeline"
+        :seleccionado="ejercicioActual"
+        @select="irAEjercicio"
+      />
     </div>
 
     <!-- Selector de borradores del ejercicio (varios borradores posibles) -->
@@ -47,7 +32,7 @@
         class="text-xs px-2.5 py-1 rounded border border-dashed border-slate-300 text-slate-500 hover:bg-slate-50 disabled:opacity-50">
         + nuevo
       </button>
-      <button @click="mostrarPanelClonar = true"
+      <button @click="abrirCreador"
         class="text-xs px-2.5 py-1 rounded border border-dashed border-slate-300 text-slate-500 hover:bg-slate-50">
         + clonar otro
       </button>
@@ -55,59 +40,22 @@
 
     <LoadSpinner v-if="loading" />
 
-    <!-- Panel de clonado con factor de cuota (compartido: estado vacío y vista con borradores) -->
-    <div v-if="!loading && mostrarPanelClonar"
-      class="mb-4 border border-indigo-200 rounded-lg bg-indigo-50 p-4 max-w-lg mx-auto">
-      <h3 class="text-sm font-semibold text-indigo-800 mb-3">
-        Clonar del presupuesto {{ ejercicioActual - 1 }}
-      </h3>
-      <div v-if="ratioCuota === null" class="text-xs text-slate-500 mb-3 italic">
-        Cargando previsión de ingresos…
-      </div>
-      <div v-else-if="ratioCuota.disponible" class="mb-3">
-        <div class="flex items-center justify-between text-sm mb-1">
-          <span class="text-slate-700">Variación prevista de ingresos por cuotas</span>
-          <span :class="ratioCuota.variacionPorcentaje >= 0 ? 'text-green-700 font-semibold' : 'text-red-600 font-semibold'">
-            {{ ratioCuota.variacionPorcentaje >= 0 ? '+' : '' }}{{ ratioCuota.variacionPorcentaje.toFixed(1) }}%
-          </span>
-        </div>
-        <div class="text-xs text-slate-500 mb-1">
-          <span v-if="ratioCuota.collectionRate !== null">
-            Real cobrado {{ ejercicioActual - 1 }}: {{ eur(ratioCuota.totalOrigen) }} ·
-            Proyección {{ ejercicioActual }}: {{ eur(ratioCuota.totalNuevo) }}
-            (tasa cobro {{ (ratioCuota.collectionRate * 100).toFixed(1) }}%)
-          </span>
-          <span v-else>
-            Cuota base {{ ejercicioActual - 1 }}: {{ eur(ratioCuota.totalOrigen) }} →
-            {{ ejercicioActual }}: {{ eur(ratioCuota.totalNuevo) }}
-          </span>
-        </div>
-        <p v-if="ratioCuota.collectionRate !== null" class="text-xs text-slate-400 mb-2 italic">
-          Proyección = socios activos × tarifa {{ ejercicioActual }} × tasa histórica de cobro {{ ejercicioActual - 1 }}
-        </p>
-        <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none">
-          <input type="checkbox" v-model="aplicarFactorCuota" class="rounded" />
-          Ajustar todas las partidas con este factor (×{{ ratioCuota.ratio.toFixed(4) }})
-        </label>
-      </div>
-      <div v-else class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
-        No hay datos suficientes para calcular el factor de variación.
-        Los importes se copiarán tal cual.
-      </div>
-      <div class="flex gap-2 justify-end mt-2">
-        <button @click="mostrarPanelClonar = false"
-          class="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-800">
-          Cancelar
-        </button>
-        <button @click="clonarDelAnterior" :disabled="ocupado"
-          class="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-          {{ ocupado ? 'Creando…' : 'Crear borrador' }}
-        </button>
-      </div>
+    <!-- Creador de presupuesto: nuevo / clonar / prorrogar (panel unificado) -->
+    <div v-if="!loading && mostrarCreador" class="mb-4 max-w-2xl mx-auto">
+      <BudgetCreator
+        :ejercicio="ejercicioActual"
+        :ratio-cuota="ratioCuota"
+        :puede-clonarse="hayPlanEjercicioAnterior"
+        :puede-prorrogarse="puedeAprobar && hayDefinitivaAnterior"
+        :ocupado="ocupado"
+        @cancel="mostrarCreador = false"
+        @modo-cambiado="onModoCreador"
+        @crear="onCrearPresupuesto"
+      />
     </div>
 
     <!-- Sin presupuesto del ejercicio: ofrecer crearlo -->
-    <div v-if="!loading && !planificacion" class="bg-white rounded-lg shadow border border-gray-200 p-8">
+    <div v-if="!loading && !planificacion && !mostrarCreador" class="bg-white rounded-lg shadow border border-gray-200 p-8">
 
       <!-- Aviso si no hay cuota configurada para el ejercicio -->
       <div v-if="puedeCrear && cuotaEjercicio === null"
@@ -123,25 +71,10 @@
       <div class="text-center">
         <p class="font-medium text-gray-700 mb-1">No hay presupuesto para {{ ejercicioActual }}</p>
         <p class="text-sm text-gray-500 mb-4">Crea la planificación anual para empezar a presupuestar.</p>
-        <template v-if="puedeCrear && cuotaEjercicio !== null">
-          <div class="flex items-center justify-center gap-2">
-            <button @click="crearPlanificacion"
-              class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700">
-              Crear presupuesto {{ ejercicioActual }}
-            </button>
-          </div>
-          <div class="mt-3 text-sm text-gray-500">
-            o
-            <button @click="mostrarPanelClonar = true" class="text-purple-600 hover:underline ml-1">
-              clonar del {{ ejercicioActual - 1 }}
-            </button>
-            <span v-if="puedeAprobar"> ·
-              <button @click="prorrogarDelAnterior" class="text-purple-600 hover:underline">
-                prorrogar el de {{ ejercicioActual - 1 }}
-              </button>
-            </span>
-          </div>
-        </template>
+        <button v-if="puedeCrear && cuotaEjercicio !== null" @click="abrirCreador"
+          class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700">
+          Crear presupuesto {{ ejercicioActual }}
+        </button>
         <p v-else-if="puedeCrear && cuotaEjercicio === null" class="text-xs text-slate-500 mt-2">
           Establece la cuota para poder crear el presupuesto.
         </p>
@@ -165,7 +98,7 @@
         </template>
 
         <div class="px-5 py-4">
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div class="bg-green-50 rounded-lg p-3">
               <p class="text-xs text-green-700">Ingresos previstos</p>
               <p class="text-lg font-semibold text-green-800">{{ eur(planificacion.presupuestoIngresos) }}</p>
@@ -344,7 +277,7 @@
             Resumen previsto frente a ejecutado del ejercicio, para incorporar a la Memoria
             de las cuentas anuales.
           </p>
-          <div v-if="liquidacion" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div v-if="liquidacion" class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="bg-gray-50 rounded-lg p-3">
               <p class="text-xs text-gray-500 mb-1">Ingresos</p>
               <p class="text-sm">Previsto: {{ eur(liquidacion.ingresosPrevistos) }}</p>
@@ -385,11 +318,12 @@
 <script setup>
 import { useToast } from '@/composables/useToast'
 import { ref, computed, watch, onMounted } from 'vue'
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
 import LoadSpinner from '@/components/common/LoadSpinner.vue'
+import BudgetTimeline from '@/components/economico/BudgetTimeline.vue'
+import BudgetCreator from '@/components/economico/BudgetCreator.vue'
 import PartidasPorCategoria from '@/modules/economico/components/PartidasPorCategoria.vue'
 import ModificacionesPresupuestarias from '@/modules/economico/components/ModificacionesPresupuestarias.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
@@ -404,7 +338,7 @@ import {
   GET_COMPARATIVA_INTERANUAL, GET_LIQUIDACION, CLONAR_PRESUPUESTO, PRORROGAR_PRESUPUESTO,
   GET_RATIO_VARIACION_CUOTA,
 } from '@/graphql/queries/presupuestos.js'
-import { GET_CONFIG_CUOTA_EJERCICIO } from '@/graphql/queries/financiero'
+import { GET_CONFIG_CUOTA_EJERCICIO } from '@/graphql/queries/economico'
 import ConfirmActionModal from '@/components/common/ConfirmActionModal.vue'
 const toast = useToast()
 
@@ -437,6 +371,7 @@ const loading = ref(false)
 const ocupado = ref(false)
 const planificacion = ref(null)
 const planesEjercicio = ref([])   // todos los presupuestos (borradores incl.) del ejercicio
+const todosPlanes = ref([])       // todos los presupuestos de todos los ejercicios (para el timeline)
 const partidas = ref([])
 const desviaciones = ref([])
 const estados = ref([])
@@ -449,17 +384,23 @@ const liquidacion = ref(null)
 const _hoy = new Date().getFullYear()
 const _mes  = new Date().getMonth() + 1   // 1-12
 const ejercicioActual = ref(_hoy)
-const anioMaximo = _mes >= 10 ? _hoy + 1 : _hoy  // siguiente año solo desde octubre
 const todosEjercicios = ref([])
 const nuevoEjercicio = computed(() => ejercicioActual.value)
-const mostrarPanelClonar = ref(false)
+const mostrarCreador = ref(false)
 const ratioCuota = ref(null)
-const aplicarFactorCuota = ref(false)
 const cuotaEjercicio = ref(undefined)  // undefined=cargando, null=no existe, objeto=existe
+
+// ¿Hay algún presupuesto del ejercicio anterior para clonar?
+const hayPlanEjercicioAnterior = computed(() =>
+  todosPlanes.value.some(p => p.ejercicio === ejercicioActual.value - 1))
+// ¿El ejercicio anterior tiene un presupuesto definitivo (aprobado+) para prorrogar?
+const hayDefinitivaAnterior = computed(() =>
+  todosPlanes.value.some(p =>
+    p.ejercicio === ejercicioActual.value - 1 &&
+    ['APROBADO', 'EN_EJECUCION', 'CERRADO'].includes(codigoEstadoDe(p))))
 
 async function cargarRatioCuota() {
   ratioCuota.value = null
-  aplicarFactorCuota.value = false
   try {
     const data = await query(GET_RATIO_VARIACION_CUOTA, {
       ejercicioOrigen: nuevoEjercicio.value - 1,
@@ -471,11 +412,22 @@ async function cargarRatioCuota() {
   }
 }
 
-function onCambioEjercicio() {
-  if (mostrarPanelClonar.value) cargarRatioCuota()
+function abrirCreador() {
+  mostrarCreador.value = true
 }
 
-watch(mostrarPanelClonar, (v) => { if (v) cargarRatioCuota() })
+// Cuando el usuario elige el modo "clonar" en el creador, cargamos el ratio de cuota
+function onModoCreador(modo) {
+  if (modo === 'clonar' && ratioCuota.value === null) cargarRatioCuota()
+}
+
+// El creador emite { modo, factor }
+async function onCrearPresupuesto({ modo, factor }) {
+  if (modo === 'nuevo')          await crearPlanificacion()
+  else if (modo === 'clonar')    await clonarDelAnterior(factor)
+  else if (modo === 'prorrogar') await prorrogarDelAnterior()
+  mostrarCreador.value = false
+}
 
 const partidasIngreso = computed(() => partidas.value.filter(p => p.tipo === 'INGRESO'))
 const partidasGasto = computed(() => partidas.value.filter(p => p.tipo === 'GASTO'))
@@ -487,6 +439,20 @@ const estadoColor = computed(() => estadoActual.value?.color ?? '#9ca3af')
 
 const codigoEstadoDe = (plan) =>
   estados.value.find(e => e.id === plan?.estadoId)?.codigo ?? 'BORRADOR'
+
+// Datos para el BudgetTimeline: un nodo por ejercicio con su estado más relevante.
+// Para cada año se elige el plan definitivo (aprobado+) o, si solo hay borradores,
+// el estado del primero. Si no hay ningún plan, estado null (nodo "+", crear).
+const ejerciciosTimeline = computed(() =>
+  todosEjercicios.value.map((anio) => {
+    const delAnio = todosPlanes.value.filter(p => p.ejercicio === anio)
+    if (!delAnio.length) return { anio, estado: null }
+    const definitivo = delAnio.find(p =>
+      ['APROBADO', 'EN_EJECUCION', 'CERRADO'].includes(codigoEstadoDe(p)))
+    return { anio, estado: codigoEstadoDe(definitivo ?? delAnio[0]) }
+  })
+)
+
 // ¿El ejercicio ya tiene un presupuesto definitivo (aprobado o posterior)?
 const hayDefinitiva = computed(() =>
   planesEjercicio.value.some(p => ['APROBADO', 'EN_EJECUCION', 'CERRADO'].includes(codigoEstadoDe(p))))
@@ -499,15 +465,10 @@ const esAprobadoOEjecucion = computed(() => ['APROBADO', 'EN_EJECUCION'].include
 
 const eur = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0)
 
-const cambiarEjercicio = async (delta) => {
-  ejercicioActual.value += delta
-  mostrarPanelClonar.value = false
-  await cargar()
-}
-
 const irAEjercicio = async (ej) => {
   ejercicioActual.value = ej
-  mostrarPanelClonar.value = false
+  mostrarCreador.value = false
+  ratioCuota.value = null
   await cargar()
 }
 
@@ -522,6 +483,7 @@ const cargar = async () => {
     ])
     estados.value = dataEstados?.estadosPlanificacion ?? []
     const planes = dataPlanes?.planificaciones ?? []
+    todosPlanes.value = planes
     cuotaEjercicio.value = (dataCuota?.importesCuotaAnio ?? [])[0] ?? null
     // Construir lista de ejercicios disponibles (existentes + año actual; siguiente solo desde oct.)
     const ejerciciosExistentes = planes.map(p => p.ejercicio)
@@ -675,21 +637,19 @@ const registrarModificacion = async (datos) => {
   await recargarPlan()
 }
 
-const clonarDelAnterior = async () => {
+const clonarDelAnterior = async (factor = null) => {
   ocupado.value = true
   try {
-    const factor = (aplicarFactorCuota.value && ratioCuota.value?.disponible)
-      ? ratioCuota.value.ratio
-      : null
     await mutation(CLONAR_PRESUPUESTO, {
       ejercicioOrigen: nuevoEjercicio.value - 1,
       ejercicioNuevo: nuevoEjercicio.value,
       factor,
     })
-    mostrarPanelClonar.value = false
     await cargar()
+    toast.success(`Presupuesto ${nuevoEjercicio.value} creado clonando ${nuevoEjercicio.value - 1}`)
   } catch (e) {
     console.error(e?.message || e)
+    toast.error(e?.message || 'No se pudo clonar el presupuesto')
   } finally {
     ocupado.value = false
   }
@@ -702,8 +662,10 @@ const prorrogarDelAnterior = async () => {
       ejercicioOrigen: nuevoEjercicio.value - 1, ejercicioNuevo: nuevoEjercicio.value,
     })
     await cargar()
+    toast.success(`Presupuesto ${nuevoEjercicio.value - 1} prorrogado a ${nuevoEjercicio.value}`)
   } catch (e) {
     console.error(e?.message || e)
+    toast.error(e?.message || 'No se pudo prorrogar el presupuesto')
   } finally {
     ocupado.value = false
   }

@@ -42,7 +42,7 @@
             <label class="label">Nombre de la organización <span class="text-red-500">*</span></label>
             <input v-model="form.nombre" type="text" class="input" placeholder="Nombre completo" required />
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="label">NIF <span class="text-red-500">*</span></label>
               <input v-model="form.nif" type="text" class="input" placeholder="G00000000" required />

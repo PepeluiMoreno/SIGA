@@ -41,7 +41,7 @@
     <!-- Tabla -->
     <div v-else class="bg-white rounded-lg border border-gray-200 overflow-hidden">
       <EstadoPendiente v-if="!filtersApplied" />
-      <table v-else class="min-w-full divide-y divide-gray-100">
+      <div class="overflow-x-auto -mx-1"><table v-else class="min-w-full divide-y divide-gray-100">
         <thead class="bg-gray-50">
           <tr>
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Código</th>
@@ -109,7 +109,7 @@
             <td colspan="8" class="px-4 py-12 text-center text-sm text-gray-400">No hay roles definidos</td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <!-- Modal confirmar eliminar -->

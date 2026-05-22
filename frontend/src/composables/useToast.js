@@ -1,25 +1,48 @@
 /**
  * useToast — sistema de notificaciones toast global.
  *
- * Uso en cualquier componente:
- *   import { useToast } from '@/composables/useToast'
+ * Uso básico:
  *   const toast = useToast()
  *   toast.success('Guardado correctamente')
  *   toast.error('No se pudo guardar')
- *   toast.info('Procesando...')
- *   toast.warning('Revisa los datos')
+ *
+ * Con acción "Deshacer":
+ *   toast.success('Miembro eliminado', {
+ *     accion: { label: 'Deshacer', callback: () => restaurarMiembro(id) },
+ *     duration: 6000,
+ *   })
  */
 import { ref } from 'vue'
 
 const toasts = ref([])
 let nextId = 0
 
-function add(message, type = 'info', duration = 4000) {
+function add(message, type = 'info', options = {}) {
+  const duration = options.duration ?? (type === 'error' ? 6000 : 4000)
   const id = ++nextId
-  toasts.value.push({ id, message, type })
-  if (duration > 0) {
-    setTimeout(() => remove(id), duration)
+  const toast = {
+    id,
+    message,
+    type,
+    accion: options.accion ?? null,  // { label: string, callback: fn }
   }
+  toasts.value.push(toast)
+
+  let timer = null
+  if (duration > 0) {
+    timer = setTimeout(() => remove(id), duration)
+  }
+
+  // Si hay acción de deshacer, cancelar el timer al ejecutarla
+  if (toast.accion) {
+    const originalCallback = toast.accion.callback
+    toast.accion.callback = () => {
+      if (timer) clearTimeout(timer)
+      remove(id)
+      originalCallback()
+    }
+  }
+
   return id
 }
 
@@ -31,10 +54,10 @@ function remove(id) {
 export function useToast() {
   return {
     toasts,
-    success: (msg, duration)  => add(msg, 'success', duration),
-    error:   (msg, duration)  => add(msg, 'error',   duration ?? 6000),
-    info:    (msg, duration)  => add(msg, 'info',    duration),
-    warning: (msg, duration)  => add(msg, 'warning', duration),
+    success: (msg, opts = {}) => add(msg, 'success', typeof opts === 'number' ? { duration: opts } : opts),
+    error:   (msg, opts = {}) => add(msg, 'error',   typeof opts === 'number' ? { duration: opts } : opts),
+    info:    (msg, opts = {}) => add(msg, 'info',    typeof opts === 'number' ? { duration: opts } : opts),
+    warning: (msg, opts = {}) => add(msg, 'warning', typeof opts === 'number' ? { duration: opts } : opts),
     remove,
   }
 }

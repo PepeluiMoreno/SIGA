@@ -28,7 +28,7 @@
       <!-- ── KPIs ── -->
       <section class="mb-8">
         <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Estado general</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div v-for="kpi in kpis" :key="kpi.label"
             class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex flex-col gap-1">
             <span class="text-2xl">{{ kpi.icono }}</span>
@@ -42,7 +42,7 @@
       </section>
 
       <!-- ── Columnas: Acuerdos + Reuniones ── -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div class="grid grid-cols-1 lg:grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
 
         <!-- Acuerdos pendientes -->
         <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">

@@ -98,7 +98,7 @@
           </div>
         </div>
 
-        <table class="min-w-full divide-y divide-gray-200">
+        <div class="overflow-x-auto -mx-1"><table class="min-w-full divide-y divide-gray-200">
           <tbody class="bg-white divide-y divide-gray-100">
             <template v-for="fila in filasJerarquicas" :key="fila.type === 'agrupacion' ? 'ag-' + fila.agrupacion.id : 'mb-' + fila.miembro.id">
 
@@ -186,7 +186,7 @@
 
             </template>
           </tbody>
-        </table>
+        </table></div>
       </template>
     </div>
   </AppLayout>

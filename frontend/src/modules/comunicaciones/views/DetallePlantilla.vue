@@ -19,7 +19,7 @@
             <span class="shrink-0 w-1.5 h-5 rounded-full bg-indigo-500"></span>
             <h2 class="text-sm font-semibold text-slate-800">Datos generales</h2>
           </div>
-          <div class="px-5 py-4 grid grid-cols-4 gap-3">
+          <div class="px-5 py-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div class="col-span-2">
               <label :class="lbl">Nombre <span class="text-red-400">*</span></label>
               <input v-model="form.nombre" type="text" :class="inp" @blur="guardarCabecera" />
@@ -158,7 +158,7 @@
                     class="flex-1 text-sm font-medium text-slate-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0"
                     placeholder="Nombre de la actividad…" @blur="guardarActividad(act)" />
                   <div class="flex items-center gap-2 shrink-0">
-                    <select v-model="act.tipoActividadId" :class="inpSm" class="w-36"
+                    <select v-model="act.tipoActividadId" :class="inpSm" class="w-full sm:w-36"
                       @change="guardarActividad(act)">
                       <option value="">— Tipo —</option>
                       <option v-for="t in tiposActividad" :key="t.id" :value="t.id">{{ t.nombre }}</option>

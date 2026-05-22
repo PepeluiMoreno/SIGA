@@ -127,7 +127,7 @@
                 <option v-for="t in tiposReunion" :key="t.id" :value="t.id">{{ t.nombre }}</option>
               </select>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                   Fecha convocatoria <span class="text-red-500">*</span>
@@ -216,7 +216,7 @@
                 <option :value="2">Segunda convocatoria</option>
               </select>
             </div>
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Total socios <span class="text-red-500">*</span></label>
                 <input type="number" min="0" v-model.number="formCeleb.sociosTotales"

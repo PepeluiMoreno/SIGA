@@ -35,52 +35,52 @@
 
     <div v-if="loading" class="py-12 text-center text-slate-400 text-sm">Cargando…</div>
 
-    <div v-else-if="donacionesFiltradas.length" class="bg-white border border-slate-200 rounded-xl overflow-hidden">
-      <table class="w-full text-sm">
-        <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
-          <tr>
-            <th class="px-3 py-2 text-left">Fecha</th>
-            <th class="px-3 py-2 text-left">Donante</th>
-            <th class="px-3 py-2 text-center">Tipo</th>
-            <th class="px-3 py-2 text-right">Importe</th>
-            <th class="px-3 py-2 text-left">Concepto</th>
-            <th class="px-3 py-2 text-center">Estado</th>
-            <th class="px-3 py-2 text-center">Cert.</th>
-            <th class="px-3 py-2 text-center w-8"></th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          <tr v-for="d in donacionesFiltradas" :key="d.id" class="hover:bg-slate-50 cursor-pointer"
-              @click="abrirDetalle(d)">
-            <td class="px-3 py-1.5 text-xs text-slate-600">{{ fechaFmt(d.fecha) }}</td>
-            <td class="px-3 py-1.5">
-              <div class="font-medium text-slate-800">{{ donanteNombre(d) || '—' }}</div>
-              <div v-if="d.donanteDni" class="text-[10px] text-slate-500 font-mono">{{ d.donanteDni }}</div>
-            </td>
-            <td class="px-3 py-1.5 text-center">
-              <span :class="badgeTipo(d.tipo)" class="text-[10px] uppercase rounded-full px-2 py-0.5">
-                {{ d.tipo === 'ESPECIE' ? 'B · Especie' : 'A · Dineraria' }}
-              </span>
-            </td>
-            <td class="px-3 py-1.5 text-right font-mono">{{ fmt(importeDonacion(d)) }}</td>
-            <td class="px-3 py-1.5 text-slate-600 text-xs truncate max-w-xs">
-              {{ d.concepto?.nombre || (d.tipo === 'ESPECIE' ? d.descripcionEspecie : '—') }}
-            </td>
-            <td class="px-3 py-1.5 text-center">
-              <span :class="badgeEstado(d.estado?.nombre)" class="text-[10px] uppercase rounded-full px-2 py-0.5">
-                {{ d.estado?.nombre || '—' }}
-              </span>
-            </td>
-            <td class="px-3 py-1.5 text-center">
-              <span v-if="d.certificadoEmitido" class="text-green-600 font-mono text-[10px]">
-                {{ d.numeroCertificado || '✓' }}
-              </span>
-              <span v-else class="text-slate-300">—</span>
-            </td>
-            <td class="px-3 py-1.5 text-center text-slate-400">›</td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-else-if="donacionesFiltradas.length" class="bg-white border border-slate-200 rounded-xl sm:overflow-hidden p-3 sm:p-0">
+      <ResponsiveTable
+        :columnas="columnasDonaciones"
+        :filas="donacionesFiltradas"
+        clave-fila="id"
+        :row-class="() => 'cursor-pointer'"
+        @row-click="abrirDetalle"
+      >
+        <template #cell-fecha="{ fila }">
+          <span class="text-xs text-slate-600">{{ fechaFmt(fila.fecha) }}</span>
+        </template>
+
+        <template #cell-donante="{ fila }">
+          <div class="font-medium text-slate-800">{{ donanteNombre(fila) || '—' }}</div>
+          <div v-if="fila.donanteDni" class="text-[10px] text-slate-500 font-mono">{{ fila.donanteDni }}</div>
+        </template>
+
+        <template #cell-tipo="{ fila }">
+          <span :class="badgeTipo(fila.tipo)" class="text-[10px] uppercase rounded-full px-2 py-0.5">
+            {{ fila.tipo === 'ESPECIE' ? 'B · Especie' : 'A · Dineraria' }}
+          </span>
+        </template>
+
+        <template #cell-importe="{ fila }">
+          <span class="font-mono">{{ fmt(importeDonacion(fila)) }}</span>
+        </template>
+
+        <template #cell-concepto="{ fila }">
+          <span class="text-slate-600 text-xs">
+            {{ fila.concepto?.nombre || (fila.tipo === 'ESPECIE' ? fila.descripcionEspecie : '—') }}
+          </span>
+        </template>
+
+        <template #cell-estado="{ fila }">
+          <span :class="badgeEstado(fila.estado?.nombre)" class="text-[10px] uppercase rounded-full px-2 py-0.5">
+            {{ fila.estado?.nombre || '—' }}
+          </span>
+        </template>
+
+        <template #cell-cert="{ fila }">
+          <span v-if="fila.certificadoEmitido" class="text-green-600 font-mono text-[10px]">
+            {{ fila.numeroCertificado || '✓' }}
+          </span>
+          <span v-else class="text-slate-300">—</span>
+        </template>
+      </ResponsiveTable>
     </div>
 
     <p v-else class="text-center text-slate-400 py-12 text-sm border border-dashed border-slate-200 rounded-xl">
@@ -102,7 +102,7 @@
         </div>
         <div class="px-6 py-5 space-y-3 overflow-y-auto">
           <!-- Tipo + Carácter -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="label">Tipo *</label>
               <select v-model="formAlta.tipo" class="input">
@@ -122,7 +122,7 @@
           <!-- Donante -->
           <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
             <div class="text-xs font-medium text-slate-700 mb-2">Donante</div>
-            <div class="grid grid-cols-3 gap-2 mb-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-2">
               <label class="flex items-center gap-1.5 text-xs text-slate-700">
                 <input type="radio" v-model="formAlta.donanteTipo" value="MIEMBRO" />
                 <span>Socio</span>
@@ -147,7 +147,7 @@
                 </select>
               </div>
             </div>
-            <div v-if="formAlta.donanteTipo === 'EXTERNO' && !formAlta.anonima" class="grid grid-cols-2 gap-2">
+            <div v-if="formAlta.donanteTipo === 'EXTERNO' && !formAlta.anonima" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div class="col-span-2">
                 <label class="label">Nombre del donante *</label>
                 <input v-model="formAlta.donanteNombre" class="input" placeholder="Nombre o razón social" />
@@ -171,7 +171,7 @@
           </div>
 
           <!-- Importe / Valoración -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div v-if="formAlta.tipo === 'DINERARIA'">
               <label class="label">Importe (€) *</label>
               <input type="number" step="0.01" min="0" v-model.number="formAlta.importe" class="input" />
@@ -200,7 +200,7 @@
           </div>
 
           <!-- Modo de pago + concepto -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div v-if="formAlta.tipo === 'DINERARIA'">
               <label class="label">Modo de ingreso</label>
               <select v-model="formAlta.modoIngreso" class="input">
@@ -287,7 +287,7 @@
           <button @click="donacionDetalle = null" class="text-slate-400 hover:text-slate-700 text-xl leading-none">×</button>
         </div>
         <div class="px-6 py-5 space-y-3 text-sm">
-          <dl class="grid grid-cols-2 gap-3">
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="col-span-2">
               <dt class="text-xs text-slate-500">Donante</dt>
               <dd class="font-medium text-slate-800">{{ donanteNombre(donacionDetalle) || '—' }}</dd>
@@ -395,7 +395,7 @@
         <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center gap-3">
           <label class="text-xs text-slate-700">Ejercicio:</label>
           <input type="number" v-model.number="ejercicioCert" :min="2000" :max="2099"
-                 class="input !w-28" @change="cargarCertificables()" />
+                 class="input !w-full sm:w-28" @change="cargarCertificables()" />
           <button @click="cargarCertificables()" class="btn-secondary text-xs">Recalcular</button>
         </div>
         <div class="px-6 py-3 overflow-y-auto flex-1">
@@ -403,7 +403,7 @@
           <p v-else-if="!certificables.length" class="text-center text-slate-400 text-sm py-4">
             No hay donaciones COBRADAS con NIF en {{ ejercicioCert }}.
           </p>
-          <table v-else class="w-full text-sm">
+          <div class="overflow-x-auto -mx-1"><table v-else class="w-full text-sm">
             <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
               <tr>
                 <th class="px-2 py-1 text-left">Donante</th>
@@ -438,7 +438,7 @@
                 </td>
               </tr>
             </tbody>
-          </table>
+          </table></div>
         </div>
         <div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-2">
           <button @click="modalCertificados = false" class="btn-secondary text-sm">Cerrar</button>
@@ -455,6 +455,7 @@ import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
+import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
 const toast = useToast()
@@ -467,11 +468,22 @@ const toast = useToast()
   EMITIR_CERTIFICADO_DONACION_ANUAL,
   GET_CUENTAS_BANCARIAS_ACTIVAS,
   GET_MIEMBROS_PARA_GASTO,
-} from '@/graphql/queries/financiero'
+} from '@/graphql/queries/economico'
 
 const { query, mutation, loading } = useGraphQL()
 
 const donaciones = ref([])
+
+// Columnas de la tabla responsive (la primera es cabecera de tarjeta en móvil)
+const columnasDonaciones = [
+  { key: 'donante',  label: 'Donante' },
+  { key: 'fecha',    label: 'Fecha' },
+  { key: 'tipo',     label: 'Tipo',     align: 'center' },
+  { key: 'importe',  label: 'Importe',  align: 'right' },
+  { key: 'concepto', label: 'Concepto', ocultaEnMovil: true },
+  { key: 'estado',   label: 'Estado',   align: 'center' },
+  { key: 'cert',     label: 'Cert.',    align: 'center' },
+]
 const conceptos = ref([])
 const cuentasBancarias = ref([])
 const miembros = ref([])

@@ -21,7 +21,7 @@
     </div>
 
     <div v-else class="bg-white rounded-xl border border-gray-200 shadow overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <div class="overflow-x-auto -mx-1"><table class="min-w-full divide-y divide-gray-200 text-sm">
         <thead class="bg-gray-50">
           <tr>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo</th>
@@ -66,7 +66,7 @@
             </td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
   </AppLayout>

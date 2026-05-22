@@ -1,7 +1,7 @@
 <template>
   <AppLayout title="Gestión Económico-Financiera" subtitle="Recaudación, presupuestos y control de gastos">
     <!-- Resumen financiero -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div class="bg-green-50 rounded-lg shadow p-4 border border-green-100">
         <div class="flex items-center">
           <div class="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center mr-3">
@@ -109,7 +109,7 @@
         </div>
 
         <!-- Resumen totales -->
-        <div class="mt-6 pt-6 border-t border-gray-200 grid grid-cols-3 gap-4">
+        <div class="mt-6 pt-6 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div class="text-center">
             <p class="text-sm text-gray-500">Total Presupuestado</p>
             <p class="text-xl font-bold text-gray-900">{{ formatCurrency(totalPresupuestado) }}</p>
@@ -160,7 +160,7 @@
 
         <!-- Filtros avanzados -->
         <div v-if="showFilters" class="mt-4 p-4 border border-gray-200 rounded-lg bg-white">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
               <select v-model="filters.tipo" class="w-full border border-gray-300 rounded-lg px-3 py-2">
@@ -209,51 +209,43 @@
           <p class="text-sm text-gray-500 mt-1">No se encontraron transacciones con los filtros seleccionados.</p>
         </div>
 
-        <table v-else class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-100">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Concepto</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ orgConfig.Miembro }}</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Importe</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="transaccion in transacciones" :key="transaccion.id" class="hover:bg-gray-50">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {{ formatDate(transaccion.fecha) }}
-              </td>
-              <td class="px-6 py-4">
-                <div class="text-sm text-gray-900">{{ transaccion.concepto }}</div>
-                <div v-if="transaccion.referencia" class="text-xs text-gray-500">Ref: {{ transaccion.referencia }}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">{{ transaccion.miembro }}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="getTipoClass(transaccion.tipo)">{{ transaccion.tipo }}</span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full border"
-                  :style="badgeStyle(transaccion.estadoColor)">{{ transaccion.estado }}</span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right">
-                <span :class="transaccion.tipo === 'GASTO' ? 'text-red-600' : 'text-green-600'" class="font-medium">
-                  {{ transaccion.tipo === 'GASTO' ? '-' : '+' }}{{ formatCurrency(transaccion.importe) }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm">
-                <button @click="verDetalle(transaccion)" class="text-purple-600 hover:text-purple-800 mr-2">Ver</button>
-                <button v-if="transaccion.estado === 'PENDIENTE'" @click="marcarCobrada(transaccion)" class="text-green-600 hover:text-green-800">
-                  Cobrar
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <ResponsiveTable
+          v-else
+          :columnas="columnasTransacciones"
+          :filas="transacciones"
+          clave-fila="id"
+        >
+          <template #cell-concepto="{ fila }">
+            <div class="text-sm text-gray-900">{{ fila.concepto }}</div>
+            <div v-if="fila.referencia" class="text-xs text-gray-500">Ref: {{ fila.referencia }}</div>
+          </template>
+          <template #cell-fecha="{ fila }">
+            <span class="text-sm text-gray-900">{{ formatDate(fila.fecha) }}</span>
+          </template>
+          <template #cell-miembro="{ fila }">
+            <span class="text-sm text-gray-900">{{ fila.miembro }}</span>
+          </template>
+          <template #cell-tipo="{ fila }">
+            <span :class="getTipoClass(fila.tipo)">{{ fila.tipo }}</span>
+          </template>
+          <template #cell-estado="{ fila }">
+            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full border"
+              :style="badgeStyle(fila.estadoColor)">{{ fila.estado }}</span>
+          </template>
+          <template #cell-importe="{ fila }">
+            <span :class="fila.tipo === 'GASTO' ? 'text-red-600' : 'text-green-600'" class="font-medium">
+              {{ fila.tipo === 'GASTO' ? '-' : '+' }}{{ formatCurrency(fila.importe) }}
+            </span>
+          </template>
+          <template #cell-acciones="{ fila }">
+            <div class="flex gap-2 justify-end">
+              <button @click="verDetalle(fila)" class="text-purple-600 hover:text-purple-800">Ver</button>
+              <button v-if="fila.estado === 'PENDIENTE'" @click="marcarCobrada(fila)" class="text-green-600 hover:text-green-800">
+                Cobrar
+              </button>
+            </div>
+          </template>
+        </ResponsiveTable>
       </div>
     </div>
 
@@ -267,7 +259,7 @@
           </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <!-- Cuenta Bancaria Principal -->
           <div v-for="plataforma in plataformasCobro" :key="plataforma.id"
                class="border rounded-lg p-4 hover:shadow-md transition-shadow"
@@ -327,7 +319,7 @@
 
     <!-- Tab: Tesorería -->
     <div v-if="activeTab === 'tesoreria'" class="space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-1 sm:grid-cols-2 gap-6">
         <!-- Saldos de cuentas -->
         <div class="bg-gray-50 rounded-lg shadow p-6 border border-gray-200">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">Saldos de Cuentas</h3>
@@ -381,7 +373,7 @@
             + Nueva Remesa
           </button>
         </div>
-        <table class="min-w-full">
+        <div class="overflow-x-auto -mx-1"><table class="min-w-full">
           <thead class="bg-gray-100">
             <tr>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
@@ -410,7 +402,7 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   </AppLayout>
@@ -419,12 +411,23 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
+import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import { executeQuery } from '@/graphql/client'
 import { GET_CUOTAS_ANUALES, GET_DONACIONES, GET_REMESAS } from '@/graphql/queries/economico.js'
 import { badgeStyle } from '@/utils/badge'
 import { useOrgConfigStore } from '@/stores/orgConfig'
 
 const orgConfig = useOrgConfigStore()
+
+const columnasTransacciones = computed(() => [
+  { key: 'concepto', label: 'Concepto' },
+  { key: 'fecha',    label: 'Fecha' },
+  { key: 'miembro',  label: orgConfig.Miembro },
+  { key: 'tipo',     label: 'Tipo' },
+  { key: 'estado',   label: 'Estado' },
+  { key: 'importe',  label: 'Importe', align: 'right' },
+  { key: 'acciones', label: 'Acciones', align: 'right', esAcciones: true },
+])
 const loading = ref(false)
 const activeTab = ref('cobros')
 const cuotas = ref([])

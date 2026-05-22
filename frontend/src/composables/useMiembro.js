@@ -12,7 +12,7 @@ import {
   UPDATE_MIEMBRO,
 } from '@/graphql/queries/miembros.js'
 import { GET_PAISES, GET_PROVINCIAS, GET_NIVELES_ESTUDIOS, GET_NIVELES_HABILIDAD } from '@/graphql/queries/catalogos.js'
-import { GET_MOTIVOS_REDUCCION } from '@/graphql/queries/financiero.js'
+import { GET_MOTIVOS_REDUCCION } from '@/graphql/queries/economico.js'
 
 export function useMiembro() {
   const router = useRouter()

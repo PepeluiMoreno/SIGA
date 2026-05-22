@@ -24,7 +24,7 @@
         <div v-if="!actividadesSinCampania.length" class="px-5 py-8 text-center text-sm text-slate-400">
           Ninguna actividad fuera de campaña con estos filtros.
         </div>
-        <table v-else class="w-full text-sm">
+        <div class="overflow-x-auto -mx-1"><table v-else class="w-full text-sm">
           <thead class="bg-slate-50 border-b border-slate-200">
             <tr>
               <th class="px-4 py-3 text-left font-medium text-slate-600">Nombre</th>
@@ -43,7 +43,7 @@
               @delete="(opts) => eliminarActividad(a, opts)"
             />
           </tbody>
-        </table>
+        </table></div>
       </AccordionPanel>
 
       <!-- ── Acordeón 2: Actividades de campaña (árbol campaña → actividad) ── -->
@@ -51,7 +51,7 @@
         <div v-if="!gruposCampania.length" class="px-5 py-8 text-center text-sm text-slate-400">
           Ninguna actividad de campaña con estos filtros.
         </div>
-        <table v-else class="w-full text-sm">
+        <div class="overflow-x-auto -mx-1"><table v-else class="w-full text-sm">
           <thead class="bg-slate-50 border-b border-slate-200">
             <tr>
               <th class="px-4 py-3 text-left font-medium text-slate-600">Nombre</th>
@@ -86,7 +86,7 @@
               @delete="(opts) => eliminarActividad(a, opts)"
             />
           </tbody>
-        </table>
+        </table></div>
       </AccordionPanel>
 
     </div>

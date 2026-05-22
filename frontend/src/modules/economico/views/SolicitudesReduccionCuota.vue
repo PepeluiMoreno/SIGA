@@ -16,7 +16,7 @@
     </div>
 
     <div v-else class="bg-white rounded-xl border border-slate-200 overflow-hidden mt-3">
-      <table class="w-full text-sm">
+      <div class="overflow-x-auto -mx-1"><table class="w-full text-sm">
         <thead class="bg-slate-50 border-b border-slate-200">
           <tr>
             <th class="px-4 py-3 text-left font-medium text-slate-600">Socio</th>
@@ -51,7 +51,7 @@
             </td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <!-- Modal de detalle / resolución -->
@@ -64,7 +64,7 @@
           </span>
         </div>
         <div class="px-6 py-5 space-y-4 text-sm">
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <p class="text-xs text-slate-500">Socio</p>
               <p class="font-medium text-slate-800">{{ nombreSocio(detalle.miembro) }}</p>
