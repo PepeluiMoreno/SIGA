@@ -736,40 +736,62 @@
                     </div>
                   </div>
 
-                  <div v-if="mostrarFormFranja" class="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-3">
-                    <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Día</label>
-                        <select v-model="nuevaFranja.diaSemana"
-                          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500">
-                          <option v-for="(dia, i) in diasSemana" :key="i" :value="i">{{ dia }}</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Hora inicio</label>
-                        <input v-model="nuevaFranja.horaInicio" type="time"
-                          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
-                      </div>
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Hora fin</label>
-                        <input v-model="nuevaFranja.horaFin" type="time"
-                          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
-                      </div>
-                    </div>
-                    <div class="flex gap-2 justify-end">
-                      <button @click="mostrarFormFranja = false; nuevaFranja = { diaSemana: 0, horaInicio: '', horaFin: '' }"
-                        class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
-                      <button @click="guardarFranja" :disabled="!nuevaFranja.horaInicio || !nuevaFranja.horaFin"
-                        class="px-3 py-1.5 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50">Guardar</button>
-                    </div>
-                  </div>
-
                   <div v-if="!mostrarFormFranja" class="flex justify-end">
                     <button @click="abrirFormFranja(0)"
                       class="px-3 py-1.5 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700">
                       + Añadir franja
                     </button>
                   </div>
+
+                  <!-- Drawer de nueva franja: el día ya viene fijado por la columna -->
+                  <AppDrawer
+                    v-model="mostrarFormFranja"
+                    :title="`Disponibilidad — ${diasSemanaLargo[nuevaFranja.diaSemana]}`"
+                    subtitle="Indica el tramo horario en que puedes colaborar"
+                    size="sm"
+                  >
+                    <div class="space-y-4">
+                      <!-- Día (cambiable, por si se abrió desde el botón general) -->
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Día de la semana</label>
+                        <div class="grid grid-cols-7 gap-1">
+                          <button
+                            v-for="(dia, i) in diasSemana" :key="i"
+                            type="button"
+                            @click="nuevaFranja.diaSemana = i"
+                            class="h-9 rounded-lg text-xs font-medium transition-colors"
+                            :class="nuevaFranja.diaSemana === i
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                          >{{ dia }}</button>
+                        </div>
+                      </div>
+
+                      <div class="grid grid-cols-2 gap-3">
+                        <div>
+                          <label class="block text-sm font-medium text-gray-700 mb-1">Desde</label>
+                          <input v-model="nuevaFranja.horaInicio" type="time"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
+                        </div>
+                        <div>
+                          <label class="block text-sm font-medium text-gray-700 mb-1">Hasta</label>
+                          <input v-model="nuevaFranja.horaFin" type="time"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <template #footer>
+                      <button @click="mostrarFormFranja = false"
+                        class="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        Cancelar
+                      </button>
+                      <button @click="guardarFranja" :disabled="!nuevaFranja.horaInicio || !nuevaFranja.horaFin"
+                        class="px-4 py-2 text-sm text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50">
+                        Guardar franja
+                      </button>
+                    </template>
+                  </AppDrawer>
                 </template>
               </section>
             </template>
@@ -1156,6 +1178,7 @@ import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
+import AppDrawer from '@/components/common/AppDrawer.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
 import JustificantesGastoPanel from '@/components/common/JustificantesGastoPanel.vue'
 import { gql } from 'graphql-request'
@@ -1803,6 +1826,7 @@ const loadingFranjas = ref(false)
 const mostrarFormFranja = ref(false)
 const nuevaFranja = ref({ diaSemana: 0, horaInicio: '', horaFin: '' })
 const diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+const diasSemanaLargo = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
 const franjasPorDia = computed(() => {
   const grupos = {}
