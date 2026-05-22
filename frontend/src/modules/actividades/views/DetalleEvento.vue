@@ -11,7 +11,7 @@
     <div v-else-if="evento">
       <DetailHeader fallback="/eventos" />
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- Columna principal -->
         <div class="lg:col-span-2 space-y-6">
 
@@ -42,7 +42,7 @@
             <div v-if="evento.participantes?.length === 0" class="text-sm text-gray-500 py-4 text-center">
               Sin inscripciones registradas
             </div>
-            <table v-else class="min-w-full divide-y divide-gray-200 text-sm">
+            <div class="overflow-x-auto -mx-1"><<table v-else class="min-w-full divide-y divide-gray-200 text-sm">
               <thead class="bg-gray-50">
                 <tr>
                   <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ orgConfig.Miembro }}</th>
@@ -65,7 +65,7 @@
                   </td>
                 </tr>
               </tbody>
-            </table>
+            </table></div>
           </div>
 
           <!-- Materiales (cartelería, infografías) -->
@@ -80,7 +80,7 @@
             <div v-if="!evento.materiales?.length" class="text-sm text-gray-500 py-4 text-center">
               Sin materiales adjuntos (carteles, infografías, programas...)
             </div>
-            <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div v-else class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-3">
               <a
                 v-for="m in evento.materiales"
                 :key="m.id"
@@ -105,7 +105,7 @@
           <div class="bg-white rounded-lg shadow p-6 border border-gray-100">
             <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Fecha y Lugar</h2>
             <div class="space-y-3 text-sm">
-              <div class="flex items-start gap-2">
+              <div class="flex flex-wrap items-start gap-3">
                 <span class="text-lg mt-0.5">📅</span>
                 <div>
                   <p class="font-medium text-gray-900">{{ formatFechaLarga(evento.fechaInicio) }}</p>
@@ -118,7 +118,7 @@
                 </div>
               </div>
 
-              <div v-if="evento.lugar || evento.ciudad" class="flex items-start gap-2">
+              <div v-if="evento.lugar || evento.ciudad" class="flex flex-wrap items-start gap-3">
                 <span class="text-lg mt-0.5">📍</span>
                 <div>
                   <p class="font-medium text-gray-900">{{ evento.lugar }}</p>
@@ -127,7 +127,7 @@
                 </div>
               </div>
 
-              <div v-if="evento.esOnline" class="flex items-start gap-2">
+              <div v-if="evento.esOnline" class="flex flex-wrap items-start gap-3">
                 <span class="text-lg mt-0.5">🌐</span>
                 <div>
                   <p class="font-medium text-gray-900">Online</p>

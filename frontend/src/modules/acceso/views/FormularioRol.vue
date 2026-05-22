@@ -39,7 +39,7 @@
                 <textarea v-model="form.descripcion" rows="3" class="input resize-none"
                   placeholder="Para qué sirve este rol…" />
               </div>
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <div class="flex items-center gap-1 mb-0.5">
                     <label class="text-xs font-medium text-slate-600">Tipo</label>

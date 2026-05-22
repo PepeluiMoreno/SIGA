@@ -105,7 +105,7 @@
 
           <!-- Campos de nombre (cuando no hay socio aceptado) -->
           <div v-else class="space-y-3">
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <!-- Nombre -->
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">

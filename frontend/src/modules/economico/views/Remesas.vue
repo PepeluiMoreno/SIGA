@@ -141,7 +141,7 @@
           <div v-else-if="asistente.paso === 2" class="space-y-4">
             <!-- ORDINARIA -->
             <template v-if="asistente.tipo === 'ORDINARIA'">
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label class="label">Ejercicio *</label>
                   <input type="number" v-model.number="asistente.ejercicio" class="input" :min="2000" :max="2099" />
@@ -198,7 +198,7 @@
                     <summary class="px-3 py-2 bg-slate-50 cursor-pointer text-xs font-medium text-slate-700 hover:bg-slate-100">
                       Ver cuotas excluidas ({{ preview.excluidas.length }})
                     </summary>
-                    <table class="w-full text-xs">
+                    <div class="overflow-x-auto -mx-1"><<table class="w-full text-xs">
                       <thead class="bg-slate-50 border-t border-slate-100">
                         <tr>
                           <th class="px-3 py-1.5 text-left text-slate-500">Miembro</th>
@@ -213,7 +213,7 @@
                           <td class="px-3 py-1 text-amber-700">{{ e.motivoExclusion }}</td>
                         </tr>
                       </tbody>
-                    </table>
+                    </table></div>
                   </details>
                 </div>
               </div>
@@ -221,7 +221,7 @@
 
             <!-- EXTRAORDINARIA -->
             <template v-else-if="asistente.tipo === 'EXTRAORDINARIA'">
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label class="label">Ejercicio *</label>
                   <input type="number" v-model.number="asistente.ejercicio" class="input" :min="2000" :max="2099" />

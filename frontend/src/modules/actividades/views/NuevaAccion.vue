@@ -26,7 +26,7 @@
       </div>
 
       <!-- Tipo y Estado -->
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Tipo *</label>
           <select
@@ -87,7 +87,7 @@
       </div>
 
       <!-- Fechas y horas -->
-      <div class="grid grid-cols-4 gap-3">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div class="col-span-2">
           <label class="block text-sm font-medium text-slate-700 mb-1">Fecha inicio</label>
           <input

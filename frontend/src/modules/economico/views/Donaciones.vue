@@ -36,7 +36,7 @@
     <div v-if="loading" class="py-12 text-center text-slate-400 text-sm">Cargando…</div>
 
     <div v-else-if="donacionesFiltradas.length" class="bg-white border border-slate-200 rounded-xl overflow-hidden">
-      <table class="w-full text-sm">
+      <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
           <tr>
             <th class="px-3 py-2 text-left">Fecha</th>
@@ -80,7 +80,7 @@
             <td class="px-3 py-1.5 text-center text-slate-400">›</td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <p v-else class="text-center text-slate-400 py-12 text-sm border border-dashed border-slate-200 rounded-xl">
@@ -102,7 +102,7 @@
         </div>
         <div class="px-6 py-5 space-y-3 overflow-y-auto">
           <!-- Tipo + Carácter -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="label">Tipo *</label>
               <select v-model="formAlta.tipo" class="input">
@@ -122,7 +122,7 @@
           <!-- Donante -->
           <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
             <div class="text-xs font-medium text-slate-700 mb-2">Donante</div>
-            <div class="grid grid-cols-3 gap-2 mb-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-2">
               <label class="flex items-center gap-1.5 text-xs text-slate-700">
                 <input type="radio" v-model="formAlta.donanteTipo" value="MIEMBRO" />
                 <span>Socio</span>
@@ -147,7 +147,7 @@
                 </select>
               </div>
             </div>
-            <div v-if="formAlta.donanteTipo === 'EXTERNO' && !formAlta.anonima" class="grid grid-cols-2 gap-2">
+            <div v-if="formAlta.donanteTipo === 'EXTERNO' && !formAlta.anonima" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div class="col-span-2">
                 <label class="label">Nombre del donante *</label>
                 <input v-model="formAlta.donanteNombre" class="input" placeholder="Nombre o razón social" />
@@ -171,7 +171,7 @@
           </div>
 
           <!-- Importe / Valoración -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div v-if="formAlta.tipo === 'DINERARIA'">
               <label class="label">Importe (€) *</label>
               <input type="number" step="0.01" min="0" v-model.number="formAlta.importe" class="input" />
@@ -200,7 +200,7 @@
           </div>
 
           <!-- Modo de pago + concepto -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div v-if="formAlta.tipo === 'DINERARIA'">
               <label class="label">Modo de ingreso</label>
               <select v-model="formAlta.modoIngreso" class="input">
@@ -287,7 +287,7 @@
           <button @click="donacionDetalle = null" class="text-slate-400 hover:text-slate-700 text-xl leading-none">×</button>
         </div>
         <div class="px-6 py-5 space-y-3 text-sm">
-          <dl class="grid grid-cols-2 gap-3">
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="col-span-2">
               <dt class="text-xs text-slate-500">Donante</dt>
               <dd class="font-medium text-slate-800">{{ donanteNombre(donacionDetalle) || '—' }}</dd>
@@ -395,7 +395,7 @@
         <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center gap-3">
           <label class="text-xs text-slate-700">Ejercicio:</label>
           <input type="number" v-model.number="ejercicioCert" :min="2000" :max="2099"
-                 class="input !w-28" @change="cargarCertificables()" />
+                 class="input !w-full sm:w-28" @change="cargarCertificables()" />
           <button @click="cargarCertificables()" class="btn-secondary text-xs">Recalcular</button>
         </div>
         <div class="px-6 py-3 overflow-y-auto flex-1">
@@ -403,7 +403,7 @@
           <p v-else-if="!certificables.length" class="text-center text-slate-400 text-sm py-4">
             No hay donaciones COBRADAS con NIF en {{ ejercicioCert }}.
           </p>
-          <table v-else class="w-full text-sm">
+          <div class="overflow-x-auto -mx-1"><<table v-else class="w-full text-sm">
             <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
               <tr>
                 <th class="px-2 py-1 text-left">Donante</th>
@@ -438,7 +438,7 @@
                 </td>
               </tr>
             </tbody>
-          </table>
+          </table></div>
         </div>
         <div class="px-6 py-4 border-t border-slate-200 flex justify-end gap-2">
           <button @click="modalCertificados = false" class="btn-secondary text-sm">Cerrar</button>

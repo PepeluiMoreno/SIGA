@@ -3,7 +3,7 @@
     <Transition name="drawer">
       <div
         v-if="modelValue"
-        class="fixed inset-0 z-50 flex"
+        class="fixed inset-0 z-50 flex items-end sm:items-stretch"
         role="dialog"
         :aria-labelledby="titleId"
         aria-modal="true"
@@ -14,9 +14,11 @@
           @click="closeOnBackdrop && cerrar()"
         />
 
-        <!-- Panel — se ancla a la derecha -->
+        <!-- Panel — bottom sheet en móvil, drawer lateral en sm+ -->
         <div
-          class="relative ml-auto flex flex-col bg-white shadow-2xl h-full overflow-hidden"
+          class="relative flex flex-col bg-white shadow-2xl overflow-hidden
+                 w-full max-h-[90vh] rounded-t-2xl
+                 sm:ml-auto sm:h-full sm:max-h-none sm:rounded-none sm:rounded-l-2xl"
           :class="widthClass"
         >
           <!-- Cabecera -->
@@ -67,10 +69,10 @@ const emit = defineEmits(['update:modelValue', 'close'])
 const titleId = `drawer-title-${Math.random().toString(36).slice(2)}`
 
 const WIDTH = {
-  sm: 'w-full max-w-sm',
-  md: 'w-full max-w-lg',
-  lg: 'w-full max-w-2xl',
-  xl: 'w-full max-w-3xl',
+  sm: 'sm:max-w-sm',
+  md: 'sm:max-w-lg',
+  lg: 'sm:max-w-2xl',
+  xl: 'sm:max-w-3xl',
 }
 const widthClass = computed(() => WIDTH[props.size] ?? WIDTH.md)
 
@@ -97,6 +99,12 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 }
 .drawer-enter-from { opacity: 0; }
 .drawer-leave-to  { opacity: 0; }
-.drawer-enter-from .relative { transform: translateX(100%); }
-.drawer-leave-to  .relative  { transform: translateX(100%); }
+@media (max-width: 639px) {
+  .drawer-enter-from .relative { transform: translateY(100%); }
+  .drawer-leave-to  .relative  { transform: translateY(100%); }
+}
+@media (min-width: 640px) {
+  .drawer-enter-from .relative { transform: translateX(100%); }
+  .drawer-leave-to  .relative  { transform: translateX(100%); }
+}
 </style>

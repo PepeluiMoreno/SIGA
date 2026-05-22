@@ -37,10 +37,10 @@
     <div v-else-if="grupo">
 
       <!-- ── INFO GENERAL ── -->
-      <div v-show="activeTab === 'info'" class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div v-show="activeTab === 'info'" class="grid grid-cols-1 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5 space-y-4">
           <h2 class="text-xs font-semibold uppercase tracking-widest text-indigo-600">Datos del grupo</h2>
-          <div class="grid grid-cols-2 gap-4 text-sm">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
               <p class="text-xs text-slate-500 mb-0.5">Coordinador</p>
               <p class="font-medium text-slate-900">
@@ -112,7 +112,7 @@
             <p class="text-xs font-semibold text-indigo-800 uppercase tracking-wide">Buscar voluntarios para añadir</p>
             <div class="flex flex-wrap gap-2">
               <input v-model="busqVoluntario" type="text" placeholder="Nombre del voluntario…"
-                class="h-9 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white w-48" />
+                class="h-9 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white w-full sm:w-48" />
               <select v-model="filtroHabilidad" class="h-9 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
                 <option value="">Todas las habilidades</option>
                 <option v-for="h in habilidades" :key="h.id" :value="h.id">{{ h.nombre }}</option>
@@ -204,7 +204,7 @@
 
           <!-- Formulario nueva tarea -->
           <div v-if="formTarea.visible" class="border-b border-slate-100 bg-slate-50 px-5 py-4 space-y-3">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-3">
               <div class="sm:col-span-2">
                 <label class="block text-xs font-medium text-slate-700 mb-1">Título</label>
                 <input v-model="formTarea.titulo" type="text"
@@ -277,7 +277,7 @@
         <!-- Resumen horas -->
         <div v-if="grupo.tareas?.length" class="bg-white rounded-xl border border-slate-200 px-5 py-4">
           <h3 class="text-xs font-semibold uppercase tracking-widest text-indigo-600 mb-3">Estimación de horas</h3>
-          <div class="grid grid-cols-3 gap-4 text-center">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-center">
             <div>
               <p class="text-2xl font-bold text-slate-900">{{ totalHorasEstimadas }}</p>
               <p class="text-xs text-slate-400 mt-0.5">Estimadas</p>
@@ -309,7 +309,7 @@
 
           <!-- Formulario nueva bolsa de horas -->
           <div v-if="formRequisito.visible" class="border-b border-slate-100 bg-slate-50 px-5 py-4 space-y-3">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs font-medium text-slate-700 mb-1">Especialidad / Habilidad</label>
                 <select v-model="formRequisito.especialidadId" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">

@@ -12,7 +12,7 @@
     <template v-else>
       <!-- Tabla comparativa multi-ejercicio -->
       <div class="bg-white rounded-xl border border-slate-200 overflow-hidden mb-6">
-        <table class="w-full text-sm">
+        <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm">
           <thead>
             <tr class="bg-slate-50 text-slate-600">
               <th rowspan="2" class="px-4 py-2 text-left align-bottom">Ejercicio</th>
@@ -64,7 +64,7 @@
               <td class="px-4 py-2"></td>
             </tr>
           </tfoot>
-        </table>
+        </table></div>
       </div>
 
       <!-- Barras comparativas por ejercicio -->

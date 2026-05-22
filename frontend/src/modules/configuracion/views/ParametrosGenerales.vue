@@ -23,16 +23,16 @@
         <AccordionPanel title="Identidad y Sede Social" :default-open="true">
           <div class="px-5 py-4 space-y-4">
             <!-- Nombre + NIF + Nº registro -->
-            <div class="flex items-end gap-3">
+            <div class="flex flex-wrap items-end gap-3">
               <div class="flex-1 min-w-0">
                 <label class="label">Nombre de la organización <span class="text-red-500">*</span></label>
                 <input v-model="form.nombre" type="text" class="input" placeholder="Nombre completo" />
               </div>
-              <div class="w-28 flex-shrink-0">
+              <div class="w-full sm:w-28 flex-shrink-0">
                 <label class="label">NIF <span class="text-red-500">*</span></label>
                 <input v-model="form.nif" type="text" class="input" placeholder="G00000000" maxlength="12" />
               </div>
-              <div class="w-32 flex-shrink-0">
+              <div class="w-full sm:w-32 flex-shrink-0">
                 <label class="label">Nº registro</label>
                 <input v-model="form.numero_registro" type="text" class="input" placeholder="12345/A" maxlength="40" />
               </div>
@@ -42,7 +42,7 @@
               <label class="label">Dirección</label>
               <input v-model="form.sede_social" type="text" class="input" placeholder="Calle, número, piso..." />
             </div>
-            <div class="flex items-end gap-3">
+            <div class="flex flex-wrap items-end gap-3">
               <div class="flex-1 min-w-0">
                 <label class="label">Localidad</label>
                 <input v-model="form.localidad" type="text" class="input" />
@@ -55,13 +55,13 @@
                 <label class="label">Provincia</label>
                 <input v-model="form.provincia" type="text" class="input" />
               </div>
-              <div class="w-28 flex-shrink-0">
+              <div class="w-full sm:w-28 flex-shrink-0">
                 <label class="label">País</label>
                 <input v-model="form.pais" type="text" class="input" />
               </div>
             </div>
-            <div class="flex items-end gap-3">
-              <div class="w-40 flex-shrink-0">
+            <div class="flex flex-wrap items-end gap-3">
+              <div class="w-full sm:w-40 flex-shrink-0">
                 <label class="label">Teléfono <span class="text-red-500">*</span></label>
                 <input v-model="form.telefono" type="tel" class="input" placeholder="+34 900 000 000" />
               </div>
@@ -81,8 +81,8 @@
         <AccordionPanel title="Estructura organizativa" :default-open="true">
           <div class="px-5 pt-4 space-y-4">
             <!-- Tipo entidad + denominaciones -->
-            <div class="flex items-end gap-3">
-              <div class="w-36 flex-shrink-0">
+            <div class="flex flex-wrap items-end gap-3">
+              <div class="w-full sm:w-36 flex-shrink-0">
                 <label class="label">Tipo entidad</label>
                 <select v-model="form.tipo_entidad" class="input">
                   <option value="ASOCIACION">Asociación</option>
@@ -121,7 +121,7 @@
           <div class="px-5 py-4 flex gap-6">
             <!-- Logotipo -->
             <div class="flex flex-col items-center gap-2 flex-shrink-0">
-              <div class="w-28 h-28 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden">
+              <div class="w-full sm:w-28 h-28 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden">
                 <img v-if="form.logo" :src="form.logo" alt="Logo" class="w-full h-full object-contain p-2" />
                 <span v-else class="text-4xl text-slate-200">🏛</span>
               </div>
@@ -142,7 +142,7 @@
             <div class="flex-1 min-w-0 space-y-4">
               <div>
                 <label class="label">Tema de color</label>
-                <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-1.5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 sm:grid-cols-5 gap-2 mt-1.5">
                   <button v-for="t in temas" :key="t.slug" type="button"
                     @click="form.tema = t.slug; orgConfigStore.applyTheme(t, form.fuente_principal)"
                     class="rounded-lg border-2 p-1.5 text-center transition-all hover:border-slate-400"
@@ -156,7 +156,7 @@
               </div>
               <div>
                 <label class="label">Tipografía</label>
-                <select v-model="form.fuente_principal" class="input w-44 mt-1.5">
+                <select v-model="form.fuente_principal" class="input w-full sm:w-44 mt-1.5">
                   <option v-for="f in fuentesDisponibles" :key="f.valor" :value="f.valor">{{ f.nombre }}</option>
                 </select>
               </div>
@@ -245,7 +245,7 @@
               </p>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <div v-for="feat in catalogoFuncionalidades" :key="feat.clave" class="space-y-3">
                 <label class="flex items-start gap-3 cursor-pointer"
                   :class="feat.deshabilitado?.() ? 'cursor-not-allowed' : ''">
@@ -286,7 +286,7 @@
             <div class="space-y-3">
               <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Autenticación</h3>
               <!-- Mecanismo + Inactividad + Sesión en una fila -->
-              <div class="flex items-start gap-4">
+              <div class="flex flex-wrap items-start gap-3">
                 <div class="flex-1 min-w-0">
                   <label class="label">Mecanismo</label>
                   <select v-model="form.auth_modo" class="input">
@@ -295,12 +295,12 @@
                     <option value="OIDC">OIDC / OAuth2</option>
                   </select>
                 </div>
-                <div class="w-40 flex-shrink-0">
+                <div class="w-full sm:w-40 flex-shrink-0">
                   <label class="label">Inactividad (min)</label>
                   <input v-model.number="form.session_inactividad_minutos" type="number" min="0" class="input" />
                   <p class="text-xs text-slate-400 mt-1">0 = sin timeout</p>
                 </div>
-                <div class="w-40 flex-shrink-0">
+                <div class="w-full sm:w-40 flex-shrink-0">
                   <label class="label">Sesión máxima (min)</label>
                   <input v-model.number="form.session_maximo_minutos" type="number" min="0" class="input" />
                   <p class="text-xs text-slate-400 mt-1">0 = ilimitada</p>
@@ -327,7 +327,7 @@
               Sin completar, las remesas no podrán generar XML. La cuenta operativa puede ser cualquiera, pero
               el <b>Identificador de acreedor SEPA</b> debe estar registrado en tu banco.
             </p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="label">Nombre del acreedor *</label>
                 <input v-model="form.sepa_creditor_name" type="text" maxlength="70" class="input"
@@ -355,7 +355,7 @@
 
         <!-- 8. Redes sociales -->
         <AccordionPanel title="Redes sociales" :default-open="false">
-          <div class="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="px-5 py-4 grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-3">
             <div v-for="red in redesSociales" :key="red.key" class="flex items-center gap-2 min-w-0">
               <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                    :style="{ backgroundColor: red.bg, color: red.color }" :title="red.label">

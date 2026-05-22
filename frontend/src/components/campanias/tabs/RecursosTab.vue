@@ -2,7 +2,7 @@
   <div class="space-y-6">
 
     <!-- Resumen de horas -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="bg-slate-50 rounded-lg p-4 text-center">
         <div class="text-2xl font-bold text-slate-800">{{ totalHorasEstimadas }}</div>
         <div class="text-xs text-slate-500 mt-1">Horas estimadas</div>
@@ -25,7 +25,7 @@
     <div v-if="grupos.length > 0">
       <h3 class="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide">Desglose por equipo</h3>
       <div class="rounded-lg border border-slate-200 overflow-hidden">
-        <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <div class="overflow-x-auto -mx-1"><<table class="min-w-full divide-y divide-slate-200 text-sm">
           <thead class="bg-slate-50">
             <tr>
               <th class="px-4 py-3 text-left font-medium text-slate-600">Equipo</th>
@@ -83,14 +83,14 @@
               <td class="px-4 py-3 text-right">{{ fmt(totalPresupuestoEjecutado) }} / {{ fmt(totalPresupuestoAsignado) }}</td>
             </tr>
           </tfoot>
-        </table>
+        </table></div>
       </div>
     </div>
 
     <!-- Tareas por estado -->
     <div v-if="totalTareas > 0">
       <h3 class="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide">Tareas por estado</h3>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <div
           v-for="(count, estado) in tareasPorEstado"
           :key="estado"
@@ -106,7 +106,7 @@
     <div v-if="campania.metaRecaudacion || totalPresupuestoAsignado > 0" class="pt-4 border-t border-slate-200">
       <h3 class="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide">Presupuesto global</h3>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div class="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
         <div class="bg-slate-50 rounded-lg p-4">
           <div class="text-xs text-slate-500">Presupuesto equipos</div>
           <div class="mt-1 text-lg font-semibold text-slate-800">{{ fmt(totalPresupuestoAsignado) }}</div>
@@ -147,7 +147,7 @@
 
       <!-- Form nuevo compromiso -->
       <div v-if="formComp.visible" class="bg-slate-50 rounded-lg border border-slate-200 p-4 mb-3 space-y-3">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-medium text-slate-700 mb-1">Partida presupuestaria</label>
             <select v-model="formComp.partidaId" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -180,7 +180,7 @@
 
       <!-- Lista compromisos -->
       <div v-if="compromisos.length" class="rounded-lg border border-slate-200 overflow-hidden">
-        <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <div class="overflow-x-auto -mx-1"><<table class="min-w-full divide-y divide-slate-200 text-sm">
           <thead class="bg-slate-50">
             <tr>
               <th class="px-4 py-3 text-left font-medium text-slate-600">Partida</th>
@@ -219,7 +219,7 @@
               <td colspan="3"></td>
             </tr>
           </tfoot>
-        </table>
+        </table></div>
       </div>
       <p v-else-if="!formComp.visible" class="text-sm text-slate-400 text-center py-4">
         No hay compromisos presupuestarios vinculados a esta campaña.

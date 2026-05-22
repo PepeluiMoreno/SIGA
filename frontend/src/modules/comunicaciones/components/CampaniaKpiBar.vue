@@ -1,5 +1,5 @@
 <template>
-  <section class="bg-white border border-slate-200 rounded-xl px-5 py-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-2 text-sm">
+  <section class="bg-white border border-slate-200 rounded-xl px-5 py-3 grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-2 text-sm">
     <!-- Tipo y ámbito -->
     <div class="flex flex-col gap-0.5">
       <span class="text-xs text-slate-400 font-medium uppercase tracking-wide">Tipo</span>

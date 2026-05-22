@@ -66,7 +66,7 @@
             <p class="text-gray-500 text-sm">No hay cargos asignados</p>
           </div>
 
-          <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-else class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div v-for="cargo in cargosOrdenados" :key="cargo.id"
               class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
 
@@ -116,7 +116,7 @@
             <p class="text-gray-500 text-sm">No hay registros históricos</p>
           </div>
           <div v-else class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-100">
+            <div class="overflow-x-auto -mx-1"><<table class="min-w-full divide-y divide-gray-100">
               <thead>
                 <tr class="bg-gray-50">
                   <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cargo</th>
@@ -142,7 +142,7 @@
                   <td class="px-5 py-3 text-sm text-gray-500 max-w-xs truncate">{{ h.motivoCambio || '—' }}</td>
                 </tr>
               </tbody>
-            </table>
+            </table></div>
           </div>
         </div>
       </template>

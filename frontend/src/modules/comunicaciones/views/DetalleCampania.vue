@@ -128,13 +128,13 @@
           <AccordionPanel title="Presupuesto" color="emerald">
             <div class="px-5 py-4">
               <div v-if="campania.partidasPresupuesto?.length" class="space-y-3">
-                <table class="w-full text-sm">
+                <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm">
                   <thead>
                     <tr class="text-xs text-slate-400 uppercase border-b border-slate-100">
                       <th class="text-left font-medium pb-2">Concepto</th>
                       <th class="text-left font-medium pb-2 w-20">Tipo</th>
-                      <th class="text-right font-medium pb-2 w-28">Estimado</th>
-                      <th class="text-right font-medium pb-2 w-28">Real</th>
+                      <th class="text-right font-medium pb-2 w-full sm:w-28">Estimado</th>
+                      <th class="text-right font-medium pb-2 w-full sm:w-28">Real</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -159,7 +159,7 @@
                       <td></td>
                     </tr>
                   </tfoot>
-                </table>
+                </table></div>
               </div>
               <p v-else class="text-sm text-slate-400 italic py-3">Sin partidas presupuestarias definidas.</p>
             </div>
@@ -170,7 +170,7 @@
             <div class="px-5 py-4 space-y-4">
 
               <!-- Fechas de campaña -->
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div>
                   <label :class="lbl">Periodicidad</label>
                   <div :class="ro">{{ labelPeriodicidad(campania.periodicidad) }}</div>
@@ -351,7 +351,7 @@
               <!-- Metas -->
               <div v-if="campania.metas?.length">
                 <label :class="lbl">Metas de la campaña</label>
-                <table class="w-full text-sm mt-1">
+                <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm mt-1">
                   <thead>
                     <tr class="text-xs text-slate-400 uppercase border-b border-slate-100">
                       <th class="text-left font-medium pb-2">Tipo de meta</th>
@@ -380,7 +380,7 @@
                       </td>
                     </tr>
                   </tbody>
-                </table>
+                </table></div>
               </div>
               <p v-else class="text-sm text-slate-400 italic">Sin metas definidas</p>
 
@@ -399,7 +399,7 @@
             <div class="px-5 py-4 space-y-5">
 
               <!-- Presupuesto ejecutado -->
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div>
                   <label :class="lbl">Presupuesto estimado</label>
                   <div :class="ro">{{ fmtEur(campania.presupuestoEstimado) }}</div>
@@ -496,7 +496,7 @@
                     {{ p.tipo === 'ingreso' ? 'Ingreso' : 'Gasto' }}
                   </span>
                 </div>
-                <div class="w-36 shrink-0">
+                <div class="w-full sm:w-36 shrink-0">
                   <input v-model.number="p.importeReal" type="number" min="0" step="0.01"
                     class="h-9 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-right tabular-nums"
                     placeholder="0.00" />
@@ -520,7 +520,7 @@
                   Planificado: <span class="font-medium">{{ m.planificado }} {{ m.unidad }}</span>
                 </p>
               </div>
-              <div class="w-36 shrink-0">
+              <div class="w-full sm:w-36 shrink-0">
                 <input v-model.number="m.valorReal" type="number" min="0" step="1"
                   class="h-9 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-right tabular-nums"
                   :placeholder="m.unidad" />
@@ -564,7 +564,7 @@
       <div v-if="modalNotif.resultado" class="px-6 py-5 space-y-4">
         <div class="rounded-lg p-4"
           :class="modalNotif.resultado.simulado ? 'bg-amber-50 border border-amber-200' : 'bg-green-50 border border-green-200'">
-          <div class="flex items-start gap-3">
+          <div class="flex flex-wrap items-start gap-3">
             <CheckBadgeIcon class="w-5 h-5 shrink-0 mt-0.5"
               :class="modalNotif.resultado.simulado ? 'text-amber-600' : 'text-green-600'" />
             <div class="flex-1">
@@ -576,7 +576,7 @@
                 :class="modalNotif.resultado.simulado ? 'text-amber-800' : 'text-green-800'">
                 {{ modalNotif.resultado.mensaje }}
               </p>
-              <dl class="mt-3 grid grid-cols-4 gap-3 text-center">
+              <dl class="mt-3 grid grid-cols-2 lg:grid-cols-4 gap-3 text-center">
                 <div><dt class="text-xs text-slate-500">Total</dt><dd class="text-lg font-semibold text-slate-800">{{ modalNotif.resultado.total }}</dd></div>
                 <div><dt class="text-xs text-slate-500">Enviados</dt><dd class="text-lg font-semibold text-green-700">{{ modalNotif.resultado.enviados }}</dd></div>
                 <div><dt class="text-xs text-slate-500">Fallidos</dt><dd class="text-lg font-semibold text-red-600">{{ modalNotif.resultado.fallidos }}</dd></div>
@@ -698,7 +698,7 @@
         <!-- Qué incluir -->
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-2">Incluir en el clon</label>
-          <div class="grid grid-cols-2 gap-y-2 gap-x-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
             <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
               <input type="checkbox" v-model="modalClonar.incluirMetas" class="accent-indigo-600 rounded" />
               Metas de la campaña

@@ -123,12 +123,12 @@
                   </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <FieldText v-model="miembro.nombre" label="Nombre *" :edit-mode="editMode || isCreateMode" />
                   <FieldText v-model="miembro.apellido1" label="Primer apellido *" :edit-mode="editMode || isCreateMode" />
                   <FieldText v-model="miembro.apellido2" label="Segundo apellido" :edit-mode="editMode || isCreateMode" />
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <FieldSelect v-model="miembro.sexo" label="Sexo" :edit-mode="editMode || isCreateMode" :options="sexoOptions" />
                   <FieldText v-model="miembro.fechaNacimiento" label="Fecha de nacimiento" type="date" :edit-mode="editMode || isCreateMode" />
                   <FieldSelect v-model="miembro.paisNacimientoId" label="País de nacimiento" :edit-mode="editMode || isCreateMode"
@@ -155,7 +155,7 @@
                 <h3 class="text-sm font-semibold text-slate-800">Contacto</h3>
               </template>
               <div class="p-5 space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <FieldText v-model="miembro.email" label="Email" type="email" :edit-mode="editMode || isCreateMode" />
                   <FieldText v-model="miembro.telefono" label="Teléfono" :edit-mode="editMode || isCreateMode" />
                   <FieldText v-model="miembro.telefono2" label="Tel. alternativo" :edit-mode="editMode || isCreateMode" />
@@ -199,7 +199,7 @@
 
                 <!-- Solicitud de supresión: la ejerce el propio socio (derecho RGPD).
                      El flujo formal de tramitación queda para el módulo transversal. -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-4">
                   <FieldCheckbox v-model="miembro.solicitaSupresionDatos" label="Solicita supresión de datos" :edit-mode="editMode || isCreateMode" />
                   <FieldText v-model="miembro.fechaSolicitudSupresion" label="Fecha de la solicitud" type="date"
                     :edit-mode="(editMode || isCreateMode) && miembro.solicitaSupresionDatos" />
@@ -261,7 +261,7 @@
             <div class="flex gap-5 items-start">
               <!-- Selector de forma de pago -->
               <section class="space-y-3 rounded-xl border border-gray-200 p-5 flex-shrink-0 w-80">
-                <div v-if="editMode || isCreateMode" class="grid grid-cols-3 gap-1.5">
+                <div v-if="editMode || isCreateMode" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
                   <button
                     v-for="fp in catalogos.formasPago"
                     :key="fp.id"
@@ -431,7 +431,7 @@
               </template>
               <div class="p-5 space-y-3">
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-4">
                 <!-- Tipo de cuota -->
                 <div>
                   <label class="block text-xs font-medium text-gray-600 mb-1">Tipo de cuota</label>
@@ -497,7 +497,7 @@
               </template>
               <div v-if="loadingCuotas" class="px-5 py-6 text-center text-gray-400 text-sm">Cargando…</div>
               <div v-else-if="!cuotas.length" class="px-5 py-6 text-center text-gray-400 text-sm italic">Sin cuotas registradas</div>
-              <table v-else class="min-w-full divide-y divide-gray-100 text-sm">
+              <div class="overflow-x-auto -mx-1"><<table v-else class="min-w-full divide-y divide-gray-100 text-sm">
                 <thead class="bg-gray-50">
                   <tr>
                     <th class="px-5 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ejercicio</th>
@@ -525,7 +525,7 @@
                     </td>
                   </tr>
                 </tbody>
-              </table>
+              </table></div>
             </AccordionPanel>
 
             <!-- Sub-acordeón: Justificantes de gasto -->
@@ -554,7 +554,7 @@
             <!-- Situación de membresía -->
             <section class="space-y-4 rounded-xl border border-gray-200 p-5">
               <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Situación</h3>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 lg:grid-cols-4 gap-4">
                 <FieldSelect v-model="miembro.tipoMiembroId" :label="`Tipo de ${orgConfig.miembro} *`" :edit-mode="editAdmin"
                   :options="catalogos.tiposMiembro" option-label="nombre" option-value="id" />
                 <FieldSelect v-model="miembro.estadoId" label="Estado *" :edit-mode="editAdmin"
@@ -586,7 +586,7 @@
               <!-- Sección de baja -->
               <template v-if="estadoEsBaja">
                 <div class="pt-3 border-t border-red-100 space-y-4">
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-4">
                     <FieldText v-model="miembro.fechaBaja" label="Fecha de baja" type="date" :edit-mode="editMode || isCreateMode" />
                     <FieldSelect v-model="miembro.motivoBajaId" label="Motivo de baja" :edit-mode="editMode || isCreateMode"
                       :options="catalogos.motivosBaja" option-label="nombre" option-value="id" empty-label="Sin especificar" />
@@ -607,12 +607,12 @@
             </section>
 
             <template v-if="miembro.esVoluntario">
-              <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="grid grid-cols-1 lg:grid-cols-1 sm:grid-cols-2 gap-5">
 
                 <!-- Perfil voluntario -->
                 <section class="space-y-4 rounded-xl border border-gray-200 p-5">
                   <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Perfil voluntario</h3>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-4">
                     <FieldText v-model="miembro.profesion" label="Profesión" :edit-mode="editForm" />
                     <FieldSelect v-model="miembro.nivelEstudiosId" label="Nivel de estudios"
                       :options="catalogos.nivelesEstudios" option-label="nombre" option-value="id"
@@ -621,7 +621,7 @@
                   <FieldTextarea v-model="miembro.intereses" label="Intereses" :edit-mode="editForm" rows="3" />
                   <FieldTextarea v-model="miembro.experienciaVoluntariado" label="Experiencia en voluntariado" :edit-mode="editForm" rows="3" />
                   <FieldTextarea v-model="miembro.observacionesVoluntariado" label="Observaciones de voluntariado" :edit-mode="editForm" rows="3" />
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                  <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
                     <FieldCheckbox v-model="miembro.puedeConducir" label="Puede conducir" :edit-mode="editForm" />
                     <FieldCheckbox v-model="miembro.vehiculoPropio" label="Vehículo propio" :edit-mode="editForm" />
                     <FieldCheckbox v-model="miembro.disponibilidadViajar" label="Disponibilidad para viajar" :edit-mode="editForm" />
@@ -697,7 +697,7 @@
               <!-- Disponibilidad -->
               <section class="space-y-4 rounded-xl border border-gray-200 p-5">
                 <h3 class="text-xs font-semibold uppercase tracking-widest text-sky-600">Disponibilidad</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-4">
                   <FieldText v-model="miembro.disponibilidad" label="Disponibilidad" :edit-mode="editForm" />
                   <FieldText v-model="miembro.horasDisponiblesSemana" label="Horas/semana" type="number" :edit-mode="editForm" />
                 </div>
@@ -707,7 +707,7 @@
                 </p>
                 <template v-else>
                   <div v-if="loadingFranjas" class="text-center py-6 text-gray-400 text-sm">Cargando...</div>
-                  <div v-else class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                  <div v-else class="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 lg:grid-cols-7 gap-2">
                     <div v-for="(dia, i) in diasSemana" :key="i"
                       class="rounded-xl border flex flex-col min-h-[140px] overflow-hidden"
                       :class="franjasPorDia[i]?.length ? 'border-purple-200' : 'border-gray-200'">
@@ -737,7 +737,7 @@
                   </div>
 
                   <div v-if="mostrarFormFranja" class="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-3">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Día</label>
                         <select v-model="nuevaFranja.diaSemana"
@@ -789,7 +789,7 @@
               Sin nombramientos registrados.
             </div>
             <div v-else class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <table class="min-w-full divide-y divide-gray-100 text-sm">
+              <div class="overflow-x-auto -mx-1"><<table class="min-w-full divide-y divide-gray-100 text-sm">
                 <thead class="bg-gray-50">
                   <tr>
                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cargo / Rol</th>
@@ -813,7 +813,7 @@
                     </td>
                   </tr>
                 </tbody>
-              </table>
+              </table></div>
             </div>
           </div>
         </AccordionPanel>
@@ -842,7 +842,7 @@
                   <h3 class="text-sm font-semibold text-indigo-800">Crear cuenta de acceso</h3>
                   <button type="button" @click="modalCuenta.abierto = false" class="text-gray-400 hover:text-gray-600 text-lg leading-none">&times;</button>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1">Email de acceso</label>
                     <input v-model="modalCuenta.email" type="email"
@@ -877,7 +877,7 @@
               <!-- Datos de la cuenta -->
               <section class="rounded-xl border border-gray-200 p-5 space-y-3">
                 <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Cuenta de acceso</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                   <div>
                     <p class="text-xs text-gray-500 mb-0.5">Email de acceso</p>
                     <p class="font-medium text-gray-900">{{ miembro.usuario.email }}</p>
@@ -907,7 +907,7 @@
                       </span>
                     </button>
                     <div v-if="cambioPass.activo" class="px-4 pb-4 border-t border-gray-100 pt-3 space-y-3">
-                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <div>
                           <label class="block text-xs font-medium text-gray-700 mb-1">Contraseña actual</label>
                           <input v-model="cambioPass.actual" type="password"
@@ -979,7 +979,7 @@
                   <p class="text-xs font-medium text-gray-600">Asignar rol</p>
                   <div class="flex flex-wrap gap-2">
                     <select v-model="nuevoRolId"
-                      class="flex-1 min-w-40 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
+                      class="flex-1 min-w-full sm:w-40 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
                       <option value="">Seleccionar rol…</option>
                       <optgroup v-for="tipo in ['FUNCIONAL','ORGANIZACION','SISTEMA','PERSONALIZADO']" :key="tipo" :label="tipo">
                         <option v-for="r in rolesDisponibles.filter(r => r.tipo === tipo)"
@@ -987,7 +987,7 @@
                       </optgroup>
                     </select>
                     <select v-model="nuevoRolAgrupacionId"
-                      class="flex-1 min-w-40 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
+                      class="flex-1 min-w-full sm:w-40 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
                       <option value="">Toda la organización</option>
                       <option v-for="a in catalogos.agrupaciones" :key="a.id" :value="a.id">{{ a.nombre }}</option>
                     </select>
@@ -1075,7 +1075,7 @@
           <div>
             <div class="flex items-center gap-3">
               <label class="text-xs font-medium text-slate-700 shrink-0">Incremento sobre la cuota base *</label>
-              <div class="relative w-28 shrink-0">
+              <div class="relative w-full sm:w-28 shrink-0">
                 <input type="number" min="0" step="1" v-model.number="modalIncremento.incremento"
                   class="w-full border border-slate-300 rounded-lg pl-3 pr-7 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
                 <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 pointer-events-none">€</span>

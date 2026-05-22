@@ -9,7 +9,7 @@
     </div>
 
     <!-- Información clave -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       <!-- Tipo y Responsable -->
       <div class="bg-gray-50 p-4 rounded-lg">
         <h4 class="font-medium text-gray-900 mb-3">Información General</h4>

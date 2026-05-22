@@ -15,7 +15,7 @@
     </div>
 
     <template v-else>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-1 sm:grid-cols-2 gap-6">
         <section v-for="grupo in grupos" :key="grupo.tipo">
           <h3 class="text-sm font-semibold mb-2 flex items-center gap-2"
             :class="grupo.tipo === 'INGRESO' ? 'text-green-700' : 'text-red-700'">
@@ -91,7 +91,7 @@
             <div v-if="puedeGestionar" class="px-3 py-2">
               <div v-if="altaTipo === grupo.tipo" class="flex items-center gap-2 bg-purple-50/40 rounded p-2">
                 <input v-model="nueva.codigo" placeholder="CÓDIGO"
-                  class="inline-edit font-mono text-xs w-28 uppercase" />
+                  class="inline-edit font-mono text-xs w-full sm:w-28 uppercase" />
                 <input v-model="nueva.nombre" placeholder="Nombre de la categoría"
                   class="inline-edit flex-1" @keydown.enter="confirmarAlta(grupo.tipo)" />
                 <button @click="confirmarAlta(grupo.tipo)" class="text-xs text-purple-700 font-medium hover:underline">Añadir</button>

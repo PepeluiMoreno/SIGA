@@ -90,7 +90,7 @@
     <!-- Tab Bitácora: vista orientada al evento de negocio (ApunteCaja con su asiento) -->
     <div v-if="activeTab === 'bitacora'">
       <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
-        <div class="flex items-end gap-3">
+        <div class="flex flex-wrap items-end gap-3">
           <div>
             <label class="label">Ejercicio</label>
             <select v-model.number="bitacoraEjercicio" class="input-sm">
@@ -124,7 +124,7 @@
             <input v-model="bitacoraBusqueda" type="text" placeholder="Concepto, ref…"
                    class="input-sm w-56" />
           </div>
-          <div v-if="!contabilidadCompleja" class="flex items-end gap-2">
+          <div v-if="!contabilidadCompleja" class="flex flex-wrap items-end gap-3">
             <label class="flex items-center gap-2 cursor-pointer select-none pb-1.5">
               <input type="checkbox" v-model="bitacoraSoloSinClasificar"
                 class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
@@ -395,7 +395,7 @@
             Solo se permite renombrar, editar la descripción y activar/desactivar.
             Los campos estructurales (código, tipo, nivel) no se pueden modificar para preservar la integridad contable.
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="label">Código *</label>
               <input v-model="formCuenta.codigo" :disabled="modoEdicion && cuentaBloqueada"
@@ -464,7 +464,7 @@
       <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg mx-4">
         <h3 class="text-lg font-semibold mb-4">Nuevo asiento contable</h3>
         <div class="space-y-3">
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="label">Ejercicio *</label>
               <input type="number" v-model="formAsiento.ejercicio" class="input" />
@@ -514,7 +514,7 @@
           </p>
         </div>
         <div class="px-6 py-5 space-y-3">
-          <div class="text-xs text-slate-500 grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded">
+          <div class="text-xs text-slate-500 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 bg-slate-50 p-3 rounded">
             <div><span class="text-slate-400">Fecha:</span> {{ fechaFmt(formApunte.fecha) }}</div>
             <div><span class="text-slate-400">Importe:</span> <span class="font-mono">{{ fmt(formApunte.importe) }}</span></div>
             <div><span class="text-slate-400">Tipo:</span> {{ formApunte.tipo }}</div>

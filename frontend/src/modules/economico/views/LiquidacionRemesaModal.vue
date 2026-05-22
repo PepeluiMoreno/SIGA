@@ -22,7 +22,7 @@
       <div v-if="paso === 'cargar'" class="p-6 space-y-4">
         <h4 class="font-medium text-slate-700">1. Carga la respuesta del banco</h4>
 
-        <div class="grid grid-cols-3 gap-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           <button
             v-for="t in tiposFichero" :key="t.id"
             @click="tipoFichero = t.id"
@@ -54,7 +54,7 @@
             Las que no marques se considerarán cobradas.
           </p>
           <div class="border border-slate-200 rounded-lg max-h-64 overflow-y-auto">
-            <table class="w-full text-sm">
+            <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm">
               <thead class="bg-slate-50 sticky top-0">
                 <tr>
                   <th class="px-3 py-2 text-left text-xs text-slate-500 w-10">¿Fallida?</th>
@@ -84,7 +84,7 @@
                   </td>
                 </tr>
               </tbody>
-            </table>
+            </table></div>
           </div>
         </div>
 
@@ -102,7 +102,7 @@
 
       <!-- Paso 2: Previsualización (cobradas vs fallidas) -->
       <div v-else-if="paso === 'preview' && preview" class="p-6 space-y-4">
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div class="bg-green-50 border border-green-100 rounded-lg p-3">
             <div class="text-xs text-green-700">Cobradas</div>
             <div class="text-2xl font-bold text-green-700">{{ preview.totales.nCobradas }}</div>
@@ -119,12 +119,12 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- Cobradas -->
           <div>
             <h5 class="font-medium text-green-700 mb-2 text-sm">✓ Cobradas ({{ preview.cobradas.length }})</h5>
             <div class="border border-slate-200 rounded-lg max-h-72 overflow-y-auto">
-              <table class="w-full text-xs">
+              <div class="overflow-x-auto -mx-1"><<table class="w-full text-xs">
                 <thead class="bg-slate-50 sticky top-0">
                   <tr>
                     <th class="px-2 py-1.5 text-left text-slate-500">Orden</th>
@@ -139,7 +139,7 @@
                     <td class="px-2 py-1 text-right font-mono">{{ fmt(c.importe) }}</td>
                   </tr>
                 </tbody>
-              </table>
+              </table></div>
             </div>
           </div>
 
@@ -147,7 +147,7 @@
           <div>
             <h5 class="font-medium text-red-700 mb-2 text-sm">✗ Fallidas ({{ preview.fallidas.length }})</h5>
             <div class="border border-slate-200 rounded-lg max-h-72 overflow-y-auto">
-              <table class="w-full text-xs">
+              <div class="overflow-x-auto -mx-1"><<table class="w-full text-xs">
                 <thead class="bg-slate-50 sticky top-0">
                   <tr>
                     <th class="px-2 py-1.5 text-left text-slate-500">Orden</th>
@@ -164,7 +164,7 @@
                     <td class="px-2 py-1">{{ f.motivo }}</td>
                   </tr>
                 </tbody>
-              </table>
+              </table></div>
             </div>
           </div>
         </div>
@@ -179,7 +179,7 @@
         </div>
 
         <!-- Datos del cobro real -->
-        <div class="border-t border-slate-100 pt-4 grid grid-cols-2 gap-3">
+        <div class="border-t border-slate-100 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="label">Cuenta bancaria del ingreso *</label>
             <select v-model="cuentaBancariaId" class="input">

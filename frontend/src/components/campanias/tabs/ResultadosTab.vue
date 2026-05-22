@@ -4,7 +4,7 @@
     <div class="space-y-4">
       <h3 class="text-lg font-medium text-gray-900">Indicadores de Éxito</h3>
       
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <!-- Participantes -->
         <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
           <div class="flex items-center justify-between">
@@ -139,7 +139,7 @@
     <!-- Resumen ejecutivo -->
     <div class="pt-6 border-t border-gray-200">
       <h4 class="text-md font-medium text-gray-900 mb-3">Resumen Ejecutivo</h4>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="bg-gray-50 p-4 rounded-lg">
           <h5 class="font-medium text-gray-900 mb-2">Fortalezas</h5>
           <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">

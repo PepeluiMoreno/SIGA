@@ -14,7 +14,7 @@
     </div>
 
     <!-- KPIs del último snapshot -->
-    <div v-if="ultimoSnapshot" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div v-if="ultimoSnapshot" class="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <InfoCard icon="✅" bg-class="bg-purple-50 border-purple-200"
         :items="[{ label: 'Socios activos', value: ultimoSnapshot.totalSociosActivos }]" />
       <InfoCard icon="📤" bg-class="bg-gray-50 border-gray-200"
@@ -38,7 +38,7 @@
     <div v-else>
       <h3 class="text-sm font-medium text-gray-700 mb-3">Historial de generaciones</h3>
       <div class="bg-white rounded-lg border border-gray-200 shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <div class="overflow-x-auto -mx-1"><<table class="min-w-full divide-y divide-gray-200 text-sm">
           <thead class="bg-gray-50">
             <tr>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha corte</th>
@@ -64,7 +64,7 @@
               <td class="px-4 py-3 text-gray-400 text-xs">{{ formatFechaHora(s.fechaGeneracion) }}</td>
             </tr>
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
 

@@ -24,7 +24,7 @@
     </div>
 
     <div v-else class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <table class="w-full text-sm">
+      <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm">
         <thead class="bg-slate-50 border-b border-slate-200">
           <tr>
             <th class="px-4 py-3 text-left font-medium text-slate-600">Nombre</th>
@@ -58,7 +58,7 @@
             </td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <!-- Modal confirmación hard-delete -->

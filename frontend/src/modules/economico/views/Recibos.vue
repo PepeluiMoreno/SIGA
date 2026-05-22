@@ -23,7 +23,7 @@
     <div v-if="loading" class="py-12 text-center text-slate-400 text-sm">Cargando…</div>
 
     <div v-else-if="recibosFiltrados.length" class="bg-white border border-slate-200 rounded-xl overflow-hidden">
-      <table class="w-full text-sm">
+      <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
           <tr>
             <th class="px-3 py-2 text-left">Nº Recibo</th>
@@ -55,7 +55,7 @@
             <td class="px-3 py-1.5 text-center text-slate-400">›</td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <p v-else class="text-center text-slate-400 py-12 text-sm border border-dashed border-slate-200 rounded-xl">
@@ -118,7 +118,7 @@
           <button @click="reciboDetalle = null" class="text-slate-400 hover:text-slate-700 text-xl leading-none">×</button>
         </div>
         <div class="px-6 py-5 space-y-3 text-sm">
-          <dl class="grid grid-cols-2 gap-3">
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <dt class="text-xs text-slate-500">Socio</dt>
               <dd class="font-medium text-slate-800">{{ socioNombre(reciboDetalle) }}</dd>
@@ -176,7 +176,7 @@
                 No hay cuentas bancarias activas configuradas.
               </p>
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="label">Modo cobro *</label>
                 <select v-model="formCobrar.modoCobro" class="input">

@@ -18,7 +18,7 @@
         <div class="px-5 py-4 space-y-4">
 
           <!-- Fila 1: 3 botones de origen -->
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <button type="button" @click="origenTipo = 'blanco'"
               class="flex flex-col items-center gap-2 p-4 border-2 rounded-xl transition-colors text-center"
               :class="origenTipo === 'blanco' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 bg-white hover:border-slate-300'">
@@ -236,12 +236,12 @@
                 <PlusIcon class="w-3.5 h-3.5" /> Añadir partida
               </button>
             </div>
-            <table class="w-full">
+            <div class="overflow-x-auto -mx-1"><<table class="w-full">
               <thead>
                 <tr class="border-b border-slate-100">
                   <th class="pb-2 text-left text-xs font-semibold text-slate-400">Concepto</th>
                   <th class="pb-2 w-24 text-left text-xs font-semibold text-slate-400">Tipo</th>
-                  <th class="pb-2 w-32 text-right text-xs font-semibold text-slate-400 pr-1">Importe estimado</th>
+                  <th class="pb-2 w-full sm:w-32 text-right text-xs font-semibold text-slate-400 pr-1">Importe estimado</th>
                   <th class="w-7"></th>
                 </tr>
               </thead>
@@ -281,7 +281,7 @@
                   <td></td>
                 </tr>
               </tbody>
-            </table>
+            </table></div>
           </div>
         </AccordionPanel>
 
@@ -301,11 +301,11 @@
                   <option v-for="p in PERIODICIDADES" :key="p.value" :value="p.value">{{ p.label }}</option>
                 </select>
               </div>
-              <div class="w-36">
+              <div class="w-full sm:w-36">
                 <label :class="lbl">{{ periInfo.labelInicio }}</label>
                 <input v-model="campania.fecha_inicio" type="date" :class="inp" />
               </div>
-              <div v-if="!periInfo.sinFin" class="w-36">
+              <div v-if="!periInfo.sinFin" class="w-full sm:w-36">
                 <label :class="lbl">{{ periInfo.labelFin }}</label>
                 <input v-model="campania.fecha_fin" type="date" :class="inp" />
               </div>
@@ -375,7 +375,7 @@
                     </div>
 
                     <!-- Responsable + Lugar -->
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <label class="block text-xs font-medium text-slate-500 mb-1">Responsable</label>
                         <select v-model="act.responsableId" :class="inpSm">
@@ -532,11 +532,11 @@
                   <PlusIcon class="w-3.5 h-3.5" /> Añadir meta
                 </button>
               </div>
-              <table class="w-full">
+              <div class="overflow-x-auto -mx-1"><<table class="w-full">
                 <thead>
                   <tr class="border-b border-slate-100">
                     <th class="pb-2 text-left text-xs font-semibold text-slate-400">Tipo de meta</th>
-                    <th class="pb-2 w-32 text-right text-xs font-semibold text-slate-400 pr-1">Valor planificado</th>
+                    <th class="pb-2 w-full sm:w-32 text-right text-xs font-semibold text-slate-400 pr-1">Valor planificado</th>
                     <th class="pb-2 text-left text-xs font-semibold text-slate-400 pl-2">Notas</th>
                     <th class="w-7"></th>
                   </tr>
@@ -571,7 +571,7 @@
                     </td>
                   </tr>
                 </tbody>
-              </table>
+              </table></div>
             </div>
 
           </div>

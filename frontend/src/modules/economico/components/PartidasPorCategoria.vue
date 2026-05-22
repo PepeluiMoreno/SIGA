@@ -14,13 +14,13 @@
           </div>
         </template>
 
-        <table class="w-full text-sm">
+        <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm">
           <thead class="bg-gray-50 text-xs text-gray-500">
             <tr>
-              <th class="px-3 py-2 text-left w-28">Código</th>
+              <th class="px-3 py-2 text-left w-full sm:w-28">Código</th>
               <th class="px-3 py-2 text-left">Nombre</th>
-              <th class="px-3 py-2 text-right w-32">Presupuestado</th>
-              <th class="px-3 py-2 text-right w-28">Ejecutado</th>
+              <th class="px-3 py-2 text-right w-full sm:w-32">Presupuestado</th>
+              <th class="px-3 py-2 text-right w-full sm:w-28">Ejecutado</th>
               <th class="px-3 py-2 text-right w-24">Desviación</th>
               <th class="px-3 py-2 text-center w-16">%</th>
               <th v-if="editable" class="px-3 py-2 text-center w-20"></th>
@@ -43,7 +43,7 @@
                 <input v-if="editable" :value="p.importePresupuestado" type="number" step="0.01"
                   @blur="commitImporte(p, $event.target.value)"
                   @keydown.enter="$event.target.blur()"
-                  class="inline-edit text-right w-28" />
+                  class="inline-edit text-right w-full sm:w-28" />
                 <template v-else>
                   <span>{{ eur(p.importePresupuestado) }}</span>
                   <span v-if="p.importeModificaciones" class="block text-[10px] text-gray-400">
@@ -83,7 +83,7 @@
               </td>
               <td class="px-3 py-1.5 text-right">
                 <input v-model.number="nueva.importe" type="number" step="0.01" placeholder="0,00"
-                  class="inline-edit text-right w-28" @keydown.enter="confirmarAlta(grupo)" />
+                  class="inline-edit text-right w-full sm:w-28" @keydown.enter="confirmarAlta(grupo)" />
               </td>
               <td colspan="4" class="px-3 py-1.5 text-center">
                 <button @click="confirmarAlta(grupo)" class="text-xs text-purple-700 font-medium hover:underline mr-2">Añadir</button>
@@ -91,7 +91,7 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </table></div>
 
         <div v-if="editable && grupo.clave !== filaAltaCategoria" class="px-3 py-2">
           <button @click="abrirAlta(grupo)" class="text-xs text-purple-600 hover:underline">+ Añadir partida</button>
@@ -105,7 +105,7 @@
       <button @click="abrirAltaSinCategoria" class="text-sm text-purple-600 hover:underline">+ Añadir la primera partida</button>
       <div v-if="filaAltaCategoria === '__sin__'" class="mt-3 flex items-center justify-center gap-2">
         <input v-model="nueva.codigo" placeholder="Código" class="inline-edit font-mono text-xs w-24" />
-        <input v-model="nueva.nombre" placeholder="Nombre" class="inline-edit w-48" />
+        <input v-model="nueva.nombre" placeholder="Nombre" class="inline-edit w-full sm:w-48" />
         <input v-model.number="nueva.importe" type="number" step="0.01" placeholder="0,00" class="inline-edit text-right w-24" />
         <button @click="confirmarAltaSinCategoria" class="text-xs text-purple-700 font-medium hover:underline">Añadir</button>
       </div>

@@ -42,10 +42,10 @@
       <!-- Saldo (solo hojas con saldo) -->
       <span
         v-if="cuenta.permiteAsiento && saldoFormateado"
-        class="font-mono text-xs w-28 text-right shrink-0"
+        class="font-mono text-xs w-full sm:w-28 text-right shrink-0"
         :class="saldoColor"
       >{{ saldoFormateado }}</span>
-      <span v-else class="w-28 shrink-0" />
+      <span v-else class="w-full sm:w-28 shrink-0" />
 
       <!-- Acciones -->
       <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">

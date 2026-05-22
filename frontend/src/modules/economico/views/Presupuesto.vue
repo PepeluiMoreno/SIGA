@@ -165,7 +165,7 @@
         </template>
 
         <div class="px-5 py-4">
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div class="bg-green-50 rounded-lg p-3">
               <p class="text-xs text-green-700">Ingresos previstos</p>
               <p class="text-lg font-semibold text-green-800">{{ eur(planificacion.presupuestoIngresos) }}</p>
@@ -344,7 +344,7 @@
             Resumen previsto frente a ejecutado del ejercicio, para incorporar a la Memoria
             de las cuentas anuales.
           </p>
-          <div v-if="liquidacion" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div v-if="liquidacion" class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="bg-gray-50 rounded-lg p-3">
               <p class="text-xs text-gray-500 mb-1">Ingresos</p>
               <p class="text-sm">Previsto: {{ eur(liquidacion.ingresosPrevistos) }}</p>

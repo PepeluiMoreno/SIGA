@@ -1,7 +1,7 @@
 <template>
   <AppLayout title="Gestión Económico-Financiera" subtitle="Recaudación, presupuestos y control de gastos">
     <!-- Resumen financiero -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div class="bg-green-50 rounded-lg shadow p-4 border border-green-100">
         <div class="flex items-center">
           <div class="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center mr-3">
@@ -109,7 +109,7 @@
         </div>
 
         <!-- Resumen totales -->
-        <div class="mt-6 pt-6 border-t border-gray-200 grid grid-cols-3 gap-4">
+        <div class="mt-6 pt-6 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div class="text-center">
             <p class="text-sm text-gray-500">Total Presupuestado</p>
             <p class="text-xl font-bold text-gray-900">{{ formatCurrency(totalPresupuestado) }}</p>
@@ -160,7 +160,7 @@
 
         <!-- Filtros avanzados -->
         <div v-if="showFilters" class="mt-4 p-4 border border-gray-200 rounded-lg bg-white">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
               <select v-model="filters.tipo" class="w-full border border-gray-300 rounded-lg px-3 py-2">
@@ -209,7 +209,7 @@
           <p class="text-sm text-gray-500 mt-1">No se encontraron transacciones con los filtros seleccionados.</p>
         </div>
 
-        <table v-else class="min-w-full divide-y divide-gray-200">
+        <div class="overflow-x-auto -mx-1"><<table v-else class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-100">
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
@@ -253,7 +253,7 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
 
@@ -267,7 +267,7 @@
           </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <!-- Cuenta Bancaria Principal -->
           <div v-for="plataforma in plataformasCobro" :key="plataforma.id"
                class="border rounded-lg p-4 hover:shadow-md transition-shadow"
@@ -327,7 +327,7 @@
 
     <!-- Tab: Tesorería -->
     <div v-if="activeTab === 'tesoreria'" class="space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-1 sm:grid-cols-2 gap-6">
         <!-- Saldos de cuentas -->
         <div class="bg-gray-50 rounded-lg shadow p-6 border border-gray-200">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">Saldos de Cuentas</h3>
@@ -381,7 +381,7 @@
             + Nueva Remesa
           </button>
         </div>
-        <table class="min-w-full">
+        <div class="overflow-x-auto -mx-1"><<table class="min-w-full">
           <thead class="bg-gray-100">
             <tr>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
@@ -410,7 +410,7 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   </AppLayout>

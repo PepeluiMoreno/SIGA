@@ -9,7 +9,7 @@
         <h3 class="font-semibold text-slate-800 mb-3">Configuración del ejercicio</h3>
 
         <div class="space-y-3">
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="label">Ejercicio *</label>
               <select v-model.number="ejercicio" class="input" @change="cargarConfig">
@@ -74,7 +74,7 @@
         </p>
 
         <template v-else-if="preview">
-          <div class="grid grid-cols-4 gap-2 mb-3">
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
             <div class="bg-slate-50 rounded p-2 text-center">
               <div class="text-xs text-slate-500">Generables</div>
               <div class="text-lg font-bold text-indigo-600">{{ preview.nGenerables }}</div>
@@ -94,7 +94,7 @@
           </div>
 
           <div class="border border-slate-200 rounded-lg overflow-hidden">
-            <table class="w-full text-sm">
+            <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm">
               <thead class="bg-slate-50 text-slate-600">
                 <tr>
                   <th class="px-3 py-2 text-left">Tipo de miembro</th>
@@ -121,7 +121,7 @@
                   <td class="px-3 py-1.5 text-right font-mono">{{ fmt(d.total) }}</td>
                 </tr>
               </tbody>
-            </table>
+            </table></div>
           </div>
 
           <div class="mt-3 flex items-end gap-3">

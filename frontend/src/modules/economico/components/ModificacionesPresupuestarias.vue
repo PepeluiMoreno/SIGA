@@ -13,7 +13,7 @@
         <button @click="abrirForm" class="text-sm text-purple-600 hover:underline">+ Registrar modificación</button>
       </div>
       <div v-else class="bg-purple-50/50 border border-purple-100 rounded-lg p-4 space-y-3">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Tipo</label>
             <select v-model="form.tipo" class="input-sm w-full">

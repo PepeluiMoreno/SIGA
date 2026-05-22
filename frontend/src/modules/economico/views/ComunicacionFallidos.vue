@@ -7,7 +7,7 @@
       <div class="flex flex-wrap items-end gap-3">
         <div>
           <label class="label">Ejercicio</label>
-          <select v-model="filtroEjercicio" class="input-sm w-32">
+          <select v-model="filtroEjercicio" class="input-sm w-full sm:w-32">
             <option value="">Todos</option>
             <option v-for="y in ejerciciosDisponibles" :key="y" :value="y">{{ y }}</option>
           </select>
@@ -24,7 +24,7 @@
 
     <!-- Tabla recibos -->
     <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
-      <table class="w-full text-sm">
+      <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-600">
           <tr>
             <th class="px-3 py-2 text-left w-10">
@@ -58,7 +58,7 @@
             </td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <!-- Barra envío -->

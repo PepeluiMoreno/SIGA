@@ -34,7 +34,7 @@
     <div v-if="loading" class="py-12 text-center text-slate-400 text-sm">Cargando…</div>
 
     <div v-else-if="justificantesFiltrados.length" class="bg-white border border-slate-200 rounded-xl overflow-hidden">
-      <table class="w-full text-sm">
+      <div class="overflow-x-auto -mx-1"><<table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
           <tr>
             <th class="px-3 py-2 text-left">Nº</th>
@@ -75,7 +75,7 @@
             </td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <p v-else class="text-center text-slate-400 py-10 text-sm border border-dashed border-slate-200 rounded-xl">
@@ -218,7 +218,7 @@
           <button @click="justDetalle = null" class="text-slate-400 hover:text-slate-700 text-xl leading-none">×</button>
         </div>
         <div class="px-6 py-5 space-y-3 text-sm overflow-y-auto">
-          <dl class="grid grid-cols-2 gap-3">
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <dt class="text-xs text-slate-500">Presentado por</dt>
               <dd class="font-medium text-slate-800">{{ miembroNombre(justDetalle.miembro) }}</dd>
@@ -284,7 +284,7 @@
             <h4 class="text-xs font-semibold text-slate-700 uppercase mb-2">
               Gastos ({{ justDetalle.lineas.length }})
             </h4>
-            <table class="w-full text-xs">
+            <div class="overflow-x-auto -mx-1"><<table class="w-full text-xs">
               <thead class="text-slate-500">
                 <tr>
                   <th class="text-left font-medium py-1">Concepto</th>
@@ -308,7 +308,7 @@
                   <td class="py-1 text-right font-mono text-slate-800">{{ fmt(justDetalle.importe) }}</td>
                 </tr>
               </tfoot>
-            </table>
+            </table></div>
           </div>
 
           <!-- Documentos probatorios -->
@@ -339,7 +339,7 @@
                 </option>
               </select>
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="label">Modo pago *</label>
                 <select v-model="formPagar.modoPago" class="input">

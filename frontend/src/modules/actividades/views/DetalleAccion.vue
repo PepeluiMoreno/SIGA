@@ -54,7 +54,7 @@
 
         <!-- Formulario edición -->
         <div v-if="editandoAccion" class="px-5 py-4 space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="sm:col-span-2">
               <label class="block text-xs font-medium text-slate-700 mb-1">Nombre *</label>
               <input v-model="formAccionEdit.nombre" type="text"
@@ -162,7 +162,7 @@
           <div v-if="accion.descripcion" class="px-5 py-4">
             <p class="text-sm text-slate-600">{{ accion.descripcion }}</p>
           </div>
-          <dl class="px-5 py-4 grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+          <dl class="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <div v-if="accion.fechaInicio">
               <dt class="text-slate-500 mb-0.5">Fecha inicio</dt>
               <dd class="text-slate-900 font-medium">{{ accion.fechaInicio }}<span v-if="accion.horaInicio" class="ml-1 text-slate-500">{{ accion.horaInicio }}</span></dd>
@@ -439,7 +439,7 @@
                 </button>
               </div>
             </div>
-            <div v-else class="grid grid-cols-2 gap-3">
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">Nombre *</label>
                 <input v-model="formParticipacion.nombreExterno" type="text"
@@ -451,7 +451,7 @@
                   class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">Rol</label>
                 <select v-model="formParticipacion.rol"
@@ -502,7 +502,7 @@
                   confirm-title="¿Eliminar participante?" :confirm-text="`«${nombreParticipacion(p)}» será eliminado.`" />
               </div>
               <div v-else class="px-5 py-3 bg-slate-50 space-y-3">
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-xs font-medium text-slate-700 mb-1">Rol</label>
                     <select v-model="formParticipacionEdit.rol" class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white">
@@ -550,7 +550,7 @@
         <div v-else class="px-5 py-4 space-y-4">
           <!-- Vista valoración si ya está cerrada -->
           <div v-if="!editandoValoracion" class="space-y-3">
-            <dl class="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
               <div v-if="accion.presupuestoEjecutado">
                 <dt class="text-slate-500 mb-0.5">Presupuesto ejecutado</dt>
                 <dd class="text-slate-900 font-medium">{{ Number(accion.presupuestoEjecutado).toFixed(2) }} €</dd>
@@ -583,7 +583,7 @@
           </div>
           <!-- Formulario de valoración -->
           <div v-else class="space-y-3">
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs font-medium text-slate-700 mb-1">Presupuesto ejecutado (€)</label>
                 <input v-model.number="formValoracion.presupuestoEjecutado" type="number" min="0" step="0.01"
@@ -663,7 +663,7 @@
   <div v-if="modalCierre.visible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 space-y-4">
       <h3 class="text-lg font-semibold text-slate-900">Cerrar actividad</h3>
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label class="block text-xs font-medium text-slate-700 mb-1">Presupuesto ejecutado (€)</label>
           <input v-model.number="modalCierre.presupuestoEjecutado" type="number" min="0" step="0.01"

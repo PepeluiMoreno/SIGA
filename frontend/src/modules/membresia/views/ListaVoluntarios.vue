@@ -1,7 +1,7 @@
 <template>
   <AppLayout title="Voluntarios" subtitle="Gestión del voluntariado de Europa Laica">
     <!-- Resumen -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
       <div class="bg-white rounded-lg shadow p-4">
         <div class="flex items-center">
           <div class="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center mr-3">
@@ -64,7 +64,7 @@
     </div>
 
     <!-- Lista de voluntarios -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div v-else class="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       <div v-if="!filtersApplied" class="col-span-full bg-white rounded-lg shadow">
         <EstadoPendiente />
       </div>
