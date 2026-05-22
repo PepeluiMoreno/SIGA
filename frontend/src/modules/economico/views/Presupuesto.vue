@@ -1,35 +1,20 @@
 <template>
   <AppLayout title="Presupuestos" subtitle="Planificación presupuestaria anual y partidas">
 
-    <!-- Navegador de ejercicios -->
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-2">
-        <button @click="cambiarEjercicio(-1)"
-          class="p-1.5 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-700">
-          <ChevronLeftIcon class="w-5 h-5" />
-        </button>
-        <span class="text-lg font-semibold text-slate-800 w-14 text-center">{{ ejercicioActual }}</span>
-        <button @click="cambiarEjercicio(+1)"
-          :disabled="ejercicioActual >= anioMaximo"
-          class="p-1.5 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-700 disabled:opacity-30">
-          <ChevronRightIcon class="w-5 h-5" />
-        </button>
-      </div>
-      <div class="flex items-center gap-3">
-        <div v-if="todosEjercicios.length > 1" class="flex gap-1">
-          <button v-for="ej in todosEjercicios" :key="ej"
-            @click="irAEjercicio(ej)"
-            :class="['text-xs px-2 py-0.5 rounded-full', ej === ejercicioActual
-              ? 'bg-indigo-600 text-white'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200']">
-            {{ ej }}
-          </button>
-        </div>
+    <!-- Línea temporal de ejercicios (clicable) -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-3 mb-4">
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Ejercicios</h2>
         <router-link to="/economico/presupuesto-evolucion"
           class="text-xs text-indigo-600 hover:underline whitespace-nowrap">
           Ver evolución ↗
         </router-link>
       </div>
+      <BudgetTimeline
+        :ejercicios="ejerciciosTimeline"
+        :seleccionado="ejercicioActual"
+        @select="irAEjercicio"
+      />
     </div>
 
     <!-- Selector de borradores del ejercicio (varios borradores posibles) -->
