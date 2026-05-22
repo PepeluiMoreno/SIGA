@@ -36,13 +36,13 @@
                 class="px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100"
               >
                 + Inscribir
-              </button>
+              </AppButton>
             </div>
 
             <div v-if="evento.participantes?.length === 0" class="text-sm text-gray-500 py-4 text-center">
               Sin inscripciones registradas
             </div>
-            <div class="overflow-x-auto -mx-1"><table v-else class="min-w-full divide-y divide-gray-200 text-sm">
+            <div v-else class="overflow-x-auto -mx-1"><table class="min-w-full divide-y divide-gray-200 text-sm">
               <thead class="bg-gray-50">
                 <tr>
                   <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ orgConfig.Miembro }}</th>

@@ -235,10 +235,11 @@ import { useToast } from '@/composables/useToast'
 import { ref, computed } from 'vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
-const toast = useToast()
   PREVISUALIZAR_LIQUIDACION_REMESA,
   LIQUIDAR_REMESA,
 } from '@/graphql/queries/economico'
+
+const toast = useToast()
 
 const props = defineProps({
   remesa: { type: Object, required: true },              // remesa completa con ordenes y miembros cargados

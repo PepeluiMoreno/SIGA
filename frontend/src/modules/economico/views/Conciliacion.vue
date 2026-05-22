@@ -81,7 +81,7 @@
         <div v-if="!apuntesPendientes.length" class="text-center text-slate-400 py-8 text-xs">
           Sin apuntes pendientes de conciliar.
         </div>
-        <div class="overflow-x-auto -mx-1"><table v-else class="w-full text-xs">
+        <div v-else class="overflow-x-auto -mx-1"><table class="w-full text-xs">
           <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase">
             <tr>
               <th class="px-3 py-1.5 text-center w-8"></th>
@@ -117,7 +117,7 @@
         <div v-if="!extractosPendientes.length" class="text-center text-slate-400 py-8 text-xs">
           Sin líneas de extracto pendientes. Importa un extracto bancario para empezar.
         </div>
-        <div class="overflow-x-auto -mx-1"><table v-else class="w-full text-xs">
+        <div v-else class="overflow-x-auto -mx-1"><table class="w-full text-xs">
           <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase">
             <tr>
               <th class="px-3 py-1.5 text-center w-8"></th>
@@ -182,7 +182,6 @@ import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
-const confirmDialog = useConfirm()
   GET_CUENTAS_BANCARIAS_ACTIVAS,
   GET_APUNTES_PARA_CONCILIAR,
   GET_EXTRACTOS_PARA_CONCILIAR,
@@ -191,6 +190,8 @@ const confirmDialog = useConfirm()
   IMPORTAR_EXTRACTO_CSV,
   GET_OPENBANKING_ACTIVO,
 } from '@/graphql/queries/economico'
+
+const confirmDialog = useConfirm()
 
 const { query, mutation } = useGraphQL()
 

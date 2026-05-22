@@ -257,7 +257,6 @@ import FilterBar from '@/components/common/FilterBar.vue'
 import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
-const toast = useToast()
   GET_RECIBOS,
   EMITIR_RECIBOS_LOTE,
   MARCAR_RECIBO_COBRADO,
@@ -267,6 +266,8 @@ const toast = useToast()
   GET_PLANTILLAS_EMAIL_ECONOMICO,
   GET_CUENTAS_BANCARIAS_ACTIVAS,
 } from '@/graphql/queries/economico'
+
+const toast = useToast()
 
 const { query, mutation, loading } = useGraphQL()
 

@@ -403,7 +403,7 @@
           <p v-else-if="!certificables.length" class="text-center text-slate-400 text-sm py-4">
             No hay donaciones COBRADAS con NIF en {{ ejercicioCert }}.
           </p>
-          <div class="overflow-x-auto -mx-1"><table v-else class="w-full text-sm">
+          <div v-else class="overflow-x-auto -mx-1"><table class="w-full text-sm">
             <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
               <tr>
                 <th class="px-2 py-1 text-left">Donante</th>
@@ -458,7 +458,6 @@ import FilterBar from '@/components/common/FilterBar.vue'
 import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
-const toast = useToast()
   GET_DONACIONES,
   GET_DONACION_CONCEPTOS,
   REGISTRAR_DONACION,
@@ -469,6 +468,8 @@ const toast = useToast()
   GET_CUENTAS_BANCARIAS_ACTIVAS,
   GET_MIEMBROS_PARA_GASTO,
 } from '@/graphql/queries/economico'
+
+const toast = useToast()
 
 const { query, mutation, loading } = useGraphQL()
 

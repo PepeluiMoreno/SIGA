@@ -17,9 +17,6 @@
     </div>
 
     <template v-else-if="rol">
-      <!-- Mensaje de guardado -->
-              {{ savedMsg }}
-      </div>
 
       <!-- Dual-list principal -->
       <div class="grid grid-cols-[1fr_52px_1fr] gap-3 items-start">
@@ -242,12 +239,13 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import DetailHeader from '@/components/common/DetailHeader.vue'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
 import {
-const toast = useToast()
   GET_ROL_CON_PERMISOS,
   GET_TRANSACCIONES_TODAS,
   ASIGNAR_TRANSACCION_ROL,
   REVOCAR_TRANSACCION_ROL,
 } from '@/graphql/queries/administracion.js'
+
+const toast = useToast()
 
 const route = useRoute()
 
@@ -406,7 +404,7 @@ async function guardar() {
     ])
 
     await cargar()
-    toast.success(`Cambios guardados: ${adds.length} añadidos, ${removes.length} revocados.`) => { savedMsg.value = '' }, 4000)
+    toast.success(`Cambios guardados: ${adds.length} añadidos, ${removes.length} revocados.`)
   } catch (err) {
     console.error('Error guardando permisos:', err)
     error.value = err?.response?.errors?.[0]?.message || 'Error al guardar los permisos'

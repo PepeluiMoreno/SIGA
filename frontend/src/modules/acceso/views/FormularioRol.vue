@@ -537,7 +537,9 @@ async function guardar() {
           ...(!rolOriginal.value.sistema && { codigo: form.codigo.toUpperCase() }),
         },
       })
-      toast.success('Cambios guardados correctamente') => window.history.state?.back ? router.back() : router.push('/roles'), 1200)
+      toast.success('Cambios guardados correctamente')
+      if (window.history.state?.back) router.back()
+      else router.push('/roles')
     } else {
       await graphqlClient.request(CREAR_ROL, {
         data: {

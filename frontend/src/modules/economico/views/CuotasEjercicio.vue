@@ -170,14 +170,15 @@ import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
-const toast = useToast()
-const confirmDialog = useConfirm()
   GET_CONFIG_CUOTA_EJERCICIO,
   CONFIGURAR_CUOTA_EJERCICIO,
   ELIMINAR_CUOTA_EJERCICIO,
   PREVISUALIZAR_GENERACION_CUOTAS,
   GENERAR_CUOTAS_INDIVIDUALES,
 } from '@/graphql/queries/economico'
+
+const toast = useToast()
+const confirmDialog = useConfirm()
 
 const { query, mutation } = useGraphQL()
 const route = useRoute()

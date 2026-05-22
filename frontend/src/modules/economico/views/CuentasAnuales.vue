@@ -215,7 +215,6 @@ import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
-const toast = useToast()
   GET_CUENTAS_ANUALES,
   GENERAR_CCAA,
   ACTUALIZAR_MEMORIA_CCAA,
@@ -225,6 +224,8 @@ const toast = useToast()
   EXPORTAR_CCAA_PDF,
   GET_MIEMBROS_PARA_GASTO,
 } from '@/graphql/queries/economico'
+
+const toast = useToast()
 
 const { query, mutation } = useGraphQL()
 
