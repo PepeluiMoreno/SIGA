@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-purple-100 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
+    <div class="max-w-xs w-full space-y-8">
       <div>
         <div v-if="orgConfigStore.logo" class="mx-auto flex justify-center mb-2">
           <img :src="orgConfigStore.logo" alt="Logo organización" class="h-20 w-auto object-contain" />
@@ -16,6 +16,8 @@
             <label for="email" class="sr-only">Email</label>
             <input
               id="email"
+              name="email"
+              autocomplete="username"
               v-model="form.email"
               type="email"
               required
@@ -27,6 +29,8 @@
             <label for="password" class="sr-only">Contraseña</label>
             <input
               id="password"
+              name="password"
+              autocomplete="current-password"
               v-model="form.password"
               type="password"
               required
@@ -36,24 +40,16 @@
           </div>
         </div>
 
-        <div class="flex items-center justify-between">
-          <div class="flex items-center">
-            <input
-              id="remember-me"
-              v-model="form.remember"
-              type="checkbox"
-              class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-            />
-            <label for="remember-me" class="ml-2 block text-sm text-gray-900">
-              Recordarme
-            </label>
-          </div>
-
-          <div class="text-sm">
-            <a href="#" class="font-medium text-purple-600 hover:text-purple-500">
-              ¿Olvidaste tu contraseña?
-            </a>
-          </div>
+        <div class="flex items-center">
+          <input
+            id="remember-me"
+            v-model="form.remember"
+            type="checkbox"
+            class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+          />
+          <label for="remember-me" class="ml-2 block text-sm text-gray-900">
+            Recordarme
+          </label>
         </div>
 
         <div v-if="hintYaInicializado" class="rounded-md bg-blue-50 p-4 border border-blue-200">
@@ -117,7 +113,7 @@ onMounted(() => { orgConfigStore.fetchConfig() })
 const form = ref({
   email: "",
   password: "",
-  remember: false
+  remember: true
 })
 
 const loading = ref(false)
