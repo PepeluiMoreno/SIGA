@@ -354,9 +354,24 @@ class RemesaService:
             contador += 1
 
         await self.session.commit()
-        return contador
 
-    # ── Liquidación atómica de remesa (Flujo 4) ───────────────────────────────
+        # Aviso de flujo: devoluciones recibidas del banco. Tras commit, envuelto;
+        # un fallo de aviso no afecta al registro de los fallidos.
+        if contador > 0:
+            try:
+                from app.core.events import event_bus, RemesaDevolucion
+                rem = (await self.session.execute(
+                    select(Remesa).where(Remesa.id == remesa_id)
+                )).scalars().first()
+                await event_bus.publish(RemesaDevolucion(
+                    remesa_id=str(remesa_id),
+                    num_devoluciones=contador,
+                    agrupacion_id=str(rem.agrupacion_id) if rem and rem.agrupacion_id else None,
+                ))
+            except Exception:
+                pass
+
+        return contador
 
     async def previsualizar_liquidacion(
         self,

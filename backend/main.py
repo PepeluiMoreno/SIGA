@@ -70,6 +70,9 @@ async def lifespan(app: FastAPI):
 
     # 3. Conectar event bus con invalidación de la matrix
     wire_matrix_invalidation(async_session)
+    # 3b. Conectar handlers de comunicación (avisos de flujos de trabajo)
+    from app.modules.core.comunicacion.handlers import wire_comunicacion_handlers
+    wire_comunicacion_handlers(async_session)
     logger.info("Event bus conectado")
 
     yield

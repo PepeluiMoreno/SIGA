@@ -133,11 +133,9 @@ class EstadoNotificacion(EstadoBase):
     """Estados para notificaciones."""
     __tablename__ = 'estados_notificacion'
 
-    # Posibles estados:
-    # PENDIENTE: Notificación creada pero no enviada
-    # ENVIADA: Notificación enviada al canal correspondiente
-    # LEIDA: Notificación leída por el usuario
-    # ERROR: Error al enviar la notificación
+    # PENDIENTE → ENVIADA → LEIDA ; ERROR (fallo de envío)
+    codigo: Mapped[str] = mapped_column(String(30), nullable=False, unique=True,
+        comment="Código de máquina: PENDIENTE, ENVIADA, LEIDA, ERROR")
 
 
 

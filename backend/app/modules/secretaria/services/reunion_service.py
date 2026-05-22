@@ -166,6 +166,21 @@ class ReunionService:
 
         await self.session.commit()
         await self.session.refresh(reunion)
+
+        # Aviso de flujo: convocatoria. Publicado tras el commit; un fallo de
+        # aviso no afecta a la convocatoria (el event bus captura).
+        try:
+            from app.core.events import event_bus, ReunionConvocada
+            tipo_nombre = tipo.nombre if (tipo := await self.obtener_tipo_reunion(tipo_reunion_id)) else "reunión"
+            await event_bus.publish(ReunionConvocada(
+                reunion_id=str(reunion.id),
+                titulo=f"{tipo_nombre} {reunion.numero_convocatoria}/{reunion.anio}",
+                agrupacion_id=str(reunion.agrupacion_id) if reunion.agrupacion_id else None,
+                fecha=reunion.fecha_convocatoria.isoformat() if reunion.fecha_convocatoria else None,
+            ))
+        except Exception:
+            pass
+
         return reunion
 
     async def obtener_reunion(self, reunion_id: UUID) -> Optional[Reunion]:
