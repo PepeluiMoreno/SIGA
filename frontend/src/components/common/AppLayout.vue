@@ -423,11 +423,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { usePermisos } from '@/composables/usePermisos.js'
+import { useSessionGuard, stopSessionGuard } from '@/composables/useSessionGuard.js'
 import BackendStatus from '@/components/common/BackendStatus.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
@@ -524,71 +525,18 @@ const userRole = computed(() => authStore.user?.roles?.[0] || 'Usuario')
 // El avatar del usuario (foto del miembro vinculado) vive en el store de sesión,
 // para que al cambiar la foto desde Mis datos el sidebar se actualice al instante.
 
-const sessionStartTime = ref(Date.now())
-const sessionTime = ref('0m')
-let lastActivity = Date.now()
-let sessionTimer = null
-
-function updateSessionTime() {
-  const elapsed = Date.now() - sessionStartTime.value
-  const minutes = Math.floor(elapsed / 60000)
-  const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
-  sessionTime.value = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
-}
-
-function resetActivity() {
-  lastActivity = Date.now()
-}
-
-function checkSessionTimeouts() {
-  updateSessionTime()
-  const now = Date.now()
-
-  const inactividadMin = orgConfigStore.sessionInactividad
-  if (inactividadMin > 0 && (now - lastActivity) > inactividadMin * 60000) {
-    forceLogout()
-    return
-  }
-
-  const maximoMin = orgConfigStore.sessionMaximo
-  if (maximoMin > 0 && (now - sessionStartTime.value) > maximoMin * 60000) {
-    forceLogout()
-  }
-}
-
-function forceLogout() {
-  localStorage.removeItem('session_start_time')
-  authStore.clearAuth()
-  router.push('/login')
-}
+// Vigilancia de caducidad de sesión — singleton de módulo (ver useSessionGuard):
+// AppLayout se monta por vista y con keep-alive, así que el temporizador NO
+// puede vivir aquí o se acumularían intervalos zombis.
+const { sessionTime } = useSessionGuard()
 
 onMounted(async () => {
   await orgConfigStore.fetchConfig()
   authStore.cargarPerfilMiembro()
-  const storedTime = localStorage.getItem('session_start_time')
-  if (storedTime) {
-    sessionStartTime.value = parseInt(storedTime)
-  } else {
-    localStorage.setItem('session_start_time', sessionStartTime.value.toString())
-  }
-  updateSessionTime()
-  sessionTimer = setInterval(checkSessionTimeouts, 60000)
-
-  window.addEventListener('mousemove', resetActivity)
-  window.addEventListener('keydown', resetActivity)
-  window.addEventListener('click', resetActivity)
-})
-
-onUnmounted(() => {
-  if (sessionTimer) clearInterval(sessionTimer)
-  window.removeEventListener('mousemove', resetActivity)
-  window.removeEventListener('keydown', resetActivity)
-  window.removeEventListener('click', resetActivity)
 })
 
 const logout = async () => {
-  localStorage.removeItem('session_start_time')
+  stopSessionGuard()
   await authStore.logout()
   router.push('/login')
 }
