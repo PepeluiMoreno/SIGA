@@ -14,7 +14,7 @@ from typing import Optional
 
 import strawberry
 
-from app.graphql.permissions import RequireAuthenticated
+from app.graphql.permissions import RequireAuthenticated, RequireTransaction
 from app.modules.core.comunicacion.mensajeria.chat_bridge_service import ChatBridgeService
 from app.modules.core.comunicacion.mensajeria.models import CanalChat
 
@@ -86,5 +86,36 @@ class ChatMutation:
         return ResultadoOperacionCanal(
             exito=ok,
             mensaje="Sincronización correcta" if ok else f"Sincronización falló: {canal.ultimo_error or ''}",
+            canal=CanalChatType.from_model(canal),
+        )
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("GRUPO_ASIGNAR_MIEMBRO")])
+    async def sincronizar_canal_grupo(
+        self, info: strawberry.Info, grupo_id: uuid.UUID
+    ) -> ResultadoOperacionCanal:
+        """Asegura el canal del grupo y sincroniza su membresía con ejabberd.
+
+        Pensada para invocarse desde el frontend tras alta/baja de miembros de un
+        grupo (hoy CRUD autogeneradas, sin evento propio). Quien puede asignar
+        miembros (GRUPO_ASIGNAR_MIEMBRO) puede sincronizar el canal.
+        """
+        from sqlalchemy import select
+        from app.modules.actividades.models.grupo import GrupoTrabajo
+
+        session = info.context.session
+        grupo = (await session.execute(
+            select(GrupoTrabajo).where(GrupoTrabajo.id == grupo_id)
+        )).scalar_one_or_none()
+        if grupo is None:
+            return ResultadoOperacionCanal(exito=False, mensaje="Grupo no encontrado")
+
+        bridge = ChatBridgeService(session)
+        canal = await bridge.asegurar_canal_grupo(grupo)
+        await bridge.sincronizar_membresia_grupo(grupo_id)
+        await session.refresh(canal)
+        ok = (canal.estado_sync.value if hasattr(canal.estado_sync, "value") else str(canal.estado_sync)) == "OK"
+        return ResultadoOperacionCanal(
+            exito=ok,
+            mensaje="Canal sincronizado" if ok else f"Sincronización con incidencias: {canal.ultimo_error or ''}",
             canal=CanalChatType.from_model(canal),
         )
