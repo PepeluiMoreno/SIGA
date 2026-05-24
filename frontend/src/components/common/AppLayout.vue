@@ -58,6 +58,14 @@
                   <span>Mis datos</span>
                 </router-link>
               </li>
+              <li v-if="orgConfigStore.chatActivo">
+                <router-link to="/chat"
+                  class="nav-item"
+                  :class="$route.path === '/chat' ? 'active' : 'inactive'">
+                  <ChatBubbleLeftRightIcon class="nav-icon" />
+                  <span>Chat interno</span>
+                </router-link>
+              </li>
             </ul>
 
             <hr class="nav-sep" />
@@ -438,6 +446,7 @@ import {
   ArrowsRightLeftIcon, ChartBarIcon, GiftIcon, UserCircleIcon,
   Bars3Icon, XMarkIcon, ChevronDownIcon, TrashIcon,
   ClipboardDocumentCheckIcon, DocumentTextIcon, DocumentCheckIcon,
+  ChatBubbleLeftRightIcon,
 } from '@heroicons/vue/24/outline'
 
 defineProps({

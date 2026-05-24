@@ -10,7 +10,7 @@ const QUERY = `
       denominacionMiembro denominacionMiembroPlural
       denominacionOrganoGobierno denominacionOrganoGobiernoPlural
       sessionInactividadMinutos sessionMaximoMinutos
-      tema fuentePrincipal usaPresupuesto
+      tema fuentePrincipal usaPresupuesto chatActivo
     }
     temasUi {
       id nombre slug
@@ -36,6 +36,7 @@ export const useOrgConfigStore = defineStore('orgConfig', {
     fuentePrincipal: 'Inter',
     temas: [],
     usaPresupuesto: false,
+    chatActivo: false,
     initialized: null,
     loaded: false,
   }),
@@ -66,6 +67,7 @@ export const useOrgConfigStore = defineStore('orgConfig', {
         this.tema            = p.tema         ?? 'violeta'
         this.fuentePrincipal = p.fuentePrincipal ?? 'Inter'
         this.usaPresupuesto  = p.usaPresupuesto ?? false
+        this.chatActivo      = p.chatActivo ?? false
         const temaObj = this.temas.find(t => t.slug === this.tema)
         this.applyTheme(temaObj ?? this.tema, this.fuentePrincipal)
         this.loaded = true
