@@ -94,7 +94,7 @@
             class="py-8 text-center text-xs text-slate-400 italic">
             Sin cargos registrados para esta unidad.
           </div>
-          <div class="overflow-x-auto -mx-1"><table v-else class="w-full">
+          <div v-else class="overflow-x-auto -mx-1"><table class="w-full">
             <thead>
               <tr class="border-b border-slate-100">
                 <th class="pb-2 text-left text-xs font-semibold text-slate-400 w-full sm:w-36">Cargo</th>

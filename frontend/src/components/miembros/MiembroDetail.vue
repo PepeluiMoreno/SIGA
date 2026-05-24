@@ -497,7 +497,7 @@
               </template>
               <div v-if="loadingCuotas" class="px-5 py-6 text-center text-gray-400 text-sm">Cargando…</div>
               <div v-else-if="!cuotas.length" class="px-5 py-6 text-center text-gray-400 text-sm italic">Sin cuotas registradas</div>
-              <div class="overflow-x-auto -mx-1"><table v-else class="min-w-full divide-y divide-gray-100 text-sm">
+              <div v-else class="overflow-x-auto -mx-1"><table class="min-w-full divide-y divide-gray-100 text-sm">
                 <thead class="bg-gray-50">
                   <tr>
                     <th class="px-5 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ejercicio</th>

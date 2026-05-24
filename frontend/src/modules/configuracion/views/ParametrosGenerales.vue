@@ -712,7 +712,7 @@ async function guardar() {
     temaOriginal.value   = typeof temaObj === 'object' ? temaObj : null
     fuenteOriginal.value = form.fuente_principal
     guardadoExitoso = true
-    toast.success('Cambios guardados correctamente') => { guardadoOk.value = false }, 3000)
+    toast.success('Cambios guardados correctamente')
   } catch (e) {
     error.value = e?.response?.errors?.[0]?.message ?? 'Error al guardar'
   } finally {

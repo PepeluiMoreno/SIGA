@@ -16,9 +16,6 @@ import ListaMiembros from '@/modules/membresia/views/ListaMiembros.vue'
 import ListaAgrupaciones from '@/modules/membresia/views/ListaAgrupaciones.vue'
 import DetalleAgrupacionesTerritoriales from '@/modules/membresia/views/DetalleAgrupacionesTerritoriales.vue'
 
-// === Módulo: CONFIGURACION ===
-import EstructuraOrganizativa from '@/views/parametrizacion/EstructuraOrganizativa.vue'
-
 // === Módulo: ACTIVIDADES ===
 import ListaGrupos from '@/modules/actividades/views/ListaGrupos.vue'
 
@@ -158,12 +155,6 @@ const routes = [
     component: DetalleAgrupacionesTerritoriales,
     name: 'Agrupaciones',
     meta: { requiresAuth: true, requiredPermission: 'AGR_EDIT' }
-  },
-  {
-    path: '/configuracion/estructura',
-    component: EstructuraOrganizativa,
-    name: 'EstructuraOrganizativa',
-    meta: { requiresAuth: true, requiredPermission: 'CFG_EDIT' }
   },
   {
     path: '/agrupaciones/:id',
@@ -475,12 +466,6 @@ const routes = [
     component: () => import('@/modules/configuracion/views/catalogos/EstadosCuota.vue'),
     name: 'EstadosCuota',
     meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
-  },
-  {
-    path: '/parametrizacion/temas',
-    component: () => import('@/views/configuracion/TemasCatalogo.vue'),
-    name: 'TemasCatalogo',
-    meta: { requiresAuth: true, requiredPermission: 'CFG_EDIT' }
   },
   // Catálogos de campañas
   {

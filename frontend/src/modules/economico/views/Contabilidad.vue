@@ -605,11 +605,12 @@ import {
 import { GET_ACTIVIDADES_PARA_GASTO } from '@/graphql/queries/economico'
 import { GET_CAMPANIAS } from '@/graphql/queries/campanias'
 import {
-const toast = useToast()
-const confirmDialog = useConfirm()
   ASIGNAR_CATEGORIA_MASIVA,
   CLASIFICAR_APUNTES_PENDIENTES,
 } from '@/graphql/queries/categorias_fiscales.js'
+
+const toast = useToast()
+const confirmDialog = useConfirm()
 
 const {
   cuentasContables,

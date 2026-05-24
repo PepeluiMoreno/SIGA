@@ -50,7 +50,7 @@
         <p class="text-sm text-gray-500 mt-1">No se encontraron agrupaciones con los filtros seleccionados.</p>
       </div>
 
-      <div class="overflow-x-auto -mx-1"><table v-else-if="filtersApplied" class="min-w-full divide-y divide-gray-200">
+      <div v-else-if="filtersApplied" class="overflow-x-auto -mx-1"><table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agrupación</th>

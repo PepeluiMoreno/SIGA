@@ -41,9 +41,6 @@
     </div>
 
     <template v-else-if="rol">
-      <!-- Mensaje de éxito -->
-              {{ savedMsg }}
-      </div>
 
       <!-- TAB: FUNCIONALIDADES -->
       <div v-if="activeTab === 'funcionalidades'">
@@ -306,12 +303,13 @@ import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
 import {
-const toast = useToast()
   GET_ROL_CON_FUNCIONALIDADES,
   GET_FUNCIONALIDADES_TODAS,
   ASIGNAR_FUNCIONALIDAD,
   REVOCAR_FUNCIONALIDAD,
 } from '@/graphql/queries/administracion.js'
+
+const toast = useToast()
 
 const route = useRoute()
 
@@ -465,7 +463,7 @@ async function guardarFunc() {
       }),
     ])
     await cargar()
-    toast.success(`Cambios guardados: ${pendingFuncAdd.value.length} añadidas, ${pendingFuncRemove.value.length} revocadas.`) => { savedMsg.value = '' }, 4000)
+    toast.success(`Cambios guardados: ${pendingFuncAdd.value.length} añadidas, ${pendingFuncRemove.value.length} revocadas.`)
   } catch (err) {
     console.error('Error guardando funcionalidades:', err)
     error.value = err?.response?.errors?.[0]?.message || 'Error al guardar'

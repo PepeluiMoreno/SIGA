@@ -12,7 +12,7 @@
       >
         <PlusIcon class="w-5 h-5" />
         Nuevo {{ nombreSingular }}
-      </button>
+      </AppButton>
     </div>
 
     <!-- Loading -->
@@ -40,7 +40,7 @@
         <p class="text-sm text-gray-500 mt-1">Crea el primer {{ nombreSingular.toLowerCase() }}</p>
       </div>
 
-      <div class="overflow-x-auto -mx-1"><table v-else class="min-w-full divide-y divide-gray-200">
+      <div v-else class="overflow-x-auto -mx-1"><table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
             <th

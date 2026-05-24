@@ -716,12 +716,13 @@ import AvatarImg from '@/components/common/AvatarImg.vue'
 import LoadSpinner from '@/components/common/LoadSpinner.vue'
 import { graphqlClient } from '@/graphql/client'
 import {
-const toast = useToast()
   GET_ACCION_BY_ID, ACTUALIZAR_ACCION, ELIMINAR_ACCION, SOFT_DELETE_ACCION,
   REGISTRAR_PARTICIPACION, ACTUALIZAR_PARTICIPACION, ELIMINAR_PARTICIPACION,
   CREAR_TAREA, ACTUALIZAR_TAREA, ELIMINAR_TAREA,
   TRANSICIONAR_ACTIVIDAD, APROBAR_ACTIVIDAD, CERRAR_ACTIVIDAD,
 } from '../graphql/queries.js'
+
+const toast = useToast()
 
 const GET_CATALOGOS = `
   query CatalogosDetalleActividad {
