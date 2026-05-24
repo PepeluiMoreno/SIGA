@@ -137,6 +137,12 @@ class RemesaDevolucion(DomainEvent):
     num_devoluciones: int = 0
     agrupacion_id: Optional[str] = None
 
+@dataclass(frozen=True)
+class GrupoTrabajoCreado(DomainEvent):
+    """Se ha creado un grupo de trabajo (→ crear su canal de chat)."""
+    grupo_id: str = ""
+    nombre: str = ""
+
 
 # -----------------------------------------------------------------------
 # Event Bus

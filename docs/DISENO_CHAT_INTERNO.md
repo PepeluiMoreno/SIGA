@@ -70,10 +70,25 @@ Cuatro piezas:
 Librería para el puente: **slixmpp** (asyncio, como SIGA; viva, release 2026-05).
 Para la API ReST basta un cliente HTTP con bearer token.
 
+**Decisión de cliente (validada contra repos oficiales).** No hay cliente Python
+oficial y mantenido para ejabberd (su ecosistema es Erlang/Go): `processone/ejabberd-api`
+es Go (vivo, oct-2025); `dirkmoors/pyejabberd` es Python pero está muerto (2016) y
+usa XML-RPC síncrono. Por tanto SIGA usa un **cliente httpx async propio** (~100 líneas,
+sin dependencia nueva). Se revisó `processone/ejabberd-api` como referencia y confirma
+que el patrón implementado es el correcto: POST a `/api/{comando}`, header
+`Authorization: Bearer {token}`, `Content-Type: application/json`, cuerpo JSON; el
+comando `register` toma `{user, host, password}`. El cliente propio (`ejabberd_client.py`)
+sigue ese patrón.
+
 ## 5. Identidad: principio rector
 
 **El puente se engancha a la identidad YA RESUELTA por SIGA, con independencia del
-`auth.modo` activo.** SIGA soporta UN modo de autenticación activo a la vez
+`auth.modo` activo.** SIGA es la ÚNICA autoridad de identidad del chat. Decisión
+explícita: **Nextcloud queda descartado como proveedor de identidad** (evita una
+segunda autoridad que habría que sincronizar; Nextcloud podría usarse en el futuro
+solo como almacén de archivos, integración aparte y opcional, sin afectar al puente).
+
+SIGA soporta UN modo de autenticación activo a la vez
 (`auth.modo`: `LOCAL` con JWT propio, o `AUTHELIA` por forward-auth; el `Context`
 en `app/core/context.py` ya abstrae ambos en un `user_id`). El chat **NO debe
 vincularse a un modo concreto**: se vincula a "usuario autenticado en SIGA, sea
@@ -90,6 +105,49 @@ Detalle dependiente del modo (no es atadura, es implementación del onboarding):
 - **AUTHELIA**: Authelia es forward-auth HTTP; **no cubre XMPP nativo** (Conversations
   habla TCP directo, no pasa por el proxy HTTP). Por eso la emisión del token la
   hace SIGA (que sí está tras Authelia) y se entrega al móvil por QR.
+
+### 5.1 Tres vías de identidad candidatas (decidir en sesión de verificación)
+
+Todas tienen a SIGA como autoridad. A elegir con un ejabberd de pruebas delante:
+
+1. **Token + QR (preferida en diseño).** SIGA emite un token XMPP (`sasl_auth`) y
+   lo entrega por QR a Conversations. Ventaja: el usuario no teclea contraseña en
+   el cliente. Incógnita: que Conversations soporte login por token/QR (§7.1, §7.2).
+
+2. **Delegación de auth contra SIGA (vía `xmpp-cloud-auth` / xcauth).** ejabberd
+   delega la verificación de credenciales en un endpoint HTTP de SIGA; SIGA es la
+   autoridad. Candidato concreto: **github.com/jsxc/xmpp-cloud-auth** (xcauth), que
+   nació para delegar XMPP en Nextcloud pero el mecanismo es genérico (un backend
+   HTTP de verificación). Ventaja: encaja con cualquier `auth.modo`, SIGA manda.
+   Coste/incógnitas a VERIFICAR antes de adoptar:
+     - Estado de mantenimiento del proyecto (no está en PyPI; distribución por
+       GitHub/paquete de sistema, repo APT: `deb https://dl.jsxc.org stable main`).
+       Confirmar que sigue vivo y soporta la versión
+       de ejabberd elegida.
+     - El usuario teclearía su contraseña de SIGA en Conversations (viaja por el
+       cliente de chat) — valorar implicación de seguridad frente a la vía 1.
+     - Hay que exponer en SIGA un endpoint de verificación de credenciales y operar
+       el puente xcauth como pieza adicional.
+   Nota: NO usar Nextcloud como verificador (descartado como identidad, §5); si se
+   usa xcauth, su backend de verificación apunta a SIGA, no a Nextcloud.
+   **Hallazgo (leído el código de xcauth):** xcauth implementa un mecanismo de
+   **token propio** (`auth_token` en `xclib/auth.py`) además de la verificación por
+   contraseña. El cliente manda el token en el campo "password"; xcauth lo valida
+   localmente comprobando firma **HMAC-SHA256** con un secreto compartido, versión y
+   caducidad — SIN consultar al backend en ese momento. Esto **une las vías 1 y 2**:
+   SIGA, compartiendo el secreto HMAC con xcauth, genera tokens (formato: version 0 +
+   header con secretID y expiry + MAC de 16 bytes sobre el JID) y los entrega por QR;
+   el usuario no teclea contraseña. Riesgos confirmados al leer el repo: proyecto
+   **inactivo desde 2019-2020** (último commit dic-2020), formato de token artesanal
+   (no JWT), y el token caduca (gestionar renovación). Sigue requiriendo verificar que
+   funciona con la versión de ejabberd elegida y que Conversations acepte el QR.
+
+3. **Cuenta provisionada (plan B simple).** SIGA crea una cuenta XMPP por usuario
+   con contraseña propia (independiente de la de SIGA). Más tosco (dos credenciales)
+   pero sin incógnitas técnicas. Reserva si 1 y 2 no cuajan.
+
+La elección NO afecta al puente de sincronización de salas (modelo `CanalChat`,
+cliente ReST, servicio): la identidad es ortogonal y se conecta después.
 
 ## 6. Lo confirmado por la documentación de ejabberd (OAuth/API)
 
