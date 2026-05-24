@@ -21,7 +21,10 @@ Requisitos declarados por el usuario:
 - **Vínculo fuerte** con la app (membresía del canal derivada de la de SIGA).
 - **Fiable**, **trazable**, transferencia de **archivos sin pérdida** (poco frecuente).
 - Uso principal **desde el móvil**.
-- No depender de servicios fuera de la organización (VPN).
+- No depender de servicios externos para el núcleo (servidor y datos en la VPN).
+  Excepción aceptada: las notificaciones push del móvil pasan por Google/Apple
+  (inevitable en el ecosistema móvil); se acepta porque solo exponen metadato de
+  actividad, no contenido (ver §7.5).
 
 ## 2. Alcance de canales
 
@@ -112,6 +115,14 @@ Detalle dependiente del modo (no es atadura, es implementación del onboarding):
 5. Notificaciones push de Conversations: confirmar si requieren el servicio de push
    de Conversations/Google y si eso es aceptable respecto al requisito de VPN
    (las push de móvil pasan necesariamente por Google/Apple — punto a aceptar o no).
+   **DECIDIDO:** se acepta el uso de push vía Google/Apple. El contenido del mensaje
+   va cifrado (TLS cliente-servidor; OMEMO extremo a extremo disponible) y la push
+   normalmente solo dice "hay actividad, conéctate"; lo que se expone a Google/Apple
+   es el metadato de que el usuario X tiene actividad a tal hora, no el contenido.
+   Para esta organización ese metadato no es sensible (ya usa ecosistema Android/iOS).
+   No es temeridad. Queda como verificación menor de implementación: la variante de
+   Conversations de F-Droid evita el push de Google (a costa de batería/despliegue);
+   evaluar solo si en el futuro se quisiera prescindir de Google del todo.
 
 > Estas verificaciones necesitan acceso a internet/documentación actual y, idealmente,
 > un ejabberd de pruebas. No se pudieron hacer en la sesión de diseño.
