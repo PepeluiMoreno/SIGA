@@ -143,3 +143,19 @@ Distinto del subsistema de **notificaciones dirigidas por procesos**
 usuario↔usuario. Pueden puentearse: un mensaje o mención podría generar una
 notificación in-app, y el `DestinatarioResolver` podría reutilizarse para poblar la
 membresía inicial de un canal (p. ej. "todos los de este grupo de trabajo").
+
+## 10. Despliegue (nota operativa)
+
+ejabberd se despliega como **un contenedor más en el stack de infraestructura ya
+existente** (uno de los servidores de la organización, dentro de la VPN). No
+requiere máquina dedicada: ejabberd (Erlang) es muy ligero y para el volumen
+previsto (coordinación interna, no mensajería masiva) consume recursos mínimos.
+
+El coste real no es de hardware sino de **operación**, que se absorbe en la
+administración de infraestructura ya existente:
+- Copias de seguridad de la BD de ejabberd (los mensajes viven ahí, no en SIGA).
+- Renovación de certificados TLS.
+- Actualizaciones del contenedor y monitorización de disponibilidad.
+
+SIGA y ejabberd comparten red interna (VPN); SIGA le habla por su API ReST.
+
