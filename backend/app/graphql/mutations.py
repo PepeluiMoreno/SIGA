@@ -28,10 +28,11 @@ from .categoria_fiscal_resolvers import CategoriaFiscalMutation
 from .categorizacion_resolvers import CategorizacionMutation
 from .presupuesto_resolvers import PresupuestoMutation
 from .comunicacion_resolvers import ComunicacionMutation
+from .chat_resolvers import ChatMutation
 
 
 @strawberry.type
-class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionMutation, AccesoMutation, EconomicoMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, CampaniaClonarMutation, ActividadResolverMutation, PapeleraResolverMutation, SecretariaResolverMutation, CategoriaFiscalMutation, CategorizacionMutation, PresupuestoMutation, ComunicacionMutation):
+class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionMutation, AccesoMutation, EconomicoMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, CampaniaClonarMutation, ActividadResolverMutation, PapeleraResolverMutation, SecretariaResolverMutation, CategoriaFiscalMutation, CategorizacionMutation, PresupuestoMutation, ComunicacionMutation, ChatMutation):
     """Mutations GraphQL del sistema SIGA con generación automática."""
 
     # === ACCESO: roles y transacciones (CRUD) ===

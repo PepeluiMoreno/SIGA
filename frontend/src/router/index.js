@@ -233,6 +233,12 @@ const routes = [
     meta: { requiresAuth: true, requiredPermission: 'CAMP_LIST' }
   },
   {
+    path: '/chat',
+    component: () => import('@/modules/comunicaciones/views/MisCanalesChat.vue'),
+    name: 'MisCanalesChat',
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/campanias/nueva',
     component: () => import('@/modules/comunicaciones/views/CampaniaForm.vue'),
     name: 'NuevaCampania',

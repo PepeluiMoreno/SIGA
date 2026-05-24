@@ -1,0 +1,141 @@
+### Configuración mínima de ejabberd para el chat interno de SIGA.
+###
+### ⚠️ NO VERIFICADO contra un ejabberd real. Punto de partida basado en la
+###    documentación oficial. Revisar en la fase de despliegue (ver
+###    docs/DISENO_CHAT_INTERNO.md §6 y §7). En particular:
+###    - api_permissions / oauth deben permitir a SIGA administrar con bearer token.
+###    - mod_http_upload necesita la URL pública correcta para los adjuntos.
+###    - Sustituir certificados y secretos.
+
+hosts:
+  - "siga.local"
+
+loglevel: info
+
+### ── Certificados (montar los reales) ───────────────────────────────────────
+certfiles:
+  - "/opt/ejabberd/conf/certs/fullchain.pem"
+  - "/opt/ejabberd/conf/certs/privkey.pem"
+
+### ── Listeners ───────────────────────────────────────────────────────────────
+listen:
+  # Clientes XMPP (Conversations)
+  -
+    port: 5222
+    ip: "::"
+    module: ejabberd_c2s
+    max_stanza_size: 262144
+    shaper: c2s_shaper
+    access: c2s
+    starttls_required: true
+
+  # HTTP: API ReST (/api), OAuth (/oauth), websocket. Exponer solo en la VPN.
+  -
+    port: 5280
+    ip: "::"
+    module: ejabberd_http
+    request_handlers:
+      /admin: ejabberd_web_admin
+      /api: mod_http_api
+      /oauth: ejabberd_oauth
+      /ws: ejabberd_http_ws
+
+  # HTTPS: file upload (XEP-0363) y BOSH/ws sobre TLS.
+  -
+    port: 5443
+    ip: "::"
+    module: ejabberd_http
+    tls: true
+    request_handlers:
+      /upload: mod_http_upload
+
+### ── OAuth (para que SIGA administre con bearer token) ───────────────────────
+### Token admin emitible con:
+###   ejabberdctl oauth_issue_token admin@siga.local 31536000 ejabberd:admin
+oauth_access: all
+oauth_expire: 31536000          # 1 año (ajustar política)
+oauth_db_type: mnesia
+
+### Permisos de la API: el token con scope ejabberd:admin puede administrar.
+api_permissions:
+  "admin access":
+    who:
+      oauth:
+        scope: "ejabberd:admin"
+        access:
+          allow:
+            - acl: loopback
+            - acl: admin
+    what:
+      - "*"
+      - "!stop"
+      - "!start"
+
+### ── ACL ─────────────────────────────────────────────────────────────────────
+acl:
+  admin:
+    user:
+      - "admin@siga.local"
+  local:
+    user_regexp: ""
+  loopback:
+    ip:
+      - "127.0.0.0/8"
+      - "::1/128"
+
+access_rules:
+  c2s:
+    allow: all
+  local:
+    allow: local
+
+shaper:
+  normal: 1000
+  fast: 50000
+
+shaper_rules:
+  c2s_shaper:
+    none: admin
+    normal: all
+
+### ── Módulos ─────────────────────────────────────────────────────────────────
+modules:
+  mod_adhoc: {}
+  mod_admin_extra: {}        # comandos extra (rosters, etc.) usados por la API
+  mod_caps: {}
+  mod_carboncopy: {}
+  mod_client_state: {}
+  mod_disco: {}
+  # Salas de grupo (MUC): el puente crea una sala por grupo de trabajo.
+  mod_muc:
+    host: "conference.@HOST@"          # → conference.siga.local
+    access:
+      - allow
+    access_admin:
+      - allow: admin
+    access_create: muc_create
+    access_persistent: muc_create
+    default_room_options:
+      persistent: true
+      members_only: true               # la afiliación la controla SIGA
+  mod_muc_admin: {}                     # set_room_affiliation, create_room… (API)
+  # Historial de mensajes en el servidor (trazabilidad).
+  mod_mam:
+    default: always
+  # Adjuntos (XEP-0363). ⚠️ poner la URL pública real accesible por los clientes.
+  mod_http_upload:
+    put_url: "https://xmpp.siga.local:5443/upload"
+    max_size: 104857600                # 100 MB (ajustar)
+  mod_offline:
+    access_max_user_messages: 5000
+  mod_ping: {}
+  mod_roster: {}
+  mod_vcard: {}
+  # Push a clientes (para notificaciones en el móvil). El último salto a FCM/APNs
+  # lo da el cliente/su servicio; ver decisión de push en el diseño.
+  mod_push: {}
+  mod_push_keepalive: {}
+
+access_create:
+  muc_create:
+    allow: local

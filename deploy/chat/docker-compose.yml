@@ -1,0 +1,54 @@
+# docker-compose para el servidor ejabberd del chat interno de SIGA.
+#
+# ⚠️ PUNTO DE PARTIDA NO VERIFICADO contra un ejabberd real (ver
+#    docs/DISENO_CHAT_INTERNO.md §7). Ajustar en la fase de despliegue:
+#    - Confirmar el tag de imagen más reciente (ejabberd/ecs).
+#    - Generar y montar certificados TLS reales.
+#    - Cambiar TODAS las contraseñas/secretos de ejemplo.
+#
+# Va en la VPN, junto al resto del stack de SIGA. SIGA le habla por la API ReST
+# (puerto 5280, /api) con bearer token de scope ejabberd:admin.
+
+services:
+  ejabberd:
+    image: ejabberd/ecs:25.08          # ⚠️ verificar tag vigente
+    container_name: siga-ejabberd
+    restart: unless-stopped
+    # El hostname debe coincidir con el dominio XMPP configurado (XMPP_DOMAIN).
+    hostname: xmpp.siga.local
+    environment:
+      # Dominio XMPP servido. Debe coincidir con chat.xmpp_dominio en SIGA.
+      - EJABBERD_DOMAIN=siga.local
+      # Admin inicial (se usa para emitir el token admin que consumirá SIGA).
+      - EJABBERD_ADMINS=admin@siga.local
+      # ⚠️ cambiar: contraseña del admin inicial.
+      - EJABBERD_ADMIN_PWD=CAMBIA_ESTA_PASSWORD
+    ports:
+      # 5222: clientes XMPP (Conversations) — conexión nativa.
+      - "5222:5222"
+      # 5269: federación servidor-servidor (opcional; cerrar si todo es interno).
+      # - "5269:5269"
+      # 5280: HTTP (API ReST /api, OAuth /oauth, websocket). Exponer solo en la VPN.
+      - "5280:5280"
+      # 5443: HTTPS (file upload XEP-0363, BOSH/websocket sobre TLS).
+      - "5443:5443"
+    volumes:
+      # Configuración (incluye el listener de la API y OAuth).
+      - ./ejabberd.yml:/opt/ejabberd/conf/ejabberd.yml:ro
+      # Datos persistentes: BD interna (Mnesia), mensajes, uploads.
+      # ⚠️ los mensajes viven aquí — incluir en la política de backup.
+      - ejabberd_db:/opt/ejabberd/database
+      - ejabberd_uploads:/opt/ejabberd/upload
+      # Certificados TLS (montar los reales en producción).
+      # - ./certs:/opt/ejabberd/conf/certs:ro
+    networks:
+      - siga_net
+
+volumes:
+  ejabberd_db:
+  ejabberd_uploads:
+
+networks:
+  siga_net:
+    # Si SIGA ya define su red en otro compose, usar external: true y el nombre real.
+    driver: bridge

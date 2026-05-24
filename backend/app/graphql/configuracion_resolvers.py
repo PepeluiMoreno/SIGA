@@ -28,6 +28,7 @@ class ParametrosOrganizacion:
     tipo_entidad: str
     contabilidad_compleja: bool
     usa_presupuesto: bool
+    chat_activo: bool
     sede_social: str
     localidad: str
     cp: str
@@ -84,6 +85,7 @@ def _dict_to_parametros(cfg: dict) -> ParametrosOrganizacion:
         tipo_entidad=cfg.get('org.tipo_entidad', 'ASOCIACION'),
         contabilidad_compleja=bool(cfg.get('org.contabilidad_compleja', False)),
         usa_presupuesto=bool(cfg.get('org.usa_presupuesto', False)),
+        chat_activo=str(cfg.get('chat.activo', '')).strip().lower() in ('1', 'true', 'si', 'sí', 'on'),
         sede_social=cfg.get('org.sede_social', ''),
         localidad=cfg.get('org.localidad', ''),
         cp=cfg.get('org.cp', ''),

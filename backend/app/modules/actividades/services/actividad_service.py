@@ -250,4 +250,15 @@ class ActividadService:
         self.session.add(grupo)
         await self.session.commit()
         await self.session.refresh(grupo)
+
+        # Aviso de flujo: crear el canal de chat del grupo. Tras commit, envuelto;
+        # un fallo de la creación del canal no afecta a la creación del grupo.
+        try:
+            from app.core.events import event_bus, GrupoTrabajoCreado
+            await event_bus.publish(GrupoTrabajoCreado(
+                grupo_id=str(grupo.id), nombre=grupo.nombre,
+            ))
+        except Exception:
+            pass
+
         return grupo
