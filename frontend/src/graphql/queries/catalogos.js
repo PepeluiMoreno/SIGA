@@ -553,8 +553,11 @@ export const GET_ESTADOS_ACTIVIDAD = `
   }
 `
 
+// Los estados de actividad comparten catálogo con los estados de acción
+// (Actividad.estado_id → estados_accion), por eso usan el tipo GraphQL
+// EstadoAccion* aunque la mutación se llame crearEstadoActividad.
 export const CREATE_ESTADO_ACTIVIDAD = `
-  mutation CrearEstadoActividad($data: EstadoActividadCreateInput!) {
+  mutation CrearEstadoActividad($data: EstadoAccionCreateInput!) {
     crearEstadoActividad(data: $data) {
       id
       nombre
@@ -563,7 +566,7 @@ export const CREATE_ESTADO_ACTIVIDAD = `
 `
 
 export const UPDATE_ESTADO_ACTIVIDAD = `
-  mutation ActualizarEstadoActividad($data: EstadoActividadUpdateInput!) {
+  mutation ActualizarEstadoActividad($data: EstadoAccionUpdateInput!) {
     actualizarEstadoActividad(data: $data) {
       id
       nombre
@@ -572,7 +575,7 @@ export const UPDATE_ESTADO_ACTIVIDAD = `
 `
 
 export const DELETE_ESTADO_ACTIVIDAD = `
-  mutation EliminarEstadoActividad($filter: EstadoActividadFilter!) {
+  mutation EliminarEstadoActividad($filter: EstadoAccionFilter!) {
     eliminarEstadosActividad(filter: $filter) {
       id
     }

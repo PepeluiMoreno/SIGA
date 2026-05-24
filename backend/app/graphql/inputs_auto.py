@@ -319,10 +319,11 @@ class EstadoAccionUpdateInput:
 class EstadoAccionFilter:
     pass
 
-# Aliases semánticos para el frontend
-EstadoActividadCreateInput = EstadoAccionCreateInput
-EstadoActividadUpdateInput = EstadoAccionUpdateInput
-EstadoActividadFilter = EstadoAccionFilter
+# Estados de actividad reutilizan el catálogo de estados de acción
+# (Actividad.estado_id → estados_accion). No se exponen tipos GraphQL
+# separados: el frontend usa los nombres EstadoAccion* en las mutaciones
+# crear/actualizar/eliminar estado_actividad. Aliasar en Python no registra
+# un tipo GraphQL nuevo, así que aquí no hay nada que aliasar.
 
 
 @strawchemy.input(EstadoTarea, mode="create_input", include="all", exclude=get_exclude_fields(EstadoTarea))
