@@ -119,3 +119,21 @@ class ChatMutation:
             mensaje="Canal sincronizado" if ok else f"Sincronización con incidencias: {canal.ultimo_error or ''}",
             canal=CanalChatType.from_model(canal),
         )
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("GRUPO_ASIGNAR_MIEMBRO")])
+    async def sincronizar_canal_unidad(
+        self, info: strawberry.Info, unidad_id: uuid.UUID, nombre: Optional[str] = None
+    ) -> ResultadoOperacionCanal:
+        """Asegura el canal de una unidad organizativa (cargos/responsables) y
+        sincroniza su membresía con ejabberd."""
+        session = info.context.session
+        bridge = ChatBridgeService(session)
+        canal = await bridge.asegurar_canal_unidad(unidad_id, nombre)
+        await bridge.sincronizar_membresia_unidad(unidad_id)
+        await session.refresh(canal)
+        ok = (canal.estado_sync.value if hasattr(canal.estado_sync, "value") else str(canal.estado_sync)) == "OK"
+        return ResultadoOperacionCanal(
+            exito=ok,
+            mensaje="Canal de unidad sincronizado" if ok else f"Sincronización con incidencias: {canal.ultimo_error or ''}",
+            canal=CanalChatType.from_model(canal),
+        )

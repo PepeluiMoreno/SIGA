@@ -73,6 +73,11 @@ class ChatBridgeService:
         """Parte local del JID de la sala. Estable y opaca."""
         return f"grupo-{grupo_id}"
 
+    @staticmethod
+    def _nombre_sala_unidad(unidad_id: uuid.UUID) -> str:
+        """Parte local del JID de la sala de una unidad organizativa."""
+        return f"unidad-{unidad_id}"
+
     def _jid_usuario(self, usuario: Usuario, dominio: str) -> Optional[str]:
         """JID del usuario = su email. El UUID no se usa como id externo."""
         if not usuario.email:
@@ -90,6 +95,27 @@ class ChatBridgeService:
                 MiembroGrupo.eliminado == False,    # noqa: E712
                 Usuario.activo == True,             # noqa: E712
                 Usuario.eliminado == False,         # noqa: E712
+            )
+        )
+        return list(r.scalars().all())
+
+    async def _usuarios_cargo_unidad(self, unidad_id: uuid.UUID) -> list[Usuario]:
+        """Usuarios que ocupan ALGÚN cargo vigente en la unidad organizativa.
+
+        El canal de una unidad es para cargos/responsables (no para todos los
+        miembros, que pueden ser cientos). Fuente: vista v_nombramientos_vigentes
+        (la misma que usa el DestinatarioResolver), filtrada por la agrupación.
+        """
+        from app.modules.membresia.models.nombramiento_vigente import NombramientoVigente
+        sub = (
+            select(NombramientoVigente.miembro_id)
+            .where(NombramientoVigente.agrupacion_id == unidad_id)
+        )
+        r = await self.session.execute(
+            select(Usuario).where(
+                Usuario.miembro_id.in_(sub),
+                Usuario.activo == True,        # noqa: E712
+                Usuario.eliminado == False,    # noqa: E712
             )
         )
         return list(r.scalars().all())
@@ -149,6 +175,56 @@ class ChatBridgeService:
         except EjabberdError as exc:
             await self._marcar_sync(canal, EstadoSync.ERROR, str(exc))
 
+    async def asegurar_canal_unidad(
+        self, unidad_id: uuid.UUID, nombre: Optional[str] = None
+    ) -> CanalChat:
+        """Crea (si no existe) el canal de una unidad organizativa y su sala MUC.
+
+        El canal es para los cargos/responsables de la unidad. Idempotente.
+        """
+        existente = await self._canal_de(OrigenCanal.UNIDAD_ORGANIZATIVA, unidad_id)
+        if existente is not None:
+            return existente
+
+        cfg = await self._cargar_config()
+        nombre_sala = self._nombre_sala_unidad(unidad_id)
+        jid = f"{nombre_sala}@{cfg.muc_servicio}" if cfg.muc_servicio else nombre_sala
+
+        canal = CanalChat(
+            id=uuid.uuid4(),
+            origen=OrigenCanal.UNIDAD_ORGANIZATIVA,
+            origen_id=unidad_id,
+            sala_jid=jid,
+            nombre=nombre,
+            estado_sync=EstadoSync.PENDIENTE,
+        )
+        self.session.add(canal)
+        await self.session.commit()
+        await self.session.refresh(canal)
+
+        await self._crear_sala_remota(canal, nombre_sala)
+        return canal
+
+    async def sincronizar_membresia_unidad(self, unidad_id: uuid.UUID) -> None:
+        """Propaga a ejabberd los cargos vigentes de la unidad como miembros del canal."""
+        canal = await self._canal_de(OrigenCanal.UNIDAD_ORGANIZATIVA, unidad_id)
+        if canal is None:
+            logger.warning("sincronizar_membresia_unidad: no hay canal para unidad %s", unidad_id)
+            return
+        cfg = await self._cargar_config()
+        nombre_sala = self._nombre_sala_unidad(unidad_id)
+        usuarios = await self._usuarios_cargo_unidad(unidad_id)
+
+        try:
+            client = await self._get_client()
+            for u in usuarios:
+                jid = self._jid_usuario(u, cfg.dominio)
+                if jid:
+                    await client.set_afiliacion(nombre_sala, jid, "member")
+            await self._marcar_sync(canal, EstadoSync.OK)
+        except EjabberdError as exc:
+            await self._marcar_sync(canal, EstadoSync.ERROR, str(exc))
+
     async def anadir_miembro(self, grupo_id: uuid.UUID, usuario: Usuario) -> None:
         canal = await self._canal_de(OrigenCanal.GRUPO_TRABAJO, grupo_id)
         if canal is None:
@@ -192,14 +268,15 @@ class ChatBridgeService:
     # ── Consulta / reintento (para la capa GraphQL) ──────────────────────
 
     async def mis_canales(self, usuario: Usuario) -> list[CanalChat]:
-        """Canales de los grupos de trabajo a los que pertenece el usuario.
-
-        Se deriva de la membresía en SIGA (miembro→grupo), no de ejabberd.
+        """Canales del usuario: los de sus grupos de trabajo y los de las unidades
+        donde ocupa un cargo vigente. Derivado de SIGA, no de ejabberd.
         """
         if usuario.miembro_id is None:
             return []
-        # IDs de grupos activos del miembro del usuario.
-        sub = (
+        from app.modules.membresia.models.nombramiento_vigente import NombramientoVigente
+
+        # Grupos de trabajo activos del miembro.
+        sub_grupos = (
             select(MiembroGrupo.grupo_id)
             .where(
                 MiembroGrupo.miembro_id == usuario.miembro_id,
@@ -207,11 +284,25 @@ class ChatBridgeService:
                 MiembroGrupo.eliminado == False,  # noqa: E712
             )
         )
+        # Unidades donde el miembro tiene cargo vigente.
+        sub_unidades = (
+            select(NombramientoVigente.agrupacion_id)
+            .where(NombramientoVigente.miembro_id == usuario.miembro_id)
+        )
+        from sqlalchemy import or_, and_
         r = await self.session.execute(
             select(CanalChat).where(
-                CanalChat.origen == OrigenCanal.GRUPO_TRABAJO,
-                CanalChat.origen_id.in_(sub),
                 CanalChat.eliminado == False,  # noqa: E712
+                or_(
+                    and_(
+                        CanalChat.origen == OrigenCanal.GRUPO_TRABAJO,
+                        CanalChat.origen_id.in_(sub_grupos),
+                    ),
+                    and_(
+                        CanalChat.origen == OrigenCanal.UNIDAD_ORGANIZATIVA,
+                        CanalChat.origen_id.in_(sub_unidades),
+                    ),
+                ),
             )
         )
         return list(r.scalars().all())
@@ -235,6 +326,10 @@ class ChatBridgeService:
             nombre_sala = self._nombre_sala_grupo(canal.origen_id)
             await self._crear_sala_remota(canal, nombre_sala)
             await self.sincronizar_membresia_grupo(canal.origen_id)
+        elif canal.origen == OrigenCanal.UNIDAD_ORGANIZATIVA:
+            nombre_sala = self._nombre_sala_unidad(canal.origen_id)
+            await self._crear_sala_remota(canal, nombre_sala)
+            await self.sincronizar_membresia_unidad(canal.origen_id)
         await self.session.refresh(canal)
         return canal
 

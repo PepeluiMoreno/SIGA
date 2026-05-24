@@ -178,3 +178,58 @@ class TestMembresiaYConsulta:
         await bridge.archivar_canal_grupo(grupo.id)
         canal = await bridge._canal_de(OrigenCanal.GRUPO_TRABAJO, grupo.id)
         assert canal.fecha_archivado is not None
+
+
+# ── Canal por unidad organizativa (cargos/responsables) ──────────────────────
+
+class TestCanalUnidad:
+    async def _config(self, session):
+        for k, v in [
+            ("chat.ejabberd_api_url", "http://x/api"),
+            ("chat.ejabberd_admin_token", "tok"),
+            ("chat.xmpp_dominio", "siga.local"),
+            ("chat.muc_servicio", "conference.siga.local"),
+        ]:
+            session.add(Configuracion(clave=k, valor=v))
+        await session.flush()
+
+    async def test_canal_unidad_solo_afilia_a_cargos(self, session):
+        """El canal de la unidad afilia a quien tiene cargo vigente, no a todos."""
+        from app.modules.membresia.models.nombramiento_vigente import NombramientoVigente
+        await self._config(session)
+        hoy = dt.date.today()
+        unidad_id = uuid.uuid4()
+
+        # Dos miembros con usuario: uno CON cargo en la unidad, otro SIN cargo.
+        m_cargo = Miembro(id=uuid.uuid4(), nombre="Jefa", apellido1="X", fecha_alta=hoy)
+        u_cargo = Usuario(id=uuid.uuid4(), email="jefa@siga.local", password_hash="x", miembro_id=m_cargo.id)
+        m_raso = Miembro(id=uuid.uuid4(), nombre="Raso", apellido1="Y", fecha_alta=hoy)
+        u_raso = Usuario(id=uuid.uuid4(), email="raso@siga.local", password_hash="x", miembro_id=m_raso.id)
+        session.add_all([m_cargo, u_cargo, m_raso, u_raso])
+        await session.flush()
+        # Solo m_cargo tiene nombramiento vigente en la unidad.
+        session.add(NombramientoVigente(
+            id=uuid.uuid4(), miembro_id=m_cargo.id, cargo_id=uuid.uuid4(),
+            agrupacion_id=unidad_id, fecha_inicio=hoy,
+        ))
+        await session.commit()
+
+        fake = AsyncMock()
+        bridge = _bridge_con_cliente(session, fake)
+        canal = await bridge.asegurar_canal_unidad(unidad_id, nombre="Agrupación Norte")
+        assert canal.origen == OrigenCanal.UNIDAD_ORGANIZATIVA
+        assert canal.sala_jid == f"unidad-{unidad_id}@conference.siga.local"
+
+        await bridge.sincronizar_membresia_unidad(unidad_id)
+        afiliados = [a for c in fake.set_afiliacion.await_args_list for a in c.args]
+        # La jefa (con cargo) sí; el raso (sin cargo) no.
+        assert "jefa@siga.local" in afiliados
+        assert "raso@siga.local" not in afiliados
+
+    async def test_canal_unidad_idempotente(self, session):
+        await self._config(session)
+        unidad_id = uuid.uuid4()
+        bridge = _bridge_con_cliente(session, AsyncMock())
+        c1 = await bridge.asegurar_canal_unidad(unidad_id)
+        c2 = await bridge.asegurar_canal_unidad(unidad_id)
+        assert c1.id == c2.id
