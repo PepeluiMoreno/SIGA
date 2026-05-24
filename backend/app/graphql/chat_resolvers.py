@@ -15,7 +15,7 @@ from typing import Optional
 import strawberry
 
 from app.graphql.permissions import RequireAuthenticated, RequireTransaction
-from app.modules.core.comunicacion.mensajeria.chat_bridge_service import ChatBridgeService
+from app.modules.core.comunicacion.mensajeria.chat_bridge_service import ChatBridgeService, ChatDesactivado
 from app.modules.core.comunicacion.mensajeria.models import CanalChat
 
 
@@ -110,7 +110,10 @@ class ChatMutation:
             return ResultadoOperacionCanal(exito=False, mensaje="Grupo no encontrado")
 
         bridge = ChatBridgeService(session)
-        canal = await bridge.asegurar_canal_grupo(grupo)
+        try:
+            canal = await bridge.asegurar_canal_grupo(grupo)
+        except ChatDesactivado:
+            return ResultadoOperacionCanal(exito=False, mensaje="El chat interno no está activado")
         await bridge.sincronizar_membresia_grupo(grupo_id)
         await session.refresh(canal)
         ok = (canal.estado_sync.value if hasattr(canal.estado_sync, "value") else str(canal.estado_sync)) == "OK"
@@ -128,7 +131,10 @@ class ChatMutation:
         sincroniza su membresía con ejabberd."""
         session = info.context.session
         bridge = ChatBridgeService(session)
-        canal = await bridge.asegurar_canal_unidad(unidad_id, nombre)
+        try:
+            canal = await bridge.asegurar_canal_unidad(unidad_id, nombre)
+        except ChatDesactivado:
+            return ResultadoOperacionCanal(exito=False, mensaje="El chat interno no está activado")
         await bridge.sincronizar_membresia_unidad(unidad_id)
         await session.refresh(canal)
         ok = (canal.estado_sync.value if hasattr(canal.estado_sync, "value") else str(canal.estado_sync)) == "OK"

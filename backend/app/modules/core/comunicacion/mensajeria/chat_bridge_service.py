@@ -30,8 +30,13 @@ from .ejabberd_client import EjabberdClient, EjabberdConfig, EjabberdError
 
 logger = logging.getLogger(__name__)
 
+
+class ChatDesactivado(Exception):
+    """El módulo de chat no está activado (feature flag chat.activo apagado)."""
+
 # Claves de configuración de SIGA (Parámetros Generales) para el chat.
 _CFG_KEYS = {
+    "activo": "chat.activo",
     "api_url": "chat.ejabberd_api_url",
     "admin_token": "chat.ejabberd_admin_token",
     "dominio": "chat.xmpp_dominio",
@@ -47,6 +52,21 @@ class ChatBridgeService:
         self._client: Optional[EjabberdClient] = None
 
     # ── Configuración / cliente ──────────────────────────────────────────
+
+    async def chat_activo(self) -> bool:
+        """Feature flag: el módulo de chat solo opera si chat.activo es verdadero.
+
+        Si está desactivado, el módulo queda inerte: no crea canales ni habla con
+        ejabberd. La clave vive en la tabla de configuración de SIGA.
+        """
+        from app.modules.configuracion.models.configuracion import Configuracion
+        r = await self.session.execute(
+            select(Configuracion).where(Configuracion.clave == _CFG_KEYS["activo"])
+        )
+        cfg = r.scalar_one_or_none()
+        if cfg is None or cfg.valor is None:
+            return False
+        return str(cfg.valor).strip().lower() in ("1", "true", "si", "sí", "on")
 
     async def _cargar_config(self) -> EjabberdConfig:
         from app.modules.configuracion.models.configuracion import Configuracion
@@ -131,6 +151,8 @@ class ChatBridgeService:
         existente = await self._canal_de(OrigenCanal.GRUPO_TRABAJO, grupo.id)
         if existente is not None:
             return existente
+        if not await self.chat_activo():
+            raise ChatDesactivado()
 
         cfg = await self._cargar_config()
         nombre_sala = self._nombre_sala_grupo(grupo.id)
@@ -185,6 +207,8 @@ class ChatBridgeService:
         existente = await self._canal_de(OrigenCanal.UNIDAD_ORGANIZATIVA, unidad_id)
         if existente is not None:
             return existente
+        if not await self.chat_activo():
+            raise ChatDesactivado()
 
         cfg = await self._cargar_config()
         nombre_sala = self._nombre_sala_unidad(unidad_id)

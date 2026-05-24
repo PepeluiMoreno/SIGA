@@ -13,6 +13,7 @@ import uuid
 from unittest.mock import AsyncMock
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.schema import CreateTable
 
@@ -27,6 +28,7 @@ from app.modules.configuracion.models.configuracion import Configuracion
 from app.modules.core.comunicacion.mensajeria.chat_bridge_service import ChatBridgeService
 from app.modules.core.comunicacion.mensajeria.models import CanalChat, EstadoSync, OrigenCanal
 from app.modules.core.comunicacion.mensajeria.ejabberd_client import EjabberdError
+from app.modules.core.comunicacion.mensajeria.chat_bridge_service import ChatDesactivado
 
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -58,6 +60,7 @@ async def grupo_con_usuario(session):
         ("chat.ejabberd_admin_token", "tok"),
         ("chat.xmpp_dominio", "siga.local"),
         ("chat.muc_servicio", "conference.siga.local"),
+        ("chat.activo", "true"),
     ]:
         session.add(Configuracion(clave=k, valor=v))
     tg = TipoGrupo(id=uuid.uuid4(), nombre="T")
@@ -189,6 +192,7 @@ class TestCanalUnidad:
             ("chat.ejabberd_admin_token", "tok"),
             ("chat.xmpp_dominio", "siga.local"),
             ("chat.muc_servicio", "conference.siga.local"),
+        ("chat.activo", "true"),
         ]:
             session.add(Configuracion(clave=k, valor=v))
         await session.flush()
@@ -233,3 +237,34 @@ class TestCanalUnidad:
         c1 = await bridge.asegurar_canal_unidad(unidad_id)
         c2 = await bridge.asegurar_canal_unidad(unidad_id)
         assert c1.id == c2.id
+
+
+# ── Feature flag (módulo inerte si está desactivado) ─────────────────────────
+
+class TestFeatureFlag:
+    async def test_chat_inactivo_por_defecto(self, session):
+        """Sin la clave chat.activo, el módulo se considera desactivado."""
+        bridge = ChatBridgeService(session)
+        assert await bridge.chat_activo() is False
+
+    async def test_chat_activo_si_la_clave_es_true(self, session):
+        session.add(Configuracion(clave="chat.activo", valor="true"))
+        await session.commit()
+        bridge = ChatBridgeService(session)
+        assert await bridge.chat_activo() is True
+
+    async def test_no_crea_canal_si_desactivado(self, session, grupo_con_usuario):
+        """Con el flag apagado, asegurar_canal lanza ChatDesactivado y no crea nada."""
+        grupo, _ = grupo_con_usuario
+        # Apagar el flag que la fixture dejó en true.
+        r = await session.execute(select(Configuracion).where(Configuracion.clave == "chat.activo"))
+        flag = r.scalar_one()
+        flag.valor = "false"
+        await session.commit()
+
+        bridge = _bridge_con_cliente(session, AsyncMock())
+        with pytest.raises(ChatDesactivado):
+            await bridge.asegurar_canal_grupo(grupo)
+        # No se creó ningún canal.
+        canal = await bridge._canal_de(OrigenCanal.GRUPO_TRABAJO, grupo.id)
+        assert canal is None

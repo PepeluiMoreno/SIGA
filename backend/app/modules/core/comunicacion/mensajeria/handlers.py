@@ -38,15 +38,17 @@ def wire_chat_handlers(session_factory: Callable) -> None:
             return
         try:
             async with session_factory() as session:
+                bridge = ChatBridgeService(session)
+                # Feature flag: si el chat no está activo, el módulo es inerte.
+                if not await bridge.chat_activo():
+                    return
                 grupo = (await session.execute(
                     select(GrupoTrabajo).where(GrupoTrabajo.id == gid)
                 )).scalar_one_or_none()
                 if grupo is None:
                     logger.warning("GrupoTrabajoCreado: grupo %s no encontrado", gid)
                     return
-                bridge = ChatBridgeService(session)
                 await bridge.asegurar_canal_grupo(grupo)
-                # Alta inicial de los miembros ya presentes al crear el grupo.
                 await bridge.sincronizar_membresia_grupo(gid)
         except Exception:
             logger.exception("Fallo creando el canal de chat del grupo %s", ev.grupo_id)
