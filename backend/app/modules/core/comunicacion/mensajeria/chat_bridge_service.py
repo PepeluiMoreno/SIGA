@@ -189,6 +189,55 @@ class ChatBridgeService:
         canal.fecha_archivado = datetime.utcnow()
         await self.session.commit()
 
+    # ── Consulta / reintento (para la capa GraphQL) ──────────────────────
+
+    async def mis_canales(self, usuario: Usuario) -> list[CanalChat]:
+        """Canales de los grupos de trabajo a los que pertenece el usuario.
+
+        Se deriva de la membresía en SIGA (miembro→grupo), no de ejabberd.
+        """
+        if usuario.miembro_id is None:
+            return []
+        # IDs de grupos activos del miembro del usuario.
+        sub = (
+            select(MiembroGrupo.grupo_id)
+            .where(
+                MiembroGrupo.miembro_id == usuario.miembro_id,
+                MiembroGrupo.activo == True,      # noqa: E712
+                MiembroGrupo.eliminado == False,  # noqa: E712
+            )
+        )
+        r = await self.session.execute(
+            select(CanalChat).where(
+                CanalChat.origen == OrigenCanal.GRUPO_TRABAJO,
+                CanalChat.origen_id.in_(sub),
+                CanalChat.eliminado == False,  # noqa: E712
+            )
+        )
+        return list(r.scalars().all())
+
+    async def reintentar_sync(self, canal_id: uuid.UUID) -> Optional[CanalChat]:
+        """Reintenta la sincronización de un canal en estado ERROR.
+
+        Reaplica creación de sala + membresía. Devuelve el canal con su nuevo
+        estado_sync, o None si no existe.
+        """
+        r = await self.session.execute(
+            select(CanalChat).where(
+                CanalChat.id == canal_id,
+                CanalChat.eliminado == False,  # noqa: E712
+            )
+        )
+        canal = r.scalar_one_or_none()
+        if canal is None:
+            return None
+        if canal.origen == OrigenCanal.GRUPO_TRABAJO:
+            nombre_sala = self._nombre_sala_grupo(canal.origen_id)
+            await self._crear_sala_remota(canal, nombre_sala)
+            await self.sincronizar_membresia_grupo(canal.origen_id)
+        await self.session.refresh(canal)
+        return canal
+
     # ── Internos ─────────────────────────────────────────────────────────
 
     async def _crear_sala_remota(self, canal: CanalChat, nombre_sala: str) -> None:
