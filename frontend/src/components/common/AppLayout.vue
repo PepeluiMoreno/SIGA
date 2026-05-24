@@ -19,10 +19,7 @@
           <!-- Header right -->
           <div class="flex items-center space-x-4">
             <span class="text-sm text-gray-500 hidden md:block">v1.0</span>
-            <button class="p-2 text-gray-500 hover:text-gray-700 relative">
-              <span class="text-xl">🔔</span>
-              <span class="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-            </button>
+            <NotificacionesBell />
           </div>
         </div>
       </div>
@@ -432,6 +429,7 @@ import { useSessionGuard, stopSessionGuard } from '@/composables/useSessionGuard
 import BackendStatus from '@/components/common/BackendStatus.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
+import NotificacionesBell from '@/components/common/NotificacionesBell.vue'
 import {
   HomeIcon, UserIcon, UsersIcon, MapPinIcon, FlagIcon, UserGroupIcon,
   HeartIcon, KeyIcon, ListBulletIcon, ClipboardDocumentListIcon,
