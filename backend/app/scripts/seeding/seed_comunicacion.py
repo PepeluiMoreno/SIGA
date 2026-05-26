@@ -97,6 +97,10 @@ _TIPOS = [
      "categoria": "MEMBRESIA", "prioridad": "ALTA", "requiere_accion": False,
      "icono": "check-badge", "color": "#22C55E",
      "descripcion": "Se ha resuelto una solicitud de traslado de agrupación."},
+    {"codigo": "MIEMBRO_PERFIL_INCOMPLETO", "nombre": "Perfil de socio incompleto",
+     "categoria": "MEMBRESIA", "prioridad": "NORMAL", "requiere_accion": True,
+     "icono": "exclamation-triangle", "color": "#F59E0B",
+     "descripcion": "Un miembro tiene campos clave sin rellenar (tipo, estado, email o teléfono)."},
 
     # — Actividades / Campañas y grupos —
     {"codigo": "TAREA_ASIGNADA", "nombre": "Tarea asignada",

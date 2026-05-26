@@ -143,6 +143,19 @@ class GrupoTrabajoCreado(DomainEvent):
     grupo_id: str = ""
     nombre: str = ""
 
+@dataclass(frozen=True)
+class MiembroPerfilIncompleto(DomainEvent):
+    """Un miembro ha sido creado/actualizado con campos clave sin rellenar
+    (tipo_miembro_id, estado_id, email o telefono).
+
+    Dispara avisos al propio miembro (si tiene cuenta) y a quien pueda
+    editar miembros en su agrupación.
+    """
+    miembro_id: str = ""
+    miembro_nombre: str = ""
+    agrupacion_id: Optional[str] = None
+    campos_faltantes: tuple = ()
+
 
 # -----------------------------------------------------------------------
 # Event Bus

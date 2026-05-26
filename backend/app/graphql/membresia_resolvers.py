@@ -17,6 +17,40 @@ from app.modules.membresia.models.miembro import Miembro
 from app.modules.acceso.services.acceso_service import AccesoService
 from app.graphql.types_auto import MiembroType
 from app.graphql.permissions import RequireTransaction
+from app.core.events import event_bus, MiembroPerfilIncompleto
+
+
+_CAMPOS_PERFIL_CLAVE: tuple[tuple[str, str], ...] = (
+    ("tipo_miembro_id", "tipo de socio"),
+    ("estado_id",       "estado"),
+    ("email",           "email"),
+    ("telefono",        "teléfono"),
+)
+
+
+def _campos_perfil_faltantes(miembro: Miembro) -> tuple[str, ...]:
+    """Devuelve los nombres legibles de los campos clave sin rellenar."""
+    return tuple(
+        etiqueta for attr, etiqueta in _CAMPOS_PERFIL_CLAVE
+        if not getattr(miembro, attr, None)
+    )
+
+
+async def _publicar_perfil_incompleto(miembro: Miembro) -> None:
+    """Publica MiembroPerfilIncompleto si faltan campos clave. Nunca lanza."""
+    faltantes = _campos_perfil_faltantes(miembro)
+    if not faltantes:
+        return
+    try:
+        nombre = " ".join(filter(None, [miembro.nombre, miembro.apellido1])).strip()
+        await event_bus.publish(MiembroPerfilIncompleto(
+            miembro_id=str(miembro.id),
+            miembro_nombre=nombre or "(sin nombre)",
+            agrupacion_id=str(miembro.agrupacion_id) if miembro.agrupacion_id else None,
+            campos_faltantes=faltantes,
+        ))
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -172,6 +206,8 @@ class MembresiaResolverMutation:
         session.add(miembro)
         await session.commit()
 
+        await _publicar_perfil_incompleto(miembro)
+
         return await _fetch_miembro(session, miembro.id)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_CREAR")])
@@ -202,6 +238,9 @@ class MembresiaResolverMutation:
         )
 
         await session.commit()
+
+        await _publicar_perfil_incompleto(miembro)
+
         return await _fetch_miembro(session, miembro.id)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_EDITAR")])
@@ -213,6 +252,7 @@ class MembresiaResolverMutation:
         session = info.context.session
 
         miembro = await _fetch_miembro(session, data.id)
+        faltantes_antes = _campos_perfil_faltantes(miembro)
 
         for field in _MIEMBRO_FIELDS:
             val = getattr(data, field, None)
@@ -222,6 +262,13 @@ class MembresiaResolverMutation:
                 setattr(miembro, field, val)
 
         await session.commit()
+
+        # Notificar solo si la edición ha cambiado el conjunto de campos
+        # faltantes y siguen quedando huecos. Si los huecos son los mismos
+        # que antes, evitamos el spam por cada edición del coordinador.
+        faltantes_despues = _campos_perfil_faltantes(miembro)
+        if faltantes_despues and faltantes_despues != faltantes_antes:
+            await _publicar_perfil_incompleto(miembro)
 
         return await _fetch_miembro(session, miembro.id)
 

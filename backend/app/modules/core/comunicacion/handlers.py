@@ -28,6 +28,7 @@ from app.core.events import (
     TrasladoSolicitado,
     TrasladoResuelto,
     RemesaDevolucion,
+    MiembroPerfilIncompleto,
 )
 
 logger = logging.getLogger(__name__)
@@ -137,6 +138,36 @@ def wire_comunicacion_handlers(session_factory: Callable) -> None:
             entidad_tipo="solicitud_traslado", entidad_id=ev.solicitud_id,
         )
 
+    async def _on_miembro_perfil_incompleto(ev: MiembroPerfilIncompleto) -> None:
+        miembro_id = _uuid(ev.miembro_id)
+        if miembro_id is None or not ev.campos_faltantes:
+            return
+        faltantes = ", ".join(ev.campos_faltantes)
+        url = f"/miembros/{ev.miembro_id}"
+
+        # Aviso al propio miembro (si tiene cuenta de acceso).
+        await _emitir(
+            tipo_codigo="MIEMBRO_PERFIL_INCOMPLETO",
+            audiencia=EspecificacionAudiencia.por_miembro(miembro_id),
+            titulo="Completa tu perfil",
+            mensaje=f"Faltan datos en tu perfil: {faltantes}. "
+                    f"Entra en Mis Datos y complétalos cuando puedas.",
+            entidad_tipo="miembro", entidad_id=ev.miembro_id,
+            url_accion="/mis-datos",
+        )
+
+        # Aviso a quienes pueden editar miembros (coordinador / junta) de su agrupación.
+        await _emitir(
+            tipo_codigo="MIEMBRO_PERFIL_INCOMPLETO",
+            audiencia=EspecificacionAudiencia.por_permiso(
+                "MEMBRESIA_MIEMBRO_EDITAR", _uuid(ev.agrupacion_id)),
+            titulo="Perfil de socio incompleto",
+            mensaje=f"El perfil de {ev.miembro_nombre} tiene campos sin rellenar: "
+                    f"{faltantes}.",
+            entidad_tipo="miembro", entidad_id=ev.miembro_id,
+            url_accion=url,
+        )
+
     # ── Económico ─────────────────────────────────────────────────────────
 
     async def _on_remesa_devolucion(ev: RemesaDevolucion) -> None:
@@ -162,5 +193,6 @@ def wire_comunicacion_handlers(session_factory: Callable) -> None:
     event_bus.subscribe(TrasladoSolicitado, _on_traslado_solicitado)
     event_bus.subscribe(TrasladoResuelto, _on_traslado_resuelto)
     event_bus.subscribe(RemesaDevolucion, _on_remesa_devolucion)
+    event_bus.subscribe(MiembroPerfilIncompleto, _on_miembro_perfil_incompleto)
 
-    logger.info("Comunicación: 7 handlers de eventos suscritos al event bus.")
+    logger.info("Comunicación: 8 handlers de eventos suscritos al event bus.")

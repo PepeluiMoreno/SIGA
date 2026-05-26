@@ -148,7 +148,23 @@ export const GET_ACCION_BY_ID = `
         nombreExterno
         emailExterno
       }
+      documentos {
+        id
+        nombre
+        nombreArchivo
+        ruta
+        tipoMime
+        tamanyo
+        tipoDoc
+        creadoEn
+      }
     }
+  }
+`
+
+export const ELIMINAR_DOCUMENTOS_ACTIVIDAD = `
+  mutation EliminarDocumentosActividad($filter: DocumentoActividadFilter!) {
+    eliminarDocumentosActividad(filter: $filter) { id }
   }
 `
 

@@ -316,6 +316,51 @@
               </div>
             </div>
 
+            <!-- Servidor de correo (SMTP) -->
+            <div class="space-y-3 pt-3 border-t border-slate-100">
+              <div class="flex items-baseline justify-between">
+                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Servidor de correo (SMTP)</h3>
+                <p class="text-xs text-slate-400">Usado para enviar emails de bienvenida, reset de contraseña, etc.</p>
+              </div>
+              <div class="flex flex-wrap items-end gap-3">
+                <div class="flex-1 min-w-0">
+                  <label class="label">Servidor</label>
+                  <input v-model="form.smtp_host" type="text" class="input" placeholder="smtp.midominio.org" />
+                </div>
+                <div class="w-full sm:w-24 flex-shrink-0">
+                  <label class="label">Puerto</label>
+                  <input v-model="form.smtp_port" type="text" class="input" placeholder="587" />
+                </div>
+                <div class="w-full sm:w-auto flex-shrink-0 flex items-end gap-4 pb-2">
+                  <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                    <input v-model="form.smtp_tls" type="checkbox" class="rounded text-indigo-600" />
+                    STARTTLS
+                  </label>
+                  <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                    <input v-model="form.smtp_ssl" type="checkbox" class="rounded text-indigo-600" />
+                    SSL directo
+                  </label>
+                </div>
+              </div>
+              <div class="flex flex-wrap items-end gap-3">
+                <div class="flex-1 min-w-0">
+                  <label class="label">Usuario</label>
+                  <input v-model="form.smtp_usuario" type="text" class="input" placeholder="noreply@midominio.org" autocomplete="off" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <label class="label">Contraseña</label>
+                  <input v-model="form.smtp_password" type="password" class="input" placeholder="••••••••" autocomplete="new-password" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <label class="label">Remitente (From)</label>
+                  <input v-model="form.smtp_from" type="email" class="input" placeholder="SIGA <noreply@midominio.org>" />
+                </div>
+              </div>
+              <p class="text-xs text-slate-400">
+                Si dejas la contraseña en blanco, se conservará la actual. Si hay variables de entorno SMTP definidas en el servidor, tienen prioridad sobre esta configuración.
+              </p>
+            </div>
+
           </div>
         </AccordionPanel>
 
@@ -440,6 +485,13 @@ const form = reactive({
   auth_oidc_issuer: '',
   session_inactividad_minutos: 30,
   session_maximo_minutos: 480,
+  smtp_host: '',
+  smtp_port: '587',
+  smtp_usuario: '',
+  smtp_password: '',
+  smtp_from: '',
+  smtp_tls: true,
+  smtp_ssl: false,
   tema: 'violeta',
   fuente_principal: 'Inter',
   indico_activo: false,
@@ -555,6 +607,7 @@ const QUERY_PARAMETROS = `
       denominacionOrganoGobierno denominacionOrganoGobiernoPlural
       authModo authAutheliaUrl authOidcIssuer
       sessionInactividadMinutos sessionMaximoMinutos
+      smtpHost smtpPort smtpUsuario smtpPassword smtpFrom smtpTls smtpSsl
       indicoActivo indicoUrl indicoApiToken
       tema fuentePrincipal
       sepaCreditorName sepaCreditorIban sepaCreditorBic sepaCreditorId
@@ -634,6 +687,13 @@ onMounted(async () => {
     form.auth_oidc_issuer                = p.authOidcIssuer                   ?? ''
     form.session_inactividad_minutos     = p.sessionInactividadMinutos        ?? 30
     form.session_maximo_minutos          = p.sessionMaximoMinutos             ?? 480
+    form.smtp_host                       = p.smtpHost                         ?? ''
+    form.smtp_port                       = p.smtpPort                         ?? '587'
+    form.smtp_usuario                    = p.smtpUsuario                      ?? ''
+    form.smtp_password                   = p.smtpPassword                     ?? ''
+    form.smtp_from                       = p.smtpFrom                         ?? ''
+    form.smtp_tls                        = p.smtpTls                          ?? true
+    form.smtp_ssl                        = p.smtpSsl                          ?? false
     form.indico_activo                   = p.indicoActivo                     ?? false
     form.indico_url                      = p.indicoUrl                        ?? ''
     form.indico_api_token                = p.indicoApiToken                   ?? ''
@@ -695,6 +755,13 @@ async function guardar() {
         authOidcIssuer:                  form.auth_oidc_issuer,
         sessionInactividadMinutos:       form.session_inactividad_minutos,
         sessionMaximoMinutos:            form.session_maximo_minutos,
+        smtpHost:                        form.smtp_host,
+        smtpPort:                        form.smtp_port,
+        smtpUsuario:                     form.smtp_usuario,
+        smtpPassword:                    form.smtp_password,
+        smtpFrom:                        form.smtp_from,
+        smtpTls:                         form.smtp_tls,
+        smtpSsl:                         form.smtp_ssl,
         indicoActivo:                    form.indico_activo,
         indicoUrl:                       form.indico_url,
         indicoApiToken:                  form.indico_api_token,

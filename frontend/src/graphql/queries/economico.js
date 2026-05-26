@@ -104,6 +104,7 @@ export const REGISTRAR_DONACION = `
     $donanteEmail: String
     $donanteTelefono: String
     $conceptoId: UUID
+    $campaniaId: UUID
     $modoIngreso: String
     $referenciaPago: String
     $descripcionEspecie: String
@@ -125,6 +126,7 @@ export const REGISTRAR_DONACION = `
       donanteEmail: $donanteEmail
       donanteTelefono: $donanteTelefono
       conceptoId: $conceptoId
+      campaniaId: $campaniaId
       modoIngreso: $modoIngreso
       referenciaPago: $referenciaPago
       descripcionEspecie: $descripcionEspecie

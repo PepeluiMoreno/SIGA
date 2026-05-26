@@ -556,3 +556,81 @@ WHERE tipo_id = (SELECT id FROM niveles_organizativos WHERE nombre='Grupo local'
 
 -- Corrección de nombre del nivel supranacional (APLICADO directamente — 2026-05-20).
 UPDATE niveles_organizativos SET nombre='Europa Laica Internacional' WHERE nombre='Europa Internacional';
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- Lote 9: Donaciones ligadas a campañas de recogida de fondos (2026-05-26)
+-- La columna `donaciones.campania_id` ya existe (UUID indexada) pero no
+-- tiene FK a `campanias`. Añadirla. La relación SQLAlchemy ya se ha
+-- destapado en `donaciones.py:campania`.
+-- ─────────────────────────────────────────────────────────────────────────
+ALTER TABLE donaciones
+  ADD CONSTRAINT fk_donaciones_campania_id
+  FOREIGN KEY (campania_id) REFERENCES campanias(id)
+  ON DELETE SET NULL
+  NOT VALID;
+-- NOT VALID + VALIDATE: evita full-scan bloqueante en producción.
+ALTER TABLE donaciones VALIDATE CONSTRAINT fk_donaciones_campania_id;
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- Lote 8: Catálogo `tipos_ingreso` (preparado 2026-05-26) — PENDIENTE
+-- Reemplaza el getTipoClass hardcoded de ListaEconomico.vue y unifica el
+-- discriminador {CUOTA, DONACION, SUBVENCION, GASTO, …} con un catálogo
+-- que lleve `color` (badge dinámico, patrón estándar del proyecto).
+-- ─────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS tipos_ingreso (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  codigo VARCHAR(40) UNIQUE NOT NULL,
+  nombre VARCHAR(100) NOT NULL,
+  descripcion TEXT,
+  color VARCHAR(20),
+  signo VARCHAR(10) NOT NULL DEFAULT 'INGRESO',  -- INGRESO | GASTO
+  orden INTEGER NOT NULL DEFAULT 0,
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
+  fecha_creacion TIMESTAMP DEFAULT now(),
+  fecha_modificacion TIMESTAMP,
+  fecha_eliminacion TIMESTAMP,
+  eliminado BOOLEAN NOT NULL DEFAULT FALSE,
+  creado_por_id UUID REFERENCES usuarios(id),
+  modificado_por_id UUID REFERENCES usuarios(id)
+);
+CREATE INDEX IF NOT EXISTS ix_tipos_ingreso_codigo ON tipos_ingreso(codigo);
+CREATE INDEX IF NOT EXISTS ix_tipos_ingreso_signo ON tipos_ingreso(signo);
+CREATE INDEX IF NOT EXISTS ix_tipos_ingreso_activo ON tipos_ingreso(activo);
+
+INSERT INTO tipos_ingreso (codigo, nombre, descripcion, color, signo, orden) VALUES
+  ('CUOTA',              'Cuota',                       'Cuota ordinaria de socio',                       '#7C3AED', 'INGRESO',  1),
+  ('DONACION',           'Donación',                    'Donación recibida',                              '#2563EB', 'INGRESO',  2),
+  ('SUBVENCION_PUBLICA', 'Subvención pública',          'Subvención de administración pública',           '#059669', 'INGRESO',  3),
+  ('SUBVENCION_PRIVADA', 'Subvención privada',          'Subvención de entidad privada',                  '#10B981', 'INGRESO',  4),
+  ('VENTA',              'Venta',                       'Venta de bienes o servicios',                    '#0891B2', 'INGRESO',  5),
+  ('OTROS_INGRESOS',     'Otros ingresos',              'Ingresos no clasificados',                       '#64748B', 'INGRESO', 99),
+  ('GASTO',              'Gasto',                       'Gasto general',                                  '#DC2626', 'GASTO',   10),
+  ('GASTO_PERSONAL',     'Gastos de personal',          'Salarios, retenciones, seguros sociales',        '#B91C1C', 'GASTO',   11),
+  ('GASTO_ACTIVIDAD',    'Gastos de actividad',         'Materiales, alquileres, ponentes',               '#EF4444', 'GASTO',   12),
+  ('GASTO_ESTRUCTURA',   'Gastos de estructura',        'Mantenimiento de sede, software, gestoría',      '#F97316', 'GASTO',   13),
+  ('TRASPASO',           'Traspaso entre cuentas',      'Movimiento entre cuentas propias (neutro)',      '#94A3B8', 'INGRESO', 90)
+ON CONFLICT (codigo) DO NOTHING;
+
+-- FK opcional en cuotas_anuales y donaciones (snapshot del tipo en cada movimiento)
+ALTER TABLE cuotas_anuales
+  ADD COLUMN IF NOT EXISTS tipo_ingreso_id UUID REFERENCES tipos_ingreso(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS ix_cuotas_anuales_tipo_ingreso_id ON cuotas_anuales(tipo_ingreso_id);
+
+ALTER TABLE donaciones
+  ADD COLUMN IF NOT EXISTS tipo_ingreso_id UUID REFERENCES tipos_ingreso(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS ix_donaciones_tipo_ingreso_id ON donaciones(tipo_ingreso_id);
+
+-- Backfill: marcar las cuotas como CUOTA y las donaciones como DONACION
+UPDATE cuotas_anuales SET tipo_ingreso_id = (SELECT id FROM tipos_ingreso WHERE codigo='CUOTA')
+  WHERE tipo_ingreso_id IS NULL;
+UPDATE donaciones     SET tipo_ingreso_id = (SELECT id FROM tipos_ingreso WHERE codigo='DONACION')
+  WHERE tipo_ingreso_id IS NULL;
+
+-- Tras este lote, en código backend:
+--   * añadir relación `tipo_ingreso` en modelos CuotaAnual y Donacion
+--   * exponer `tipoIngreso { codigo nombre color }` en GraphQL
+--   * deprecar TipoMovimientoTesoreria a favor del catálogo (o conservarlo solo
+--     para distinguir TRASPASO ↔ flujo neto, ortogonal a este catálogo)
+-- En frontend (ListaEconomico.vue):
+--   * eliminar getTipoClass, usar badgeStyle(fila.tipoIngresoColor)
+--   * exponer color desde la query GraphQL de cuotas y donaciones

@@ -213,10 +213,17 @@
               </select>
             </div>
             <div>
-              <label class="label">Concepto / Campaña</label>
+              <label class="label">Concepto</label>
               <select v-model="formAlta.conceptoId" class="input">
                 <option :value="null">— Sin concepto —</option>
                 <option v-for="c in conceptos" :key="c.id" :value="c.id">{{ c.nombre }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="label">Campaña</label>
+              <select v-model="formAlta.campaniaId" class="input">
+                <option :value="null">— Sin campaña —</option>
+                <option v-for="c in campaniasActivas" :key="c.id" :value="c.id">{{ c.nombre }}</option>
               </select>
             </div>
           </div>
@@ -468,6 +475,7 @@ import {
   GET_CUENTAS_BANCARIAS_ACTIVAS,
   GET_MIEMBROS_PARA_GASTO,
 } from '@/graphql/queries/economico'
+import { GET_CAMPANIAS } from '@/graphql/queries/campanias'
 
 const toast = useToast()
 
@@ -486,6 +494,8 @@ const columnasDonaciones = [
   { key: 'cert',     label: 'Cert.',    align: 'center' },
 ]
 const conceptos = ref([])
+const campanias = ref([])
+const campaniasActivas = computed(() => campanias.value.filter(c => !c.estado?.esFinal))
 const cuentasBancarias = ref([])
 const miembros = ref([])
 const error = ref('')
@@ -526,6 +536,7 @@ function _emptyAlta() {
     modoIngreso: null,
     referenciaPago: '',
     conceptoId: null,
+    campaniaId: null,
     descripcionEspecie: '',
     documentoValoracion: '',
     anonima: false,
@@ -627,14 +638,16 @@ const cargar = async () => {
 
 const cargarAuxiliares = async () => {
   try {
-    const [c, b, m] = await Promise.all([
+    const [c, b, m, camp] = await Promise.all([
       query(GET_DONACION_CONCEPTOS),
       query(GET_CUENTAS_BANCARIAS_ACTIVAS),
       query(GET_MIEMBROS_PARA_GASTO),
+      query(GET_CAMPANIAS),
     ])
     conceptos.value = (c.donacionConceptos || []).filter(x => x.activo)
     cuentasBancarias.value = (b.cuentasBancarias || []).filter(c => c.activa)
     miembros.value = m.miembros || []
+    campanias.value = camp.campanias || []
   } catch (e) {
     console.error('Error cargando auxiliares:', e)
   }
@@ -683,6 +696,7 @@ const guardarAlta = async () => {
       donanteEmail: f.donanteTipo === 'EXTERNO' && !f.anonima ? f.donanteEmail || null : null,
       donanteTelefono: f.donanteTipo === 'EXTERNO' && !f.anonima ? f.donanteTelefono || null : null,
       conceptoId: f.conceptoId || null,
+      campaniaId: f.campaniaId || null,
       modoIngreso: f.tipo === 'DINERARIA' ? (f.modoIngreso || null) : null,
       referenciaPago: f.tipo === 'DINERARIA' ? (f.referenciaPago || null) : null,
       descripcionEspecie: f.tipo === 'ESPECIE' ? f.descripcionEspecie : null,

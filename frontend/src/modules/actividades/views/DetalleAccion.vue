@@ -622,6 +622,19 @@
         </div>
       </AccordionPanel>
 
+      <!-- Panel 5: Documentos -->
+      <AccordionPanel title="Documentos" :count="accion.documentos?.length || 0">
+        <div class="px-5 py-4">
+          <DocumentosPanel
+            :documentos="accion.documentos || []"
+            :upload-endpoint="`/upload/actividades/${accion.id}/documentos`"
+            :tipo-doc-options="TIPOS_DOC_ACTIVIDAD"
+            :delete-fn="eliminarDocumentoActividad"
+            @change="recargarAccion"
+          />
+        </div>
+      </AccordionPanel>
+
       </AccordionGroup>
 
     </div>
@@ -720,7 +733,23 @@ import {
   REGISTRAR_PARTICIPACION, ACTUALIZAR_PARTICIPACION, ELIMINAR_PARTICIPACION,
   CREAR_TAREA, ACTUALIZAR_TAREA, ELIMINAR_TAREA,
   TRANSICIONAR_ACTIVIDAD, APROBAR_ACTIVIDAD, CERRAR_ACTIVIDAD,
+  ELIMINAR_DOCUMENTOS_ACTIVIDAD,
 } from '../graphql/queries.js'
+import DocumentosPanel from '@/components/common/DocumentosPanel.vue'
+
+const TIPOS_DOC_ACTIVIDAD = [
+  { value: 'acta',     label: 'Acta' },
+  { value: 'informe',  label: 'Informe' },
+  { value: 'foto',     label: 'Foto' },
+  { value: 'material', label: 'Material' },
+  { value: 'otro',     label: 'Otro' },
+]
+
+async function eliminarDocumentoActividad(doc) {
+  await graphqlClient.request(ELIMINAR_DOCUMENTOS_ACTIVIDAD, {
+    filter: { id: { eq: doc.id } },
+  })
+}
 
 const toast = useToast()
 
