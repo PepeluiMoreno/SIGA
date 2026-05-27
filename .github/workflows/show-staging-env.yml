@@ -1,0 +1,28 @@
+# Workflow puntual para extraer el .env.staging del servidor.
+#
+# Uso una vez: Actions → "Show staging .env (one-shot)" → Run workflow.
+# Copia el contenido del log y guárdalo en un gestor de secretos
+# (1Password, Bitwarden, Vaultwarden self-hosted, etc.).
+#
+# ⚠️  Tras usarlo conviene BORRAR este workflow: deja una puerta de
+# lectura del .env de staging accesible a cualquier colaborador con
+# permiso de "write" en el repo.
+name: Show staging .env (one-shot)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  show:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read .env.staging via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            echo "=== BEGIN .env.staging ==="
+            cat /opt/docker/apps/SIGA/.env.staging
+            echo "=== END .env.staging ==="
