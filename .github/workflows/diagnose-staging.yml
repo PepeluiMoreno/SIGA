@@ -1,8 +1,8 @@
-name: Diagnose staging (one-shot)
+name: Stamp + restart staging (one-shot)
 on:
   workflow_dispatch:
 jobs:
-  diagnose:
+  fix:
     runs-on: ubuntu-latest
     steps:
       - uses: appleboy/ssh-action@v1.0.3
@@ -11,6 +11,35 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
+            cd /opt/docker/apps/SIGA
             BE_CONT=$(docker ps -a --filter "name=backend" --format "{{.Names}}" | head -1)
-            echo "=== backend logs (last 120) ==="
-            docker logs --tail 120 "$BE_CONT" 2>&1
+            DB_CONT=$(docker ps --filter "name=db" --format "{{.Names}}" | head -1)
+            echo "=== alembic actual ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -tAc "SELECT version_num FROM alembic_version"
+            echo ""
+            echo "=== Stampeando a e1f2a3b4c5d6 (UPDATE directo) ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -c "UPDATE alembic_version SET version_num='e1f2a3b4c5d6'"
+            echo ""
+            echo "=== Reiniciando backend ==="
+            docker restart "$BE_CONT"
+            sleep 15
+            echo ""
+            echo "=== docker ps ==="
+            docker ps --format "table {{.Names}}\t{{.Status}}"
+            echo ""
+            echo "=== logs (últimas 50) ==="
+            docker logs --tail 50 "$BE_CONT" 2>&1
+            echo ""
+            echo "=== alembic tras upgrade ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -tAc "SELECT version_num FROM alembic_version"
+            echo ""
+            echo "=== usuarios admin ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -c "
+              SELECT u.email, u.activo,
+                EXISTS(SELECT 1 FROM usuarios_roles ur
+                       JOIN roles r ON r.id=ur.rol_id
+                       WHERE ur.usuario_id=u.id AND r.codigo='SUPERADMIN'
+                       AND ur.eliminado=FALSE) AS superadmin
+              FROM usuarios u
+              WHERE u.email IN ('admin@siga.local', 'joseluis.morgomez@gmail.com');
+            "
