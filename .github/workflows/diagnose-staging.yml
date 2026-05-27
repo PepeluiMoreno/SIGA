@@ -1,8 +1,8 @@
-name: Revert stamp + rebuild + diagnose staging
+name: Deep diagnose staging
 on:
   workflow_dispatch:
 jobs:
-  fix:
+  diag:
     runs-on: ubuntu-latest
     steps:
       - uses: appleboy/ssh-action@v1.0.3
@@ -11,53 +11,21 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
-            cd /opt/docker/apps/SIGA
             DB_CONT=$(docker ps --filter "name=db" --format "{{.Names}}" | head -1)
-            BE_CONT=$(docker ps -a --filter "name=backend" --format "{{.Names}}" | head -1)
-
-            echo "=== Cleanup parcial: tablas RGPD que creó f0 sobre BD desactualizada ==="
-            # Mi stamp erróneo dejó f0/f1 aplicadas creando tablas RGPD,
-            # pero la BD aún no tiene secretaría. Volvemos la versión atrás
-            # y conservamos las tablas RGPD (idempotente — son IF NOT EXISTS).
-            echo "=== Revertir stamp: poner alembic en g2h3i4j5k6l7 ==="
-            docker exec "$DB_CONT" psql -U siga -d siga -c "UPDATE alembic_version SET version_num='g2h3i4j5k6l7'"
-
             echo "=== alembic actual ==="
             docker exec "$DB_CONT" psql -U siga -d siga -tAc "SELECT version_num FROM alembic_version"
-
-            echo "=== git pull para coger las migraciones idempotentes nuevas ==="
-            git pull --rebase
-
-            echo "=== docker compose pull (re-traer imagen con las migraciones fix) ==="
-            docker compose --env-file .env.staging \
-              -f docker-compose.yml -f docker-compose.staging.yml \
-              pull backend
-
-            echo "=== Re-creando backend ==="
-            docker compose --env-file .env.staging \
-              -f docker-compose.yml -f docker-compose.staging.yml \
-              up -d --force-recreate backend
-
-            echo "=== Esperando 20s al bootstrap ==="
-            sleep 20
-
-            echo "=== docker ps ==="
-            docker ps --format "table {{.Names}}\t{{.Status}}"
             echo ""
-            echo "=== logs (últimas 60) ==="
-            NEW_BE=$(docker ps -a --filter "name=backend" --format "{{.Names}}" | head -1)
-            docker logs --tail 60 "$NEW_BE" 2>&1
+            echo "=== Existe sec_reuniones? ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -tAc "SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name='sec_reuniones')"
+            echo "=== Existe sec_actas? ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -tAc "SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name='sec_actas')"
+            echo "=== Existe rgpd_encargados_tratamiento? ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -tAc "SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name='rgpd_encargados_tratamiento')"
+            echo "=== Existe sec_plataformas_telematicas? ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -tAc "SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name='sec_plataformas_telematicas')"
             echo ""
-            echo "=== alembic final ==="
-            docker exec "$DB_CONT" psql -U siga -d siga -tAc "SELECT version_num FROM alembic_version"
+            echo "=== Lista de tablas (top 60) ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -tAc "SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY table_name" | head -60
             echo ""
-            echo "=== usuarios admin ==="
-            docker exec "$DB_CONT" psql -U siga -d siga -c "
-              SELECT u.email, u.activo,
-                EXISTS(SELECT 1 FROM usuarios_roles ur
-                       JOIN roles r ON r.id=ur.rol_id
-                       WHERE ur.usuario_id=u.id AND r.codigo='SUPERADMIN'
-                       AND ur.eliminado=FALSE) AS superadmin
-              FROM usuarios u
-              WHERE u.email IN ('admin@siga.local', 'joseluis.morgomez@gmail.com');
-            "
+            echo "=== Total tablas ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'"
