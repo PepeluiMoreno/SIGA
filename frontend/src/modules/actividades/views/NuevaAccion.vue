@@ -148,18 +148,17 @@
         </div>
       </template>
 
-      <!-- Online -->
+      <!-- Online — plataforma + campos dinámicos del catálogo -->
       <div class="flex items-center gap-2">
         <input id="esOnline" v-model="form.esOnline" type="checkbox" class="rounded border-slate-300 text-indigo-600" />
-        <label for="esOnline" class="text-sm text-slate-700">Es online</label>
+        <label for="esOnline" class="text-sm text-slate-700">Actividad online (videoreunión)</label>
       </div>
-      <div v-if="form.esOnline">
-        <label class="block text-sm font-medium text-slate-700 mb-1">URL online</label>
-        <input
-          v-model="form.urlOnline"
-          type="url"
-          class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
+      <div v-if="form.esOnline" class="bg-slate-50 border border-slate-200 rounded-lg p-3">
+        <PlataformaTelematicaSelector
+          ref="selectorPlataformaRef"
+          v-model:plataforma-id="form.plataformaTelematicaId"
+          v-model:datos-conexion="form.datosConexion"
+          :requerido="true" />
       </div>
 
       <!-- Error -->
@@ -189,11 +188,14 @@
 
 <script setup>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import PlataformaTelematicaSelector from '@/components/common/PlataformaTelematicaSelector.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { graphqlClient } from '@/graphql/client'
 import { GET_TIPOS_ACCION, GET_ESTADOS_ACCION, CREAR_ACCION } from '../graphql/queries.js'
+
+const selectorPlataformaRef = ref(null)
 
 const router = useRouter()
 const route  = useRoute()
@@ -224,6 +226,8 @@ const form = ref({
   duracionDias: null,
   esOnline: false,
   urlOnline: '',
+  plataformaTelematicaId: '',
+  datosConexion: {},
 })
 
 const tipoSeleccionado = computed(() =>
@@ -244,9 +248,17 @@ onMounted(async () => {
 async function guardar() {
   saving.value = true
   error.value = ''
+  if (form.value.esOnline) {
+    const errPlat = selectorPlataformaRef.value?.validar() || ''
+    if (errPlat) { error.value = errPlat; saving.value = false; return }
+  }
   try {
     // PERMANENTE no admite ni campaña ni recurrencia ni fecha_fin.
     const esPermanente = form.value.caracter === 'PERMANENTE'
+    const datosConexion = form.value.esOnline && Object.keys(form.value.datosConexion).length
+      ? JSON.stringify(form.value.datosConexion)
+      : null
+    const plat = selectorPlataformaRef.value?.getPlataformaActual?.()
     const data = {
       nombre: form.value.nombre,
       tipoActividadId: form.value.tipoActividadId,
@@ -265,7 +277,12 @@ async function guardar() {
       duracionHoras: form.value.duracionHoras || null,
       duracionDias: form.value.duracionDias || null,
       esOnline: form.value.esOnline,
-      urlOnline: form.value.urlOnline || null,
+      // Conservamos urlOnline (legacy) tomando la URL de los datos si existe.
+      urlOnline: form.value.esOnline
+        ? (form.value.datosConexion.url || form.value.urlOnline || null)
+        : null,
+      plataformaTelematicaId: form.value.esOnline ? (form.value.plataformaTelematicaId || null) : null,
+      datosConexionTelematica: datosConexion,
       ...(campaniaId && !esPermanente ? { campaniaId } : {}),
     }
     const res = await graphqlClient.request(CREAR_ACCION, { data })

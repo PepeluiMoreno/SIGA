@@ -79,6 +79,12 @@ _MAPPING: tuple[tuple[str, str, str], ...] = (
     ('sepa.creditor_bic',                       'string', 'sepa_creditor_bic'),
     ('sepa.creditor_id',                        'string', 'sepa_creditor_id'),
     ('funcion.openbanking.activo',              'bool',   'openbanking_activo'),
+    # RGPD — datos del responsable / DPD y plazos de retención
+    ('rgpd.dpd_nombre',                         'string', 'rgpd_dpd_nombre'),
+    ('rgpd.dpd_email',                          'string', 'rgpd_dpd_email'),
+    ('rgpd.dpd_telefono',                       'string', 'rgpd_dpd_telefono'),
+    ('rgpd.dpd_externo',                        'bool',   'rgpd_dpd_externo'),
+    ('rgpd.anios_retencion_baja',               'int',    'rgpd_anios_retencion_baja'),
 )
 
 # Claves cuya presencia con valor no-vacío indica que el sistema ya fue inicializado.
@@ -262,6 +268,8 @@ class ConfiguracionService:
             'sepa_creditor_name': '', 'sepa_creditor_iban': '',
             'sepa_creditor_bic': '', 'sepa_creditor_id': '',
             'openbanking_activo': False,
+            'rgpd_dpd_nombre': '', 'rgpd_dpd_email': '', 'rgpd_dpd_telefono': '',
+            'rgpd_dpd_externo': False, 'rgpd_anios_retencion_baja': 6,
         }
         result = {}
         for attr, default in defaults.items():

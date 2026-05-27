@@ -186,6 +186,19 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
     tiposFormacion: list[TipoFormacionType] = strawchemy.field(filter_input=TipoFormacionFilter)
     formacionesMiembro: list[FormacionMiembroType] = strawchemy.field(filter_input=FormacionMiembroFilter)
 
+    # === SECRETARÍA — PLATAFORMAS TELEMÁTICAS ===
+    plataformasTelematicas: list[PlataformaTelematicaType] = strawchemy.field(filter_input=PlataformaTelematicaFilter)
+
+    # === PROTECCIÓN DE DATOS (RGPD) ===
+    rgpdEncargados: list[EncargadoTratamientoType] = strawchemy.field(filter_input=EncargadoTratamientoFilter)
+    rgpdActividadesTratamiento: list[ActividadTratamientoType] = strawchemy.field(filter_input=ActividadTratamientoFilter)
+    rgpdActividadesEncargados: list[ActividadTratamientoEncargadoType] = strawchemy.field(filter_input=ActividadTratamientoEncargadoFilter)
+    rgpdClausulas: list[ClausulaInformativaType] = strawchemy.field(filter_input=ClausulaInformativaFilter)
+    rgpdConsentimientos: list[ConsentimientoType] = strawchemy.field(filter_input=ConsentimientoFilter)
+    rgpdSolicitudesDerechos: list[SolicitudDerechoRGPDType] = strawchemy.field(filter_input=SolicitudDerechoRGPDFilter)
+    rgpdBrechasSeguridad: list[BrechaSeguridadType] = strawchemy.field(filter_input=BrechaSeguridadFilter)
+    rgpdAuditoriaAccesos: list[AuditoriaAccesoDatosType] = strawchemy.field(filter_input=AuditoriaAccesoDatosFilter)
+
 
 # Importar mutations
 from .mutations import Mutation

@@ -737,3 +737,51 @@ class FormacionMiembroType:
     pass
 
 
+# === PROTECCIÓN DE DATOS (RGPD) ===
+from ..modules.proteccion_datos.models import (
+    EncargadoTratamiento, ActividadTratamiento, ActividadTratamientoEncargado,
+    ClausulaInformativa, Consentimiento, SolicitudDerechoRGPD,
+    BrechaSeguridad, AuditoriaAccesoDatos,
+)
+
+@strawchemy.type(EncargadoTratamiento, include="all", override=True)
+class EncargadoTratamientoType:
+    pass
+
+@strawchemy.type(ActividadTratamiento, include="all", override=True)
+class ActividadTratamientoType:
+    pass
+
+@strawchemy.type(ActividadTratamientoEncargado, include="all", override=True)
+class ActividadTratamientoEncargadoType:
+    pass
+
+@strawchemy.type(ClausulaInformativa, include="all", override=True)
+class ClausulaInformativaType:
+    pass
+
+@strawchemy.type(Consentimiento, include="all", override=True)
+class ConsentimientoType:
+    pass
+
+@strawchemy.type(SolicitudDerechoRGPD, include="all", override=True)
+class SolicitudDerechoRGPDType:
+    pass
+
+@strawchemy.type(BrechaSeguridad, include="all", override=True)
+class BrechaSeguridadType:
+    pass
+
+@strawchemy.type(AuditoriaAccesoDatos, include="all", override=True)
+class AuditoriaAccesoDatosType:
+    pass
+
+
+# === SECRETARÍA — PLATAFORMAS TELEMÁTICAS ===
+from ..modules.secretaria.models import PlataformaTelematica
+
+@strawchemy.type(PlataformaTelematica, include="all", override=True)
+class PlataformaTelematicaType:
+    pass
+
+

@@ -75,6 +75,7 @@ const categorias = [
   { id: 'actividades', nombre: 'Actividades' },
   { id: 'grupos', nombre: 'Grupos' },
   { id: 'geografico', nombre: 'Geográfico' },
+  { id: 'secretaria', nombre: 'Secretaría' },
 ]
 
 const catalogos = [
@@ -213,6 +214,15 @@ const catalogos = [
     descripcion: 'Delegaciones y sedes',
     icono: '🏢',
     ruta: '/parametrizacion/agrupaciones'
+  },
+
+  // Secretaría
+  {
+    categoria: 'secretaria',
+    nombre: 'Plataformas telemáticas',
+    descripcion: 'Productos de videoreunión (Jitsi, Zoom, Meet, Teams…)',
+    icono: '📹',
+    ruta: '/parametrizacion/plataformas-telematicas'
   },
 ]
 

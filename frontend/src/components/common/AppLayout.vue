@@ -254,6 +254,68 @@
 
             <hr class="nav-sep" />
 
+            <!-- Protección de Datos (RGPD) -->
+            <div v-if="tieneAlguno('RGPD_RAT_LEER','RGPD_SOLICITUD_LEER','RGPD_CONSENTIMIENTO_LEER','RGPD_BRECHA_LEER','RGPD_AUDITORIA_LEER')" class="mb-1">
+              <button @click="toggleSection('rgpd')" class="section-btn">
+                <span>Protección de Datos</span>
+                <ChevronDownIcon class="chevron" :class="openSections.rgpd ? '' : '-rotate-90'" />
+              </button>
+              <div class="accordion-wrap" :class="{ closed: !openSections.rgpd }">
+                <ul class="space-y-1 pb-1">
+                  <li>
+                    <router-link to="/rgpd" class="nav-item"
+                      :class="$route.path === '/rgpd' ? 'active' : 'inactive'">
+                      <ShieldCheckIcon class="nav-icon" /><span>Panel RGPD</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('RGPD_RAT_LEER')">
+                    <router-link to="/rgpd/encargados" class="nav-item"
+                      :class="$route.path.startsWith('/rgpd/encargados') ? 'active' : 'inactive'">
+                      <BuildingOffice2Icon class="nav-icon" /><span>Encargados</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('RGPD_RAT_LEER')">
+                    <router-link to="/rgpd/actividades" class="nav-item"
+                      :class="$route.path.startsWith('/rgpd/actividades') ? 'active' : 'inactive'">
+                      <ClipboardDocumentListIcon class="nav-icon" /><span>RAT (art. 30)</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('RGPD_CLAUSULA_GESTIONAR')">
+                    <router-link to="/rgpd/clausulas" class="nav-item"
+                      :class="$route.path.startsWith('/rgpd/clausulas') ? 'active' : 'inactive'">
+                      <DocumentTextIcon class="nav-icon" /><span>Cláusulas</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('RGPD_CONSENTIMIENTO_LEER')">
+                    <router-link to="/rgpd/consentimientos" class="nav-item"
+                      :class="$route.path.startsWith('/rgpd/consentimientos') ? 'active' : 'inactive'">
+                      <CheckCircleIcon class="nav-icon" /><span>Consentimientos</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('RGPD_SOLICITUD_LEER')">
+                    <router-link to="/rgpd/solicitudes" class="nav-item"
+                      :class="$route.path.startsWith('/rgpd/solicitudes') ? 'active' : 'inactive'">
+                      <UserIcon class="nav-icon" /><span>Solicitudes ARSULIPO</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('RGPD_BRECHA_LEER')">
+                    <router-link to="/rgpd/brechas" class="nav-item"
+                      :class="$route.path.startsWith('/rgpd/brechas') ? 'active' : 'inactive'">
+                      <ShieldExclamationIcon class="nav-icon" /><span>Brechas de seguridad</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('RGPD_AUDITORIA_LEER')">
+                    <router-link to="/rgpd/auditoria" class="nav-item"
+                      :class="$route.path.startsWith('/rgpd/auditoria') ? 'active' : 'inactive'">
+                      <EyeIcon class="nav-icon" /><span>Auditoría de accesos</span>
+                    </router-link>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <hr class="nav-sep" />
+
             <!-- Ayuda -->
             <div class="mb-1">
               <button @click="toggleSection('ayuda')" class="section-btn">
@@ -447,6 +509,7 @@ import {
   Bars3Icon, XMarkIcon, ChevronDownIcon, TrashIcon,
   ClipboardDocumentCheckIcon, DocumentTextIcon, DocumentCheckIcon,
   ChatBubbleLeftRightIcon,
+  ShieldCheckIcon, ShieldExclamationIcon, CheckCircleIcon, EyeIcon,
 } from '@heroicons/vue/24/outline'
 
 defineProps({
@@ -488,6 +551,7 @@ const openSections = reactive({
   membresia: false,
   actividades: false,
   economico: false,
+  rgpd: false,
   ayuda: false,
 })
 
@@ -509,6 +573,8 @@ function sectionForPath(path) {
     return 'presidencia'
   if (path.startsWith('/secretaria'))
     return 'secretaria'
+  if (path.startsWith('/rgpd'))
+    return 'rgpd'
   return null
 }
 

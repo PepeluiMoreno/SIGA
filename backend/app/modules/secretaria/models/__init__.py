@@ -11,6 +11,7 @@ from .reunion import (
 from .acta import Acta, CertificadoAcuerdo
 from .libro_socios import LibroSociosSnapshot
 from .convenio import TipoConvenio, ConvenioInstitucional, DelegacionFirma
+from .plataforma_telematica import PlataformaTelematica
 
 __all__ = [
     "TipoReunion", "Reunion", "AsistenteReunionSecretaria",
@@ -18,4 +19,5 @@ __all__ = [
     "Acta", "CertificadoAcuerdo",
     "LibroSociosSnapshot",
     "TipoConvenio", "ConvenioInstitucional", "DelegacionFirma",
+    "PlataformaTelematica",
 ]

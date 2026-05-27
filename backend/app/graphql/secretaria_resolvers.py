@@ -64,6 +64,9 @@ class ReunionGQL:
     fecha_celebracion: Optional[datetime]
     lugar: Optional[str]
     es_telematica: bool
+    plataforma_telematica: Optional[str]
+    plataforma_telematica_id: Optional[uuid.UUID]
+    datos_conexion_telematica: Optional[str]
     tiene_segunda_convocatoria: bool
     convocatoria_utilizada: Optional[int]
     socios_totales: Optional[int]
@@ -83,6 +86,9 @@ class ReunionGQL:
             fecha_convocatoria=m.fecha_convocatoria,
             fecha_celebracion=m.fecha_celebracion,
             lugar=m.lugar, es_telematica=m.es_telematica,
+            plataforma_telematica=m.plataforma_telematica,
+            plataforma_telematica_id=m.plataforma_telematica_id,
+            datos_conexion_telematica=m.datos_conexion_telematica,
             tiene_segunda_convocatoria=m.tiene_segunda_convocatoria,
             convocatoria_utilizada=m.convocatoria_utilizada,
             socios_totales=m.socios_totales,
@@ -203,7 +209,7 @@ class ConvenioGQL:
     referencia: str
     titulo: str
     entidad_contraparte: str
-    cif_contraparte: Optional[str]
+    nif_contraparte: Optional[str]
     fecha_firma: date
     fecha_inicio: date
     fecha_fin: Optional[date]
@@ -218,7 +224,7 @@ class ConvenioGQL:
             id=m.id, tipo_convenio_id=m.tipo_convenio_id,
             referencia=m.referencia, titulo=m.titulo,
             entidad_contraparte=m.entidad_contraparte,
-            cif_contraparte=m.cif_contraparte,
+            nif_contraparte=m.nif_contraparte,
             fecha_firma=m.fecha_firma, fecha_inicio=m.fecha_inicio,
             fecha_fin=m.fecha_fin,
             renovacion_automatica=m.renovacion_automatica,
@@ -262,6 +268,8 @@ class ConvocarReunionInput:
     lugar: Optional[str] = None
     es_telematica: bool = False
     plataforma_telematica: Optional[str] = None
+    plataforma_telematica_id: Optional[uuid.UUID] = None
+    datos_conexion_telematica: Optional[str] = None
     tiene_segunda_convocatoria: bool = True
     fecha_segunda_convocatoria: Optional[datetime] = None
     agrupacion_id: Optional[uuid.UUID] = None
@@ -327,7 +335,7 @@ class RegistrarConvenioInput:
     entidad_contraparte: str
     fecha_firma: date
     fecha_inicio: date
-    cif_contraparte: Optional[str] = None
+    nif_contraparte: Optional[str] = None
     fecha_fin: Optional[date] = None
     renovacion_automatica: bool = False
     dias_preaviso_no_renovacion: Optional[int] = None
@@ -396,9 +404,14 @@ class SecretariaQuery:
         info: strawberry.Info,
         anio: Optional[int] = None,
         estado_codigo: Optional[str] = None,
+        tipo_reunion_id: Optional[uuid.UUID] = None,
+        agrupacion_id: Optional[uuid.UUID] = None,
     ) -> List[ActaGQL]:
         svc = ActaService(info.context.session)
-        items = await svc.listar_actas(anio=anio, estado=estado_codigo)
+        items = await svc.listar_actas(
+            anio=anio, estado=estado_codigo,
+            tipo_reunion_id=tipo_reunion_id, agrupacion_id=agrupacion_id,
+        )
         return [ActaGQL.from_model(a) for a in items]
 
     @strawberry.field(permission_classes=[RequireTransaction("SEC_ACTA_LISTAR")])
@@ -467,7 +480,7 @@ class SecretariaResolverMutation:
         self, info: strawberry.Info, data: ConvocarReunionInput
     ) -> ReunionGQL:
         svc = ReunionService(info.context.session)
-        usuario_id = info.context.current_user.id if info.context.current_user else None
+        usuario_id = info.context.user.id if info.context.user else None
         reunion = await svc.convocar_reunion(
             tipo_reunion_id=data.tipo_reunion_id,
             fecha_convocatoria=data.fecha_convocatoria,
@@ -475,6 +488,8 @@ class SecretariaResolverMutation:
             lugar=data.lugar,
             es_telematica=data.es_telematica,
             plataforma_telematica=data.plataforma_telematica,
+            plataforma_telematica_id=data.plataforma_telematica_id,
+            datos_conexion_telematica=data.datos_conexion_telematica,
             tiene_segunda_convocatoria=data.tiene_segunda_convocatoria,
             fecha_segunda_convocatoria=data.fecha_segunda_convocatoria,
             agrupacion_id=data.agrupacion_id,
@@ -488,7 +503,7 @@ class SecretariaResolverMutation:
         self, info: strawberry.Info, data: RegistrarCelebracionInput
     ) -> ReunionGQL:
         svc = ReunionService(info.context.session)
-        usuario_id = info.context.current_user.id if info.context.current_user else None
+        usuario_id = info.context.user.id if info.context.user else None
         reunion = await svc.registrar_celebracion(
             reunion_id=data.reunion_id,
             socios_totales=data.socios_totales,
@@ -507,7 +522,7 @@ class SecretariaResolverMutation:
         motivo: Optional[str] = None,
     ) -> ReunionGQL:
         svc = ReunionService(info.context.session)
-        usuario_id = info.context.current_user.id if info.context.current_user else None
+        usuario_id = info.context.user.id if info.context.user else None
         reunion = await svc.cancelar_reunion(
             reunion_id=reunion_id, motivo=motivo, modificado_por_id=usuario_id
         )
@@ -518,7 +533,7 @@ class SecretariaResolverMutation:
         self, info: strawberry.Info, data: RegistrarAcuerdoInput
     ) -> AcuerdoGQL:
         svc = ReunionService(info.context.session)
-        usuario_id = info.context.current_user.id if info.context.current_user else None
+        usuario_id = info.context.user.id if info.context.user else None
         acuerdo = await svc.registrar_acuerdo(
             punto_orden_dia_id=data.punto_orden_dia_id,
             descripcion=data.descripcion,
@@ -540,7 +555,7 @@ class SecretariaResolverMutation:
         self, info: strawberry.Info, data: ActualizarSeguimientoInput
     ) -> AcuerdoGQL:
         svc = ReunionService(info.context.session)
-        usuario_id = info.context.current_user.id if info.context.current_user else None
+        usuario_id = info.context.user.id if info.context.user else None
         acuerdo = await svc.actualizar_seguimiento_acuerdo(
             acuerdo_id=data.acuerdo_id,
             estado_ejecucion=data.estado_ejecucion,
@@ -556,7 +571,7 @@ class SecretariaResolverMutation:
         self, info: strawberry.Info, data: CrearActaInput
     ) -> ActaGQL:
         svc = ActaService(info.context.session)
-        usuario_id = info.context.current_user.id if info.context.current_user else None
+        usuario_id = info.context.user.id if info.context.user else None
         acta = await svc.crear_acta_borrador(
             reunion_id=data.reunion_id,
             texto_acta=data.texto_acta,
@@ -575,11 +590,28 @@ class SecretariaResolverMutation:
         reunion_aprobacion_id: Optional[uuid.UUID] = None,
     ) -> ActaGQL:
         svc = ActaService(info.context.session)
-        usuario_id = info.context.current_user.id if info.context.current_user else None
+        usuario_id = info.context.user.id if info.context.user else None
         acta = await svc.aprobar_acta(
             acta_id=acta_id,
             fecha_aprobacion=fecha_aprobacion,
             reunion_aprobacion_id=reunion_aprobacion_id,
+            modificado_por_id=usuario_id,
+        )
+        return ActaGQL.from_model(acta)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("SEC_ACTA_APROBAR")])
+    async def anular_aprobacion_acta(
+        self,
+        info: strawberry.Info,
+        acta_id: uuid.UUID,
+        motivo: Optional[str] = None,
+    ) -> ActaGQL:
+        """Revierte la aprobación: el acta vuelve a BORRADOR."""
+        svc = ActaService(info.context.session)
+        usuario_id = info.context.user.id if info.context.user else None
+        acta = await svc.anular_aprobacion_acta(
+            acta_id=acta_id,
+            motivo=motivo,
             modificado_por_id=usuario_id,
         )
         return ActaGQL.from_model(acta)
@@ -593,7 +625,7 @@ class SecretariaResolverMutation:
         presidente_id: uuid.UUID,
     ) -> ActaGQL:
         svc = ActaService(info.context.session)
-        usuario_id = info.context.current_user.id if info.context.current_user else None
+        usuario_id = info.context.user.id if info.context.user else None
         acta = await svc.firmar_acta(
             acta_id=acta_id,
             secretario_id=secretario_id,
@@ -607,7 +639,7 @@ class SecretariaResolverMutation:
         self, info: strawberry.Info, data: EmitirCertificadoInput
     ) -> CertificadoGQL:
         svc = ActaService(info.context.session)
-        usuario_id = info.context.current_user.id if info.context.current_user else None
+        usuario_id = info.context.user.id if info.context.user else None
         cert = await svc.emitir_certificado(
             acta_id=data.acta_id,
             acuerdo_id=data.acuerdo_id,
@@ -629,7 +661,7 @@ class SecretariaResolverMutation:
         observaciones: Optional[str] = None,
     ) -> LibroSociosSnapshotGQL:
         svc = LibroSociosService(info.context.session)
-        usuario_id = info.context.current_user.id if info.context.current_user else None
+        usuario_id = info.context.user.id if info.context.user else None
         snapshot = await svc.generar_snapshot(
             fecha_corte=fecha_corte, motivo=motivo,
             observaciones=observaciones, creado_por_id=usuario_id,
@@ -641,14 +673,14 @@ class SecretariaResolverMutation:
         self, info: strawberry.Info, data: RegistrarConvenioInput
     ) -> ConvenioGQL:
         svc = ConvenioService(info.context.session)
-        usuario_id = info.context.current_user.id if info.context.current_user else None
+        usuario_id = info.context.user.id if info.context.user else None
         convenio = await svc.registrar_convenio(
             tipo_convenio_id=data.tipo_convenio_id,
             titulo=data.titulo,
             entidad_contraparte=data.entidad_contraparte,
             fecha_firma=data.fecha_firma,
             fecha_inicio=data.fecha_inicio,
-            cif_contraparte=data.cif_contraparte,
+            nif_contraparte=data.nif_contraparte,
             fecha_fin=data.fecha_fin,
             renovacion_automatica=data.renovacion_automatica,
             dias_preaviso_no_renovacion=data.dias_preaviso_no_renovacion,
@@ -670,7 +702,7 @@ class SecretariaResolverMutation:
         nuevo_estado: str,
     ) -> ConvenioGQL:
         svc = ConvenioService(info.context.session)
-        usuario_id = info.context.current_user.id if info.context.current_user else None
+        usuario_id = info.context.user.id if info.context.user else None
         convenio = await svc.cambiar_estado_convenio(
             convenio_id=convenio_id,
             nuevo_estado=nuevo_estado,
@@ -683,7 +715,7 @@ class SecretariaResolverMutation:
         self, info: strawberry.Info, data: CrearDelegacionInput
     ) -> DelegacionFirmaGQL:
         svc = ConvenioService(info.context.session)
-        usuario_id = info.context.current_user.id if info.context.current_user else None
+        usuario_id = info.context.user.id if info.context.user else None
         delegacion = await svc.crear_delegacion(
             delegante_id=data.delegante_id,
             delegado_id=data.delegado_id,
@@ -704,7 +736,7 @@ class SecretariaResolverMutation:
         delegacion_id: uuid.UUID,
     ) -> DelegacionFirmaGQL:
         svc = ConvenioService(info.context.session)
-        usuario_id = info.context.current_user.id if info.context.current_user else None
+        usuario_id = info.context.user.id if info.context.user else None
         delegacion = await svc.revocar_delegacion(
             delegacion_id=delegacion_id, modificado_por_id=usuario_id
         )

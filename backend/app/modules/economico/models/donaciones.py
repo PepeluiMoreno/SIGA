@@ -93,7 +93,9 @@ class Donacion(BaseModel):
     # TODO: Descomentar cuando existan los modelos
     # miembro = relationship('Miembro', foreign_keys=[miembro_id], lazy='selectin')
     concepto = relationship('DonacionConcepto', back_populates='donaciones', lazy='selectin')
-    campania = relationship('Campania', foreign_keys=[campania_id], lazy='selectin')
+    # campania: pendiente de aplicar FK de SQL_PENDIENTE.md Lote 9
+    # campania = relationship('Campania', foreign_keys=[campania_id], lazy='selectin',
+    #                         primaryjoin='Donacion.campania_id == foreign(Campania.id)')
     estado = relationship('EstadoDonacion', foreign_keys=[estado_id], lazy='selectin')
     cuenta_bancaria = relationship('CuentaBancaria', foreign_keys=[cuenta_bancaria_id], lazy='selectin')
     apunte_caja = relationship('ApunteCaja', foreign_keys=[apunte_caja_id], lazy='selectin')

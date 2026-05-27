@@ -74,6 +74,11 @@ class ParametrosOrganizacion:
     sepa_creditor_bic: str
     sepa_creditor_id: str
     openbanking_activo: bool
+    rgpd_dpd_nombre: str
+    rgpd_dpd_email: str
+    rgpd_dpd_telefono: str
+    rgpd_dpd_externo: bool
+    rgpd_anios_retencion_baja: int
 
 
 def _dict_to_parametros(cfg: dict) -> ParametrosOrganizacion:
@@ -131,6 +136,11 @@ def _dict_to_parametros(cfg: dict) -> ParametrosOrganizacion:
         sepa_creditor_bic=cfg.get('sepa.creditor_bic', ''),
         sepa_creditor_id=cfg.get('sepa.creditor_id', ''),
         openbanking_activo=bool(cfg.get('funcion.openbanking.activo', False)),
+        rgpd_dpd_nombre=cfg.get('rgpd.dpd_nombre', ''),
+        rgpd_dpd_email=cfg.get('rgpd.dpd_email', ''),
+        rgpd_dpd_telefono=cfg.get('rgpd.dpd_telefono', ''),
+        rgpd_dpd_externo=bool(cfg.get('rgpd.dpd_externo', False)),
+        rgpd_anios_retencion_baja=int(cfg.get('rgpd.anios_retencion_baja', 6)),
     )
 
 
@@ -191,6 +201,11 @@ class ParametrosOrganizacionInput:
     sepa_creditor_bic: Optional[str] = ''
     sepa_creditor_id: Optional[str] = ''
     openbanking_activo: Optional[bool] = False
+    rgpd_dpd_nombre: Optional[str] = ''
+    rgpd_dpd_email: Optional[str] = ''
+    rgpd_dpd_telefono: Optional[str] = ''
+    rgpd_dpd_externo: Optional[bool] = False
+    rgpd_anios_retencion_baja: Optional[int] = 6
 
 
 # ---------------------------------------------------------------------------

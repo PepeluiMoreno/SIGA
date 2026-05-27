@@ -41,36 +41,39 @@
     <!-- Formulario de subida -->
     <div v-if="!readonly" class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
       <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Adjuntar documento</h4>
-      <div class="flex flex-wrap gap-3 items-end">
-        <div class="flex-1 min-w-[200px]">
-          <label class="block text-xs font-medium text-slate-700 mb-1">Archivo</label>
-          <input ref="fileInputRef" type="file" @change="onFileChange"
-            class="block w-full text-sm text-slate-700 file:mr-3 file:h-9 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-sm file:font-medium hover:file:bg-indigo-100" />
-        </div>
-        <div class="flex-1 min-w-[150px]">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
           <label class="block text-xs font-medium text-slate-700 mb-1">Nombre (opcional)</label>
-          <input v-model="form.nombre" type="text" placeholder="Acta de la asamblea…"
+          <input v-model="metadatos.nombre" type="text" placeholder="Acta de la asamblea…"
             class="h-9 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
-        <div v-if="tipoDocOptions?.length" class="min-w-[140px]">
+        <div v-if="tipoDocOptions?.length">
           <label class="block text-xs font-medium text-slate-700 mb-1">Tipo</label>
-          <select v-model="form.tipoDoc"
+          <select v-model="metadatos.tipoDoc"
             class="h-9 w-full px-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option v-for="o in tipoDocOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
           </select>
         </div>
-        <button type="button" @click="subir" :disabled="!form.archivo || subiendo"
-          class="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg">
-          {{ subiendo ? 'Subiendo…' : 'Subir' }}
-        </button>
       </div>
+
+      <UploadFile
+        :endpoint="uploadEndpoint"
+        :extra-params="extraParamsSubida"
+        :accept="accept"
+        :max-size-m-b="maxSizeMB"
+        @upload="onSubido"
+        @error="error = $event"
+      />
+
       <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import UploadFile from './UploadFile.vue'
 
 const props = defineProps({
   documentos: { type: Array, default: () => [] },
@@ -80,21 +83,25 @@ const props = defineProps({
   defaultTipoDoc: { type: String, default: 'otro' },
   readonly: { type: Boolean, default: false },
   urlBase: { type: String, default: '/api/uploads/' },
+  /** MIME types o extensiones aceptadas. */
+  accept: { type: String, default: '' },
+  /** Tamaño máximo en MB. */
+  maxSizeMB: { type: Number, default: 10 },
 })
 
 const emit = defineEmits(['change'])
 
-const fileInputRef = ref(null)
-const subiendo = ref(false)
 const error = ref('')
+const metadatos = ref({ nombre: '', tipoDoc: props.defaultTipoDoc })
 
-const form = ref({ archivo: null, nombre: '', tipoDoc: props.defaultTipoDoc })
-
-function onFileChange(e) {
-  const f = e.target.files?.[0]
-  form.value.archivo = f || null
-  if (f && !form.value.nombre) form.value.nombre = f.name
-}
+// Los metadatos viajan como query-params al endpoint (patrón existente
+// en /upload/actividades/{id}/documentos y similares).
+const extraParamsSubida = computed(() => {
+  const p = {}
+  if (metadatos.value.nombre)  p.nombre   = metadatos.value.nombre
+  if (metadatos.value.tipoDoc) p.tipo_doc = metadatos.value.tipoDoc
+  return p
+})
 
 function urlDescarga(d) {
   return d.url || `${props.urlBase}${d.ruta || ''}`
@@ -117,38 +124,11 @@ function etiquetaTipo(tipo) {
   return opt?.label || tipo || 'otro'
 }
 
-async function subir() {
-  if (!form.value.archivo) return
-  subiendo.value = true
+function onSubido() {
+  // Limpiar metadatos para la siguiente subida y notificar al padre.
+  metadatos.value = { nombre: '', tipoDoc: props.defaultTipoDoc }
   error.value = ''
-  try {
-    const token = localStorage.getItem('siga_token') || sessionStorage.getItem('siga_token')
-    const fd = new FormData()
-    fd.append('file', form.value.archivo)
-    const params = new URLSearchParams()
-    if (form.value.nombre) params.set('nombre', form.value.nombre)
-    if (form.value.tipoDoc) params.set('tipo_doc', form.value.tipoDoc)
-    const sep = props.uploadEndpoint.includes('?') ? '&' : '?'
-    const url = params.toString()
-      ? `${props.uploadEndpoint}${sep}${params.toString()}`
-      : props.uploadEndpoint
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: fd,
-    })
-    if (!r.ok) {
-      const txt = await r.text()
-      throw new Error(txt || `Error ${r.status}`)
-    }
-    form.value = { archivo: null, nombre: '', tipoDoc: props.defaultTipoDoc }
-    if (fileInputRef.value) fileInputRef.value.value = ''
-    emit('change')
-  } catch (e) {
-    error.value = e?.message || 'Error al subir el documento'
-  } finally {
-    subiendo.value = false
-  }
+  emit('change')
 }
 
 async function eliminar(doc) {

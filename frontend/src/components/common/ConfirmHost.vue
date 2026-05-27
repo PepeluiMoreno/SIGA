@@ -1,11 +1,11 @@
 <template>
   <ConfirmActionModal
-    v-model="_confirmState.value.visible"
-    :titulo="_confirmState.value.titulo"
-    :mensaje="_confirmState.value.mensaje"
-    :variante="_confirmState.value.variante"
-    :etiquetaConfirmar="_confirmState.value.etiquetaConfirmar"
-    :etiquetaCancelar="_confirmState.value.etiquetaCancelar"
+    v-model="_confirmState.visible"
+    :titulo="_confirmState.titulo"
+    :mensaje="_confirmState.mensaje"
+    :variante="_confirmState.variante"
+    :etiquetaConfirmar="_confirmState.etiquetaConfirmar"
+    :etiquetaCancelar="_confirmState.etiquetaCancelar"
     @confirm="_resolveConfirm(true)"
     @cancel="_resolveConfirm(false)"
   />

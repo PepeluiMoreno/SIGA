@@ -165,6 +165,19 @@ from .secretaria.models import (
     TipoConvenio,
     ConvenioInstitucional,
     DelegacionFirma,
+    PlataformaTelematica,
+)
+
+# Protección de datos (RGPD / LOPDGDD)
+from .proteccion_datos.models import (
+    EncargadoTratamiento,
+    ActividadTratamiento,
+    ActividadTratamientoEncargado,
+    ClausulaInformativa,
+    Consentimiento,
+    SolicitudDerechoRGPD,
+    BrechaSeguridad,
+    AuditoriaAccesoDatos,
 )
 
 __all__ = [
@@ -209,4 +222,9 @@ __all__ = [
     'Acta', 'CertificadoAcuerdo',
     'LibroSociosSnapshot',
     'TipoConvenio', 'ConvenioInstitucional', 'DelegacionFirma',
+    'PlataformaTelematica',
+    # Protección de datos (RGPD)
+    'EncargadoTratamiento', 'ActividadTratamiento', 'ActividadTratamientoEncargado',
+    'ClausulaInformativa', 'Consentimiento', 'SolicitudDerechoRGPD',
+    'BrechaSeguridad', 'AuditoriaAccesoDatos',
 ]

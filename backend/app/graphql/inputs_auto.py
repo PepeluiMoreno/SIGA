@@ -1705,3 +1705,119 @@ class ReglaContableUpdateInput:
 @strawchemy.filter(ReglaContableModel)
 class ReglaContableFilter:
     pass
+
+
+# === PROTECCIÓN DE DATOS (RGPD) ===
+from ..modules.proteccion_datos.models import (
+    EncargadoTratamiento, ActividadTratamiento, ActividadTratamientoEncargado,
+    ClausulaInformativa, Consentimiento, SolicitudDerechoRGPD,
+    BrechaSeguridad, AuditoriaAccesoDatos,
+)
+
+
+@strawchemy.input(EncargadoTratamiento, mode="create_input", include="all", exclude=get_exclude_fields(EncargadoTratamiento))
+class EncargadoTratamientoCreateInput:
+    pass
+
+@strawchemy.input(EncargadoTratamiento, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(EncargadoTratamiento))
+class EncargadoTratamientoUpdateInput:
+    pass
+
+@strawchemy.filter(EncargadoTratamiento, include="all")
+class EncargadoTratamientoFilter:
+    pass
+
+
+@strawchemy.input(ActividadTratamiento, mode="create_input", include="all", exclude=get_exclude_fields(ActividadTratamiento))
+class ActividadTratamientoCreateInput:
+    pass
+
+@strawchemy.input(ActividadTratamiento, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(ActividadTratamiento))
+class ActividadTratamientoUpdateInput:
+    pass
+
+@strawchemy.filter(ActividadTratamiento, include="all")
+class ActividadTratamientoFilter:
+    pass
+
+
+@strawchemy.input(ActividadTratamientoEncargado, mode="create_input", include="all", exclude=get_exclude_fields(ActividadTratamientoEncargado))
+class ActividadTratamientoEncargadoCreateInput:
+    pass
+
+@strawchemy.filter(ActividadTratamientoEncargado, include="all")
+class ActividadTratamientoEncargadoFilter:
+    pass
+
+
+@strawchemy.input(ClausulaInformativa, mode="create_input", include="all", exclude=get_exclude_fields(ClausulaInformativa))
+class ClausulaInformativaCreateInput:
+    pass
+
+@strawchemy.input(ClausulaInformativa, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(ClausulaInformativa))
+class ClausulaInformativaUpdateInput:
+    pass
+
+@strawchemy.filter(ClausulaInformativa, include="all")
+class ClausulaInformativaFilter:
+    pass
+
+
+@strawchemy.input(Consentimiento, mode="create_input", include="all", exclude=get_exclude_fields(Consentimiento))
+class ConsentimientoCreateInput:
+    pass
+
+@strawchemy.input(Consentimiento, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Consentimiento))
+class ConsentimientoUpdateInput:
+    pass
+
+@strawchemy.filter(Consentimiento, include="all")
+class ConsentimientoFilter:
+    pass
+
+
+@strawchemy.input(SolicitudDerechoRGPD, mode="create_input", include="all", exclude=get_exclude_fields(SolicitudDerechoRGPD))
+class SolicitudDerechoRGPDCreateInput:
+    pass
+
+@strawchemy.input(SolicitudDerechoRGPD, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(SolicitudDerechoRGPD))
+class SolicitudDerechoRGPDUpdateInput:
+    pass
+
+@strawchemy.filter(SolicitudDerechoRGPD, include="all")
+class SolicitudDerechoRGPDFilter:
+    pass
+
+
+@strawchemy.input(BrechaSeguridad, mode="create_input", include="all", exclude=get_exclude_fields(BrechaSeguridad))
+class BrechaSeguridadCreateInput:
+    pass
+
+@strawchemy.input(BrechaSeguridad, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(BrechaSeguridad))
+class BrechaSeguridadUpdateInput:
+    pass
+
+@strawchemy.filter(BrechaSeguridad, include="all")
+class BrechaSeguridadFilter:
+    pass
+
+
+@strawchemy.filter(AuditoriaAccesoDatos, include="all")
+class AuditoriaAccesoDatosFilter:
+    pass
+
+
+# === SECRETARÍA — PLATAFORMAS TELEMÁTICAS ===
+from ..modules.secretaria.models import PlataformaTelematica
+
+@strawchemy.input(PlataformaTelematica, mode="create_input", include="all", exclude=get_exclude_fields(PlataformaTelematica))
+class PlataformaTelematicaCreateInput:
+    pass
+
+@strawchemy.input(PlataformaTelematica, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(PlataformaTelematica))
+class PlataformaTelematicaUpdateInput:
+    pass
+
+@strawchemy.filter(PlataformaTelematica, include="all")
+class PlataformaTelematicaFilter:
+    pass

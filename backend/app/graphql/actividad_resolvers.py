@@ -39,6 +39,8 @@ class ActividadCreateData:
     aforo: Optional[int] = None
     es_online: bool = False
     url_online: Optional[str] = None
+    plataforma_telematica_id: Optional[uuid.UUID] = None
+    datos_conexion_telematica: Optional[str] = None
     presupuesto_estimado: Decimal = Decimal('0.00')
 
 
@@ -69,6 +71,8 @@ class ActividadUpdateData:
     aforo: Optional[int] = None
     es_online: Optional[bool] = None
     url_online: Optional[str] = None
+    plataforma_telematica_id: Optional[uuid.UUID] = None
+    datos_conexion_telematica: Optional[str] = None
     presupuesto_estimado: Optional[Decimal] = None
     presupuesto_ejecutado: Optional[Decimal] = None
     eliminado: Optional[bool] = None
@@ -132,6 +136,8 @@ class ActividadResolverMutation:
             lugar=data.lugar, direccion=data.direccion, localidad=data.localidad,
             provincia=data.provincia, aforo=data.aforo,
             es_online=data.es_online, url_online=data.url_online,
+            plataforma_telematica_id=data.plataforma_telematica_id,
+            datos_conexion_telematica=data.datos_conexion_telematica,
             presupuesto_estimado=data.presupuesto_estimado,
         )
 
@@ -143,7 +149,9 @@ class ActividadResolverMutation:
             'grupo_id', 'responsable_id', 'fecha_inicio', 'hora_inicio',
             'fecha_fin', 'hora_fin', 'duracion_horas', 'duracion_dias',
             'lugar', 'direccion', 'localidad', 'provincia', 'aforo',
-            'es_online', 'url_online', 'presupuesto_estimado',
+            'es_online', 'url_online',
+            'plataforma_telematica_id', 'datos_conexion_telematica',
+            'presupuesto_estimado',
             'presupuesto_ejecutado', 'eliminado',
         ]}
         return await ActividadService(info.context.session).actualizar(data.id, campos)

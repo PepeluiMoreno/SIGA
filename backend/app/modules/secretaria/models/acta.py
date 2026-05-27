@@ -42,10 +42,14 @@ class Acta(BaseModel):
         comment="Texto completo del acta (puede generarse desde los datos estructurados)"
     )
 
-    # Aprobación
-    estado: Mapped[str] = mapped_column(
-        String(20), nullable=False, default='BORRADOR', index=True
-    )  # BORRADOR | APROBADA | FIRMADA
+    # Aprobación — estado por catálogo `estados_acta` + snapshot del código
+    estado_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('estados_acta.id'), nullable=True, index=True,
+    )
+    estado_codigo: Mapped[str] = mapped_column(
+        String(30), nullable=False, default='BORRADOR', index=True,
+        comment='BORRADOR | APROBADA | FIRMADA (snapshot del catálogo)',
+    )
     fecha_aprobacion: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     reunion_aprobacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid, ForeignKey('sec_reuniones.id'), nullable=True,
@@ -72,7 +76,7 @@ class Acta(BaseModel):
     certificados = relationship('CertificadoAcuerdo', back_populates='acta', lazy='selectin')
 
     def __repr__(self) -> str:
-        return f"<Acta(numero={self.numero}, anio={self.anio}, estado='{self.estado}')>"
+        return f"<Acta(numero={self.numero}, anio={self.anio}, estado='{self.estado_codigo}')>"
 
 
 class CertificadoAcuerdo(BaseModel):

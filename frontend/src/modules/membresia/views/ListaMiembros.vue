@@ -256,6 +256,13 @@ watch(filters, () => {
   applyClientFilters()
 }, { deep: true })
 
+// Si los catálogos llegan después de los miembros (por una recarga, caché,
+// etc.), re-aplicamos los filtros: el filtro de bajas depende del id del
+// estado Baja resuelto desde el catálogo.
+watch(estadosMiembro, () => {
+  if (allMiembros.value.length) applyClientFilters()
+}, { deep: false })
+
 // Búsqueda en tiempo real. Al buscar se despliegan todas las agrupaciones para
 // que los resultados sean visibles; al vaciar la búsqueda se vuelven a colapsar.
 watch(searchQuery, () => {
@@ -646,8 +653,14 @@ const applyClientFilters = () => {
   }
 
   // Los dados de baja se ocultan salvo que se marque "Incluir las bajas".
+  // Si los catálogos aún no han cargado, `estadoBajaId.value` puede ser
+  // undefined; en ese caso filtramos por nombre como fallback para no dejar
+  // que cuelen los de baja sin querer.
   if (!filters.value.incluirBajas) {
-    filtered = filtered.filter(m => m.estado?.id !== estadoBajaId.value)
+    const bajaId = estadoBajaId.value
+    filtered = filtered.filter(m => bajaId
+      ? m.estado?.id !== bajaId
+      : m.estado?.nombre !== 'Baja')
   }
 
   // Filtro por tipos (OR)

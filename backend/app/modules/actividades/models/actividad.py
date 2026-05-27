@@ -123,7 +123,17 @@ class Actividad(BaseModel):
     provincia: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     aforo: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     es_online: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    url_online: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    url_online: Mapped[Optional[str]] = mapped_column(
+        String(500), nullable=True,
+        comment='Legacy: URL libre. Cuando hay plataforma_telematica_id se prefiere ese catálogo.'
+    )
+    plataforma_telematica_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('sec_plataformas_telematicas.id'), nullable=True, index=True,
+    )
+    datos_conexion_telematica: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True,
+        comment='JSON con valores de los campos definidos por la plataforma telemática.'
+    )
 
     # Económico
     presupuesto_estimado: Mapped[Decimal] = mapped_column(

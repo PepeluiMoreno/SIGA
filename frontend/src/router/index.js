@@ -428,6 +428,56 @@ const routes = [
     meta: { requiresAuth: true },
   },
 
+  // ─── PROTECCIÓN DE DATOS (RGPD) ───────────────────────────────────────────
+  {
+    path: '/rgpd',
+    component: () => import('@/modules/proteccion_datos/views/IndexRGPD.vue'),
+    name: 'RGPDIndex',
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/rgpd/encargados',
+    component: () => import('@/modules/proteccion_datos/views/Encargados.vue'),
+    name: 'RGPDEncargados',
+    meta: { requiresAuth: true, requiredPermission: 'RGPD_RAT_LEER' },
+  },
+  {
+    path: '/rgpd/actividades',
+    component: () => import('@/modules/proteccion_datos/views/ActividadesTratamiento.vue'),
+    name: 'RGPDActividades',
+    meta: { requiresAuth: true, requiredPermission: 'RGPD_RAT_LEER' },
+  },
+  {
+    path: '/rgpd/clausulas',
+    component: () => import('@/modules/proteccion_datos/views/Clausulas.vue'),
+    name: 'RGPDClausulas',
+    meta: { requiresAuth: true, requiredPermission: 'RGPD_CLAUSULA_GESTIONAR' },
+  },
+  {
+    path: '/rgpd/consentimientos',
+    component: () => import('@/modules/proteccion_datos/views/Consentimientos.vue'),
+    name: 'RGPDConsentimientos',
+    meta: { requiresAuth: true, requiredPermission: 'RGPD_CONSENTIMIENTO_LEER' },
+  },
+  {
+    path: '/rgpd/solicitudes',
+    component: () => import('@/modules/proteccion_datos/views/Solicitudes.vue'),
+    name: 'RGPDSolicitudes',
+    meta: { requiresAuth: true, requiredPermission: 'RGPD_SOLICITUD_LEER' },
+  },
+  {
+    path: '/rgpd/brechas',
+    component: () => import('@/modules/proteccion_datos/views/Brechas.vue'),
+    name: 'RGPDBrechas',
+    meta: { requiresAuth: true, requiredPermission: 'RGPD_BRECHA_LEER' },
+  },
+  {
+    path: '/rgpd/auditoria',
+    component: () => import('@/modules/proteccion_datos/views/Auditoria.vue'),
+    name: 'RGPDAuditoria',
+    meta: { requiresAuth: true, requiredPermission: 'RGPD_AUDITORIA_LEER' },
+  },
+
   // ─── CONFIGURACION ────────────────────────────────────────────────────────
   {
     path: '/configuracion',
@@ -471,6 +521,12 @@ const routes = [
     path: '/parametrizacion/estados-cuota',
     component: () => import('@/modules/configuracion/views/catalogos/EstadosCuota.vue'),
     name: 'EstadosCuota',
+    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+  },
+  {
+    path: '/parametrizacion/plataformas-telematicas',
+    component: () => import('@/modules/configuracion/views/catalogos/PlataformasTelematicas.vue'),
+    name: 'PlataformasTelematicas',
     meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
   },
   // Catálogos de campañas

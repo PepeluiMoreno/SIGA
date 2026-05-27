@@ -84,7 +84,17 @@ class Reunion(BaseModel):
     fecha_celebracion: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     lugar: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
     es_telematica: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    plataforma_telematica: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    plataforma_telematica: Mapped[Optional[str]] = mapped_column(
+        String(200), nullable=True,
+        comment='Texto libre (legacy). Cuando hay plataforma_telematica_id se prefiere este último.'
+    )
+    plataforma_telematica_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('sec_plataformas_telematicas.id'), nullable=True, index=True,
+    )
+    datos_conexion_telematica: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True,
+        comment='JSON con valores de los campos definidos por la plataforma (URL, sala, password…)'
+    )
 
     # Segunda convocatoria
     tiene_segunda_convocatoria: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -129,7 +139,7 @@ class Reunion(BaseModel):
     actividad = relationship('Actividad', foreign_keys=[actividad_id], lazy='selectin')
 
     def __repr__(self) -> str:
-        return f"<Reunion(tipo='{self.tipo_reunion_id}', fecha='{self.fecha_celebracion}', estado='{self.estado}')>"
+        return f"<Reunion(tipo='{self.tipo_reunion_id}', fecha='{self.fecha_celebracion}', estado='{self.estado_codigo}')>"
 
     @property
     def quorum_asistencia(self) -> Optional[float]:

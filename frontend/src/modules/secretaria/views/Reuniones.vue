@@ -151,10 +151,13 @@
                 class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
               <span class="text-sm text-gray-700">Reunión telemática</span>
             </label>
-            <div v-if="form.esTelematica">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Plataforma</label>
-              <input type="text" v-model="form.plataformaTelematica" placeholder="Zoom, Teams, Meet…"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
+            <div v-if="form.esTelematica" class="bg-slate-50 border border-slate-200 rounded-lg p-3">
+              <PlataformaTelematicaSelector
+                ref="selectorPlataformaRef"
+                v-model:plataforma-id="form.plataformaTelematicaId"
+                v-model:datos-conexion="form.datosConexion"
+                :requerido="true"
+                @plataforma-seleccionada="onPlataformaSeleccionada" />
             </div>
             <label class="flex items-center gap-3 cursor-pointer select-none">
               <input type="checkbox" v-model="form.tieneSegundaConvocatoria"
@@ -280,6 +283,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import RowActions from '@/components/common/RowActions.vue'
+import PlataformaTelematicaSelector from '@/components/common/PlataformaTelematicaSelector.vue'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { executeQuery, executeMutation } from '@/graphql/client'
 import {
@@ -302,6 +306,8 @@ const errorInline = ref('')
 const reuniones   = ref([])
 const tiposReunion = ref([])
 const reunionActiva = ref(null)
+const selectorPlataformaRef = ref(null)
+const plataformaSnapshot = ref(null)
 
 const anioActual = new Date().getFullYear()
 const filtroAnio   = ref(anioActual)
@@ -319,9 +325,15 @@ const modalCelebracion = ref(false)
 const form = ref({
   tipoReunionId: '', fechaConvocatoria: '', fechaCelebracion: '',
   lugar: '', esTelematica: false, plataformaTelematica: '',
+  plataformaTelematicaId: '', datosConexion: {},
   tieneSegundaConvocatoria: true, fechaSegundaConvocatoria: '',
   observaciones: '',
 })
+
+function onPlataformaSeleccionada(plataforma) {
+  // Snapshot del nombre para enviarlo en el campo legacy plataformaTelematica.
+  plataformaSnapshot.value = plataforma
+}
 const formCeleb = ref({ convocatoriaUtilizada: 1, sociosTotales: 0, sociosPresentes: 0, sociosRepresentados: 0 })
 
 const ESTADOS = [
@@ -378,7 +390,7 @@ const cargar = async () => {
       executeQuery(GET_REUNIONES, {
         anio: filtroAnio.value,
         tipoReunionId: filtroTipo.value || undefined,
-        estado: filtroEstado.value || undefined,
+        estadoCodigo: filtroEstado.value || undefined,
       }),
     ])
     if (dataTipos) tiposReunion.value = dataTipos.tiposReunion ?? []
@@ -394,6 +406,7 @@ const abrirConvocar = () => {
   form.value = {
     tipoReunionId: '', fechaConvocatoria: '', fechaCelebracion: '',
     lugar: '', esTelematica: false, plataformaTelematica: '',
+    plataformaTelematicaId: '', datosConexion: {},
     tieneSegundaConvocatoria: true, fechaSegundaConvocatoria: '', observaciones: '',
   }
   errorModal.value = ''
@@ -404,8 +417,16 @@ const guardarConvocatoria = async () => {
   errorModal.value = ''
   if (!form.value.tipoReunionId)       { errorModal.value = 'Selecciona el tipo de reunión'; return }
   if (!form.value.fechaConvocatoria)   { errorModal.value = 'Indica la fecha de convocatoria'; return }
+  if (form.value.esTelematica) {
+    const err = selectorPlataformaRef.value?.validar() || ''
+    if (err) { errorModal.value = err; return }
+  }
   guardando.value = true
   try {
+    const datosConexion = form.value.esTelematica && Object.keys(form.value.datosConexion).length
+      ? JSON.stringify(form.value.datosConexion)
+      : null
+    const plat = selectorPlataformaRef.value?.getPlataformaActual?.()
     await executeMutation(CONVOCAR_REUNION, {
       data: {
         tipoReunionId: form.value.tipoReunionId,
@@ -413,7 +434,11 @@ const guardarConvocatoria = async () => {
         fechaCelebracion: form.value.fechaCelebracion || null,
         lugar: form.value.lugar || null,
         esTelematica: form.value.esTelematica,
-        plataformaTelematica: form.value.plataformaTelematica || null,
+        plataformaTelematica: form.value.esTelematica
+          ? (plat?.nombre || form.value.plataformaTelematica || null)
+          : null,
+        plataformaTelematicaId: form.value.esTelematica ? (form.value.plataformaTelematicaId || null) : null,
+        datosConexionTelematica: datosConexion,
         tieneSegundaConvocatoria: form.value.tieneSegundaConvocatoria,
         fechaSegundaConvocatoria: form.value.fechaSegundaConvocatoria || null,
         observaciones: form.value.observaciones || null,

@@ -133,17 +133,20 @@ class ActaService:
         anio: Optional[int] = None,
         estado: Optional[str] = None,
         tipo_reunion_id: Optional[UUID] = None,
+        agrupacion_id: Optional[UUID] = None,
     ) -> List[Acta]:
         query = select(Acta).where(Acta.eliminado == False)
         if anio:
             query = query.where(Acta.anio == anio)
         if estado:
             query = query.where(Acta.estado_codigo == estado)
-        if tipo_reunion_id:
-            query = (
-                query.join(Reunion, Acta.reunion_id == Reunion.id)
-                .where(Reunion.tipo_reunion_id == tipo_reunion_id)
-            )
+        # Filtros que pasan por la reunión origen
+        if tipo_reunion_id or agrupacion_id:
+            query = query.join(Reunion, Acta.reunion_id == Reunion.id)
+            if tipo_reunion_id:
+                query = query.where(Reunion.tipo_reunion_id == tipo_reunion_id)
+            if agrupacion_id:
+                query = query.where(Reunion.agrupacion_id == agrupacion_id)
         query = query.order_by(Acta.anio.desc(), Acta.numero.desc())
         result = await self.session.execute(query)
         return list(result.scalars().all())
@@ -160,7 +163,7 @@ class ActaService:
         if not acta:
             raise ValueError(f"Acta {acta_id} no encontrada")
         if acta.estado_codigo not in ('BORRADOR',):
-            raise ValueError(f"El acta está en estado '{acta.estado}' y no puede aprobarse")
+            raise ValueError(f"El acta está en estado '{acta.estado_codigo}' y no puede aprobarse")
 
         acta.estado_codigo = 'APROBADA'
         acta.fecha_aprobacion = fecha_aprobacion
@@ -197,6 +200,45 @@ class ActaService:
         except Exception:
             pass
 
+        return acta
+
+    async def anular_aprobacion_acta(
+        self,
+        acta_id: UUID,
+        motivo: Optional[str] = None,
+        modificado_por_id: Optional[UUID] = None,
+    ) -> Acta:
+        """Revierte la aprobación de un acta: vuelve a BORRADOR.
+
+        Solo posible si el acta está APROBADA (no FIRMADA). Una vez firmada
+        el acta es inmutable y no puede des-aprobarse — se requiere
+        proceso formal de modificación en una reunión posterior.
+        """
+        acta = await self.obtener_acta(acta_id)
+        if not acta:
+            raise ValueError(f"Acta {acta_id} no encontrada")
+        if acta.estado_codigo != 'APROBADA':
+            raise ValueError(
+                f"Solo se puede anular la aprobación de un acta APROBADA "
+                f"(actual: '{acta.estado_codigo}'). Un acta firmada es inmutable."
+            )
+
+        acta.estado_codigo = 'BORRADOR'
+        acta.fecha_aprobacion = None
+        acta.reunion_aprobacion_id = None
+        acta.modificado_por_id = modificado_por_id
+
+        # Devolver la reunión origen al estado previo a la aprobación
+        reunion_result = await self.session.execute(
+            select(Reunion).where(Reunion.id == acta.reunion_id)
+        )
+        reunion = reunion_result.scalars().first()
+        if reunion:
+            reunion.estado_codigo = 'ACTA_BORRADOR'
+            reunion.modificado_por_id = modificado_por_id
+
+        await self.session.commit()
+        await self.session.refresh(acta)
         return acta
 
     async def firmar_acta(

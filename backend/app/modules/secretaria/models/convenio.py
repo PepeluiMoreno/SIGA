@@ -52,7 +52,7 @@ class ConvenioInstitucional(BaseModel):
 
     # Contraparte
     entidad_contraparte: Mapped[str] = mapped_column(String(300), nullable=False)
-    cif_contraparte: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    nif_contraparte: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
 
     # Vigencia
     fecha_firma: Mapped[date] = mapped_column(Date, nullable=False)

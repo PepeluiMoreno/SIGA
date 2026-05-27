@@ -19,11 +19,48 @@ export const GET_TIPOS_REUNION = `
   }
 `
 
+// ── PLATAFORMAS TELEMÁTICAS ──────────────────────────────────────────────────
+
+export const GET_PLATAFORMAS_TELEMATICAS = `
+  query PlataformasTelematicas {
+    plataformasTelematicas(filter: { eliminado: { eq: false } }) {
+      id
+      codigo
+      nombre
+      descripcion
+      icono
+      activa
+      orden
+      urlBase
+      camposEsquema
+      esInmutable
+    }
+  }
+`
+
+export const CREATE_PLATAFORMA_TELEMATICA = `
+  mutation CreatePlataformaTelematica($data: PlataformaTelematicaCreateInput!) {
+    crearPlataformaTelematica(data: $data) { id }
+  }
+`
+
+export const UPDATE_PLATAFORMA_TELEMATICA = `
+  mutation UpdatePlataformaTelematica($data: PlataformaTelematicaUpdateInput!) {
+    actualizarPlataformaTelematica(data: $data) { id }
+  }
+`
+
+export const DELETE_PLATAFORMAS_TELEMATICAS = `
+  mutation DeletePlataformasTelematicas($filter: PlataformaTelematicaFilter!) {
+    eliminarPlataformasTelematicas(filter: $filter) { id }
+  }
+`
+
 // ── REUNIONES ────────────────────────────────────────────────────────────────
 
 export const GET_REUNIONES = `
-  query Reuniones($anio: Int, $tipoReunionId: UUID, $estado: String) {
-    reuniones(anio: $anio, tipoReunionId: $tipoReunionId, estado: $estado) {
+  query Reuniones($anio: Int, $tipoReunionId: UUID, $estadoCodigo: String) {
+    reuniones(anio: $anio, tipoReunionId: $tipoReunionId, estadoCodigo: $estadoCodigo) {
       id
       tipoReunionId
       agrupacionId
@@ -33,7 +70,10 @@ export const GET_REUNIONES = `
       fechaCelebracion
       lugar
       esTelematica
-      tienSegundaConvocatoria
+      plataformaTelematica
+      plataformaTelematicaId
+      datosConexionTelematica
+      tieneSegundaConvocatoria
       convocatoriaUtilizada
       sociosTotales
       sociosPresentes
@@ -56,7 +96,7 @@ export const CONVOCAR_REUNION = `
       fechaCelebracion
       lugar
       esTelematica
-      estado
+      estadoCodigo
     }
   }
 `
@@ -65,7 +105,7 @@ export const REGISTRAR_CELEBRACION = `
   mutation RegistrarCelebracionReunion($data: RegistrarCelebracionInput!) {
     registrarCelebracionReunion(data: $data) {
       id
-      estado
+      estadoCodigo
       sociosTotales
       sociosPresentes
       sociosRepresentados
@@ -79,7 +119,7 @@ export const CANCELAR_REUNION = `
   mutation CancelarReunion($reunionId: UUID!, $motivo: String) {
     cancelarReunion(reunionId: $reunionId, motivo: $motivo) {
       id
-      estado
+      estadoCodigo
     }
   }
 `
@@ -90,7 +130,7 @@ export const GET_ACUERDOS_PENDIENTES = `
   query AcuerdosPendientes($agrupacionId: UUID) {
     acuerdosPendientes(agrupacionId: $agrupacionId) {
       id
-      puntOrdenDiaId
+      puntoOrdenDiaId
       numero
       descripcion
       tipoMayoria
@@ -129,8 +169,8 @@ export const ACTUALIZAR_SEGUIMIENTO = `
 // ── ACTAS ─────────────────────────────────────────────────────────────────────
 
 export const GET_ACTAS = `
-  query Actas($anio: Int, $estado: String) {
-    actas(anio: $anio, estado: $estado) {
+  query Actas($anio: Int, $estadoCodigo: String, $agrupacionId: UUID, $tipoReunionId: UUID) {
+    actas(anio: $anio, estadoCodigo: $estadoCodigo, agrupacionId: $agrupacionId, tipoReunionId: $tipoReunionId) {
       id
       reunionId
       numero
@@ -152,7 +192,7 @@ export const GET_ACTAS_PENDIENTES = `
       reunionId
       numero
       anio
-      estado
+      estadoCodigo
     }
   }
 `
@@ -163,7 +203,7 @@ export const CREAR_ACTA_BORRADOR = `
       id
       numero
       anio
-      estado
+      estadoCodigo
     }
   }
 `
@@ -179,11 +219,22 @@ export const APROBAR_ACTA = `
   }
 `
 
+export const ANULAR_APROBACION_ACTA = `
+  mutation AnularAprobacionActa($actaId: UUID!, $motivo: String) {
+    anularAprobacionActa(actaId: $actaId, motivo: $motivo) {
+      id
+      estadoCodigo
+      estadoId
+      fechaAprobacion
+    }
+  }
+`
+
 export const FIRMAR_ACTA = `
   mutation FirmarActa($actaId: UUID!, $secretarioId: UUID!, $presidenteId: UUID!) {
     firmarActa(actaId: $actaId, secretarioId: $secretarioId, presidenteId: $presidenteId) {
       id
-      estado
+      estadoCodigo
       fechaFirma
     }
   }

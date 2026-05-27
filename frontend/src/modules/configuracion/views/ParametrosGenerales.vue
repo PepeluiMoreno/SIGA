@@ -398,6 +398,55 @@
           </div>
         </AccordionPanel>
 
+        <!-- 7b. Protección de datos (RGPD) -->
+        <AccordionPanel title="Protección de datos (RGPD)" :default-open="false">
+          <div class="px-5 py-4 space-y-4">
+            <p class="text-xs text-slate-500">
+              Datos del Delegado de Protección de Datos (DPD/DPO) y plazos de retención.
+              Obligatorio según art. 37 RGPD para algunas entidades.
+            </p>
+            <div class="space-y-3">
+              <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Delegado de Protección de Datos</h3>
+              <div class="flex flex-wrap items-end gap-3">
+                <div class="flex-1 min-w-[200px]">
+                  <label class="label">Nombre del DPD</label>
+                  <input v-model="form.rgpd_dpd_nombre" type="text" class="input"
+                    placeholder="María García López / Consultora ABC, S.L." />
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                  <label class="label">Email del DPD</label>
+                  <input v-model="form.rgpd_dpd_email" type="email" class="input"
+                    placeholder="dpd@organizacion.org" />
+                </div>
+                <div class="w-full sm:w-44 flex-shrink-0">
+                  <label class="label">Teléfono</label>
+                  <input v-model="form.rgpd_dpd_telefono" type="tel" class="input"
+                    placeholder="+34 900 000 000" />
+                </div>
+                <div class="w-full sm:w-auto flex-shrink-0 pb-2">
+                  <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                    <input v-model="form.rgpd_dpd_externo" type="checkbox" class="rounded text-indigo-600" />
+                    DPD externo (proveedor)
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-3 pt-3 border-t border-slate-100">
+              <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Plazos de retención</h3>
+              <div class="flex flex-wrap items-end gap-3">
+                <div class="w-full sm:w-64 flex-shrink-0">
+                  <label class="label">Años de retención tras baja</label>
+                  <input v-model.number="form.rgpd_anios_retencion_baja" type="number" min="0" max="20" class="input" />
+                  <p class="text-xs text-slate-400 mt-1">
+                    Tras la baja, se calcula <code>fecha_baja + N años</code> como límite tras el cual los datos
+                    pueden purgarse. 6 años cubre el Código de Comercio (art. 30).
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </AccordionPanel>
+
         <!-- 8. Redes sociales -->
         <AccordionPanel title="Redes sociales" :default-open="false">
           <div class="px-5 py-4 grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-3">
@@ -504,6 +553,12 @@ const form = reactive({
   sepa_creditor_id: '',
   // Open Banking — conciliación bancaria automática (flujo 8)
   openbanking_activo: false,
+  // RGPD — Protección de datos
+  rgpd_dpd_nombre: '',
+  rgpd_dpd_email: '',
+  rgpd_dpd_telefono: '',
+  rgpd_dpd_externo: false,
+  rgpd_anios_retencion_baja: 6,
 })
 
 const temaOriginal = ref(orgConfigStore.temaActivo)
@@ -612,6 +667,7 @@ const QUERY_PARAMETROS = `
       tema fuentePrincipal
       sepaCreditorName sepaCreditorIban sepaCreditorBic sepaCreditorId
       openbankingActivo
+      rgpdDpdNombre rgpdDpdEmail rgpdDpdTelefono rgpdDpdExterno rgpdAniosRetencionBaja
     }
   }
 `
@@ -704,6 +760,11 @@ onMounted(async () => {
     form.sepa_creditor_bic               = p.sepaCreditorBic                  ?? ''
     form.sepa_creditor_id                = p.sepaCreditorId                   ?? ''
     form.openbanking_activo              = p.openbankingActivo                ?? false
+    form.rgpd_dpd_nombre                 = p.rgpdDpdNombre                    ?? ''
+    form.rgpd_dpd_email                  = p.rgpdDpdEmail                     ?? ''
+    form.rgpd_dpd_telefono               = p.rgpdDpdTelefono                  ?? ''
+    form.rgpd_dpd_externo                = p.rgpdDpdExterno                   ?? false
+    form.rgpd_anios_retencion_baja       = p.rgpdAniosRetencionBaja           ?? 6
     temaOriginal.value   = orgConfigStore.temas.find(t => t.slug === form.tema) ?? null
     fuenteOriginal.value = form.fuente_principal
   } catch (e) {
@@ -772,6 +833,11 @@ async function guardar() {
         sepaCreditorBic:                 form.sepa_creditor_bic,
         sepaCreditorId:                  form.sepa_creditor_id,
         openbankingActivo:               form.openbanking_activo,
+        rgpdDpdNombre:                   form.rgpd_dpd_nombre,
+        rgpdDpdEmail:                    form.rgpd_dpd_email,
+        rgpdDpdTelefono:                 form.rgpd_dpd_telefono,
+        rgpdDpdExterno:                  form.rgpd_dpd_externo,
+        rgpdAniosRetencionBaja:          form.rgpd_anios_retencion_baja,
       }
     })
     await orgConfigStore.refreshConfig()

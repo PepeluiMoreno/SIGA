@@ -48,7 +48,7 @@
               </div>
               <p class="text-sm text-gray-600">
                 {{ c.entidadContraparte }}
-                <span v-if="c.cifContraparte" class="text-gray-400"> · {{ c.cifContraparte }}</span>
+                <span v-if="c.nifContraparte" class="text-gray-400"> · {{ c.nifContraparte }}</span>
               </p>
               <div class="flex flex-wrap gap-4 text-xs text-gray-400 mt-2">
                 <span>Ref: {{ c.referencia }}</span>
@@ -154,8 +154,8 @@
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">CIF contraparte</label>
-                <input type="text" v-model="formConvenio.cifContraparte"
+                <label class="block text-sm font-medium text-gray-700 mb-1">NIF contraparte</label>
+                <input type="text" v-model="formConvenio.nifContraparte"
                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
               </div>
               <div>
@@ -250,7 +250,7 @@ const modalConvenio  = ref(false)
 const modalDelegacion = ref(false)
 
 const formConvenio = ref({
-  tipoConvenioId: '', titulo: '', entidadContraparte: '', cifContraparte: '',
+  tipoConvenioId: '', titulo: '', entidadContraparte: '', nifContraparte: '',
   fechaFirma: '', fechaInicio: '', fechaFin: '', renovacionAutomatica: false, objeto: '',
 })
 
@@ -292,7 +292,7 @@ watch(tabActiva, (tab) => {
 
 const abrirModalConvenio = () => {
   formConvenio.value = {
-    tipoConvenioId: '', titulo: '', entidadContraparte: '', cifContraparte: '',
+    tipoConvenioId: '', titulo: '', entidadContraparte: '', nifContraparte: '',
     fechaFirma: '', fechaInicio: '', fechaFin: '', renovacionAutomatica: false, objeto: '',
   }
   errorModal.value = ''
@@ -313,7 +313,7 @@ const guardarConvenio = async () => {
         tipoConvenioId: f.tipoConvenioId,
         titulo: f.titulo,
         entidadContraparte: f.entidadContraparte,
-        cifContraparte: f.cifContraparte || null,
+        nifContraparte: f.nifContraparte || null,
         fechaFirma: f.fechaFirma,
         fechaInicio: f.fechaInicio,
         fechaFin: f.fechaFin || null,

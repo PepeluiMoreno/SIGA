@@ -102,7 +102,7 @@ class CategoriaFiscalMutation:
             casilla_modelo=data.casilla_modelo,
             orden=data.orden,
             color=data.color,
-            creado_por_id=info.context.current_user.id if info.context.current_user else None,
+            creado_por_id=info.context.user.id if info.context.user else None,
         )
         return CategoriaFiscalDetailType.from_model(categoria)
 

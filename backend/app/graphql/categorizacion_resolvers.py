@@ -98,7 +98,7 @@ class CategorizacionMutation:
             tipo_apunte=data.tipo_apunte,
             orden=data.orden,
             descripcion=data.descripcion,
-            creado_por_id=info.context.current_user.id if info.context.current_user else None,
+            creado_por_id=info.context.user.id if info.context.user else None,
         )
         return ReglaCategorizacionDetailType.from_model(regla)
 

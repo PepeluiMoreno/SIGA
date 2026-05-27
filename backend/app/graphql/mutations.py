@@ -29,10 +29,11 @@ from .categorizacion_resolvers import CategorizacionMutation
 from .presupuesto_resolvers import PresupuestoMutation
 from .comunicacion_resolvers import ComunicacionMutation
 from .chat_resolvers import ChatMutation
+from .proteccion_datos_resolvers import ProteccionDatosMutation
 
 
 @strawberry.type
-class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionMutation, AccesoMutation, EconomicoMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, CampaniaClonarMutation, ActividadResolverMutation, PapeleraResolverMutation, SecretariaResolverMutation, CategoriaFiscalMutation, CategorizacionMutation, PresupuestoMutation, ComunicacionMutation, ChatMutation):
+class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionMutation, AccesoMutation, EconomicoMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, CampaniaClonarMutation, ActividadResolverMutation, PapeleraResolverMutation, SecretariaResolverMutation, CategoriaFiscalMutation, CategorizacionMutation, PresupuestoMutation, ComunicacionMutation, ChatMutation, ProteccionDatosMutation):
     """Mutations GraphQL del sistema SIGA con generación automática."""
 
     # === ACCESO: roles y transacciones (CRUD) ===
@@ -442,3 +443,40 @@ class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionM
     crear_compromiso_presupuestario: CompromisoPresupuestarioType = strawchemy.create(CompromisoPresupuestarioCreateInput)
     actualizar_compromiso_presupuestario: CompromisoPresupuestarioType = strawchemy.update_by_ids(CompromisoPresupuestarioUpdateInput)
     eliminar_compromisos_presupuestarios: list[CompromisoPresupuestarioType] = strawchemy.delete(CompromisoPresupuestarioFilter)
+
+    # === SECRETARÍA — PLATAFORMAS TELEMÁTICAS ===
+    crear_plataforma_telematica: PlataformaTelematicaType = strawchemy.create(PlataformaTelematicaCreateInput)
+    actualizar_plataforma_telematica: PlataformaTelematicaType = strawchemy.update_by_ids(PlataformaTelematicaUpdateInput)
+    eliminar_plataformas_telematicas: list[PlataformaTelematicaType] = strawchemy.delete(PlataformaTelematicaFilter)
+
+    # === PROTECCIÓN DE DATOS (RGPD) — CRUD strawchemy ===
+    # Las transiciones de estado custom (tramitar/resolver solicitud, cerrar
+    # brecha, retirar consentimiento, registrar acceso) viven en
+    # ProteccionDatosMutation (resolver manual con permisos RBAC).
+
+    crear_rgpd_encargado: EncargadoTratamientoType = strawchemy.create(EncargadoTratamientoCreateInput)
+    actualizar_rgpd_encargado: EncargadoTratamientoType = strawchemy.update_by_ids(EncargadoTratamientoUpdateInput)
+    eliminar_rgpd_encargados: list[EncargadoTratamientoType] = strawchemy.delete(EncargadoTratamientoFilter)
+
+    crear_rgpd_actividad_tratamiento: ActividadTratamientoType = strawchemy.create(ActividadTratamientoCreateInput)
+    actualizar_rgpd_actividad_tratamiento: ActividadTratamientoType = strawchemy.update_by_ids(ActividadTratamientoUpdateInput)
+    eliminar_rgpd_actividades_tratamiento: list[ActividadTratamientoType] = strawchemy.delete(ActividadTratamientoFilter)
+
+    crear_rgpd_actividad_encargado: ActividadTratamientoEncargadoType = strawchemy.create(ActividadTratamientoEncargadoCreateInput)
+    eliminar_rgpd_actividades_encargados: list[ActividadTratamientoEncargadoType] = strawchemy.delete(ActividadTratamientoEncargadoFilter)
+
+    crear_rgpd_clausula: ClausulaInformativaType = strawchemy.create(ClausulaInformativaCreateInput)
+    actualizar_rgpd_clausula: ClausulaInformativaType = strawchemy.update_by_ids(ClausulaInformativaUpdateInput)
+    eliminar_rgpd_clausulas: list[ClausulaInformativaType] = strawchemy.delete(ClausulaInformativaFilter)
+
+    crear_rgpd_consentimiento: ConsentimientoType = strawchemy.create(ConsentimientoCreateInput)
+    actualizar_rgpd_consentimiento: ConsentimientoType = strawchemy.update_by_ids(ConsentimientoUpdateInput)
+    eliminar_rgpd_consentimientos: list[ConsentimientoType] = strawchemy.delete(ConsentimientoFilter)
+
+    crear_rgpd_solicitud_derecho: SolicitudDerechoRGPDType = strawchemy.create(SolicitudDerechoRGPDCreateInput)
+    actualizar_rgpd_solicitud_derecho: SolicitudDerechoRGPDType = strawchemy.update_by_ids(SolicitudDerechoRGPDUpdateInput)
+    eliminar_rgpd_solicitudes_derecho: list[SolicitudDerechoRGPDType] = strawchemy.delete(SolicitudDerechoRGPDFilter)
+
+    crear_rgpd_brecha: BrechaSeguridadType = strawchemy.create(BrechaSeguridadCreateInput)
+    actualizar_rgpd_brecha: BrechaSeguridadType = strawchemy.update_by_ids(BrechaSeguridadUpdateInput)
+    eliminar_rgpd_brechas: list[BrechaSeguridadType] = strawchemy.delete(BrechaSeguridadFilter)

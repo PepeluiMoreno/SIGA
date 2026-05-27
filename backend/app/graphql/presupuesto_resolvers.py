@@ -427,7 +427,7 @@ class PresupuestoMutation:
         self, info: strawberry.Info, data: RegistrarModificacionInput
     ) -> ModificacionPresupuestariaDetailType:
         service = PresupuestoService(info.context.session)
-        usuario_id = info.context.current_user.id if info.context.current_user else None
+        usuario_id = info.context.user.id if info.context.user else None
         m = await service.registrar_modificacion(
             planificacion_id=data.planificacion_id,
             tipo=TipoModificacionPresupuestaria[data.tipo],

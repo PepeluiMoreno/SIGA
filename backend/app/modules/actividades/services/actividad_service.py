@@ -67,6 +67,7 @@ class ActividadService:
         fecha_fin=None, hora_fin=None, duracion_horas=None, duracion_dias=None,
         lugar=None, direccion=None, localidad=None, provincia=None, aforo=None,
         es_online: bool = False, url_online=None,
+        plataforma_telematica_id=None, datos_conexion_telematica=None,
         presupuesto_estimado: Decimal = Decimal("0.00"),
     ) -> Actividad:
         self.validar_caracter(
@@ -83,6 +84,8 @@ class ActividadService:
             duracion_horas=duracion_horas, duracion_dias=duracion_dias,
             lugar=lugar, direccion=direccion, localidad=localidad, provincia=provincia,
             aforo=aforo, es_online=es_online, url_online=url_online,
+            plataforma_telematica_id=plataforma_telematica_id,
+            datos_conexion_telematica=datos_conexion_telematica,
             presupuesto_estimado=presupuesto_estimado,
         )
         self.session.add(actividad)

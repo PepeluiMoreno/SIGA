@@ -62,6 +62,12 @@
                   class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 font-medium transition-colors">
                   Aprobar
                 </button>
+                <button v-if="a.estadoCodigo === 'APROBADA' && tienePermiso('SEC_ACTA_APROBAR')"
+                  @click="anularAprobacion(a)"
+                  title="Revierte la aprobación: el acta vuelve a borrador"
+                  class="text-xs px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 font-medium transition-colors">
+                  Anular aprobación
+                </button>
                 <button v-if="a.estadoCodigo === 'APROBADA' && tienePermiso('SEC_ACTA_FIRMAR')"
                   @click="abrirFirmar(a)"
                   class="text-xs px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 font-medium transition-colors">
@@ -95,13 +101,41 @@
             </button>
           </div>
           <div class="p-6 space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Fecha de aprobación <span class="text-red-500">*</span>
-              </label>
-              <input type="date" v-model="formAprobar.fechaAprobacion"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
+            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-xs text-indigo-800">
+              📜 Un acta sólo puede aprobarse en una <strong>reunión posterior del mismo órgano</strong>
+              ya celebrada. Selecciona esa reunión y la fecha en la que se aprobó.
             </div>
+
+            <div v-if="cargandoCandidatas" class="text-sm text-gray-500">Buscando reuniones candidatas…</div>
+
+            <div v-else-if="!reunionesCandidatas.length"
+              class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+              ⏳ No hay reuniones posteriores del mismo órgano ya celebradas. El acta no se puede
+              aprobar hasta que se celebre la próxima reunión.
+            </div>
+
+            <template v-else>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Reunión en la que se aprueba <span class="text-red-500">*</span>
+                </label>
+                <select v-model="formAprobar.reunionAprobacionId"
+                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500">
+                  <option value="">Selecciona…</option>
+                  <option v-for="r in reunionesCandidatas" :key="r.id" :value="r.id">
+                    {{ r.numeroConvocatoria }}/{{ r.anio }} — {{ formatFecha(r.fechaCelebracion) }}
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha de aprobación <span class="text-red-500">*</span>
+                </label>
+                <input type="date" v-model="formAprobar.fechaAprobacion"
+                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
+              </div>
+            </template>
+
             <p v-if="errorModal" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
               {{ errorModal }}
             </p>
@@ -111,8 +145,9 @@
               class="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
               Cancelar
             </button>
-            <button @click="ejecutarAprobar" :disabled="guardando"
-              class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+            <button @click="ejecutarAprobar"
+              :disabled="guardando || !reunionesCandidatas.length || !formAprobar.reunionAprobacionId"
+              class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
               {{ guardando ? 'Aprobando…' : 'Aprobar' }}
             </button>
           </div>
@@ -273,8 +308,9 @@ import SelectorMiembro from '@/components/common/SelectorMiembro.vue'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { executeQuery, executeMutation } from '@/graphql/client'
 import {
-  GET_ACTAS, GET_ACTAS_PENDIENTES, APROBAR_ACTA, FIRMAR_ACTA, EMITIR_CERTIFICADO,
-  GET_MIEMBROS_LIGERO,
+  GET_ACTAS, GET_ACTAS_PENDIENTES, APROBAR_ACTA, ANULAR_APROBACION_ACTA,
+  FIRMAR_ACTA, EMITIR_CERTIFICADO,
+  GET_MIEMBROS_LIGERO, GET_REUNIONES,
 } from '@/graphql/queries/secretaria.js'
 import { DocumentTextIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 
@@ -302,7 +338,9 @@ const modalAprobar     = ref(false)
 const modalFirmar      = ref(false)
 const modalCertificado = ref(false)
 
-const formAprobar = ref({ fechaAprobacion: '' })
+const formAprobar = ref({ fechaAprobacion: '', reunionAprobacionId: '' })
+const reunionesCandidatas = ref([])
+const cargandoCandidatas = ref(false)
 const formFirmar  = ref({ secretarioId: null, presidenteId: null })
 const formCert    = ref({
   acuerdoId: '', destinatario: '', proposito: '',
@@ -324,7 +362,7 @@ const cargar = async () => {
   loading.value = true; error.value = ''
   try {
     const [dataActas, dataPend] = await Promise.all([
-      executeQuery(GET_ACTAS, { anio: filtroAnio.value, estado: filtroEstado.value || undefined }),
+      executeQuery(GET_ACTAS, { anio: filtroAnio.value, estadoCodigo: filtroEstado.value || undefined }),
       executeQuery(GET_ACTAS_PENDIENTES),
     ])
     actas.value           = dataActas?.actas ?? []
@@ -350,20 +388,60 @@ const cargarAcuerdosActa = async (actaId) => {
   acuerdosActa.value = []
 }
 
-const abrirAprobar = (a) => {
+const abrirAprobar = async (a) => {
   actaActiva.value = a
-  formAprobar.value = { fechaAprobacion: new Date().toISOString().split('T')[0] }
+  formAprobar.value = { fechaAprobacion: new Date().toISOString().split('T')[0], reunionAprobacionId: '' }
   errorModal.value = ''
+  reunionesCandidatas.value = []
   modalAprobar.value = true
+  await cargarReunionesCandidatas(a)
+}
+
+// Carga las reuniones del MISMO órgano celebradas DESPUÉS de la reunión origen del acta.
+// El acta sólo puede aprobarse en una de ellas (art. de funcionamiento de los órganos colegiados).
+const cargarReunionesCandidatas = async (acta) => {
+  cargandoCandidatas.value = true
+  try {
+    // Sondear año en curso y el anterior (las actas suelen aprobarse pronto).
+    const anios = [new Date().getFullYear(), new Date().getFullYear() - 1, acta.anio]
+      .filter((v, i, arr) => arr.indexOf(v) === i)
+    const resultados = await Promise.all(
+      anios.map(an => executeQuery(GET_REUNIONES, { anio: an }))
+    )
+    const todas = resultados.flatMap(r => r?.reuniones ?? [])
+
+    const origen = todas.find(r => r.id === acta.reunionId)
+    if (!origen) {
+      // Sin datos de la reunión origen no podemos filtrar — caer atrás y mostrar mensaje.
+      reunionesCandidatas.value = []
+      return
+    }
+
+    const ESTADOS_VALIDOS = ['CELEBRADA', 'ACTA_BORRADOR', 'ACTA_APROBADA', 'FINALIZADA']
+    reunionesCandidatas.value = todas
+      .filter(r => r.id !== origen.id
+                && r.tipoReunionId === origen.tipoReunionId
+                && ESTADOS_VALIDOS.includes(r.estadoCodigo)
+                && r.fechaCelebracion && origen.fechaCelebracion
+                && new Date(r.fechaCelebracion) > new Date(origen.fechaCelebracion))
+      .sort((a, b) => new Date(a.fechaCelebracion) - new Date(b.fechaCelebracion))
+  } catch (e) {
+    console.error('Error cargando reuniones candidatas', e)
+    reunionesCandidatas.value = []
+  } finally {
+    cargandoCandidatas.value = false
+  }
 }
 
 const ejecutarAprobar = async () => {
+  if (!formAprobar.value.reunionAprobacionId) { errorModal.value = 'Selecciona la reunión en la que se aprueba'; return }
   if (!formAprobar.value.fechaAprobacion) { errorModal.value = 'Indica la fecha de aprobación'; return }
   guardando.value = true
   try {
     await executeMutation(APROBAR_ACTA, {
       actaId: actaActiva.value.id,
       fechaAprobacion: formAprobar.value.fechaAprobacion,
+      reunionAprobacionId: formAprobar.value.reunionAprobacionId,
     })
     modalAprobar.value = false
     await cargar()
@@ -371,6 +449,22 @@ const ejecutarAprobar = async () => {
     errorModal.value = e.message ?? 'Error al aprobar el acta'
   } finally {
     guardando.value = false
+  }
+}
+
+const anularAprobacion = async (a) => {
+  const motivo = prompt(
+    `¿Anular la aprobación del acta ${a.numero}/${a.anio}?\n\n` +
+    `El acta volverá al estado BORRADOR y se borrarán la fecha de aprobación y la reunión donde se aprobó. ` +
+    `Esto no se puede hacer una vez firmada el acta.\n\n` +
+    `Motivo (opcional):`
+  )
+  if (motivo === null) return // cancelado
+  try {
+    await executeMutation(ANULAR_APROBACION_ACTA, { actaId: a.id, motivo: motivo || null })
+    await cargar()
+  } catch (e) {
+    alert('Error al anular: ' + (e.message || e))
   }
 }
 
