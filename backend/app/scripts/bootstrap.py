@@ -147,20 +147,17 @@ async def ensure_superadmin(
     return rol
 
 
-async def ensure_admin_user(session, superadmin: Rol) -> Optional[Usuario]:
-    """Crea (si procede) el usuario admin inicial. Requiere variables de entorno."""
-    email = os.getenv("INITIAL_ADMIN_EMAIL")
-    password = os.getenv("INITIAL_ADMIN_PASSWORD")
-    if not email or not password:
-        print(
-            "[bootstrap] INITIAL_ADMIN_EMAIL/INITIAL_ADMIN_PASSWORD no definidas; "
-            "omito creación de admin inicial"
-        )
-        return None
+async def _ensure_single_admin(
+    session, email: str, password: str, superadmin: Rol
+) -> Usuario:
+    """Crea o sincroniza un único usuario admin con rol SUPERADMIN.
 
+    Idempotente: si el usuario existe se sincronizan password y rol.
+    """
     existing = (
         await session.execute(select(Usuario).where(Usuario.email == email))
     ).scalar_one_or_none()
+
     if existing:
         updated = False
 
@@ -191,7 +188,7 @@ async def ensure_admin_user(session, superadmin: Rol) -> Optional[Usuario]:
             )
             updated = True
 
-        # Si el secret cambia, el siguiente arranque sincroniza la contraseña.
+        # Si la password en el secret cambia, el siguiente arranque resincroniza.
         if password and not verify_password(password, existing.password_hash):
             existing.password_hash = hash_password(password)
             updated = True
@@ -220,6 +217,32 @@ async def ensure_admin_user(session, superadmin: Rol) -> Optional[Usuario]:
     await session.flush()
     print(f"[bootstrap] Usuario admin creado: {email}")
     return usuario
+
+
+async def ensure_admin_user(session, superadmin: Rol) -> Optional[Usuario]:
+    """Crea/sincroniza los usuarios admin iniciales.
+
+    `INITIAL_ADMIN_EMAIL` puede ser un único email o una lista separada por
+    comas; todos comparten `INITIAL_ADMIN_PASSWORD` y reciben SUPERADMIN.
+    Devuelve el primer usuario procesado (para compatibilidad con llamadores
+    anteriores).
+    """
+    raw_emails = os.getenv("INITIAL_ADMIN_EMAIL", "")
+    password = os.getenv("INITIAL_ADMIN_PASSWORD")
+    emails = [e.strip() for e in raw_emails.split(",") if e.strip()]
+    if not emails or not password:
+        print(
+            "[bootstrap] INITIAL_ADMIN_EMAIL/INITIAL_ADMIN_PASSWORD no definidas; "
+            "omito creación de admin inicial"
+        )
+        return None
+
+    primero: Optional[Usuario] = None
+    for email in emails:
+        usuario = await _ensure_single_admin(session, email, password, superadmin)
+        if primero is None:
+            primero = usuario
+    return primero
 
 
 
