@@ -1,4 +1,4 @@
-name: Stamp + restart staging (one-shot)
+name: Revert stamp + rebuild + diagnose staging
 on:
   workflow_dispatch:
 jobs:
@@ -12,25 +12,43 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
             cd /opt/docker/apps/SIGA
-            BE_CONT=$(docker ps -a --filter "name=backend" --format "{{.Names}}" | head -1)
             DB_CONT=$(docker ps --filter "name=db" --format "{{.Names}}" | head -1)
+            BE_CONT=$(docker ps -a --filter "name=backend" --format "{{.Names}}" | head -1)
+
+            echo "=== Cleanup parcial: tablas RGPD que creó f0 sobre BD desactualizada ==="
+            # Mi stamp erróneo dejó f0/f1 aplicadas creando tablas RGPD,
+            # pero la BD aún no tiene secretaría. Volvemos la versión atrás
+            # y conservamos las tablas RGPD (idempotente — son IF NOT EXISTS).
+            echo "=== Revertir stamp: poner alembic en g2h3i4j5k6l7 ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -c "UPDATE alembic_version SET version_num='g2h3i4j5k6l7'"
+
             echo "=== alembic actual ==="
             docker exec "$DB_CONT" psql -U siga -d siga -tAc "SELECT version_num FROM alembic_version"
-            echo ""
-            echo "=== Stampeando a e1f2a3b4c5d6 (UPDATE directo) ==="
-            docker exec "$DB_CONT" psql -U siga -d siga -c "UPDATE alembic_version SET version_num='e1f2a3b4c5d6'"
-            echo ""
-            echo "=== Reiniciando backend ==="
-            docker restart "$BE_CONT"
-            sleep 15
-            echo ""
+
+            echo "=== git pull para coger las migraciones idempotentes nuevas ==="
+            git pull --rebase
+
+            echo "=== docker compose pull (re-traer imagen con las migraciones fix) ==="
+            docker compose --env-file .env.staging \
+              -f docker-compose.yml -f docker-compose.staging.yml \
+              pull backend
+
+            echo "=== Re-creando backend ==="
+            docker compose --env-file .env.staging \
+              -f docker-compose.yml -f docker-compose.staging.yml \
+              up -d --force-recreate backend
+
+            echo "=== Esperando 20s al bootstrap ==="
+            sleep 20
+
             echo "=== docker ps ==="
             docker ps --format "table {{.Names}}\t{{.Status}}"
             echo ""
-            echo "=== logs (últimas 50) ==="
-            docker logs --tail 50 "$BE_CONT" 2>&1
+            echo "=== logs (últimas 60) ==="
+            NEW_BE=$(docker ps -a --filter "name=backend" --format "{{.Names}}" | head -1)
+            docker logs --tail 60 "$NEW_BE" 2>&1
             echo ""
-            echo "=== alembic tras upgrade ==="
+            echo "=== alembic final ==="
             docker exec "$DB_CONT" psql -U siga -d siga -tAc "SELECT version_num FROM alembic_version"
             echo ""
             echo "=== usuarios admin ==="

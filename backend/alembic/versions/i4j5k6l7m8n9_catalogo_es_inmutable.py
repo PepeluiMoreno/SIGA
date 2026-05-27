@@ -1,12 +1,14 @@
 """Añade es_inmutable a todos los catálogos del sistema y actualiza colores de estados.
 
+Idempotente: usa `ADD COLUMN IF NOT EXISTS`. Las tablas pueden no existir
+aún en algunos entornos parcialmente migrados; se ignoran con WHERE EXISTS.
+
 Revision ID: i4j5k6l7m8n9
 Revises: h3i4j5k6l7m8
 Create Date: 2026-05-16 14:00:00.000000
 """
 
 from alembic import op
-import sqlalchemy as sa
 
 revision: str = 'i4j5k6l7m8n9'
 down_revision: str = 'h3i4j5k6l7m8'
@@ -50,37 +52,42 @@ CATALOG_TABLES = [
     'tipos_vinculacion',
 ]
 
-# Colores para estados de campaña (hex reales — los existentes son NULL o "primary")
+# Colores para estados de campaña (hex reales)
 ESTADOS_CAMPANIA_COLORES = [
-    ('Borrador',    '#6B7280'),   # gris      — draft/neutro
-    ('Programada',  '#3B82F6'),   # azul      — scheduled
-    ('En curso',    '#10B981'),   # verde     — activo
-    ('Pausada',     '#F59E0B'),   # ámbar     — advertencia
-    ('Finalizada',  '#6366F1'),   # índigo    — completado
-    ('Cancelada',   '#EF4444'),   # rojo      — cancelado
+    ('Borrador',    '#6B7280'),
+    ('Programada',  '#3B82F6'),
+    ('En curso',    '#10B981'),
+    ('Pausada',     '#F59E0B'),
+    ('Finalizada',  '#6366F1'),
+    ('Cancelada',   '#EF4444'),
 ]
 
 
 def upgrade() -> None:
-    # 1. Añadir es_inmutable a todas las tablas de catálogo
+    # Idempotente: solo añade la columna si no existe y la tabla existe.
     for table in CATALOG_TABLES:
-        op.add_column(
-            table,
-            sa.Column('es_inmutable', sa.Boolean, server_default='false', nullable=False)
-        )
+        op.execute(f"""
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT 1 FROM information_schema.tables
+                           WHERE table_name = '{table}') THEN
+                    ALTER TABLE {table}
+                      ADD COLUMN IF NOT EXISTS es_inmutable BOOLEAN NOT NULL DEFAULT FALSE;
+                    UPDATE {table} SET es_inmutable = TRUE
+                      WHERE eliminado = FALSE OR eliminado IS NULL;
+                END IF;
+            END$$;
+        """)
 
-    # 2. Marcar todos los registros actuales como inmutables
-    #    (fueron insertados en seeding, no por usuarios)
-    for table in CATALOG_TABLES:
-        op.execute(f"UPDATE {table} SET es_inmutable = true WHERE eliminado = false OR eliminado IS NULL")
-
-    # 3. Actualizar colores de estados_campania con valores hex reales
+    # Colores de estados_campania (solo si la tabla existe).
+    bind = op.get_bind()
     for nombre, color in ESTADOS_CAMPANIA_COLORES:
-        op.execute(
-            sa.text("UPDATE estados_campania SET color = :color WHERE nombre = :nombre").bindparams(color=color, nombre=nombre)
+        bind.exec_driver_sql(
+            "UPDATE estados_campania SET color = "
+            f"'{color}' WHERE nombre = '{nombre}'"
         )
 
 
 def downgrade() -> None:
     for table in reversed(CATALOG_TABLES):
-        op.drop_column(table, 'es_inmutable')
+        op.execute(f"ALTER TABLE {table} DROP COLUMN IF EXISTS es_inmutable")
