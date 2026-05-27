@@ -15,20 +15,17 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
             cd /opt/docker/apps/SIGA
-            echo "=== docker ps ==="
-            docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
-            echo ""
-            echo "=== backend logs (last 80) ==="
-            docker logs --tail 80 $(docker ps -a --filter "name=backend" --format "{{.Names}}" | head -1) 2>&1 || true
-            echo ""
-            echo "=== usuarios admin ==="
             DB_CONT=$(docker ps --filter "name=db" --format "{{.Names}}" | head -1)
-            docker exec "$DB_CONT" psql -U siga -d siga -c "
-              SELECT u.email, u.activo,
-                EXISTS(SELECT 1 FROM usuarios_roles ur
-                       JOIN roles r ON r.id=ur.rol_id
-                       WHERE ur.usuario_id=u.id AND r.codigo='SUPERADMIN'
-                       AND ur.eliminado=FALSE) AS superadmin
-              FROM usuarios u
-              WHERE u.email IN ('admin@siga.local', 'joseluis.morgomez@gmail.com');
-            " 2>&1 || echo "(no se pudo consultar BD)"
+            echo "=== alembic_version ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -tAc "SELECT version_num FROM alembic_version" 2>&1
+            echo ""
+            echo "=== tipos_meta_campania schema ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -c "\d tipos_meta_campania" 2>&1 | head -25
+            echo ""
+            echo "=== Migraciones disponibles (3 últimas) ==="
+            BE_CONT=$(docker ps -a --filter "name=backend" --format "{{.Names}}" | head -1)
+            docker exec "$BE_CONT" sh -c "ls /app/alembic/versions | sort | tail -10" 2>&1 || echo "(backend caído, ls indirecto)"
+            ls /opt/docker/apps/SIGA/backend/alembic/versions 2>/dev/null | sort | tail -10 || true
+            echo ""
+            echo "=== Buscar add_column tipos_meta_campania fecha_creacion ==="
+            grep -rln "tipos_meta_campania" /opt/docker/apps/SIGA/backend/alembic/versions 2>/dev/null || true
