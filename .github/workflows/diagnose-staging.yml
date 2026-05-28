@@ -1,4 +1,4 @@
-name: Apply manual SQL + stamp head + restart
+name: Backfill m8-r3 + restart staging
 on:
   workflow_dispatch:
 jobs:
@@ -14,74 +14,122 @@ jobs:
             DB_CONT=$(docker ps --filter "name=db" --format "{{.Names}}" | head -1)
             BE_CONT=$(docker ps -a --filter "name=backend" --format "{{.Names}}" | head -1)
 
-            # Volcamos el SQL a /tmp y lo aplicamos vía psql -f
-            cat > /tmp/staging_fix.sql <<'EOSQL'
-            CREATE TABLE IF NOT EXISTS sec_plataformas_telematicas (
-              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-              codigo VARCHAR(40) UNIQUE NOT NULL,
+            cat > /tmp/backfill.sql <<'EOSQL'
+            -- Enums (idempotente)
+            DO $$ BEGIN CREATE TYPE tipocategoriafiscal AS ENUM ('INGRESO','GASTO'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+            DO $$ BEGIN CREATE TYPE tipocoincidencia AS ENUM ('CONTIENE','EMPIEZA_POR','EXACTO','REGEX'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+            DO $$ BEGIN CREATE TYPE tipomodificacionpresupuestaria AS ENUM ('TRANSFERENCIA','AMPLIACION','SUPLEMENTO'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+            -- m8: taxonomia_actividades_gobierno
+            ALTER TABLE tipos_accion ADD COLUMN IF NOT EXISTS es_actividad_gobierno BOOLEAN NOT NULL DEFAULT FALSE;
+            ALTER TABLE tipos_accion ADD COLUMN IF NOT EXISTS tipo_reunion_secretaria_id UUID REFERENCES sec_tipos_reunion(id);
+            -- columna presente en el modelo TipoActividad pero sin migración alembic
+            ALTER TABLE tipos_accion ADD COLUMN IF NOT EXISTS cuenta_contable_default_id UUID REFERENCES cuentas_contables(id) ON DELETE SET NULL;
+            CREATE INDEX IF NOT EXISTS ix_tipos_accion_cuenta_contable_default_id ON tipos_accion(cuenta_contable_default_id);
+            CREATE INDEX IF NOT EXISTS ix_tipos_accion_es_actividad_gobierno ON tipos_accion(es_actividad_gobierno);
+            ALTER TABLE sec_reuniones ADD COLUMN IF NOT EXISTS actividad_id UUID REFERENCES actividades(id);
+            CREATE INDEX IF NOT EXISTS ix_sec_reuniones_actividad_id ON sec_reuniones(actividad_id);
+
+            -- n9: contabilidad_simplificada
+            CREATE TABLE IF NOT EXISTS categorias_fiscales (
+              id UUID PRIMARY KEY,
+              codigo VARCHAR(30) NOT NULL UNIQUE,
               nombre VARCHAR(100) NOT NULL,
               descripcion TEXT,
-              icono VARCHAR(100),
+              tipo tipocategoriafiscal NOT NULL,
+              computa_modelo_182 BOOLEAN NOT NULL DEFAULT FALSE,
+              computa_modelo_347 BOOLEAN NOT NULL DEFAULT FALSE,
+              casilla_modelo VARCHAR(20),
+              orden INTEGER NOT NULL DEFAULT 10,
+              color VARCHAR(20),
               activa BOOLEAN NOT NULL DEFAULT TRUE,
-              orden INTEGER NOT NULL DEFAULT 0,
-              url_base VARCHAR(300),
-              campos_esquema TEXT,
-              es_inmutable BOOLEAN NOT NULL DEFAULT FALSE,
               fecha_creacion TIMESTAMP NOT NULL DEFAULT now(),
               fecha_modificacion TIMESTAMP,
               fecha_eliminacion TIMESTAMP,
               eliminado BOOLEAN NOT NULL DEFAULT FALSE,
               creado_por_id UUID REFERENCES usuarios(id),
-              modificado_por_id UUID REFERENCES usuarios(id)
+              modificado_por_id UUID REFERENCES usuarios(id),
+              es_inmutable BOOLEAN NOT NULL DEFAULT FALSE
             );
-            CREATE INDEX IF NOT EXISTS ix_sec_plat_telem_codigo ON sec_plataformas_telematicas(codigo);
-            CREATE INDEX IF NOT EXISTS ix_sec_plat_telem_activa ON sec_plataformas_telematicas(activa);
-            ALTER TABLE sec_reuniones ADD COLUMN IF NOT EXISTS plataforma_telematica_id UUID REFERENCES sec_plataformas_telematicas(id) ON DELETE SET NULL;
-            ALTER TABLE sec_reuniones ADD COLUMN IF NOT EXISTS datos_conexion_telematica TEXT;
-            CREATE INDEX IF NOT EXISTS ix_sec_reuniones_plat_telem ON sec_reuniones(plataforma_telematica_id);
-            INSERT INTO sec_plataformas_telematicas (id, codigo, nombre, descripcion, icono, orden, url_base, campos_esquema, es_inmutable) VALUES
-              (gen_random_uuid(), 'JITSI', 'Jitsi Meet', 'Servidor de videoconferencia abierto y autoalojable.', '📹', 10, 'https://meet.jit.si/',
-               '[{"key":"sala","label":"Nombre de la sala","tipo":"text","requerido":true,"placeholder":"asamblea-2026"},{"key":"url","label":"URL completa","tipo":"url","requerido":false,"placeholder":"https://meet.jit.si/asamblea-2026"},{"key":"password","label":"Contraseña","tipo":"text","requerido":false}]',
-               TRUE),
-              (gen_random_uuid(), 'ZOOM', 'Zoom', 'Plataforma comercial de videoconferencia.', '🟦', 20, 'https://zoom.us/j/',
-               '[{"key":"url","label":"URL de la reunión","tipo":"url","requerido":true},{"key":"id_reunion","label":"ID de reunión","tipo":"text","requerido":false},{"key":"password","label":"Contraseña","tipo":"text","requerido":false}]',
-               TRUE),
-              (gen_random_uuid(), 'MEET', 'Google Meet', 'Videoconferencia de Google Workspace.', '🟢', 30, 'https://meet.google.com/',
-               '[{"key":"url","label":"URL de la reunión","tipo":"url","requerido":true,"placeholder":"https://meet.google.com/xxx-xxxx-xxx"}]',
-               TRUE),
-              (gen_random_uuid(), 'TEAMS', 'Microsoft Teams', 'Videoconferencia de Microsoft 365.', '🟪', 40, 'https://teams.microsoft.com/',
-               '[{"key":"url","label":"URL de la reunión","tipo":"url","requerido":true},{"key":"id_reunion","label":"ID de reunión","tipo":"text","requerido":false},{"key":"password","label":"Contraseña","tipo":"text","requerido":false}]',
-               TRUE),
-              (gen_random_uuid(), 'INDICO', 'Indico', 'Plataforma de eventos académicos / activismo (CERN).', '🎯', 50, NULL,
-               '[{"key":"url","label":"URL del evento Indico","tipo":"url","requerido":true},{"key":"sala","label":"ID del evento","tipo":"text","requerido":false}]',
-               TRUE),
-              (gen_random_uuid(), 'OTRA', 'Otra plataforma', 'Plataforma personalizada — usa URL y notas libres.', '🔗', 99, NULL,
-               '[{"key":"url","label":"URL de la reunión","tipo":"url","requerido":true},{"key":"nombre_plataforma","label":"Nombre de la plataforma","tipo":"text","requerido":false},{"key":"notas","label":"Notas de conexión","tipo":"text","requerido":false}]',
-               FALSE)
-            ON CONFLICT (codigo) DO NOTHING;
-            ALTER TABLE actividades ADD COLUMN IF NOT EXISTS plataforma_telematica_id UUID REFERENCES sec_plataformas_telematicas(id) ON DELETE SET NULL;
-            ALTER TABLE actividades ADD COLUMN IF NOT EXISTS datos_conexion_telematica TEXT;
-            CREATE INDEX IF NOT EXISTS ix_actividades_plat_telem ON actividades(plataforma_telematica_id);
+            CREATE INDEX IF NOT EXISTS ix_categorias_fiscales_codigo ON categorias_fiscales(codigo);
+            CREATE INDEX IF NOT EXISTS ix_categorias_fiscales_tipo ON categorias_fiscales(tipo);
+            CREATE INDEX IF NOT EXISTS ix_categorias_fiscales_activa ON categorias_fiscales(activa);
+            ALTER TABLE apuntes_caja ADD COLUMN IF NOT EXISTS categoria_fiscal_id UUID REFERENCES categorias_fiscales(id);
+            CREATE INDEX IF NOT EXISTS ix_apuntes_caja_categoria_fiscal_id ON apuntes_caja(categoria_fiscal_id);
+
+            -- o0: reglas_categorizacion
+            CREATE TABLE IF NOT EXISTS reglas_categorizacion (
+              id UUID PRIMARY KEY,
+              patron VARCHAR(200) NOT NULL,
+              tipo_coincidencia tipocoincidencia NOT NULL DEFAULT 'CONTIENE',
+              tipo_apunte VARCHAR(20),
+              categoria_fiscal_id UUID NOT NULL REFERENCES categorias_fiscales(id),
+              orden INTEGER NOT NULL DEFAULT 10,
+              descripcion TEXT,
+              activa BOOLEAN NOT NULL DEFAULT TRUE,
+              fecha_creacion TIMESTAMP NOT NULL DEFAULT now(),
+              fecha_modificacion TIMESTAMP,
+              fecha_eliminacion TIMESTAMP,
+              eliminado BOOLEAN NOT NULL DEFAULT FALSE,
+              creado_por_id UUID REFERENCES usuarios(id),
+              modificado_por_id UUID REFERENCES usuarios(id),
+              es_inmutable BOOLEAN NOT NULL DEFAULT FALSE
+            );
+            CREATE INDEX IF NOT EXISTS ix_reglas_categorizacion_categoria ON reglas_categorizacion(categoria_fiscal_id);
+            CREATE INDEX IF NOT EXISTS ix_reglas_categorizacion_tipo_apunte ON reglas_categorizacion(tipo_apunte);
+            CREATE INDEX IF NOT EXISTS ix_reglas_categorizacion_activa ON reglas_categorizacion(activa);
+
+            -- p1: presupuesto_partida_actividad
+            ALTER TABLE partidas_presupuestarias ADD COLUMN IF NOT EXISTS actividad_id UUID REFERENCES actividades(id);
+            ALTER TABLE partidas_presupuestarias ADD COLUMN IF NOT EXISTS campania_id UUID REFERENCES campanias(id);
+            CREATE INDEX IF NOT EXISTS ix_partidas_actividad_id ON partidas_presupuestarias(actividad_id);
+            CREATE INDEX IF NOT EXISTS ix_partidas_campania_id ON partidas_presupuestarias(campania_id);
+
+            -- q2: presupuestos_fase2
+            ALTER TABLE partidas_presupuestarias ADD COLUMN IF NOT EXISTS importe_inicial NUMERIC(12,2) NOT NULL DEFAULT 0.00;
+            UPDATE partidas_presupuestarias SET importe_inicial = importe_presupuestado WHERE importe_inicial = 0.00;
+            ALTER TABLE planificaciones_anuales ADD COLUMN IF NOT EXISTS control_disponibilidad BOOLEAN NOT NULL DEFAULT FALSE;
+            CREATE TABLE IF NOT EXISTS modificaciones_presupuestarias (
+              id UUID PRIMARY KEY,
+              planificacion_id UUID NOT NULL REFERENCES planificaciones_anuales(id),
+              tipo tipomodificacionpresupuestaria NOT NULL,
+              partida_destino_id UUID NOT NULL REFERENCES partidas_presupuestarias(id),
+              partida_origen_id UUID REFERENCES partidas_presupuestarias(id),
+              importe NUMERIC(12,2) NOT NULL,
+              fecha DATE NOT NULL,
+              motivo TEXT NOT NULL,
+              registrada_por_id UUID REFERENCES usuarios(id),
+              fecha_creacion TIMESTAMP NOT NULL DEFAULT now(),
+              fecha_modificacion TIMESTAMP,
+              fecha_eliminacion TIMESTAMP,
+              eliminado BOOLEAN NOT NULL DEFAULT FALSE,
+              creado_por_id UUID,
+              modificado_por_id UUID,
+              es_inmutable BOOLEAN NOT NULL DEFAULT FALSE
+            );
+            CREATE INDEX IF NOT EXISTS ix_modif_presup_planificacion ON modificaciones_presupuestarias(planificacion_id);
+            CREATE INDEX IF NOT EXISTS ix_modif_presup_destino ON modificaciones_presupuestarias(partida_destino_id);
+
+            -- r3: presupuestos_fase3
+            ALTER TABLE planificaciones_anuales ADD COLUMN IF NOT EXISTS es_prorroga BOOLEAN NOT NULL DEFAULT FALSE;
+            ALTER TABLE planificaciones_anuales ADD COLUMN IF NOT EXISTS ejercicio_origen_prorroga INTEGER;
+
+            -- Mantener alembic en head
             UPDATE alembic_version SET version_num='f3d4e5f6a7b8';
             EOSQL
 
-            docker cp /tmp/staging_fix.sql "$DB_CONT":/tmp/staging_fix.sql
-            echo "=== Aplicando SQL ==="
-            docker exec "$DB_CONT" psql -U siga -d siga -v ON_ERROR_STOP=1 -f /tmp/staging_fix.sql
-
-            echo ""
-            echo "=== alembic tras stamp ==="
-            docker exec "$DB_CONT" psql -U siga -d siga -tAc "SELECT version_num FROM alembic_version"
+            docker cp /tmp/backfill.sql "$DB_CONT":/tmp/backfill.sql
+            echo "=== Aplicando backfill ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -v ON_ERROR_STOP=1 -f /tmp/backfill.sql
 
             echo "=== restart backend ==="
             docker restart "$BE_CONT"
             sleep 25
-
             echo "=== docker ps ==="
             docker ps --format "table {{.Names}}\t{{.Status}}"
             echo ""
-            echo "=== logs (últimas 50) ==="
-            docker logs --tail 50 "$BE_CONT" 2>&1 | tail -50
+            echo "=== logs (últimas 40) ==="
+            docker logs --tail 40 "$BE_CONT" 2>&1 | tail -40
             echo ""
             echo "=== usuarios admin ==="
             docker exec "$DB_CONT" psql -U siga -d siga -c "SELECT u.email, u.activo, EXISTS(SELECT 1 FROM usuarios_roles ur JOIN roles r ON r.id=ur.rol_id WHERE ur.usuario_id=u.id AND r.codigo='SUPERADMIN' AND ur.eliminado=FALSE) AS superadmin FROM usuarios u WHERE u.email IN ('admin@siga.local', 'joseluis.morgomez@gmail.com');"
