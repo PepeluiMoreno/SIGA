@@ -52,12 +52,12 @@ _MOTIVOS_REDUCCION_CUOTA = [
 ]
 
 _TIPOS_VINCULACION = [
-    {"nombre": "Socio",                              "es_externo": False, "activo": True},
-    {"nombre": "Simpatizante",                       "es_externo": False, "activo": True},
-    {"nombre": "Trabajador autónomo",                "es_externo": False, "activo": True},
-    {"nombre": "Socio de asociación amiga",          "es_externo": True,  "activo": True},
-    {"nombre": "Empleado de servicio externo contratado", "es_externo": True, "activo": True},
-    {"nombre": "Sistema",                            "es_externo": False, "activo": True},
+    {"nombre": "Socio",                              "requiere_entidad": False, "activo": True},
+    {"nombre": "Simpatizante",                       "requiere_entidad": False, "activo": True},
+    {"nombre": "Trabajador autónomo",                "requiere_entidad": False, "activo": True},
+    {"nombre": "Socio de asociación amiga",          "requiere_entidad": True,  "activo": True},
+    {"nombre": "Empleado de servicio externo contratado", "requiere_entidad": True, "activo": True},
+    {"nombre": "Sistema",                            "requiere_entidad": False, "activo": True},
 ]
 
 _FORMAS_PAGO = [
@@ -142,10 +142,10 @@ _ESTADOS_PARTICIPANTE = [
 ]
 
 _ESTADOS_NOTIFICACION = [
-    {"nombre": "Pendiente", "descripcion": "Notificación creada pero no enviada",         "orden": 1, "es_inicial": True,  "es_final": False, "color": "#F59E0B"},
-    {"nombre": "Enviada",   "descripcion": "Notificación enviada al canal correspondiente","orden": 2, "es_inicial": False, "es_final": False, "color": "#0EA5E9"},
-    {"nombre": "Leída",     "descripcion": "Notificación leída por el usuario",           "orden": 3, "es_inicial": False, "es_final": True,  "color": "#22C55E"},
-    {"nombre": "Error",     "descripcion": "Error al enviar la notificación",             "orden": 4, "es_inicial": False, "es_final": True,  "color": "#EF4444"},
+    {"codigo": "PENDIENTE", "nombre": "Pendiente", "descripcion": "Notificación creada pero no enviada",         "orden": 1, "es_inicial": True,  "es_final": False, "color": "#F59E0B"},
+    {"codigo": "ENVIADA",   "nombre": "Enviada",   "descripcion": "Notificación enviada al canal correspondiente","orden": 2, "es_inicial": False, "es_final": False, "color": "#0EA5E9"},
+    {"codigo": "LEIDA",     "nombre": "Leída",     "descripcion": "Notificación leída por el usuario",           "orden": 3, "es_inicial": False, "es_final": True,  "color": "#22C55E"},
+    {"codigo": "ERROR",     "nombre": "Error",     "descripcion": "Error al enviar la notificación",             "orden": 4, "es_inicial": False, "es_final": True,  "color": "#EF4444"},
 ]
 
 # EstadoPlanificacion no hereda de EstadoBase (esquema propio: codigo, nombre,

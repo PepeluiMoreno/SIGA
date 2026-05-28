@@ -537,12 +537,12 @@ _TIPOS_CAMPANIA = [
 ]
 
 _ESTADOS_CAMPANIA = [
-    {"id": uuid.UUID("f181fc67-a7e1-44db-8b57-344f37bfe1c4"), "nombre": "Borrador",   "orden": 1, "es_inicial": True,  "color": "#6B7280", "es_inmutable": True},
-    {"id": uuid.UUID("2a55d055-7055-4657-9f1d-30ba76277bd6"), "nombre": "Programada", "orden": 2,                       "color": "#3B82F6", "es_inmutable": True},
-    {"id": uuid.UUID("c7d882d2-1aa0-4e74-b212-95ea731c19a0"), "nombre": "En curso",   "orden": 3,                       "color": "#10B981", "es_inmutable": True},
-    {"id": uuid.UUID("05b3edc1-1230-48ee-b7e5-fb7c5f632eff"), "nombre": "Pausada",    "orden": 4,                       "color": "#F59E0B", "es_inmutable": True},
-    {"id": uuid.UUID("7db81ba1-b5ed-4834-8b11-dd1d6c46d71f"), "nombre": "Finalizada", "orden": 5, "es_final": True,    "color": "#6366F1", "es_inmutable": True},
-    {"id": uuid.UUID("156dbbf9-46de-4550-ab2a-a7fef2a546ff"), "nombre": "Cancelada",  "orden": 6, "es_final": True,    "color": "#EF4444", "es_inmutable": True},
+    {"id": uuid.UUID("f181fc67-a7e1-44db-8b57-344f37bfe1c4"), "codigo": "BORRADOR",   "nombre": "Borrador",   "orden": 1, "es_inicial": True,  "color": "#6B7280", "es_inmutable": True},
+    {"id": uuid.UUID("2a55d055-7055-4657-9f1d-30ba76277bd6"), "codigo": "PROGRAMADA", "nombre": "Programada", "orden": 2,                       "color": "#3B82F6", "es_inmutable": True},
+    {"id": uuid.UUID("c7d882d2-1aa0-4e74-b212-95ea731c19a0"), "codigo": "EN_CURSO",   "nombre": "En curso",   "orden": 3,                       "color": "#10B981", "es_inmutable": True},
+    {"id": uuid.UUID("05b3edc1-1230-48ee-b7e5-fb7c5f632eff"), "codigo": "PAUSADA",    "nombre": "Pausada",    "orden": 4,                       "color": "#F59E0B", "es_inmutable": True},
+    {"id": uuid.UUID("7db81ba1-b5ed-4834-8b11-dd1d6c46d71f"), "codigo": "FINALIZADA", "nombre": "Finalizada", "orden": 5, "es_final": True,    "color": "#6366F1", "es_inmutable": True},
+    {"id": uuid.UUID("156dbbf9-46de-4550-ab2a-a7fef2a546ff"), "codigo": "CANCELADA",  "nombre": "Cancelada",  "orden": 6, "es_final": True,    "color": "#EF4444", "es_inmutable": True},
 ]
 
 _TIPOS_MIEMBRO = [
@@ -555,7 +555,7 @@ _ESTADOS_MIEMBRO = [
     {"nombre": "Alta",       "descripcion": "Miembro activo en la organización",      "color": "#28A745", "orden": 1, "es_inicial": True},
     {"nombre": "Pendiente",  "descripcion": "Alta solicitada, pendiente de revisión", "color": "#FFC107", "orden": 2},
     {"nombre": "Suspendido", "descripcion": "Miembro temporalmente suspendido",       "color": "#FFA500", "orden": 3},
-    {"nombre": "Baja",       "descripcion": "Miembro dado de baja definitiva",        "color": "#DC3545", "orden": 4, "es_final": True},
+    {"nombre": "Baja",       "descripcion": "Miembro dado de baja definitiva",        "color": "#DC3545", "orden": 4},
 ]
 
 
