@@ -1,4 +1,4 @@
-name: Backfill m8-r3 + restart staging
+name: Reset esquema staging (create_all)
 on:
   workflow_dispatch:
 jobs:
@@ -10,126 +10,43 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
+          command_timeout: 15m
           script: |
+            cd /opt/docker/apps/SIGA
             DB_CONT=$(docker ps --filter "name=db" --format "{{.Names}}" | head -1)
             BE_CONT=$(docker ps -a --filter "name=backend" --format "{{.Names}}" | head -1)
 
-            cat > /tmp/backfill.sql <<'EOSQL'
-            -- Enums (idempotente)
-            DO $$ BEGIN CREATE TYPE tipocategoriafiscal AS ENUM ('INGRESO','GASTO'); EXCEPTION WHEN duplicate_object THEN null; END $$;
-            DO $$ BEGIN CREATE TYPE tipocoincidencia AS ENUM ('CONTIENE','EMPIEZA_POR','EXACTO','REGEX'); EXCEPTION WHEN duplicate_object THEN null; END $$;
-            DO $$ BEGIN CREATE TYPE tipomodificacionpresupuestaria AS ENUM ('TRANSFERENCIA','AMPLIACION','SUPLEMENTO'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+            echo "=== git pull (trae sync_schema.py) ==="
+            git pull --rebase
 
-            -- m8: taxonomia_actividades_gobierno
-            ALTER TABLE tipos_accion ADD COLUMN IF NOT EXISTS es_actividad_gobierno BOOLEAN NOT NULL DEFAULT FALSE;
-            ALTER TABLE tipos_accion ADD COLUMN IF NOT EXISTS tipo_reunion_secretaria_id UUID REFERENCES sec_tipos_reunion(id);
-            -- columna presente en el modelo TipoActividad pero sin migración alembic
-            ALTER TABLE tipos_accion ADD COLUMN IF NOT EXISTS cuenta_contable_default_id UUID REFERENCES cuentas_contables(id) ON DELETE SET NULL;
-            CREATE INDEX IF NOT EXISTS ix_tipos_accion_cuenta_contable_default_id ON tipos_accion(cuenta_contable_default_id);
-            CREATE INDEX IF NOT EXISTS ix_tipos_accion_es_actividad_gobierno ON tipos_accion(es_actividad_gobierno);
-            ALTER TABLE sec_reuniones ADD COLUMN IF NOT EXISTS actividad_id UUID REFERENCES actividades(id);
-            CREATE INDEX IF NOT EXISTS ix_sec_reuniones_actividad_id ON sec_reuniones(actividad_id);
+            echo "=== Parar backend ==="
+            docker stop "$BE_CONT" || true
 
-            -- n9: contabilidad_simplificada
-            CREATE TABLE IF NOT EXISTS categorias_fiscales (
-              id UUID PRIMARY KEY,
-              codigo VARCHAR(30) NOT NULL UNIQUE,
-              nombre VARCHAR(100) NOT NULL,
-              descripcion TEXT,
-              tipo tipocategoriafiscal NOT NULL,
-              computa_modelo_182 BOOLEAN NOT NULL DEFAULT FALSE,
-              computa_modelo_347 BOOLEAN NOT NULL DEFAULT FALSE,
-              casilla_modelo VARCHAR(20),
-              orden INTEGER NOT NULL DEFAULT 10,
-              color VARCHAR(20),
-              activa BOOLEAN NOT NULL DEFAULT TRUE,
-              fecha_creacion TIMESTAMP NOT NULL DEFAULT now(),
-              fecha_modificacion TIMESTAMP,
-              fecha_eliminacion TIMESTAMP,
-              eliminado BOOLEAN NOT NULL DEFAULT FALSE,
-              creado_por_id UUID REFERENCES usuarios(id),
-              modificado_por_id UUID REFERENCES usuarios(id),
-              es_inmutable BOOLEAN NOT NULL DEFAULT FALSE
-            );
-            CREATE INDEX IF NOT EXISTS ix_categorias_fiscales_codigo ON categorias_fiscales(codigo);
-            CREATE INDEX IF NOT EXISTS ix_categorias_fiscales_tipo ON categorias_fiscales(tipo);
-            CREATE INDEX IF NOT EXISTS ix_categorias_fiscales_activa ON categorias_fiscales(activa);
-            ALTER TABLE apuntes_caja ADD COLUMN IF NOT EXISTS categoria_fiscal_id UUID REFERENCES categorias_fiscales(id);
-            CREATE INDEX IF NOT EXISTS ix_apuntes_caja_categoria_fiscal_id ON apuntes_caja(categoria_fiscal_id);
+            echo "=== DROP + CREATE SCHEMA public (reset total) ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO siga; GRANT ALL ON SCHEMA public TO public;"
 
-            -- o0: reglas_categorizacion
-            CREATE TABLE IF NOT EXISTS reglas_categorizacion (
-              id UUID PRIMARY KEY,
-              patron VARCHAR(200) NOT NULL,
-              tipo_coincidencia tipocoincidencia NOT NULL DEFAULT 'CONTIENE',
-              tipo_apunte VARCHAR(20),
-              categoria_fiscal_id UUID NOT NULL REFERENCES categorias_fiscales(id),
-              orden INTEGER NOT NULL DEFAULT 10,
-              descripcion TEXT,
-              activa BOOLEAN NOT NULL DEFAULT TRUE,
-              fecha_creacion TIMESTAMP NOT NULL DEFAULT now(),
-              fecha_modificacion TIMESTAMP,
-              fecha_eliminacion TIMESTAMP,
-              eliminado BOOLEAN NOT NULL DEFAULT FALSE,
-              creado_por_id UUID REFERENCES usuarios(id),
-              modificado_por_id UUID REFERENCES usuarios(id),
-              es_inmutable BOOLEAN NOT NULL DEFAULT FALSE
-            );
-            CREATE INDEX IF NOT EXISTS ix_reglas_categorizacion_categoria ON reglas_categorizacion(categoria_fiscal_id);
-            CREATE INDEX IF NOT EXISTS ix_reglas_categorizacion_tipo_apunte ON reglas_categorizacion(tipo_apunte);
-            CREATE INDEX IF NOT EXISTS ix_reglas_categorizacion_activa ON reglas_categorizacion(activa);
+            echo "=== create_all: crea TODO el esquema desde los modelos (BD vacía) ==="
+            # Montamos el código del repo por si la imagen aún no trae sync_schema.py
+            docker compose --env-file .env.staging -f docker-compose.yml -f docker-compose.staging.yml \
+              run --rm --no-deps -v "$PWD/backend/app:/app/app" \
+              backend python -m app.scripts.sync_schema
 
-            -- p1: presupuesto_partida_actividad
-            ALTER TABLE partidas_presupuestarias ADD COLUMN IF NOT EXISTS actividad_id UUID REFERENCES actividades(id);
-            ALTER TABLE partidas_presupuestarias ADD COLUMN IF NOT EXISTS campania_id UUID REFERENCES campanias(id);
-            CREATE INDEX IF NOT EXISTS ix_partidas_actividad_id ON partidas_presupuestarias(actividad_id);
-            CREATE INDEX IF NOT EXISTS ix_partidas_campania_id ON partidas_presupuestarias(campania_id);
+            echo "=== Fijar alembic_version a head ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -c "CREATE TABLE IF NOT EXISTS alembic_version (version_num VARCHAR(32) NOT NULL);"
+            docker exec "$DB_CONT" psql -U siga -d siga -c "DELETE FROM alembic_version; INSERT INTO alembic_version (version_num) VALUES ('f3d4e5f6a7b8');"
+            docker exec "$DB_CONT" psql -U siga -d siga -tAc "SELECT version_num FROM alembic_version"
 
-            -- q2: presupuestos_fase2
-            ALTER TABLE partidas_presupuestarias ADD COLUMN IF NOT EXISTS importe_inicial NUMERIC(12,2) NOT NULL DEFAULT 0.00;
-            UPDATE partidas_presupuestarias SET importe_inicial = importe_presupuestado WHERE importe_inicial = 0.00;
-            ALTER TABLE planificaciones_anuales ADD COLUMN IF NOT EXISTS control_disponibilidad BOOLEAN NOT NULL DEFAULT FALSE;
-            CREATE TABLE IF NOT EXISTS modificaciones_presupuestarias (
-              id UUID PRIMARY KEY,
-              planificacion_id UUID NOT NULL REFERENCES planificaciones_anuales(id),
-              tipo tipomodificacionpresupuestaria NOT NULL,
-              partida_destino_id UUID NOT NULL REFERENCES partidas_presupuestarias(id),
-              partida_origen_id UUID REFERENCES partidas_presupuestarias(id),
-              importe NUMERIC(12,2) NOT NULL,
-              fecha DATE NOT NULL,
-              motivo TEXT NOT NULL,
-              registrada_por_id UUID REFERENCES usuarios(id),
-              fecha_creacion TIMESTAMP NOT NULL DEFAULT now(),
-              fecha_modificacion TIMESTAMP,
-              fecha_eliminacion TIMESTAMP,
-              eliminado BOOLEAN NOT NULL DEFAULT FALSE,
-              creado_por_id UUID,
-              modificado_por_id UUID,
-              es_inmutable BOOLEAN NOT NULL DEFAULT FALSE
-            );
-            CREATE INDEX IF NOT EXISTS ix_modif_presup_planificacion ON modificaciones_presupuestarias(planificacion_id);
-            CREATE INDEX IF NOT EXISTS ix_modif_presup_destino ON modificaciones_presupuestarias(partida_destino_id);
+            echo "=== Arrancar backend (alembic no-op + bootstrap siembra catálogos+usuarios) ==="
+            docker start "$BE_CONT"
+            sleep 35
 
-            -- r3: presupuestos_fase3
-            ALTER TABLE planificaciones_anuales ADD COLUMN IF NOT EXISTS es_prorroga BOOLEAN NOT NULL DEFAULT FALSE;
-            ALTER TABLE planificaciones_anuales ADD COLUMN IF NOT EXISTS ejercicio_origen_prorroga INTEGER;
-
-            -- Mantener alembic en head
-            UPDATE alembic_version SET version_num='f3d4e5f6a7b8';
-            EOSQL
-
-            docker cp /tmp/backfill.sql "$DB_CONT":/tmp/backfill.sql
-            echo "=== Aplicando backfill ==="
-            docker exec "$DB_CONT" psql -U siga -d siga -v ON_ERROR_STOP=1 -f /tmp/backfill.sql
-
-            echo "=== restart backend ==="
-            docker restart "$BE_CONT"
-            sleep 25
             echo "=== docker ps ==="
             docker ps --format "table {{.Names}}\t{{.Status}}"
             echo ""
-            echo "=== logs (últimas 40) ==="
-            docker logs --tail 40 "$BE_CONT" 2>&1 | tail -40
+            echo "=== logs (últimas 50) ==="
+            docker logs --tail 50 "$BE_CONT" 2>&1 | tail -50
             echo ""
+            echo "=== conteo tablas ==="
+            docker exec "$DB_CONT" psql -U siga -d siga -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'"
             echo "=== usuarios admin ==="
             docker exec "$DB_CONT" psql -U siga -d siga -c "SELECT u.email, u.activo, EXISTS(SELECT 1 FROM usuarios_roles ur JOIN roles r ON r.id=ur.rol_id WHERE ur.usuario_id=u.id AND r.codigo='SUPERADMIN' AND ur.eliminado=FALSE) AS superadmin FROM usuarios u WHERE u.email IN ('admin@siga.local', 'joseluis.morgomez@gmail.com');"
