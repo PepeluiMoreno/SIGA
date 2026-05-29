@@ -18,6 +18,9 @@ export const GET_VOLUNTARIOS = `
       profesion
       nivelEstudiosId
       intereses
+      puedeConducir
+      vehiculoPropio
+      disponibilidadViajar
       activo
       fechaAlta
     }
@@ -114,5 +117,46 @@ export const GET_TIPOS_FORMACION = `
       descripcion
       activo
     }
+  }
+`
+
+// ── Gestión por delegación (con scoping de ámbito en backend) ───────────────
+
+// Catálogo de habilidades y niveles (para el editor)
+export const GET_CATALOGO_HABILIDADES = `
+  query CatalogoHabilidades {
+    habilidades(filter: { activo: { eq: true } }) { id nombre }
+    nivelesHabilidad(filter: { activo: { eq: true } }) { id nombre orden }
+  }
+`
+
+// Habilidades actuales de un socio
+export const GET_HABILIDADES_MIEMBRO = `
+  query HabilidadesMiembro($id: UUID!) {
+    miembrosHabilidades(filter: { miembroId: { eq: $id } }) {
+      id
+      habilidadId
+      nivelId
+    }
+  }
+`
+
+// Editar el perfil de voluntario (disponibilidad/profesión/intereses…) por delegación
+export const GESTIONAR_PERFIL_VOLUNTARIO = `
+  mutation GestionarPerfilVoluntario($data: PerfilVoluntarioInput!) {
+    gestionarPerfilVoluntario(data: $data) { id }
+  }
+`
+
+// Asignar / quitar habilidad de un socio por delegación
+export const ASIGNAR_HABILIDAD_VOLUNTARIO = `
+  mutation AsignarHabilidadVoluntario($miembroId: UUID!, $habilidadId: UUID!, $nivelId: UUID) {
+    asignarHabilidadVoluntario(miembroId: $miembroId, habilidadId: $habilidadId, nivelId: $nivelId)
+  }
+`
+
+export const QUITAR_HABILIDAD_VOLUNTARIO = `
+  mutation QuitarHabilidadVoluntario($miembroId: UUID!, $habilidadId: UUID!) {
+    quitarHabilidadVoluntario(miembroId: $miembroId, habilidadId: $habilidadId)
   }
 `

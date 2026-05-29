@@ -124,13 +124,23 @@ como global; **excluye `COORDINADOR_CAMPANA`** que va por campaña). CTE recursi
 - Guard `assert_miembro_en_ambito(session, usuario_id, miembro_id)` (en `ambito_territorial.py`):
   lanza `PermissionError` si el socio está fuera del ámbito; global ⇒ no restringe. **No se salta por API.**
 
-**❌ Pendiente (resto Fase 2):**
-- **Scoping por campaña** de `COORDINADOR_CAMPANA` (depende del flujo de nombrar coordinador de
-  campaña, aún sin construir). De momento un COORDINADOR_CAMPANA "solo" tiene ámbito vacío por la vía
-  territorial ⇒ no ve/edita nada (deniega, seguro).
-- **UI de edición por delegación**: formulario en la vista de voluntarios que llame a
-  `gestionarPerfilVoluntario` (la lista es hoy de solo lectura). La asignación de habilidades por
-  delegación (`HAB_ASSIGN`) usa hoy el CRUD strawchemy genérico (sin guard de ámbito) — pendiente.
+**✅ Hecho — habilidades por delegación con guard:**
+- Mutaciones `asignarHabilidadVoluntario(miembroId, habilidadId, nivelId?)` y
+  `quitarHabilidadVoluntario(miembroId, habilidadId)` (gated `HAB_ASSIGN`) con
+  `assert_miembro_en_ambito` (upsert/borra `MiembroHabilidad`).
+
+**✅ Hecho — UI de edición por delegación:**
+- En `ListaVoluntarios.vue`, botón "editar" por tarjeta (gated `tienePermiso('MEMBRESIA_VOLUNTARIO_GESTIONAR')`)
+  → modal que edita disponibilidad/profesión/intereses/conducción/vehículo/viajar (vía
+  `gestionarPerfilVoluntario`) y gestiona habilidades (añadir/quitar con nivel). Queries:
+  `GET_CATALOGO_HABILIDADES`, `GET_HABILIDADES_MIEMBRO`.
+
+**❌ Pendiente (bloqueado por dependencia, no por alcance):**
+- **Scoping por campaña** de `COORDINADOR_CAMPANA`: depende del flujo de *nombrar coordinador de
+  campaña* (parte del epic de campañas), aún sin construir. Mientras tanto, un COORDINADOR_CAMPANA
+  "solo" tiene ámbito territorial vacío ⇒ no ve/edita nada (deniega = seguro). Se cierra al construir
+  ese flujo: su `UsuarioRol` debería referenciar la campaña, y el helper/guard tener una rama que
+  resuelva los socios vinculados a esa campaña.
 
 ## Pasos para aplicar el lote
 

@@ -242,6 +242,58 @@ class MembresiaResolverMutation:
         await session.commit()
         return await _fetch_miembro(session, miembro.id)
 
+    @strawberry.mutation(permission_classes=[RequireTransaction("HAB_ASSIGN")])
+    async def asignar_habilidad_voluntario(
+        self,
+        info: strawberry.Info,
+        miembro_id: uuid.UUID,
+        habilidad_id: uuid.UUID,
+        nivel_id: Optional[uuid.UUID] = None,
+    ) -> bool:
+        """Asigna (o actualiza el nivel de) una habilidad a un socio, por delegación.
+        Con guard de ámbito territorial."""
+        from app.modules.acceso.services.ambito_territorial import assert_miembro_en_ambito
+        from app.modules.membresia.models.habilidad import MiembroHabilidad
+        session = info.context.session
+        await assert_miembro_en_ambito(session, info.context.user.id, miembro_id)
+        existente = (await session.execute(
+            select(MiembroHabilidad).where(
+                MiembroHabilidad.miembro_id == miembro_id,
+                MiembroHabilidad.habilidad_id == habilidad_id,
+            )
+        )).scalar_one_or_none()
+        if existente:
+            existente.nivel_id = nivel_id
+        else:
+            session.add(MiembroHabilidad(
+                miembro_id=miembro_id, habilidad_id=habilidad_id, nivel_id=nivel_id,
+            ))
+        await session.commit()
+        return True
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("HAB_ASSIGN")])
+    async def quitar_habilidad_voluntario(
+        self,
+        info: strawberry.Info,
+        miembro_id: uuid.UUID,
+        habilidad_id: uuid.UUID,
+    ) -> bool:
+        """Quita una habilidad de un socio, por delegación. Con guard de ámbito territorial."""
+        from app.modules.acceso.services.ambito_territorial import assert_miembro_en_ambito
+        from app.modules.membresia.models.habilidad import MiembroHabilidad
+        session = info.context.session
+        await assert_miembro_en_ambito(session, info.context.user.id, miembro_id)
+        existente = (await session.execute(
+            select(MiembroHabilidad).where(
+                MiembroHabilidad.miembro_id == miembro_id,
+                MiembroHabilidad.habilidad_id == habilidad_id,
+            )
+        )).scalar_one_or_none()
+        if existente:
+            await session.delete(existente)
+            await session.commit()
+        return True
+
     @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_CREAR")])
     async def crear_miembro(
         self,
@@ -446,6 +498,9 @@ class VoluntarioType:
     profesion: Optional[str]
     nivel_estudios_id: Optional[uuid.UUID]
     intereses: Optional[str]
+    puede_conducir: bool
+    vehiculo_propio: bool
+    disponibilidad_viajar: bool
     activo: bool
     fecha_alta: Optional[date]
 
@@ -482,6 +537,8 @@ class MembresiaQuery:
                 email=m.email, telefono=m.telefono, disponibilidad=m.disponibilidad,
                 horas_disponibles_semana=m.horas_disponibles_semana, profesion=m.profesion,
                 nivel_estudios_id=m.nivel_estudios_id, intereses=m.intereses,
+                puede_conducir=m.puede_conducir, vehiculo_propio=m.vehiculo_propio,
+                disponibilidad_viajar=m.disponibilidad_viajar,
                 activo=m.activo, fecha_alta=m.fecha_alta,
             )
             for m in r.scalars().all()
