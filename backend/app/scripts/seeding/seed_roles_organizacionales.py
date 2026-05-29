@@ -78,6 +78,15 @@ ORGANIZACION_ROLES = [
         "es_territorial": True,
         "nivel_territorial": "LOCAL",
     },
+    {
+        # Ámbito = su campaña (no territorial). Se asigna al nombrar coordinador de una campaña.
+        "codigo": "COORDINADOR_CAMPANA",
+        "nombre": "Coordinador de campaña",
+        "descripcion": "Coordinador responsable de una campaña concreta",
+        "nivel": 9,
+        "es_territorial": False,
+        "nivel_territorial": None,
+    },
 ]
 
 

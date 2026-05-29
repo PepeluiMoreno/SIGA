@@ -199,7 +199,7 @@ async function cargar() {
   error.value = ''
   try {
     const data = await executeQuery(GET_VOLUNTARIOS)
-    voluntarios.value = data.miembros || []
+    voluntarios.value = data.voluntariosEnAmbito || []
   } catch (e) {
     error.value = e?.response?.errors?.[0]?.message || 'Error cargando voluntarios'
   } finally {

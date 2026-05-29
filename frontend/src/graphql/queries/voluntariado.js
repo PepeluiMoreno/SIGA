@@ -2,10 +2,11 @@
 // IMPORTANTE: Strawberry usa camelCase automáticamente
 // NO usar campos 'codigo' - solo se identifican por UUID
 
-// Query para obtener miembros voluntarios
+// Query para obtener voluntarios — con scoping de ámbito territorial en backend
+// (resolver voluntariosEnAmbito: solo los voluntarios del ámbito del usuario).
 export const GET_VOLUNTARIOS = `
   query Voluntarios {
-    miembros(filter: { _and: [{ esVoluntario: { eq: true } }, { eliminado: { eq: false } }] }) {
+    voluntariosEnAmbito {
       id
       nombre
       apellido1

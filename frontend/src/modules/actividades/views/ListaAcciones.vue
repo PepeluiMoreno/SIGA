@@ -52,21 +52,14 @@
           Ninguna actividad de campaña con estos filtros.
         </div>
         <div v-else class="overflow-x-auto -mx-1"><table class="w-full text-sm">
-          <thead class="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th class="px-4 py-3 text-left font-medium text-slate-600">Nombre</th>
-              <th class="px-4 py-3 text-left font-medium text-slate-600">Tipo</th>
-              <th class="px-4 py-3 text-left font-medium text-slate-600">Carácter</th>
-              <th class="px-4 py-3 text-left font-medium text-slate-600">Estado</th>
-              <th class="px-4 py-3 text-left font-medium text-slate-600">Fecha</th>
-              <th class="px-4 py-3"></th>
-            </tr>
-          </thead>
           <tbody v-for="grupo in gruposCampania" :key="grupo.campania.id" class="divide-y divide-slate-100">
-            <!-- Cabecera de campaña (nivel 1 del árbol) -->
-            <tr class="bg-indigo-50/60 border-y border-indigo-100">
+            <!-- Cabecera de campaña (nivel 1 del árbol) — plegable -->
+            <tr class="bg-indigo-50/60 border-y border-indigo-100 cursor-pointer hover:bg-indigo-100/60"
+              @click="toggleCampania(grupo.campania.id)">
               <td colspan="6" class="px-4 py-2">
                 <div class="flex items-center gap-2">
+                  <ChevronDownIcon class="w-4 h-4 text-indigo-400 shrink-0 transition-transform"
+                    :class="{ '-rotate-90': estaColapsada(grupo.campania.id) }" />
                   <FolderIcon class="w-4 h-4 text-indigo-500 shrink-0" />
                   <span class="font-semibold text-indigo-800">{{ grupo.campania.nombre }}</span>
                   <span v-if="grupo.campania.estado"
@@ -77,9 +70,19 @@
                 </div>
               </td>
             </tr>
+            <!-- Cabecera de columnas: DEBAJO del nombre de campaña, solo si está desplegada -->
+            <tr v-show="!estaColapsada(grupo.campania.id)" class="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wide">
+              <th class="pl-10 pr-4 py-2 text-left font-medium text-slate-500">Nombre</th>
+              <th class="px-4 py-2 text-left font-medium text-slate-500">Tipo</th>
+              <th class="px-4 py-2 text-left font-medium text-slate-500">Carácter</th>
+              <th class="px-4 py-2 text-left font-medium text-slate-500">Estado</th>
+              <th class="px-4 py-2 text-left font-medium text-slate-500">Fecha</th>
+              <th class="px-4 py-2"></th>
+            </tr>
             <!-- Actividades de la campaña (nivel 2 del árbol) -->
             <ActividadRow
               v-for="a in grupo.actividades"
+              v-show="!estaColapsada(grupo.campania.id)"
               :key="a.id"
               :actividad="a"
               :indent="true"
@@ -100,6 +103,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
 import ActividadRow from './ActividadRow.vue'
+import { FolderIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import { graphqlClient } from '@/graphql/client'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_ACCIONES, GET_TIPOS_ACCION, GET_ESTADOS_ACCION, ELIMINAR_ACCION, SOFT_DELETE_ACCION } from '../graphql/queries.js'
@@ -112,9 +116,35 @@ const tiposActividad = ref([])
 const estadosAccion = ref([])
 
 const filtroNombre = ref('')
-const filtros = ref({ caracter: '', estado: '', tipo: '' })
+const filtros = ref({ ejercicio: '', caracter: '', estado: '', tipo: '' })
+
+// Ejercicios (años) disponibles según la fecha de inicio de las actividades
+const ejerciciosDisponibles = computed(() => {
+  const set = new Set()
+  for (const a of actividades.value) {
+    if (a.fechaInicio) set.add(String(a.fechaInicio).slice(0, 4))
+  }
+  return Array.from(set).sort((x, y) => y.localeCompare(x))
+})
+
+// Plegado de campañas en el árbol (nivel 1). Por defecto, todas plegadas;
+// se expanden al hacer clic en la cabecera de campaña.
+const expandidas = ref(new Set())
+const estaColapsada = (id) => !expandidas.value.has(id)
+function toggleCampania(id) {
+  const s = new Set(expandidas.value)
+  s.has(id) ? s.delete(id) : s.add(id)
+  expandidas.value = s
+}
 
 const camposFiltro = computed(() => [
+  {
+    key: 'ejercicio',
+    label: 'Ejercicio',
+    type: 'select',
+    allLabel: 'Todos los años',
+    options: ejerciciosDisponibles.value.map(y => ({ value: y, label: y })),
+  },
   {
     key: 'caracter',
     label: 'Carácter',
@@ -148,6 +178,9 @@ const actividadesFiltradas = computed(() => {
     const q = filtroNombre.value.toLowerCase()
     list = list.filter(a => (a.nombre || '').toLowerCase().includes(q))
   }
+  if (filtros.value.ejercicio) {
+    list = list.filter(a => String(a.fechaInicio || '').slice(0, 4) === filtros.value.ejercicio)
+  }
   if (filtros.value.caracter) {
     list = list.filter(a => a.caracter === filtros.value.caracter)
   }
@@ -160,12 +193,18 @@ const actividadesFiltradas = computed(() => {
   return list
 })
 
-const ordenarPorNombre = (arr) =>
-  arr.slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'))
+// Orden: de más reciente a más antigua (por fecha de inicio); sin fecha al final,
+// desempatando por nombre.
+const ordenarRecientes = (arr) =>
+  arr.slice().sort((a, b) => {
+    const fa = String(a.fechaInicio || ''), fb = String(b.fechaInicio || '')
+    if (fa !== fb) return fb.localeCompare(fa)
+    return (a.nombre || '').localeCompare(b.nombre || '', 'es')
+  })
 
-// Acordeón 1: sin campaña, lista plana alfabética
+// Acordeón 1: sin campaña, lista plana (reciente → antigua)
 const actividadesSinCampania = computed(() =>
-  ordenarPorNombre(actividadesFiltradas.value.filter(a => !a.campaniaId))
+  ordenarRecientes(actividadesFiltradas.value.filter(a => !a.campaniaId))
 )
 
 // Acordeón 2: agrupadas por campaña (árbol de dos niveles)
@@ -178,8 +217,9 @@ const gruposCampania = computed(() => {
     mapa.get(camp.id).actividades.push(a)
   }
   return Array.from(mapa.values())
-    .map(g => ({ campania: g.campania, actividades: ordenarPorNombre(g.actividades) }))
-    .sort((x, y) => (x.campania.nombre || '').localeCompare(y.campania.nombre || '', 'es'))
+    .map(g => ({ campania: g.campania, actividades: ordenarRecientes(g.actividades) }))
+    // Grupos ordenados por la actividad más reciente de cada campaña (reciente → antigua)
+    .sort((x, y) => String(y.actividades[0]?.fechaInicio || '').localeCompare(String(x.actividades[0]?.fechaInicio || '')))
 })
 
 async function cargar() {

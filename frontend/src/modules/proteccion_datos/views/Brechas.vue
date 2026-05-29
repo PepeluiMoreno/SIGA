@@ -233,6 +233,7 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
@@ -383,7 +384,7 @@ async function crear() {
     modalAlta.value = false
     await cargar()
   } catch (e) {
-    alert('Error: ' + (e.message || e))
+    useToast().error('Error: ' + (e.message || e))
   } finally {
     guardando.value = false
   }
@@ -421,7 +422,7 @@ async function notificar() {
     await cargar()
     seleccionada.value = brechas.value.find(x => x.id === seleccionada.value.id) || seleccionada.value
   } catch (e) {
-    alert('Error: ' + (e.message || e))
+    useToast().error('Error: ' + (e.message || e))
   }
 }
 
@@ -443,7 +444,7 @@ async function cerrar() {
     modalDetalle.value = false
     await cargar()
   } catch (e) {
-    alert('Error: ' + (e.message || e))
+    useToast().error('Error: ' + (e.message || e))
   }
 }
 

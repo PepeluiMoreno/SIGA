@@ -96,7 +96,7 @@
                       <BuildingOffice2Icon class="nav-icon" /><span>{{ orgConfigStore.OrganoGobiernoPl }}</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('HAB_LIST')">
+                  <li v-if="tienePermiso('VOL_LIST')">
                     <router-link to="/voluntarios" class="nav-item"
                       :class="$route.path.startsWith('/voluntarios') ? 'active' : 'inactive'">
                       <HeartIcon class="nav-icon" /><span>Voluntariado</span>

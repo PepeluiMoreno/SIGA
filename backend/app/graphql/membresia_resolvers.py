@@ -190,8 +190,57 @@ async def _fetch_miembro(session, miembro_id: uuid.UUID):
     return result.scalar_one()
 
 
+@strawberry.input
+class PerfilVoluntarioInput:
+    """Campos de voluntariado editables por delegación (no toca el resto del socio)."""
+    miembro_id: uuid.UUID
+    es_voluntario: Optional[bool] = None
+    disponibilidad: Optional[str] = None
+    horas_disponibles_semana: Optional[int] = None
+    profesion: Optional[str] = None
+    nivel_estudios_id: Optional[uuid.UUID] = None
+    intereses: Optional[str] = None
+    experiencia_voluntariado: Optional[str] = None
+    observaciones_voluntariado: Optional[str] = None
+    puede_conducir: Optional[bool] = None
+    vehiculo_propio: Optional[bool] = None
+    disponibilidad_viajar: Optional[bool] = None
+
+
+_CAMPOS_VOLUNTARIO = (
+    'es_voluntario', 'disponibilidad', 'horas_disponibles_semana', 'profesion',
+    'nivel_estudios_id', 'intereses', 'experiencia_voluntariado',
+    'observaciones_voluntariado', 'puede_conducir', 'vehiculo_propio',
+    'disponibilidad_viajar',
+)
+
+
 @strawberry.type
 class MembresiaResolverMutation:
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_VOLUNTARIO_GESTIONAR")])
+    async def gestionar_perfil_voluntario(
+        self,
+        info: strawberry.Info,
+        data: PerfilVoluntarioInput,
+    ) -> 'MiembroType':
+        """Edita el perfil de voluntario (disponibilidad, profesión, intereses…) por delegación.
+
+        Solo toca campos de voluntariado, no el resto de datos del socio. Aplica el guard de
+        ámbito territorial: un cargo territorial solo puede gestionar socios de su ámbito.
+        """
+        from app.modules.acceso.services.ambito_territorial import assert_miembro_en_ambito
+        session = info.context.session
+        user = info.context.user
+        await assert_miembro_en_ambito(session, user.id, data.miembro_id)
+
+        miembro = await _fetch_miembro(session, data.miembro_id)
+        for field in _CAMPOS_VOLUNTARIO:
+            val = getattr(data, field, None)
+            if val is not None:
+                setattr(miembro, field, val)
+        await session.commit()
+        return await _fetch_miembro(session, miembro.id)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_CREAR")])
     async def crear_miembro(
@@ -381,3 +430,59 @@ class MembresiaResolverMutation:
         buf = io.BytesIO()
         wb.save(buf)
         return base64.b64encode(buf.getvalue()).decode()
+
+
+@strawberry.type
+class VoluntarioType:
+    """Voluntario (subconjunto de Miembro) para el listado con scoping de ámbito."""
+    id: uuid.UUID
+    nombre: str
+    apellido1: str
+    apellido2: Optional[str]
+    email: Optional[str]
+    telefono: Optional[str]
+    disponibilidad: Optional[str]
+    horas_disponibles_semana: Optional[int]
+    profesion: Optional[str]
+    nivel_estudios_id: Optional[uuid.UUID]
+    intereses: Optional[str]
+    activo: bool
+    fecha_alta: Optional[date]
+
+
+@strawberry.type
+class MembresiaQuery:
+    @strawberry.field(permission_classes=[RequireTransaction("VOL_LIST")])
+    async def voluntarios_en_ambito(self, info: strawberry.Info) -> List[VoluntarioType]:
+        """Voluntarios visibles según el ámbito territorial del usuario (Fase 2).
+
+        - Rol general (presidencia / rol en unidad raíz) → todos los voluntarios.
+        - Rol territorial → voluntarios de su agrupación + descendientes.
+        - Sin ámbito territorial → lista vacía por esta vía.
+        (El scoping por campaña de COORDINADOR_CAMPANA se resolverá aparte.)
+        """
+        from app.modules.acceso.services.ambito_territorial import agrupaciones_en_ambito
+        session = info.context.session
+        user = info.context.user
+        ambito = await agrupaciones_en_ambito(session, user.id) if user else set()
+
+        q = select(Miembro).where(
+            Miembro.es_voluntario == True,  # noqa: E712
+            Miembro.eliminado == False,     # noqa: E712
+        )
+        if ambito is not None:              # None = global (sin filtro territorial)
+            if not ambito:
+                return []
+            q = q.where(Miembro.agrupacion_id.in_(ambito))
+
+        r = await session.execute(q.order_by(Miembro.apellido1, Miembro.nombre))
+        return [
+            VoluntarioType(
+                id=m.id, nombre=m.nombre, apellido1=m.apellido1, apellido2=m.apellido2,
+                email=m.email, telefono=m.telefono, disponibilidad=m.disponibilidad,
+                horas_disponibles_semana=m.horas_disponibles_semana, profesion=m.profesion,
+                nivel_estudios_id=m.nivel_estudios_id, intereses=m.intereses,
+                activo=m.activo, fecha_alta=m.fecha_alta,
+            )
+            for m in r.scalars().all()
+        ]

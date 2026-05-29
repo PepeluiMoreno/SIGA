@@ -210,6 +210,7 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
@@ -343,7 +344,7 @@ async function crear() {
     modalAlta.value = false
     await cargar()
   } catch (e) {
-    alert('Error al registrar: ' + (e.message || e))
+    useToast().error('Error al registrar: ' + (e.message || e))
   } finally {
     guardando.value = false
   }
@@ -364,7 +365,7 @@ async function iniciar(s) {
     await cargar()
     seleccionada.value = solicitudes.value.find(x => x.id === s.id) || s
   } catch (e) {
-    alert('Error: ' + (e.message || e))
+    useToast().error('Error: ' + (e.message || e))
   }
 }
 
@@ -387,7 +388,7 @@ async function prorrogar() {
     await cargar()
     seleccionada.value = solicitudes.value.find(x => x.id === seleccionada.value.id) || seleccionada.value
   } catch (e) {
-    alert('Error: ' + (e.message || e))
+    useToast().error('Error: ' + (e.message || e))
   }
 }
 
@@ -416,7 +417,7 @@ async function resolver() {
     modalDetalle.value = false
     await cargar()
   } catch (e) {
-    alert('Error: ' + (e.message || e))
+    useToast().error('Error: ' + (e.message || e))
   }
 }
 

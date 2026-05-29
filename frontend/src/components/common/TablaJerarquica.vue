@@ -15,11 +15,6 @@
     </div>
 
     <div class="overflow-x-auto -mx-1"><table class="min-w-full divide-y divide-gray-200">
-      <thead v-if="$slots.columns" class="bg-gray-50">
-        <tr>
-          <slot name="columns" />
-        </tr>
-      </thead>
       <tbody class="bg-white divide-y divide-gray-100">
         <template v-for="fila in filasJerarquicas"
           :key="fila.type === 'agrupacion' ? 'ag-' + fila.agrupacion.id : 'it-' + fila.item.id">
@@ -39,6 +34,12 @@
                 </span>
               </div>
             </td>
+          </tr>
+
+          <!-- Cabecera de columnas: DEBAJO del nombre del grupo de primer nivel, al desplegarse -->
+          <tr v-if="fila.type === 'agrupacion' && fila.depth === 0 && !fila.colapsada && $slots.columns"
+            class="bg-gray-50 border-b border-gray-200">
+            <slot name="columns" />
           </tr>
 
           <!-- Fila de item (slot) -->
@@ -61,6 +62,9 @@
             </td>
           </tr>
           <template v-if="!colapsadas.has('__sin__')">
+            <tr v-if="$slots.columns" class="bg-gray-50 border-b border-gray-200">
+              <slot name="columns" />
+            </tr>
             <tr v-for="item in sinAgrupacion" :key="'sin-' + item.id" class="hover:bg-gray-50">
               <slot name="row" :item="item" :depth="1" />
             </tr>

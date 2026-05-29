@@ -11,8 +11,9 @@
           v-for="t in transicionesDisponibles"
           :key="t.label"
           @click="$emit('transicion', t)"
-          :disabled="cargando"
-          class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+          :disabled="cargando || t.disabled"
+          :title="t.disabled ? (t.motivoDeshabilitado || '') : ''"
+          class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           :class="t.estilo || 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'"
         >
           <component :is="ICONOS[t.icono]" v-if="t.icono && ICONOS[t.icono]" class="w-3.5 h-3.5" />

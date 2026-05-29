@@ -300,6 +300,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { usePrompt } from '@/composables/useConfirm'
+import { useToast } from '@/composables/useToast'
 import AppLayout from '@/components/common/AppLayout.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
@@ -453,18 +455,18 @@ const ejecutarAprobar = async () => {
 }
 
 const anularAprobacion = async (a) => {
-  const motivo = prompt(
-    `¿Anular la aprobación del acta ${a.numero}/${a.anio}?\n\n` +
-    `El acta volverá al estado BORRADOR y se borrarán la fecha de aprobación y la reunión donde se aprobó. ` +
-    `Esto no se puede hacer una vez firmada el acta.\n\n` +
-    `Motivo (opcional):`
-  )
+  const motivo = await usePrompt()({
+    titulo: `Anular aprobación del acta ${a.numero}/${a.anio}`,
+    variante: 'critica',
+    mensaje: 'El acta volverá al estado BORRADOR y se borrarán la fecha de aprobación y la reunión donde se aprobó. Esto no se puede hacer una vez firmada el acta.',
+    label: 'Motivo (opcional)', etiquetaConfirmar: 'Anular aprobación',
+  })
   if (motivo === null) return // cancelado
   try {
     await executeMutation(ANULAR_APROBACION_ACTA, { actaId: a.id, motivo: motivo || null })
     await cargar()
   } catch (e) {
-    alert('Error al anular: ' + (e.message || e))
+    useToast().error('Error al anular: ' + (e.message || e))
   }
 }
 

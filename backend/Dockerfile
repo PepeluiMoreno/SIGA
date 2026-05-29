@@ -27,6 +27,11 @@ WORKDIR /app
 
 COPY --from=builder --chown=siga:siga /app /app
 
+# Directorio de subidas propiedad de `siga`: así el volumen nombrado montado en
+# /app/uploads hereda este propietario al crearse (si no, Docker lo crea como root
+# y el proceso `siga` no puede escribir → 500 al subir documentos).
+RUN mkdir -p /app/uploads && chown -R siga:siga /app/uploads
+
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1

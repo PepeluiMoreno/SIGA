@@ -26,9 +26,30 @@
         </h3>
 
         <!-- Mensaje -->
-        <p class="text-sm text-slate-600 text-center mb-5 leading-relaxed whitespace-pre-line">
+        <p v-if="mensaje" class="text-sm text-slate-600 text-center mb-5 leading-relaxed whitespace-pre-line">
           {{ mensaje }}
         </p>
+
+        <!-- Input opcional (modo prompt) -->
+        <div v-if="input" class="mb-5 text-left">
+          <label v-if="input.label" class="block text-xs font-medium text-slate-700 mb-1">{{ input.label }}</label>
+          <textarea
+            v-if="input.multiline"
+            :value="inputValue"
+            @input="$emit('update:inputValue', $event.target.value)"
+            rows="3"
+            :placeholder="input.placeholder"
+            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <input
+            v-else
+            :value="inputValue"
+            @input="$emit('update:inputValue', $event.target.value)"
+            type="text"
+            :placeholder="input.placeholder"
+            class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
 
         <!-- Botones -->
         <div class="flex gap-3">
@@ -41,8 +62,9 @@
           </button>
           <button
             type="button"
-            class="flex-1 h-10 px-4 text-sm font-medium text-white rounded-lg"
+            class="flex-1 h-10 px-4 text-sm font-medium text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             :class="botonConfirmar"
+            :disabled="input && input.requerido && !(inputValue || '').trim()"
             @click="confirmar"
           >
             {{ etiquetaConfirmar }}
@@ -70,9 +92,12 @@ const props = defineProps({
   etiquetaCancelar:  { type: String,  default: 'Cancelar' },
   // 'primaria' (indigo, default) | 'aviso' (amber) | 'critica' (red) | 'exito' (green)
   variante:          { type: String,  default: 'primaria' },
+  // Modo prompt: configuración del campo de texto ({ label, placeholder, multiline, requerido }) o null
+  input:             { type: Object,  default: null },
+  inputValue:        { type: String,  default: '' },
 })
 
-const emit = defineEmits(['update:modelValue', 'confirm', 'cancel'])
+const emit = defineEmits(['update:modelValue', 'confirm', 'cancel', 'update:inputValue'])
 
 const VARIANTES = {
   primaria: { fondo: 'bg-indigo-100', color: 'text-indigo-600', boton: 'bg-indigo-600 hover:bg-indigo-700', icon: InformationCircleIcon },

@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGraphQL } from './useGraphQL'
+import { useConfirm } from './useConfirm'
 import {
   GET_MIEMBRO_BY_ID,
   GET_AGRUPACIONES,
@@ -151,7 +152,13 @@ export function useMiembro() {
   `
 
   const deleteMiembro = async (id) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este miembro? Esta acción no se puede deshacer.')) return
+    const ok = await useConfirm()({
+      titulo: 'Eliminar miembro',
+      mensaje: '¿Estás seguro de que quieres eliminar este miembro? Esta acción no se puede deshacer.',
+      variante: 'critica',
+      etiquetaConfirmar: 'Eliminar',
+    })
+    if (!ok) return
 
     loading.value = true
     try {

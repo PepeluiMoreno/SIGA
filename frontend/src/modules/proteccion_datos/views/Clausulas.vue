@@ -93,6 +93,7 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
@@ -189,7 +190,7 @@ async function guardar() {
     modalAbierto.value = false
     await cargar()
   } catch (e) {
-    alert('Error al guardar: ' + (e.message || e))
+    useToast().error('Error al guardar: ' + (e.message || e))
   } finally {
     guardando.value = false
   }

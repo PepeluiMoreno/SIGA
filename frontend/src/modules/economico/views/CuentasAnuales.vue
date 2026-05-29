@@ -210,6 +210,7 @@
 
 <script setup>
 import { useToast } from '@/composables/useToast'
+import { usePrompt } from '@/composables/useConfirm'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
@@ -386,7 +387,11 @@ const confirmarDepositar = async () => {
 }
 
 const reabrir = async () => {
-  const motivo = prompt(`Reabrir CCAA ${seleccionada.value.ejercicio}? Indica el motivo:`)
+  const motivo = await usePrompt()({
+    titulo: 'Reabrir cuentas anuales', variante: 'aviso',
+    mensaje: `Ejercicio ${seleccionada.value.ejercicio}`,
+    label: 'Motivo de la reapertura', requerido: true, etiquetaConfirmar: 'Reabrir',
+  })
   if (!motivo) return
   ocupado.value = true
   try {

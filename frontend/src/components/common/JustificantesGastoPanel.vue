@@ -392,7 +392,7 @@
 
 <script setup>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import { useConfirm } from '@/composables/useConfirm'
+import { useConfirm, usePrompt } from '@/composables/useConfirm'
 import { ref, computed, onMounted, watch } from 'vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import RowActions from '@/components/common/RowActions.vue'
@@ -720,7 +720,7 @@ const presentar = async () => {
         const fd = new FormData()
         fd.append('file', f)
         try {
-          await fetch(`/upload/justificantes/${justificanteId}/documentos`, {
+          await fetch(`/api/upload/justificantes/${justificanteId}/documentos`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
             body: fd,
@@ -770,7 +770,11 @@ const aprobar = async (j) => {
 }
 
 const rechazar = async (j) => {
-  const motivo = prompt(`¿Rechazar el justificante ${j.numeroJustificante}? Indica el motivo:`)
+  const motivo = await usePrompt()({
+    titulo: 'Rechazar justificante', variante: 'critica',
+    mensaje: `Justificante ${j.numeroJustificante}`,
+    label: 'Motivo del rechazo', requerido: true, etiquetaConfirmar: 'Rechazar',
+  })
   if (!motivo) return
   ocupado.value = true
   try {
@@ -781,7 +785,11 @@ const rechazar = async (j) => {
 }
 
 const anular = async (j) => {
-  const motivo = prompt(`¿Anular el justificante ${j.numeroJustificante}? Motivo (opcional):`)
+  const motivo = await usePrompt()({
+    titulo: 'Anular justificante', variante: 'critica',
+    mensaje: `Justificante ${j.numeroJustificante}`,
+    label: 'Motivo (opcional)', etiquetaConfirmar: 'Anular',
+  })
   if (motivo === null) return
   ocupado.value = true
   try {

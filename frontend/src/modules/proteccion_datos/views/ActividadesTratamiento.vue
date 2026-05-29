@@ -156,6 +156,8 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
@@ -263,20 +265,26 @@ async function guardar() {
     modalAbierto.value = false
     await cargar()
   } catch (e) {
-    alert('Error al guardar: ' + (e.message || e))
+    useToast().error('Error al guardar: ' + (e.message || e))
   } finally {
     guardando.value = false
   }
 }
 
 async function eliminar() {
-  if (!confirm(`¿Eliminar la actividad "${form.value.nombre}"?`)) return
+  const ok = await useConfirm()({
+    titulo: 'Eliminar actividad de tratamiento',
+    mensaje: `¿Eliminar la actividad «${form.value.nombre}»?`,
+    variante: 'critica',
+    etiquetaConfirmar: 'Eliminar',
+  })
+  if (!ok) return
   try {
     await executeMutation(DELETE_ACTIVIDADES_TRATAMIENTO, { filter: { id: { eq: form.value.id } } })
     modalAbierto.value = false
     await cargar()
   } catch (e) {
-    alert('Error al eliminar: ' + (e.message || e))
+    useToast().error('Error al eliminar: ' + (e.message || e))
   }
 }
 

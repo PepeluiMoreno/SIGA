@@ -1,5 +1,5 @@
 <template>
-  <AppLayout :title="accion?.nombre || 'Actividad'" :subtitle="accion?.tipoActividad?.nombre || ''">
+  <AppLayout :title="tituloDetalle" :subtitle="accion?.tipoActividad?.nombre || ''">
     <div class="max-w-5xl">
 
     <div v-if="loading" class="flex items-center justify-center py-20">
@@ -303,8 +303,20 @@
           </div>
           <div v-if="!accion.tareas?.length && !formTareaNew.visible" class="py-8 text-center text-sm text-slate-400">No hay tareas.</div>
           <div v-else-if="accion.tareas?.length" class="divide-y divide-slate-100">
-            <template v-for="tarea in accion.tareas" :key="tarea.id">
+            <template v-for="(tarea, idx) in tareasOrdenadas" :key="tarea.id">
               <div v-if="editTareaId !== tarea.id" class="px-5 py-3 flex items-center gap-3">
+                <div v-if="!esFinal" class="flex flex-col shrink-0 -my-1">
+                  <button type="button" @click="moverTarea(tarea, -1)" :disabled="idx === 0"
+                    class="text-slate-300 hover:text-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Subir">
+                    <ChevronUpIcon class="w-4 h-4" />
+                  </button>
+                  <button type="button" @click="moverTarea(tarea, 1)" :disabled="idx === tareasOrdenadas.length - 1"
+                    class="text-slate-300 hover:text-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Bajar">
+                    <ChevronDownIcon class="w-4 h-4" />
+                  </button>
+                </div>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-slate-900 truncate">{{ tarea.titulo }}</p>
                   <p v-if="tarea.descripcion" class="text-xs text-slate-500 truncate">{{ tarea.descripcion }}</p>
@@ -399,8 +411,8 @@
         </template>
       </AccordionPanel>
 
-      <!-- Panel 3: Seguimiento (participantes + asistencia) -->
-      <AccordionPanel title="Seguimiento" :count="accion.participaciones?.length || 0">
+      <!-- Panel 3: Participación (participantes + asistencia) -->
+      <AccordionPanel title="Participación" :count="accion.participaciones?.length || 0">
         <template #actions>
           <button v-if="!formParticipacion.visible && faseActual === 'seguimiento'"
             @click="formParticipacion.visible = true"
@@ -627,7 +639,7 @@
         <div class="px-5 py-4">
           <DocumentosPanel
             :documentos="accion.documentos || []"
-            :upload-endpoint="`/upload/actividades/${accion.id}/documentos`"
+            :upload-endpoint="`/api/upload/actividades/${accion.id}/documentos`"
             :tipo-doc-options="TIPOS_DOC_ACTIVIDAD"
             :delete-fn="eliminarDocumentoActividad"
             @change="recargarAccion"
@@ -655,7 +667,9 @@
     <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
       <h3 class="text-lg font-semibold text-slate-900">{{ modalAprobacion.titulo }}</h3>
       <div>
-        <label class="block text-xs font-medium text-slate-700 mb-1">Notas (opcional)</label>
+        <label class="block text-xs font-medium text-slate-700 mb-1">
+          {{ modalAprobacion.notasObligatorias ? 'Motivos (obligatorio)' : 'Notas (opcional)' }}
+        </label>
         <textarea v-model="modalAprobacion.notas" rows="3"
           class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           :placeholder="modalAprobacion.placeholder"></textarea>
@@ -663,7 +677,8 @@
       <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
         <button @click="modalAprobacion.visible = false"
           class="h-9 px-4 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
-        <button @click="confirmarAprobacion" :disabled="cargandoTransicion"
+        <button @click="confirmarAprobacion"
+          :disabled="cargandoTransicion || (modalAprobacion.notasObligatorias && !modalAprobacion.notas.trim())"
           class="h-9 px-5 text-sm font-medium rounded-lg text-white transition-colors disabled:opacity-50"
           :class="modalAprobacion.esRechazo ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'">
           {{ cargandoTransicion ? '…' : modalAprobacion.btnLabel }}
@@ -714,7 +729,7 @@
 </template>
 
 <script setup>
-import { PlusIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, TrashIcon, ChevronLeftIcon, ChevronUpIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted } from 'vue'
@@ -755,7 +770,7 @@ const toast = useToast()
 
 const GET_CATALOGOS = `
   query CatalogosDetalleActividad {
-    miembros { id nombre apellido1 email }
+    miembros { id nombre apellido1 email estado { id nombre } }
     estadosTarea { id nombre }
     tiposActividad { id nombre tieneLugar }
     estadosAccion { id nombre }
@@ -777,6 +792,44 @@ const router = useRouter()
 
 const loading = ref(true)
 const accion = ref(null)
+// En actividades de campaña el título es "campaña › actividad" (campaña primero).
+const tituloDetalle = computed(() => {
+  if (!accion.value) return 'Actividad'
+  return accion.value.campania
+    ? `${accion.value.campania.nombre} › ${accion.value.nombre}`
+    : accion.value.nombre
+})
+
+// Tareas secuenciadas por el campo `orden` (desempate por título)
+const tareasOrdenadas = computed(() =>
+  (accion.value?.tareas || []).slice().sort((a, b) => {
+    const oa = a.orden ?? 0, ob = b.orden ?? 0
+    if (oa !== ob) return oa - ob
+    return (a.titulo || '').localeCompare(b.titulo || '', 'es')
+  })
+)
+
+// Reordenar una tarea ↑/↓ dentro de la actividad. Normaliza `orden` a 0..n-1
+// y persiste solo las que cambian de posición.
+async function moverTarea(tarea, dir) {
+  const lista = tareasOrdenadas.value.slice()
+  const i = lista.findIndex(t => t.id === tarea.id)
+  const j = i + dir
+  if (j < 0 || j >= lista.length) return
+  ;[lista[i], lista[j]] = [lista[j], lista[i]]
+  try {
+    await Promise.all(
+      lista
+        .map((t, idx) => (t.orden !== idx
+          ? graphqlClient.request(ACTUALIZAR_TAREA, { data: { id: t.id, orden: idx } })
+          : null))
+        .filter(Boolean)
+    )
+    await recargarAccion()
+  } catch (e) {
+    toast.error(e?.response?.errors?.[0]?.message || 'Error reordenando tareas')
+  }
+}
 const showConfirmEliminarAccion = ref(false)
 const miembros = ref([])
 const estadosTarea = ref([])
@@ -830,34 +883,51 @@ const transicionesDisponibles = computed(() => {
   const n = (accion.value.estado?.nombre || '').toLowerCase()
   const find = (nombre) => estadosAccion.value.find(e => e.nombre.toLowerCase().includes(nombre))
 
+  let acciones = []
   if (n.includes('propuest')) {
     const pendiente = find('pendiente')
-    return pendiente ? [{ label: 'Enviar para aprobación', estado: pendiente, icono: 'send', tipo: 'transicion' }] : []
-  }
-  if (n.includes('pendiente')) {
+    acciones = pendiente ? [{ label: 'Enviar para aprobación', estado: pendiente, icono: 'send', tipo: 'transicion' }] : []
+  } else if (n.includes('pendiente')) {
     const aprobada = find('aprobad')
-    return [
+    acciones = [
       aprobada ? { label: 'Aprobar', estado: aprobada, icono: 'check', tipo: 'aprobar', estilo: 'bg-green-50 text-green-700 hover:bg-green-100' } : null,
       { label: 'Devolver', estado: estadosAccion.value.find(e => e.nombre.toLowerCase().includes('propuest')), icono: 'reject', tipo: 'transicion', estilo: 'bg-red-50 text-red-700 hover:bg-red-100' },
     ].filter(Boolean)
-  }
-  if (n.includes('aprobad')) {
+  } else if (n.includes('aprobad')) {
     const prep = find('preparac')
-    return prep ? [{ label: 'Iniciar preparación', estado: prep, icono: 'play', tipo: 'transicion' }] : []
-  }
-  if (n.includes('preparac')) {
+    acciones = prep ? [{ label: 'Iniciar preparación', estado: prep, icono: 'play', tipo: 'transicion' }] : []
+  } else if (n.includes('preparac')) {
     const curso = find('curso')
-    return curso ? [{ label: 'Iniciar actividad', estado: curso, icono: 'play', tipo: 'transicion' }] : []
-  }
-  if (n.includes('curso')) {
+    const sinTareas = !(accion.value.tareas?.length)
+    acciones = curso ? [{
+      label: 'Iniciar actividad', estado: curso, icono: 'play', tipo: 'transicion',
+      disabled: sinTareas,
+      motivoDeshabilitado: sinTareas ? 'Añade al menos una tarea de preparación antes de iniciar la actividad.' : '',
+    }] : []
+  } else if (n.includes('curso')) {
     const final = find('finaliz')
-    return final ? [{ label: 'Cerrar actividad', estado: final, icono: 'close', tipo: 'cerrar' }] : []
+    // El cierre/valoración no puede hacerse antes de la fecha de celebración.
+    const hoy = new Date().toISOString().slice(0, 10)
+    const antesDeFecha = accion.value.fechaInicio && hoy < accion.value.fechaInicio
+    acciones = final ? [{
+      label: 'Cerrar actividad', estado: final, icono: 'close', tipo: 'cerrar',
+      disabled: !!antesDeFecha,
+      motivoDeshabilitado: antesDeFecha ? `No se puede cerrar ni valorar antes de la fecha de celebración (${accion.value.fechaInicio}).` : '',
+    }] : []
   }
-  return []
+
+  // Cancelar: disponible en cualquier estado no final, siempre con motivos.
+  if (!esFinal.value) {
+    const cancelada = find('cancel')
+    if (cancelada) {
+      acciones.push({ label: 'Cancelar', estado: cancelada, icono: 'reject', tipo: 'cancelar', estilo: 'bg-red-50 text-red-700 hover:bg-red-100' })
+    }
+  }
+  return acciones
 })
 
 // Modales
-const modalAprobacion = ref({ visible: false, titulo: '', notas: '', placeholder: '', btnLabel: '', esRechazo: false, estadoId: null, tipo: '' })
+const modalAprobacion = ref({ visible: false, titulo: '', notas: '', placeholder: '', btnLabel: '', esRechazo: false, estadoId: null, tipo: '', notasObligatorias: false })
 const modalCierre = ref({ visible: false, valoracion: '', objetivosCumplidos: null, presupuestoEjecutado: null, asistenciaReal: null, estadoId: null })
 
 async function ejecutarTransicion(t) {
@@ -869,11 +939,17 @@ async function ejecutarTransicion(t) {
     }
   } else if (t.tipo === 'cerrar') {
     modalCierre.value = { visible: true, valoracion: '', objetivosCumplidos: null, presupuestoEjecutado: null, asistenciaReal: null, estadoId: t.estado.id }
+  } else if (t.tipo === 'cancelar') {
+    modalAprobacion.value = {
+      visible: true, titulo: 'Cancelar actividad', notas: '',
+      placeholder: 'Explica por qué se cancela la actividad…', btnLabel: 'Cancelar actividad',
+      esRechazo: true, estadoId: t.estado.id, tipo: 'transicion', notasObligatorias: true,
+    }
   } else if (t.tipo === 'transicion' && t.icono === 'reject') {
     modalAprobacion.value = {
       visible: true, titulo: 'Devolver a diseño', notas: '',
       placeholder: 'Indicar motivo de devolución…', btnLabel: 'Devolver',
-      esRechazo: true, estadoId: t.estado.id, tipo: 'transicion'
+      esRechazo: true, estadoId: t.estado.id, tipo: 'transicion', notasObligatorias: false,
     }
   } else {
     cargandoTransicion.value = true
@@ -1181,7 +1257,8 @@ onMounted(async () => {
       graphqlClient.request(GET_CATALOGOS),
     ])
     accion.value = resAccion.actividades?.[0] || null
-    miembros.value = resCat.miembros || []
+    // Solo socios activos (estado "Alta") para participación y asignación de tareas.
+    miembros.value = (resCat.miembros || []).filter(m => m.estado?.nombre === 'Alta')
     estadosTarea.value = resCat.estadosTarea || []
     tiposActividad.value = resCat.tiposActividad || []
     estadosAccion.value = resCat.estadosAccion || []

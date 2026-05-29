@@ -74,6 +74,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import UploadFile from './UploadFile.vue'
+import { useConfirm } from '@/composables/useConfirm'
+
+const confirmar = useConfirm()
 
 const props = defineProps({
   documentos: { type: Array, default: () => [] },
@@ -133,7 +136,13 @@ function onSubido() {
 
 async function eliminar(doc) {
   if (!props.deleteFn) return
-  if (!confirm(`¿Eliminar el documento "${doc.nombre || doc.nombreArchivo}"?`)) return
+  const ok = await confirmar({
+    titulo: 'Eliminar documento',
+    mensaje: `¿Eliminar el documento «${doc.nombre || doc.nombreArchivo}»?`,
+    variante: 'critica',
+    etiquetaConfirmar: 'Eliminar',
+  })
+  if (!ok) return
   try {
     await props.deleteFn(doc)
     emit('change')

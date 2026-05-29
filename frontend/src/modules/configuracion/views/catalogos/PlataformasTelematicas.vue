@@ -122,6 +122,8 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
 import { ref, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
@@ -184,7 +186,7 @@ async function toggleActiva(p) {
     })
     await cargar()
   } catch (e) {
-    alert('Error: ' + (e.message || e))
+    useToast().error('Error: ' + (e.message || e))
   }
 }
 
@@ -214,20 +216,26 @@ async function guardar() {
     modalAbierto.value = false
     await cargar()
   } catch (e) {
-    alert('Error al guardar: ' + (e.message || e))
+    useToast().error('Error al guardar: ' + (e.message || e))
   } finally {
     guardando.value = false
   }
 }
 
 async function eliminar() {
-  if (!confirm(`¿Eliminar la plataforma "${form.value.nombre}"?`)) return
+  const ok = await useConfirm()({
+    titulo: 'Eliminar plataforma',
+    mensaje: `¿Eliminar la plataforma «${form.value.nombre}»?`,
+    variante: 'critica',
+    etiquetaConfirmar: 'Eliminar',
+  })
+  if (!ok) return
   try {
     await executeMutation(DELETE_PLATAFORMAS_TELEMATICAS, { filter: { id: { eq: form.value.id } } })
     modalAbierto.value = false
     await cargar()
   } catch (e) {
-    alert('Error: ' + (e.message || e))
+    useToast().error('Error: ' + (e.message || e))
   }
 }
 

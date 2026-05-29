@@ -10,12 +10,13 @@ from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.actividad import Actividad, Participacion
 from ..models.tarea import Tarea
 from ..models.grupo import GrupoTrabajo, TipoGrupo
+from app.modules.configuracion.models.estados import EstadoAccion
 
 
 CARACTERES_VALIDOS = frozenset({"PUNTUAL", "RECURRENTE", "PERMANENTE"})
@@ -109,11 +110,42 @@ class ActividadService:
         r = await self.session.execute(select(Actividad).where(Actividad.id == actividad_id))
         return r.scalar_one()
 
+    async def _validar_transicion(
+        self, actividad: Actividad, estado_destino_id: uuid.UUID, notas=None,
+    ) -> None:
+        """Reglas duras de transición de estado de una actividad.
+
+        Reglas:
+          - Ninguna actividad puede pasar a 'En curso' sin una planificación de
+            tareas. Toda actividad, por insignificante que sea, requiere preparación.
+          - La cancelación de una actividad exige indicar los motivos.
+        """
+        if estado_destino_id == actividad.estado_id:
+            return
+        destino = await self.session.get(EstadoAccion, estado_destino_id)
+        if destino is None:
+            raise ValueError("El estado de destino no existe.")
+        nombre_destino = (destino.nombre or "").lower()
+        if "curso" in nombre_destino:
+            n_tareas = await self.session.scalar(
+                select(func.count(Tarea.id)).where(Tarea.actividad_id == actividad.id)
+            )
+            if not n_tareas:
+                raise ValueError(
+                    "No se puede iniciar la actividad sin una planificación de tareas. "
+                    "Añade al menos una tarea de preparación antes de ponerla en curso."
+                )
+        if "cancel" in nombre_destino and not (notas and notas.strip()):
+            raise ValueError(
+                "Para cancelar la actividad debes indicar los motivos de la cancelación."
+            )
+
     async def transicionar_estado(
         self, actividad_id: uuid.UUID, estado_id: uuid.UUID, notas=None,
     ) -> Actividad:
         r = await self.session.execute(select(Actividad).where(Actividad.id == actividad_id))
         actividad = r.scalar_one()
+        await self._validar_transicion(actividad, estado_id, notas)
         actividad.estado_id = estado_id
         if notas:
             actividad.notas_aprobacion = notas
@@ -143,7 +175,18 @@ class ActividadService:
     ) -> Actividad:
         r = await self.session.execute(select(Actividad).where(Actividad.id == actividad_id))
         actividad = r.scalar_one()
-        if estado_id is not None: actividad.estado_id = estado_id
+        if estado_id is not None:
+            destino = await self.session.get(EstadoAccion, estado_id)
+            nombre_destino = (destino.nombre or "").lower() if destino else ""
+            # El cierre/valoración no puede hacerse antes de la fecha de celebración.
+            # La cancelación sí se permite en cualquier momento (va por transicionar_estado).
+            if "finaliz" in nombre_destino and actividad.fecha_inicio and date.today() < actividad.fecha_inicio:
+                raise ValueError(
+                    "No se puede cerrar ni valorar la actividad antes de su fecha de "
+                    f"celebración ({actividad.fecha_inicio.isoformat()}). "
+                    "Si no va a celebrarse, cancélala indicando los motivos."
+                )
+            actividad.estado_id = estado_id
         if valoracion is not None: actividad.valoracion = valoracion
         if objetivos_cumplidos is not None: actividad.objetivos_cumplidos = objetivos_cumplidos
         if asistencia_real is not None: actividad.asistencia_real = asistencia_real

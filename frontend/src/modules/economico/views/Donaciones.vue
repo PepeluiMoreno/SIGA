@@ -459,6 +459,7 @@
 <script setup>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { useToast } from '@/composables/useToast'
+import { usePrompt } from '@/composables/useConfirm'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
@@ -754,7 +755,11 @@ const confirmarCobrada = async () => {
 }
 
 const anular = async (d) => {
-  const motivo = prompt(`¿Anular la donación de ${donanteNombre(d) || 'donante'}? Indica el motivo (opcional):`)
+  const motivo = await usePrompt()({
+    titulo: 'Anular donación', variante: 'critica',
+    mensaje: `Donación de ${donanteNombre(d) || 'donante'}`,
+    label: 'Motivo (opcional)', etiquetaConfirmar: 'Anular',
+  })
   if (motivo === null) return
   ocupado.value = true
   try {

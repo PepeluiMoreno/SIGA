@@ -46,6 +46,8 @@
 </template>
 
 <script setup>
+import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
@@ -110,12 +112,18 @@ async function cargar() {
 }
 
 async function retirar(fila) {
-  if (!confirm(`¿Confirmas la retirada del consentimiento de "${fila.nombreExterno || fila.emailExterno || 'este interesado'}"?\n\nLa retirada queda registrada con fecha y hora (art. 7.3 RGPD).`)) return
+  const ok = await useConfirm()({
+    titulo: 'Retirar consentimiento',
+    mensaje: `¿Confirmas la retirada del consentimiento de «${fila.nombreExterno || fila.emailExterno || 'este interesado'}»? La retirada queda registrada con fecha y hora (art. 7.3 RGPD).`,
+    variante: 'critica',
+    etiquetaConfirmar: 'Retirar',
+  })
+  if (!ok) return
   try {
     await executeMutation(RETIRAR_CONSENTIMIENTO, { consentimientoId: fila.id })
     await cargar()
   } catch (e) {
-    alert('Error al retirar: ' + (e.message || e))
+    useToast().error('Error al retirar: ' + (e.message || e))
   }
 }
 

@@ -178,7 +178,7 @@ const routes = [
     path: '/voluntarios',
     component: ListaVoluntarios,
     name: 'Voluntarios',
-    meta: { requiresAuth: true, requiredPermission: 'HAB_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'VOL_LIST' }
   },
 
   // ─── ACTIVIDADES / GRUPOS ─────────────────────────────────────────────────
