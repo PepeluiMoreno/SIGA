@@ -202,10 +202,14 @@ class CampaniaResolverMutation:
             'lema', 'descripcion_corta', 'descripcion_larga', 'url_externa', 'foto_url',
             'objetivo_principal', 'es_recurrente', 'periodicidad',
         ] if getattr(data, k) is not None}
-        return await CampaniaService(info.context.session).crear(
+        campania = await CampaniaService(info.context.session).crear(
             nombre=data.nombre, tipo_campania_id=data.tipo_campania_id,
             estado_id=data.estado_id, **kwargs,
         )
+        if data.responsable_id is not None:
+            from app.modules.acceso.services.ambito_territorial import ensure_rol_coordinador_campania
+            await ensure_rol_coordinador_campania(info.context.session, data.responsable_id)
+        return campania
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
     async def actualizar_campania(self, info: strawberry.Info, data: CampaniaUpdateInput) -> CampaniaType:
@@ -214,7 +218,11 @@ class CampaniaResolverMutation:
             'responsable_id', 'agrupacion_id', 'lema', 'descripcion_corta', 'descripcion_larga',
             'url_externa', 'foto_url', 'objetivo_principal', 'es_recurrente', 'periodicidad',
         ]}
-        return await CampaniaService(info.context.session).actualizar(data.campania_id, campos)
+        campania = await CampaniaService(info.context.session).actualizar(data.campania_id, campos)
+        if campos.get('responsable_id') is not None:
+            from app.modules.acceso.services.ambito_territorial import ensure_rol_coordinador_campania
+            await ensure_rol_coordinador_campania(info.context.session, campos['responsable_id'])
+        return campania
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
     async def transicionar_campania(

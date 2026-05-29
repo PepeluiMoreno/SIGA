@@ -135,12 +135,18 @@ como global; **excluye `COORDINADOR_CAMPANA`** que va por campaña). CTE recursi
   `gestionarPerfilVoluntario`) y gestiona habilidades (añadir/quitar con nivel). Queries:
   `GET_CATALOGO_HABILIDADES`, `GET_HABILIDADES_MIEMBRO`.
 
-**❌ Pendiente (bloqueado por dependencia, no por alcance):**
-- **Scoping por campaña** de `COORDINADOR_CAMPANA`: depende del flujo de *nombrar coordinador de
-  campaña* (parte del epic de campañas), aún sin construir. Mientras tanto, un COORDINADOR_CAMPANA
-  "solo" tiene ámbito territorial vacío ⇒ no ve/edita nada (deniega = seguro). Se cierra al construir
-  ese flujo: su `UsuarioRol` debería referenciar la campaña, y el helper/guard tener una rama que
-  resuelva los socios vinculados a esa campaña.
+**✅ Hecho — scoping por campaña (cierre de Fase 2):**
+- Al fijar el `responsable_id` de una campaña (crear/actualizar), su usuario recibe el rol
+  `COORDINADOR_CAMPANA` (`ensure_rol_coordinador_campania`, idempotente; no se revoca porque el
+  ámbito es dinámico: si deja de coordinar, su ámbito de campaña queda vacío).
+- Ámbito de un coordinador de campaña = socios que **participan en actividades de las campañas que
+  coordina** (`miembros_de_campanias_coordinadas`: `Campania.responsable_id` → `Actividad.campania_id`
+  → `Participacion.miembro_id`).
+- Integrado: `voluntariosEnAmbito` filtra **territorial ∪ campañas**; `assert_miembro_en_ambito`
+  admite ambas vías. (No verificable end-to-end en dev por falta de datos de campaña; misma forma
+  SQL que la vía territorial, ya verificada.)
+
+**Fase 2 completa.**
 
 ## Pasos para aplicar el lote
 

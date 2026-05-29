@@ -17,6 +17,7 @@ como guard en las mutaciones. En Fase 1 no se invoca todavía.
 from __future__ import annotations
 
 import uuid
+from typing import Optional
 
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -84,13 +85,74 @@ async def agrupaciones_en_ambito(
     return await _subarbol(session, territoriales)
 
 
+async def miembros_de_campanias_coordinadas(
+    session: AsyncSession, usuario_id: uuid.UUID,
+) -> set[uuid.UUID]:
+    """IDs de socios participantes en las campañas que coordina el usuario.
+
+    El coordinador de campaña es el `responsable_id` de la campaña; su ámbito son los socios
+    que participan en actividades de esas campañas. (Vía complementaria a la territorial.)
+    """
+    from app.modules.acceso.models.usuario import Usuario
+    from app.modules.actividades.models.campana import Campania
+    from app.modules.actividades.models.actividad import Actividad, Participacion
+
+    miembro_id = await session.scalar(select(Usuario.miembro_id).where(Usuario.id == usuario_id))
+    if not miembro_id:
+        return set()
+    camp_ids = (await session.execute(
+        select(Campania.id).where(Campania.responsable_id == miembro_id)
+    )).scalars().all()
+    if not camp_ids:
+        return set()
+    rows = await session.execute(
+        select(Participacion.miembro_id)
+        .join(Actividad, Actividad.id == Participacion.actividad_id)
+        .where(Actividad.campania_id.in_(camp_ids), Participacion.miembro_id.isnot(None))
+    )
+    return {r[0] for r in rows.all()}
+
+
+async def ensure_rol_coordinador_campania(
+    session: AsyncSession, miembro_id: Optional[uuid.UUID],
+) -> None:
+    """Concede el rol COORDINADOR_CAMPANA al usuario del socio responsable de una campaña.
+
+    Idempotente. Se llama al fijar el responsable de una campaña. No se revoca al cambiar el
+    responsable: el ámbito se deriva dinámicamente de las campañas que coordina, así que si deja
+    de coordinar campañas su ámbito queda vacío (no ve nada) aunque conserve el rol.
+    """
+    if not miembro_id:
+        return
+    from app.modules.acceso.models.usuario import Usuario
+    from app.modules.acceso.models.rol import Rol
+
+    usuario_id = await session.scalar(select(Usuario.id).where(Usuario.miembro_id == miembro_id))
+    if not usuario_id:
+        return  # el socio no tiene cuenta de acceso
+    rol_id = await session.scalar(select(Rol.id).where(Rol.codigo == "COORDINADOR_CAMPANA"))
+    if not rol_id:
+        return
+    existe = await session.scalar(
+        select(UsuarioRol.id).where(
+            UsuarioRol.usuario_id == usuario_id,
+            UsuarioRol.rol_id == rol_id,
+            UsuarioRol.activo.is_(True),
+        )
+    )
+    if existe:
+        return
+    session.add(UsuarioRol(usuario_id=usuario_id, rol_id=rol_id, agrupacion_id=None, activo=True))
+    await session.commit()
+
+
 async def assert_miembro_en_ambito(
     session: AsyncSession, usuario_id: uuid.UUID, miembro_id: uuid.UUID,
 ) -> None:
-    """Lanza PermissionError si el socio está fuera del ámbito territorial del usuario.
+    """Lanza PermissionError si el socio está fuera del ámbito del usuario.
 
-    Guard para mutaciones de gestión por delegación: el filtro de la UI no se puede saltar
-    por API. Ámbito global ⇒ no restringe.
+    Ámbito = territorial (agrupación del rol + subárbol) ∪ campañas coordinadas. Global ⇒ no
+    restringe. Guard para mutaciones de gestión por delegación: no se salta por API.
     """
     ambito = await agrupaciones_en_ambito(session, usuario_id)
     if ambito is None:
@@ -99,5 +161,8 @@ async def assert_miembro_en_ambito(
     m_agr = await session.scalar(
         select(Miembro.agrupacion_id).where(Miembro.id == miembro_id)
     )
-    if m_agr is None or m_agr not in ambito:
-        raise PermissionError("El socio está fuera de tu ámbito territorial.")
+    if m_agr is not None and m_agr in ambito:
+        return
+    if miembro_id in await miembros_de_campanias_coordinadas(session, usuario_id):
+        return
+    raise PermissionError("El socio está fuera de tu ámbito.")

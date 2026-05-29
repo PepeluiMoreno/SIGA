@@ -11,7 +11,7 @@ from datetime import date
 from typing import Optional, List
 
 import strawberry
-from sqlalchemy import select
+from sqlalchemy import select, or_
 
 from app.modules.membresia.models.miembro import Miembro
 from app.modules.acceso.services.acceso_service import AccesoService
@@ -516,7 +516,9 @@ class MembresiaQuery:
         - Sin ámbito territorial → lista vacía por esta vía.
         (El scoping por campaña de COORDINADOR_CAMPANA se resolverá aparte.)
         """
-        from app.modules.acceso.services.ambito_territorial import agrupaciones_en_ambito
+        from app.modules.acceso.services.ambito_territorial import (
+            agrupaciones_en_ambito, miembros_de_campanias_coordinadas,
+        )
         session = info.context.session
         user = info.context.user
         ambito = await agrupaciones_en_ambito(session, user.id) if user else set()
@@ -525,10 +527,16 @@ class MembresiaQuery:
             Miembro.es_voluntario == True,  # noqa: E712
             Miembro.eliminado == False,     # noqa: E712
         )
-        if ambito is not None:              # None = global (sin filtro territorial)
-            if not ambito:
+        if ambito is not None:              # None = global (sin filtro)
+            conds = []
+            if ambito:
+                conds.append(Miembro.agrupacion_id.in_(ambito))
+            camp_ids = await miembros_de_campanias_coordinadas(session, user.id) if user else set()
+            if camp_ids:
+                conds.append(Miembro.id.in_(camp_ids))
+            if not conds:
                 return []
-            q = q.where(Miembro.agrupacion_id.in_(ambito))
+            q = q.where(or_(*conds))
 
         r = await session.execute(q.order_by(Miembro.apellido1, Miembro.nombre))
         return [
