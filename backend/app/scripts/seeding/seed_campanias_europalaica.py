@@ -293,9 +293,9 @@ async def seed(session: AsyncSession):
         # Guardar el último que coincida (preferimos los del seed_catalogos)
         estados[row.nombre.strip()] = row.id
 
-    # Agrupación nacional: Europa Laica
+    # Agrupación nacional = unidad raíz (sin padre)
     res = await session.execute(
-        text("SELECT id FROM agrupaciones_territoriales WHERE nombre = 'Europa Laica' LIMIT 1")
+        text("SELECT id FROM unidades_organizativas WHERE agrupacion_padre_id IS NULL ORDER BY nombre LIMIT 1")
     )
     row = res.fetchone()
     agrupacion_id = row[0] if row else None
@@ -336,12 +336,12 @@ async def seed(session: AsyncSession):
                     id, nombre, lema, descripcion_corta, objetivo_principal,
                     tipo_campania_id, estado_id,
                     fecha_inicio_plan, fecha_fin_plan,
-                    meta_firmas, url_externa, agrupacion_id
+                    url_externa, agrupacion_id
                 ) VALUES (
                     :id, :nombre, :lema, :descripcion_corta, :objetivo_principal,
                     :tipo_id, :estado_id,
                     :fecha_inicio, :fecha_fin,
-                    :meta_firmas, :url_externa, :agrupacion_id
+                    :url_externa, :agrupacion_id
                 )
             """),
             {
@@ -354,7 +354,6 @@ async def seed(session: AsyncSession):
                 "estado_id": str(estado_id),
                 "fecha_inicio": fecha_inicio,
                 "fecha_fin": fecha_fin,
-                "meta_firmas": meta_firmas,
                 "url_externa": url_externa,
                 "agrupacion_id": str(agrupacion_id) if agrupacion_id else None,
             },
