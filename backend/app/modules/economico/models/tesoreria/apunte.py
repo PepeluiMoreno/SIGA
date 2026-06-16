@@ -79,6 +79,12 @@ class ApunteCaja(BaseModel):
         Uuid, ForeignKey("categorias_fiscales.id"), nullable=True, index=True
     )
 
+    # Enlace directo a cuota cuando el origen es CUOTA (pagos manuales / directos).
+    # Para remesas el vínculo es indirecto: ApunteCaja → Remesa → OrdenCobro → CuotaAnual.
+    cuota_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("cuotas_anuales.id"), nullable=True, index=True
+    )
+
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     cuenta_bancaria = relationship('CuentaBancaria', back_populates='apuntes', lazy='selectin')
@@ -86,6 +92,7 @@ class ApunteCaja(BaseModel):
     actividad = relationship('Actividad', foreign_keys=[actividad_id], lazy='selectin')
     campania = relationship('Campania', foreign_keys=[campania_id], lazy='selectin')
     categoria_fiscal = relationship('CategoriaFiscal', foreign_keys=[categoria_fiscal_id], lazy='selectin')
+    cuota = relationship('CuotaAnual', foreign_keys=[cuota_id], lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<ApunteCaja(tipo={self.tipo}, importe={self.importe}, fecha={self.fecha})>"

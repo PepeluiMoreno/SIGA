@@ -119,6 +119,7 @@ class TesoreriaService:
         observaciones: Optional[str] = None,
         actividad_id: Optional[UUID] = None,
         campania_id: Optional[UUID] = None,
+        cuota_id: Optional[UUID] = None,
     ) -> ApunteCaja:
         """Registra un movimiento de caja y actualiza el saldo de la cuenta."""
         cuenta = await self.obtener_cuenta_bancaria(cuenta_id)
@@ -142,6 +143,7 @@ class TesoreriaService:
             observaciones=observaciones,
             actividad_id=actividad_id,
             campania_id=campania_id,
+            cuota_id=cuota_id,
         )
 
         # Actualizar saldo
@@ -873,9 +875,10 @@ class TesoreriaService:
         observaciones: Optional[str] = None,
     ) -> ApunteCaja:
         """Registra un pago manual de cuota, actualiza el estado de la cuota
-        y genera un ApunteCaja de ingreso (+ asiento en modo COMPLETA).
+        y genera un ApunteCaja de ingreso vinculado a la cuota (+ asiento en modo COMPLETA).
         """
         from ..services.registro_contable import RegistroContable
+        from ..models.cuotas import ModoIngreso
 
         cuota_r = await self.session.execute(select(CuotaAnual).where(CuotaAnual.id == cuota_id))
         cuota = cuota_r.scalars().first()
@@ -888,7 +891,11 @@ class TesoreriaService:
         cuota_estados = {e.nombre: e.id for e in cuota_est.scalars()}
 
         cuota.importe_pagado = cuota.importe_pagado + importe
-        cuota.modo_ingreso = modo_ingreso
+        # Convertir string a enum para mantener tipado correcto en la columna
+        try:
+            cuota.modo_ingreso = ModoIngreso(modo_ingreso)
+        except ValueError:
+            cuota.modo_ingreso = None
         cuota.fecha_pago = fecha_pago or date.today()
         if cuota.importe_pagado >= cuota.importe:
             estado_cobrada = cuota_estados.get("Cobrada")
@@ -898,7 +905,6 @@ class TesoreriaService:
             cuota.referencia_pago = referencia
         self.session.add(cuota)
 
-        # Miembro nombre para el concepto
         miembro = cuota.miembro
         nombre_miembro = f"{miembro.nombre} {miembro.apellido1}" if miembro else str(cuota.miembro_id)
 
@@ -913,6 +919,7 @@ class TesoreriaService:
             entidad_origen_id=cuota_id,
             referencia_externa=referencia,
             observaciones=observaciones,
+            cuota_id=cuota_id,
         )
 
         registro = RegistroContable(self.session)

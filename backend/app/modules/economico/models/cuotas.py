@@ -102,7 +102,7 @@ class CuotaAnual(BaseModel):
     estado_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("estados_cuota.id"), nullable=False, index=True)
 
     # Modo de pago
-    modo_ingreso: Mapped[Optional[str]] = mapped_column(Enum(ModoIngreso), nullable=True)
+    modo_ingreso: Mapped[Optional[ModoIngreso]] = mapped_column(Enum(ModoIngreso), nullable=True)
 
     # Fechas
     fecha_pago: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
@@ -124,9 +124,31 @@ class CuotaAnual(BaseModel):
     estado = relationship('EstadoCuota', foreign_keys=[estado_id], lazy='selectin')
     ordenes_cobro = relationship('OrdenCobro', back_populates='cuota', lazy='selectin')
     motivo_reduccion = relationship('MotivoReduccionCuota', foreign_keys=[motivo_reduccion_id], lazy='selectin')
+    # Apuntes de caja directamente vinculados (pagos manuales/directos).
+    # Para pagos via remesa el enlace es indirecto: OrdenCobro → Remesa → ApunteCaja.
+    apuntes_caja = relationship(
+        'ApunteCaja',
+        foreign_keys='ApunteCaja.cuota_id',
+        lazy='selectin',
+    )
 
     def __repr__(self) -> str:
         return f"<CuotaAnual(miembro_id='{self.miembro_id}', ejercicio={self.ejercicio}, estado_id='{self.estado_id}')>"
+
+    @property
+    def importe_pagado_real(self) -> Decimal:
+        """Importe pagado derivado de apuntes de caja vinculados (fuente de verdad).
+
+        Recorre los ApunteCaja directamente ligados a esta cuota (cuota_id).
+        Falls back a importe_pagado (campo cache) si los apuntes no están cargados.
+        """
+        try:
+            return sum(
+                (a.importe for a in self.apuntes_caja if a.es_ingreso),
+                Decimal("0.00"),
+            )
+        except Exception:
+            return self.importe_pagado
 
     @property
     def esta_pagada(self) -> bool:
@@ -137,27 +159,6 @@ class CuotaAnual(BaseModel):
     def saldo_pendiente(self) -> Decimal:
         """Calcula el saldo pendiente de pago."""
         return self.importe - self.importe_pagado
-
-    def registrar_pago(
-        self,
-        importe_pago: Decimal,
-        modo_ingreso: ModoIngreso,
-        fecha_pago: Optional[date] = None,
-        referencia: Optional[str] = None
-    ) -> None:
-        """Registra un pago para la cuota."""
-        self.importe_pagado += importe_pago
-        self.modo_ingreso = modo_ingreso.value
-        self.fecha_pago = fecha_pago or date.today()
-
-        if referencia:
-            self.referencia_pago = referencia
-
-        # TODO: Actualizar estado requiere consultar EstadoCuota por código
-        # if self.esta_pagada:
-        #     self.estado_id = # buscar estado COBRADA
-        # elif self.importe_pagado > 0:
-        #     self.estado_id = # buscar COBRADA_PARCIAL o COBRADA
 
 
 class SolicitudReduccionCuota(BaseModel):
