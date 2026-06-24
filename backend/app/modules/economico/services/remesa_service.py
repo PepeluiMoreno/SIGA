@@ -22,15 +22,14 @@ from ..models.cuotas import CuotaAnual
 from ..models.recibos import Recibo
 from ..models.tesoreria import ApunteCaja, TipoApunte, OrigenApunte
 from app.modules.configuracion.models.estados import EstadoCuota, EstadoRemesa, EstadoOrdenCobro
-from app.modules.membresia.models.miembro import Miembro
 
 
 def _resumen_orden(orden: OrdenCobro) -> dict:
     """Resumen de una orden para la previsualización de liquidación."""
     miembro_nombre = ""
-    if orden.cuota and orden.cuota.miembro:
-        m = orden.cuota.miembro
-        miembro_nombre = f"{m.nombre or ''} {m.apellido1 or ''}".strip()
+    _vs = orden.cuota.vinculacion_socio if orden.cuota else None
+    if _vs and _vs.contacto:
+        miembro_nombre = _vs.contacto.nombre_completo or ""
     return {
         "orden_id": str(orden.id),
         "end_to_end_id": orden.end_to_end_id,
@@ -117,8 +116,9 @@ class RemesaService:
 
         for nseq, recibo in enumerate(recibos_elegibles, start=1):
             importe_orden = recibo.importe - recibo.importe_pagado
-            mandato = f"MAND-{str(recibo.miembro_id)[:8].upper()}"
-            iban = getattr(recibo.miembro, "iban", None) if recibo.miembro else None
+            mandato = f"MAND-{str(recibo.vinculacion_socio_id)[:8].upper()}"
+            _socio = recibo.vinculacion_socio.socio if recibo.vinculacion_socio else None
+            iban = getattr(_socio, "iban", None) if _socio else None
 
             orden = OrdenCobro(
                 remesa_id=remesa.id,
@@ -147,7 +147,7 @@ class RemesaService:
         ejercicio: int,
         fecha_cobro: date,
         concepto: str,
-        miembro_ids: list[UUID],
+        vinculacion_socio_ids: list[UUID],
         importe_por_miembro: Decimal,
         agrupacion_id: Optional[UUID] = None,
         observaciones: Optional[str] = None,
@@ -156,12 +156,13 @@ class RemesaService:
         """Crea una remesa EXTRAORDINARIA (derrama, cuota especial) con concepto e
         importe definidos por el tesorero. No depende de cuotas pendientes existentes.
 
-        Para cargos únicos no recurrentes el SeqTp recomendado por SEPA es OOFF.
+        Los destinatarios son VINCULACIONES de socio (el IBAN vive en el satélite
+        Socio). Para cargos únicos no recurrentes el SeqTp recomendado es OOFF.
         """
-        if not miembro_ids:
-            raise ValueError("Debe indicarse al menos un miembro destinatario")
+        if not vinculacion_socio_ids:
+            raise ValueError("Debe indicarse al menos un socio destinatario")
         if importe_por_miembro <= Decimal("0"):
-            raise ValueError("El importe por miembro debe ser positivo")
+            raise ValueError("El importe por socio debe ser positivo")
 
         # Validación SEPA: fecha_cobro respeta plazo mínimo según seq_tipo
         self._validar_fecha_cobro_sepa(fecha_cobro, seq_tipo)
@@ -171,15 +172,18 @@ class RemesaService:
         if not est_rem_borrador or not est_oc_pendiente:
             raise ValueError("Estados de remesa/orden no encontrados en BD")
 
-        # Buscar miembros y validar IBAN
-        miembros_q = await self.session.execute(
-            select(Miembro).where(Miembro.id.in_(miembro_ids))
+        # Buscar vinculaciones de socio y validar IBAN (en el satélite Socio)
+        from app.modules.membresia.models.vinculacion import Vinculacion
+        vinc_q = await self.session.execute(
+            select(Vinculacion).where(Vinculacion.id.in_(vinculacion_socio_ids))
         )
-        miembros = {m.id: m for m in miembros_q.scalars().all()}
-        miembros_validos = [m for m in miembros.values() if getattr(m, "iban", None)]
+        vinculaciones = {v.id: v for v in vinc_q.scalars().all()}
+        miembros_validos = [
+            v for v in vinculaciones.values() if v.socio and getattr(v.socio, "iban", None)
+        ]
 
         if not miembros_validos:
-            raise ValueError("Ningún miembro indicado tiene IBAN registrado")
+            raise ValueError("Ningún socio indicado tiene IBAN registrado")
 
         importe_total = importe_por_miembro * len(miembros_validos)
         ts = date.today().strftime("%Y-%m-%dT%H-%M-%S")
@@ -203,15 +207,15 @@ class RemesaService:
         self.session.add(remesa)
         await self.session.flush()
 
-        for nseq, miembro in enumerate(miembros_validos, start=1):
-            mandato = f"MAND-{str(miembro.id)[:8].upper()}"
+        for nseq, vinc in enumerate(miembros_validos, start=1):
+            mandato = f"MAND-{str(vinc.id)[:8].upper()}"
             orden = OrdenCobro(
                 remesa_id=remesa.id,
                 cuota_id=None,  # No hay cuota asociada en una extraordinaria
                 nseq=nseq,
                 importe=importe_por_miembro,
                 referencia_mandato=mandato,
-                iban=miembro.iban,
+                iban=vinc.socio.iban,
                 estado_id=est_oc_pendiente.id,
             )
             self.session.add(orden)
@@ -826,9 +830,9 @@ class RemesaService:
 
                 dbtr = SubElement(drct_dbt_tx_inf, "Dbtr")
                 cuota = orden.cuota
-                if cuota and cuota.miembro:
-                    m = cuota.miembro
-                    nombre = f"{m.nombre or ''} {m.apellido1 or ''}".strip()[:70]
+                _vs = cuota.vinculacion_socio if cuota else None
+                if _vs and _vs.contacto:
+                    nombre = (_vs.contacto.nombre_completo or "")[:70]
                     SubElement(dbtr, "Nm").text = nombre or "DESCONOCIDO"
                 else:
                     SubElement(dbtr, "Nm").text = "DESCONOCIDO"
@@ -903,11 +907,11 @@ class RemesaService:
         importe_incluido = sum(r.importe - r.importe_pagado for r in incluidos)
 
         def _resumen_recibo(r: "Recibo", motivo: str) -> dict:
-            m = r.miembro
-            nombre = f"{m.nombre or ''} {m.apellido1 or ''}".strip() if m else ""
+            c = r.vinculacion_socio.contacto if r.vinculacion_socio else None
+            nombre = c.nombre_completo if c else ""
             return {
                 "cuota_id": str(r.cuota_id) if r.cuota_id else "",
-                "miembro_id": str(r.miembro_id),
+                "miembro_id": str(r.vinculacion_socio_id),
                 "miembro_nombre": nombre,
                 "importe_pendiente": float(r.importe - r.importe_pagado),
                 "motivo_exclusion": motivo,
@@ -987,9 +991,10 @@ class RemesaService:
             .where(Recibo.orden_cobro_id.is_(None))
         )
         if agrupacion_id:
-            # Recibos cuyo miembro pertenece a la agrupación (o, a futuro, recibo.agrupacion_id)
-            q = q.join(Miembro, Miembro.id == Recibo.miembro_id).where(
-                Miembro.agrupacion_id == agrupacion_id
+            # Recibos cuyo socio pertenece a la agrupación (vía la vinculación)
+            from app.modules.membresia.models.vinculacion import Vinculacion
+            q = q.join(Vinculacion, Vinculacion.id == Recibo.vinculacion_socio_id).where(
+                Vinculacion.agrupacion_id == agrupacion_id
             )
         result = await self.session.execute(q)
         candidatos = list(result.scalars().all())
@@ -1006,7 +1011,8 @@ class RemesaService:
             if not cuota or (est_pend and cuota.estado_id != est_pend.id):
                 excluidos.append((recibo, "Cuota no Pendiente"))
                 continue
-            iban = getattr(recibo.miembro, "iban", None) if recibo.miembro else None
+            _socio = recibo.vinculacion_socio.socio if recibo.vinculacion_socio else None
+            iban = getattr(_socio, "iban", None) if _socio else None
             if not iban:
                 excluidos.append((recibo, "Sin IBAN"))
                 continue
@@ -1065,7 +1071,8 @@ class RemesaService:
             if ref_existente:
                 excluidas.append((c, f"Ya en remesa {ref_existente}"))
                 continue
-            iban = getattr(c.miembro, "iban", None) if c.miembro else None
+            _socio = c.vinculacion_socio.socio if c.vinculacion_socio else None
+            iban = getattr(_socio, "iban", None) if _socio else None
             if not iban:
                 excluidas.append((c, "Sin IBAN"))
                 continue
@@ -1125,7 +1132,7 @@ class RemesaService:
                       else "EXTRAORDINARIA" if remesa.tipo_remesa == "EXTRAORDINARIA"
                       else "CUOTA_ORDINARIA"),
                 concepto=remesa.concepto or f"Cuota ordinaria ejercicio {ejercicio}",
-                miembro_id=orden.cuota.miembro_id if orden.cuota else None,
+                vinculacion_socio_id=orden.cuota.vinculacion_socio_id if orden.cuota else None,
                 cuota_id=orden.cuota_id,
                 orden_cobro_id=orden.id,
                 importe=orden.importe,

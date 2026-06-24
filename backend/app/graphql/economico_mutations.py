@@ -24,6 +24,24 @@ from ..modules.economico.models.contabilidad import TipoAsientoContable
 from .permissions import RequireTransaction
 
 
+async def _vinculacion_socio_de_contacto(session, contacto_id):
+    """Devuelve la vinculación SOCIO 'activa' de un contacto (con su satélite
+    Socio cargado por selectin), o None si no la hay."""
+    from ..modules.membresia.models.vinculacion import Vinculacion
+    from ..modules.membresia.models.tipo_vinculacion import TipoVinculacion
+    res = await session.execute(
+        select(Vinculacion)
+        .join(TipoVinculacion, Vinculacion.tipo_vinculacion_id == TipoVinculacion.id)
+        .where(
+            TipoVinculacion.codigo == "SOCIO",
+            Vinculacion.contacto_id == contacto_id,
+            Vinculacion.estado == "activa",
+            Vinculacion.eliminado == False,
+        )
+    )
+    return res.scalars().first()
+
+
 @strawberry.input
 class FallidoBancoInput:
     """Una orden de cobro fallida importada del banco."""
@@ -603,20 +621,20 @@ class EconomicoFlujosMutation:
         ejercicio: int,
         fecha_cobro: date,
         concepto: str,
-        miembro_ids: List[UUID],
+        vinculacion_socio_ids: List[UUID],
         importe_por_miembro: float,
         agrupacion_id: Optional[UUID] = None,
         observaciones: Optional[str] = None,
     ) -> str:
         """Genera una remesa extraordinaria (derrama, cuota especial) con concepto e
-        importe libre. SeqTp=OOFF por defecto (cargo único)."""
+        importe libre. SeqTp=OOFF por defecto (cargo único). Destinatarios = vinculaciones de socio."""
         session = info.context.session
         service = RemesaService(session)
         remesa = await service.generar_remesa_extraordinaria(
             ejercicio=ejercicio,
             fecha_cobro=fecha_cobro,
             concepto=concepto,
-            miembro_ids=miembro_ids,
+            vinculacion_socio_ids=vinculacion_socio_ids,
             importe_por_miembro=Decimal(str(importe_por_miembro)),
             agrupacion_id=agrupacion_id,
             observaciones=observaciones,
@@ -776,7 +794,7 @@ class EconomicoFlujosMutation:
         ejercicio: int,
         tipo: str = "CUOTA_ORDINARIA",
         concepto: Optional[str] = None,
-        miembro_ids: Optional[List[UUID]] = None,
+        vinculacion_socio_ids: Optional[List[UUID]] = None,
         agrupacion_id: Optional[UUID] = None,
         fecha_vencimiento: Optional[date] = None,
     ) -> int:
@@ -788,7 +806,7 @@ class EconomicoFlujosMutation:
             ejercicio=ejercicio,
             tipo=tipo,
             concepto=concepto,
-            miembro_ids=miembro_ids,
+            vinculacion_socio_ids=vinculacion_socio_ids,
             agrupacion_id=agrupacion_id,
             fecha_vencimiento=fecha_vencimiento,
         )
@@ -799,7 +817,7 @@ class EconomicoFlujosMutation:
         self,
         info: strawberry.Info,
         ejercicio: int,
-        miembro_id: UUID,
+        vinculacion_socio_id: UUID,
         concepto: str,
         importe: float,
         tipo: str = "EXTRAORDINARIA",
@@ -812,7 +830,7 @@ class EconomicoFlujosMutation:
         service = ReciboService(session)
         recibo = await service.emitir_recibo_individual(
             ejercicio=ejercicio,
-            miembro_id=miembro_id,
+            vinculacion_socio_id=vinculacion_socio_id,
             concepto=concepto,
             importe=Decimal(str(importe)),
             tipo=tipo,
@@ -1153,7 +1171,6 @@ class EconomicoFlujosMutation:
         from ..modules.economico.models.cuotas import (
             SolicitudReduccionCuota, CuotaAnual, MotivoReduccionCuota, ImporteCuotaAnio,
         )
-        from ..modules.membresia.models.miembro import Miembro
         session = info.context.session
         sol = await session.get(SolicitudReduccionCuota, solicitud_id)
         if not sol:
@@ -1164,21 +1181,27 @@ class EconomicoFlujosMutation:
         sol.resuelto_por_id = resuelto_por_id
         sol.fecha_resolucion = date.today()
 
-        # Cuotas futuras: motivo de reducción individual del miembro
-        miembro = await session.get(Miembro, sol.miembro_id)
-        if miembro:
-            miembro.motivo_reduccion_id = sol.motivo_reduccion_id
+        # El "miembro" de la solicitud es un Contacto; su condición de socio y la
+        # cuota viven en la vinculación SOCIO activa.
+        vinc = await _vinculacion_socio_de_contacto(session, sol.miembro_id)
+
+        # Cuotas futuras: motivo de reducción individual en el satélite Socio
+        socio = vinc.socio if vinc else None
+        if socio:
+            socio.motivo_reduccion_id = sol.motivo_reduccion_id
 
         # Ejercicio en curso: recalcular la CuotaAnual si existe e impagada
         motivo = await session.get(MotivoReduccionCuota, sol.motivo_reduccion_id)
-        res = await session.execute(
-            select(CuotaAnual).where(
-                CuotaAnual.miembro_id == sol.miembro_id,
-                CuotaAnual.ejercicio == sol.ejercicio,
-                CuotaAnual.eliminado == False,
+        cuota = None
+        if vinc:
+            res = await session.execute(
+                select(CuotaAnual).where(
+                    CuotaAnual.vinculacion_socio_id == vinc.id,
+                    CuotaAnual.ejercicio == sol.ejercicio,
+                    CuotaAnual.eliminado == False,
+                )
             )
-        )
-        cuota = res.scalar_one_or_none()
+            cuota = res.scalar_one_or_none()
         if cuota and motivo and cuota.importe_pagado == Decimal("0.00"):
             cuota.motivo_reduccion_id = motivo.id
             if cuota.importe_cuota_anio_id:
@@ -1248,26 +1271,29 @@ class EconomicoFlujosMutation:
         from ..modules.economico.models.cuotas import (
             CuotaAnual, MotivoReduccionCuota, ImporteCuotaAnio,
         )
-        from ..modules.membresia.models.miembro import Miembro
         session = info.context.session
         if incremento < Decimal("0.00"):
             raise ValueError("El incremento no puede ser negativo.")
-        miembro = await session.get(Miembro, miembro_id)
-        if not miembro:
-            raise ValueError("Miembro no encontrado.")
-        miembro.incremento_cuota = incremento
-        miembro.incremento_cuota_obs = (observaciones or "").strip() or None
+        # miembro_id es el id del Contacto; el incremento vive en el satélite Socio.
+        vinc = await _vinculacion_socio_de_contacto(session, miembro_id)
+        socio = vinc.socio if vinc else None
+        if not socio:
+            raise ValueError("El contacto no tiene una vinculación de socio activa.")
+        socio.incremento_cuota = incremento
+        socio.incremento_cuota_obs = (observaciones or "").strip() or None
 
         # Recalcular la CuotaAnual del ejercicio en curso si existe e impagada
         anio = date.today().year
-        res = await session.execute(
-            select(CuotaAnual).where(
-                CuotaAnual.miembro_id == miembro_id,
-                CuotaAnual.ejercicio == anio,
-                CuotaAnual.eliminado == False,
+        cuota = None
+        if vinc:
+            res = await session.execute(
+                select(CuotaAnual).where(
+                    CuotaAnual.vinculacion_socio_id == vinc.id,
+                    CuotaAnual.ejercicio == anio,
+                    CuotaAnual.eliminado == False,
+                )
             )
-        )
-        cuota = res.scalar_one_or_none()
+            cuota = res.scalar_one_or_none()
         if cuota and cuota.importe_pagado == Decimal("0.00") and cuota.importe_cuota_anio_id:
             base = await session.get(ImporteCuotaAnio, cuota.importe_cuota_anio_id)
             if base:
