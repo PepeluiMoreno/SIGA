@@ -147,7 +147,7 @@ export function useMiembro() {
 
   const ELIMINAR_MIEMBRO = `
     mutation EliminarMiembro($id: UUID!) {
-      eliminarMiembros(filter: { id: { eq: $id } }) { id }
+      eliminarContactos(filter: { id: { eq: $id } }) { id }
     }
   `
 

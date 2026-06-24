@@ -35,8 +35,8 @@ export const GET_CUOTAS_ANUALES = `
 
 // Query para obtener cuotas por miembro
 export const GET_CUOTAS_BY_MIEMBRO = `
-  query CuotasByMiembro($miembroId: UUID!) {
-    cuotasAnuales(filter: {miembroId: {eq: $miembroId}}) {
+  query CuotasByMiembro($vinculacionSocioId: UUID!) {
+    cuotasAnuales(filter: {vinculacionSocioId: {eq: $vinculacionSocioId}}) {
       id
       ejercicio
       importe
@@ -120,7 +120,7 @@ export const REGISTRAR_DONACION = `
       fechaDonacion: $fechaDonacion
       tipo: $tipo
       caracter: $caracter
-      miembroId: $miembroId
+      contactoId: $miembroId
       donanteNombre: $donanteNombre
       donanteDni: $donanteDni
       donanteEmail: $donanteEmail
@@ -479,11 +479,11 @@ export const GET_RECIBOS = `
 export const EMITIR_RECIBOS_LOTE = `
   mutation EmitirRecibosLote(
     $ejercicio: Int!, $tipo: String, $concepto: String,
-    $miembroIds: [UUID!], $agrupacionId: UUID, $fechaVencimiento: Date
+    $vinculacionSocioIds: [UUID!], $agrupacionId: UUID, $fechaVencimiento: Date
   ) {
     emitirRecibosLote(
       ejercicio: $ejercicio, tipo: $tipo, concepto: $concepto,
-      miembroIds: $miembroIds, agrupacionId: $agrupacionId, fechaVencimiento: $fechaVencimiento
+      vinculacionSocioIds: $vinculacionSocioIds, agrupacionId: $agrupacionId, fechaVencimiento: $fechaVencimiento
     )
   }
 `
@@ -593,7 +593,7 @@ export const GET_CUENTAS_GASTO = `
 
 export const GET_MIEMBROS_PARA_GASTO = `
   query MiembrosParaGasto {
-    miembros(filter: { activo: { eq: true } }) {
+    miembros: socios(activo: true) {
       id nombre apellido1 apellido2 numeroDocumento
     }
   }

@@ -105,7 +105,7 @@ const counts = computed(() => {
 const itemsActivos = computed(() => items.value[tabActivo.value] || [])
 
 const QUERIES = {
-  miembros: `query { miembros(filter: { eliminado: { eq: true } }) { id nombre apellido1 fechaEliminacion } }`,
+  miembros: `query { miembros: socios(eliminado: true) { id nombre apellido1 fechaEliminacion } }`,
   actividades: `query { actividades(filter: { eliminado: { eq: true } }) { id nombre fechaEliminacion } }`,
   grupos: `query { gruposTrabajo(filter: { eliminado: { eq: true } }) { id nombre fechaEliminacion } }`,
   campanias: `query { campanias(filter: { eliminado: { eq: true } }) { id nombre fechaEliminacion } }`,
@@ -119,7 +119,7 @@ const RESTORE_QUERY = {
 }
 
 const HARD_DELETE_QUERY = {
-  miembros: `mutation EliminarMiembro($id: UUID!) { eliminarMiembros(filter: { id: { eq: $id } }) { id } }`,
+  miembros: `mutation EliminarMiembro($id: UUID!) { eliminarContactos(filter: { id: { eq: $id } }) { id } }`,
   actividades: `mutation EliminarActividad($id: UUID!) { eliminarActividades(filter: { id: { eq: $id } }) { id } }`,
   grupos: `mutation EliminarGrupo($id: UUID!) { eliminarGruposTrabajo(filter: { id: { eq: $id } }) { id } }`,
   campanias: `mutation EliminarCampania($id: UUID!) { eliminarCampanias(filter: { id: { eq: $id } }) { id } }`,

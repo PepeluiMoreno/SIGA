@@ -770,7 +770,7 @@ const toast = useToast()
 
 const GET_CATALOGOS = `
   query CatalogosDetalleActividad {
-    miembros { id nombre apellido1 email estado { id nombre } }
+    miembros: socios { id nombre apellido1 email estado { id nombre } }
     estadosTarea { id nombre }
     tiposActividad { id nombre tieneLugar }
     estadosAccion { id nombre }

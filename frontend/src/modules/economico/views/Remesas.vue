@@ -542,12 +542,12 @@ const confirmarCreacion = async () => {
       `, { ejercicio: a.ejercicio, fechaCobro: a.fechaCobro, agrupacionId: a.agrupacionId || null, obs: a.observaciones || null })
     } else if (a.tipo === 'EXTRAORDINARIA') {
       await gqlMutation(`
-        mutation($ejercicio: Int!, $fechaCobro: Date!, $concepto: String!, $miembroIds: [UUID!]!, $importe: Float!, $agrupacionId: UUID, $obs: String) {
-          generarRemesaExtraordinaria(ejercicio: $ejercicio, fechaCobro: $fechaCobro, concepto: $concepto, miembroIds: $miembroIds, importePorMiembro: $importe, agrupacionId: $agrupacionId, observaciones: $obs)
+        mutation($ejercicio: Int!, $fechaCobro: Date!, $concepto: String!, $vinculacionSocioIds: [UUID!]!, $importe: Float!, $agrupacionId: UUID, $obs: String) {
+          generarRemesaExtraordinaria(ejercicio: $ejercicio, fechaCobro: $fechaCobro, concepto: $concepto, vinculacionSocioIds: $vinculacionSocioIds, importePorMiembro: $importe, agrupacionId: $agrupacionId, observaciones: $obs)
         }
       `, {
         ejercicio: a.ejercicio, fechaCobro: a.fechaCobro, concepto: a.concepto,
-        miembroIds: miembrosParseados.value, importe: a.importePorMiembro,
+        vinculacionSocioIds: miembrosParseados.value, importe: a.importePorMiembro,
         agrupacionId: a.agrupacionId || null, obs: a.observaciones || null,
       })
     } else if (a.tipo === 'REENVIO') {

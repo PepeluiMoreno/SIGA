@@ -224,7 +224,7 @@ const QUERY_CATALOGOS = gql`
     tiposMiembro(filter: { activo: { eq: true } }) { id nombre }
     estadosMiembro(filter: { activo: { eq: true } }) { id nombre }
     unidadesOrganizativas(filter: { activo: { eq: true } }) { id nombre tipoUnidad { nivel } }
-    tiposVinculacion(filter: { activo: { eq: true } }) { id nombre requiereEntidad }
+    tiposVinculacion { id nombre requiereSatelite }
   }
 `
 

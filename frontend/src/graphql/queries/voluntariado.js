@@ -30,7 +30,7 @@ export const GET_VOLUNTARIOS = `
 // Query para obtener un voluntario por ID
 export const GET_VOLUNTARIO_BY_ID = `
   query Voluntario($id: UUID!) {
-    miembros(filter: {id: {eq: $id}}) {
+    miembros: socios(contactoId: $id) {
       id
       nombre
       apellido1

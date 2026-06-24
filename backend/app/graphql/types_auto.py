@@ -276,7 +276,11 @@ class ImporteCuotaAnioType:
 
 @strawchemy.type(CuotaAnual, include="all", override=True)
 class CuotaAnualType:
-    pass
+    @strawberry.field
+    def miembro(self) -> Optional['ContactoType']:
+        """Compat: la cuota cuelga de la vinculación de socio; expone su contacto."""
+        vs = getattr(self, 'vinculacion_socio', None)
+        return vs.contacto if vs else None
 
 @strawchemy.type(MotivoReduccionCuota, include="all", override=True)
 class MotivoReduccionCuotaType:
@@ -304,7 +308,25 @@ class DonacionConceptoType:
 
 @strawchemy.type(Donacion, include="all", override=True)
 class DonacionType:
-    pass
+    # Marker para que strawchemy procese el body con campos custom escalares.
+    observaciones: Optional[str] = None
+
+    # Compat: los datos del donante salen del Contacto (ya no hay donante_* en Donacion).
+    @strawberry.field
+    def donante_nombre(self) -> Optional[str]:
+        return self.contacto.nombre_completo if self.contacto else None
+
+    @strawberry.field
+    def donante_dni(self) -> Optional[str]:
+        return self.contacto.numero_documento if self.contacto else None
+
+    @strawberry.field
+    def donante_email(self) -> Optional[str]:
+        return self.contacto.email if self.contacto else None
+
+    @strawberry.field
+    def donante_telefono(self) -> Optional[str]:
+        return self.contacto.telefono if self.contacto else None
 
 @strawchemy.type(Remesa, include="all", override=True)
 class RemesaType:
@@ -316,7 +338,11 @@ class OrdenCobroType:
 
 @strawchemy.type(Recibo, include="all", override=True)
 class ReciboType:
-    pass
+    @strawberry.field
+    def miembro(self) -> Optional['ContactoType']:
+        """Compat: el recibo cuelga de la vinculación de socio; expone su contacto."""
+        vs = getattr(self, 'vinculacion_socio', None)
+        return vs.contacto if vs else None
 
 @strawchemy.type(JustificanteGasto, include="all", override=True)
 class JustificanteGastoType:

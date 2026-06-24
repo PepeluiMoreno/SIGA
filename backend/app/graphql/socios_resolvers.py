@@ -26,10 +26,12 @@ from app.modules.membresia.models.nivel_estudios import NivelEstudios
 from app.modules.economico.models.cuotas import MotivoReduccionCuota
 from app.modules.core.geografico.direccion import UnidadOrganizativa
 from app.modules.acceso.models.usuario import Usuario
+from app.modules.membresia.models.habilidad import MiembroHabilidad
+from app.modules.membresia.models.disponibilidad import FranjaDisponibilidad
 
 from app.graphql.types_auto import (
     TipoMiembroType, UnidadOrganizativaType, MotivoBajaType, NivelEstudiosType,
-    MotivoReduccionCuotaType, UsuarioType,
+    MotivoReduccionCuotaType, UsuarioType, MiembroHabilidadType, FranjaDisponibilidadType,
 )
 from app.graphql.permissions import RequireTransaction
 
@@ -83,6 +85,7 @@ class SocioVistaType:
     fecha_anonimizacion: Optional[date] = None
     fecha_creacion: Optional[datetime] = None
     fecha_modificacion: Optional[datetime] = None
+    fecha_eliminacion: Optional[datetime] = None
 
     # Vinculación de socio
     vinculacion_socio_id: Optional[uuid.UUID] = None
@@ -127,6 +130,8 @@ class SocioVistaType:
     nivel_estudios_rel: Optional[NivelEstudiosType] = None
     usuario: Optional[UsuarioType] = None
     estado: Optional[EstadoSocioBadge] = None
+    habilidades: List[MiembroHabilidadType] = strawberry.field(default_factory=list)
+    franjas_disponibilidad: List[FranjaDisponibilidadType] = strawberry.field(default_factory=list)
 
 
 async def _construir_socios(
@@ -206,6 +211,18 @@ async def _construir_socios(
             select(MotivoBaja).where(MotivoBaja.id.in_(mb_ids))
         )).scalars().all()}
 
+    # 6) Habilidades y franjas de disponibilidad (clave miembro_id = contacto)
+    hab_por_contacto: dict = {}
+    for h in (await session.execute(
+        select(MiembroHabilidad).where(MiembroHabilidad.miembro_id.in_(contacto_ids))
+    )).scalars().all():
+        hab_por_contacto.setdefault(h.miembro_id, []).append(h)
+    franjas_por_contacto: dict = {}
+    for fr in (await session.execute(
+        select(FranjaDisponibilidad).where(FranjaDisponibilidad.miembro_id.in_(contacto_ids))
+    )).scalars().all():
+        franjas_por_contacto.setdefault(fr.miembro_id, []).append(fr)
+
     socios: List[SocioVistaType] = []
     for v in vincs:
         c = v.contacto
@@ -233,6 +250,7 @@ async def _construir_socios(
             fecha_limite_retencion=c.fecha_limite_retencion,
             fecha_anonimizacion=c.fecha_anonimizacion,
             fecha_creacion=c.fecha_creacion, fecha_modificacion=c.fecha_modificacion,
+            fecha_eliminacion=c.fecha_eliminacion,
             vinculacion_socio_id=v.id, fecha_alta=v.fecha_inicio, fecha_baja=v.fecha_fin,
             iban=(s.iban if s else None), swift_bic=(s.swift_bic if s else None),
             referencia_pago=(s.referencia_pago if s else None),
@@ -266,6 +284,8 @@ async def _construir_socios(
                 nombre=estado_socio.capitalize(),
                 color=_ESTADO_COLOR.get(estado_socio, "#6B7280"),
             ),
+            habilidades=hab_por_contacto.get(c.id, []),
+            franjas_disponibilidad=franjas_por_contacto.get(c.id, []),
         ))
     if es_voluntario is not None:
         socios = [x for x in socios if x.es_voluntario == es_voluntario]
@@ -278,6 +298,7 @@ class SociosQuery:
     async def socios(
         self,
         info: strawberry.Info,
+        contacto_id: Optional[uuid.UUID] = None,
         agrupacion_id: Optional[uuid.UUID] = None,
         activo: Optional[bool] = None,
         es_voluntario: Optional[bool] = None,
@@ -285,11 +306,14 @@ class SociosQuery:
     ) -> List[SocioVistaType]:
         """Listado denormalizado de socios (sustituye a la antigua query `miembros`).
 
-        Filtros opcionales planos: agrupacionId, activo, esVoluntario, eliminado.
+        Filtros opcionales planos: contactoId, agrupacionId, activo, esVoluntario,
+        eliminado. (Con contactoId devuelve una lista de 0/1 elementos, para que el
+        frontend pueda aliasar `miembros: socios(contactoId: $id)` y seguir leyendo
+        `data.miembros[0]`.)
         """
         return await _construir_socios(
-            info.context.session, agrupacion_id=agrupacion_id, activo=activo,
-            es_voluntario=es_voluntario, eliminado=eliminado,
+            info.context.session, contacto_id=contacto_id, agrupacion_id=agrupacion_id,
+            activo=activo, es_voluntario=es_voluntario, eliminado=eliminado,
         )
 
     @strawberry.field(permission_classes=[RequireTransaction("SOC_VIEW")])

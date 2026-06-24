@@ -562,7 +562,7 @@ import { useFormValidation, required } from '@/composables/useFormValidation.js'
 
 const GET_MIEMBROS_SIMPLE = `
   query MiembrosSimple {
-    miembros { id nombre apellido1 agrupacion { id }
+    miembros: socios { id nombre apellido1 agrupacion { id }
       usuario { id activo roles { id activo eliminado agrupacionId rol { codigo } } }
     }
   }

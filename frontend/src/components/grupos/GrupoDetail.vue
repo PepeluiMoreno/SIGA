@@ -593,7 +593,7 @@ const MUTATION_ELIMINAR_APORTACION = `
 
 const GQL_VOLUNTARIOS = `
   query VoluntariosParaGrupo($nombre: String, $habilidadId: UUID, $diaSemana: Int) {
-    miembros(filter: { esVoluntario: { eq: true } }) {
+    miembros: socios(esVoluntario: true) {
       id nombre apellido1 email
       habilidades { id habilidad { id nombre } nivelHabilidad { nombre } validado }
       franjasDisponibilidad { diaSemana horaInicio horaFin activa }

@@ -386,7 +386,7 @@ export const REVOCAR_DELEGACION = `
 
 export const GET_MIEMBROS_LIGERO = `
   query MiembrosLigero {
-    miembros(filter: { eliminado: { eq: false }, activo: { eq: true } }) {
+    miembros: socios(activo: true) {
       id
       nombre
       apellido1
