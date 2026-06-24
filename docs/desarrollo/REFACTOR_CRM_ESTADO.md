@@ -60,19 +60,46 @@ pero fallará en tiempo de ejecución contra el esquema nuevo. Reconducir por á
 - `graphql` (6) y `scripts/seeding|importacion|dump` (22): seeds e importadores
   legacy; reconducir cuando se vuelvan a ejecutar.
 
-## PENDIENTE — migraciones Alembic (NO aplicar todavía)
+## Migraciones Alembic — PROBADAS y corregidas en PostgreSQL real
 
-Dos migraciones escritas y **SIN probar en BD**:
+Probadas con un PostgreSQL 16 efímero: esquema base por `create_all` (master),
+`stamp f3d4e5f6a7b8`, datos de ejemplo (simpatizante/socio/voluntario, usuario,
+cuota) y `alembic upgrade head`. **El núcleo aplica en verde y se verificó el
+resultado**: contactos(3, tipo=PERSONA_FISICA), vinculaciones
+(SIMPATIZANTE/SOCIO/VOLUNTARIO), socios(2), voluntarios(1),
+`usuarios.contacto_id`, `cuotas.vinculacion_socio_id`, `miembros→miembros_legacy`,
+`firmas_campania.firmante_id` eliminada.
 
-- `s4t5u6v7w8x9` (p1): crea el esquema nuevo (tipos_vinculacion ampliado,
-  vinculaciones, socios, voluntarios; firmas_campania.firmante_id → contacto_id).
-- `t5u6v7w8x9y0` (p2): migra datos miembros→contactos y **renombra
-  `miembros` → `miembros_legacy`** (punto de no retorno).
+Bugs corregidos en las migraciones (ver commit): grafo con dos heads (p1 colgaba
+de fase2 → rebasado a `f3d4e5f6a7b8`); `tipos_vinculacion` preexistente no recibía
+las columnas nuevas; `dialect.has_column` inexistente; `INSERT` sin `id`;
+`estados/tipos_miembro` sin `codigo` (se usa `nombre`); drop de FKs por nombre
+fijo (frente a `*_fkey` de create_all) → drop dinámico; `contactos_temp` sin las
+columnas propias de Contacto (tipo, razon_social, cif…); FK de firmas a contactos.
 
-⚠️ **`p2` no debe aplicarse hasta que la reconducción `Miembro` → `Contacto` esté
-completa**, porque al renombrar `miembros` desaparece la tabla sobre la que opera
-todo el código que aún usa el modelo `Miembro`. Probar ambas en una BD de staging
-desechable antes de tocar nada real.
+### Lo que las migraciones AÚN no hacen (acoplado a la reconducción)
+
+- **No crean** `participaciones`, `membresias`, `tipos_entidad_juridica`, ni las
+  columnas `participacion_id` de los satélites (firmas/donaciones/convenios/
+  asistencias), ni hacen backfill de participaciones para datos existentes.
+- En greenfield esas tablas las crea `create_all`; pero `create_all` sobre la BD
+  ya migrada **falla** mientras exista el modelo `Miembro` (sus índices
+  `ix_miembros_*` chocan con los de `miembros_legacy`). Es decir: **la migración no
+  cierra hasta completar la reconducción `Miembro`→`Contacto`** (eliminar/retirar
+  el modelo Miembro). Ambas piezas están acopladas.
+
+### Decisión de diseño pendiente (bloqueante)
+
+`EstadoMiembro` y `TipoMiembro` **no tienen columna `codigo`** (solo `nombre`),
+pero código y migraciones la asumen (`Miembro.es_simpatizante` usa
+`tipo_miembro.codigo == 'SIMPATIZANTE'`; `EstadoMiembro.__repr__` usa
+`self.codigo`). Hay que decidir: (a) añadir `codigo` a esos catálogos y semilla
+canónica, o (b) identificar por `nombre` en todo el código. La elección condiciona
+la reconducción.
+
+⚠️ **`p2` no debe aplicarse en producción hasta cerrar la reconducción**, porque
+renombra `miembros`→`miembros_legacy` y deja sin tabla al código que aún usa
+`Miembro`.
 
 ## RGPD (fuera del bundle)
 
