@@ -37,7 +37,7 @@ class JustificanteGasto(BaseModel):
     ejercicio: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
 
     # Quién presenta (miembro)
-    miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("miembros.id"), nullable=False, index=True)
+    miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("contactos.id"), nullable=False, index=True)
 
     # Imputación obligatoria a actividad; opcionalmente a una partida concreta de la actividad
     actividad_id: Mapped[uuid.UUID] = mapped_column(
@@ -68,13 +68,13 @@ class JustificanteGasto(BaseModel):
 
     # Aceptación intermedia por el responsable de la actividad (D7.5)
     aceptado_por_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey("miembros.id"), nullable=True, index=True
+        Uuid, ForeignKey("contactos.id"), nullable=True, index=True
     )
     fecha_aceptacion: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
     # Autorización final (tesorero que aprueba/rechaza)
     aprobado_por_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey("miembros.id"), nullable=True, index=True
+        Uuid, ForeignKey("contactos.id"), nullable=True, index=True
     )
     fecha_aprobacion: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     motivo_rechazo: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -89,7 +89,7 @@ class JustificanteGasto(BaseModel):
 
     # D7.6: si lo presenta el tesorero en nombre de un socio (atajo)
     presentado_en_nombre_de_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey("miembros.id"), nullable=True, index=True
+        Uuid, ForeignKey("contactos.id"), nullable=True, index=True
     )
 
     # Pago
@@ -105,9 +105,9 @@ class JustificanteGasto(BaseModel):
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Relaciones
-    miembro = relationship("Miembro", foreign_keys=[miembro_id], lazy="selectin")
-    aceptador = relationship("Miembro", foreign_keys=[aceptado_por_id], lazy="selectin")
-    aprobador = relationship("Miembro", foreign_keys=[aprobado_por_id], lazy="selectin")
+    miembro = relationship("Contacto", foreign_keys=[miembro_id], lazy="selectin")
+    aceptador = relationship("Contacto", foreign_keys=[aceptado_por_id], lazy="selectin")
+    aprobador = relationship("Contacto", foreign_keys=[aprobado_por_id], lazy="selectin")
     actividad = relationship("Actividad", foreign_keys=[actividad_id], lazy="selectin")
     partida_actividad = relationship(
         "PartidaPresupuestoActividad", foreign_keys=[partida_actividad_id], lazy="selectin"
@@ -118,7 +118,7 @@ class JustificanteGasto(BaseModel):
     )
     apunte_caja = relationship("ApunteCaja", foreign_keys=[apunte_caja_id], lazy="selectin")
     cuenta_contable = relationship("CuentaContable", foreign_keys=[cuenta_contable_id], lazy="selectin")
-    presentado_por_tesorero = relationship("Miembro", foreign_keys=[presentado_en_nombre_de_id], lazy="selectin")
+    presentado_por_tesorero = relationship("Contacto", foreign_keys=[presentado_en_nombre_de_id], lazy="selectin")
 
     def __repr__(self) -> str:
         return f"<JustificanteGasto(numero='{self.numero_justificante}', estado='{self.estado}', importe={self.importe})>"

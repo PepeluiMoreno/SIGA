@@ -43,7 +43,7 @@ class HistorialNombramiento(BaseModel):
 
     # Entidades principales
     miembro_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('miembros.id', ondelete='RESTRICT'), nullable=False
+        Uuid, ForeignKey('contactos.id', ondelete='RESTRICT'), nullable=False
     )
     # Cargo orgánico (catálogo) — nuevo campo; rol_id se mantiene por compatibilidad
     cargo_id: Mapped[Optional[uuid.UUID]] = mapped_column(
@@ -79,7 +79,7 @@ class HistorialNombramiento(BaseModel):
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Relaciones
-    miembro = relationship('Miembro', lazy='selectin')
+    miembro = relationship('Contacto', lazy='selectin')
     cargo = relationship('Cargo', back_populates='nombramientos', lazy='selectin')
     rol = relationship('Rol', lazy='selectin')
     agrupacion = relationship('UnidadOrganizativa', lazy='selectin')

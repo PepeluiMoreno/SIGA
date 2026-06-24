@@ -258,7 +258,7 @@ class Campania(BaseModel):
     objetivos_cumplidos: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
 
     # Responsable y ubicación organizativa
-    responsable_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('miembros.id'), nullable=True, index=True)
+    responsable_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('contactos.id'), nullable=True, index=True)
     agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('unidades_organizativas.id'), nullable=True, index=True)
 
     # Notificación a la membresía (flag one-shot)
@@ -274,7 +274,7 @@ class Campania(BaseModel):
     tipo_campania = relationship('TipoCampania', back_populates='campanias', lazy='selectin')
     estado = relationship('EstadoCampania', foreign_keys=[estado_id], lazy='selectin')
     agrupacion = relationship('UnidadOrganizativa', lazy='selectin')
-    responsable = relationship('Miembro', foreign_keys=[responsable_id], lazy='selectin')
+    responsable = relationship('Contacto', foreign_keys=[responsable_id], lazy='selectin')
     aprobado_por = relationship('Usuario', foreign_keys=[aprobado_por_id], lazy='selectin')
     padre = relationship('Campania', remote_side='Campania.id', foreign_keys=[padre_id], lazy='selectin')
     ediciones = relationship('Campania', back_populates='padre', foreign_keys=[padre_id], lazy='selectin')

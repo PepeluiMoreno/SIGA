@@ -85,7 +85,7 @@ class CuotaAnual(BaseModel):
     __tablename__ = "cuotas_anuales"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("miembros.id"), nullable=False, index=True)
+    miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("contactos.id"), nullable=False, index=True)
     ejercicio: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     agrupacion_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("unidades_organizativas.id"), nullable=False, index=True)
 
@@ -118,7 +118,7 @@ class CuotaAnual(BaseModel):
     )
 
     # Relaciones
-    miembro = relationship('Miembro', foreign_keys=[miembro_id], lazy='selectin')
+    miembro = relationship('Contacto', foreign_keys=[miembro_id], lazy='selectin')
     agrupacion = relationship('UnidadOrganizativa', foreign_keys=[agrupacion_id], lazy='selectin')
     importe_cuota_anio = relationship('ImporteCuotaAnio', foreign_keys=[importe_cuota_anio_id], lazy='selectin')
     estado = relationship('EstadoCuota', foreign_keys=[estado_id], lazy='selectin')
@@ -178,7 +178,7 @@ class SolicitudReduccionCuota(BaseModel):
 
     # Quien la presenta
     miembro_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("miembros.id"), nullable=False, index=True
+        Uuid, ForeignKey("contactos.id"), nullable=False, index=True
     )
 
     # Motivo de reduccion solicitado (del catalogo MotivoReduccionCuota)
@@ -199,15 +199,15 @@ class SolicitudReduccionCuota(BaseModel):
 
     # Resolucion (tesorero)
     resuelto_por_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey("miembros.id"), nullable=True, index=True
+        Uuid, ForeignKey("contactos.id"), nullable=True, index=True
     )
     fecha_resolucion: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     motivo_rechazo: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Relaciones
-    miembro = relationship("Miembro", foreign_keys=[miembro_id], lazy="selectin")
+    miembro = relationship("Contacto", foreign_keys=[miembro_id], lazy="selectin")
     motivo_reduccion = relationship("MotivoReduccionCuota", foreign_keys=[motivo_reduccion_id], lazy="selectin")
-    resolutor = relationship("Miembro", foreign_keys=[resuelto_por_id], lazy="selectin")
+    resolutor = relationship("Contacto", foreign_keys=[resuelto_por_id], lazy="selectin")
     documentos = relationship(
         "SolicitudReduccionCuotaDocumento",
         back_populates="solicitud",

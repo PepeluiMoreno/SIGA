@@ -58,10 +58,10 @@ class Acta(BaseModel):
 
     # Firmantes
     secretario_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('miembros.id'), nullable=True
+        Uuid, ForeignKey('contactos.id'), nullable=True
     )
     presidente_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('miembros.id'), nullable=True
+        Uuid, ForeignKey('contactos.id'), nullable=True
     )
     fecha_firma: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
@@ -71,8 +71,8 @@ class Acta(BaseModel):
     # Relaciones
     reunion = relationship('Reunion', foreign_keys=[reunion_id], back_populates='acta')
     reunion_aprobacion = relationship('Reunion', foreign_keys=[reunion_aprobacion_id])
-    secretario = relationship('Miembro', foreign_keys=[secretario_id], lazy='selectin')
-    presidente = relationship('Miembro', foreign_keys=[presidente_id], lazy='selectin')
+    secretario = relationship('Contacto', foreign_keys=[secretario_id], lazy='selectin')
+    presidente = relationship('Contacto', foreign_keys=[presidente_id], lazy='selectin')
     certificados = relationship('CertificadoAcuerdo', back_populates='acta', lazy='selectin')
 
     def __repr__(self) -> str:
@@ -115,10 +115,10 @@ class CertificadoAcuerdo(BaseModel):
 
     # Firmantes
     secretario_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('miembros.id'), nullable=True
+        Uuid, ForeignKey('contactos.id'), nullable=True
     )
     presidente_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('miembros.id'), nullable=True
+        Uuid, ForeignKey('contactos.id'), nullable=True
     )
 
     ruta_pdf: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
@@ -126,8 +126,8 @@ class CertificadoAcuerdo(BaseModel):
     # Relaciones
     acta = relationship('Acta', back_populates='certificados')
     acuerdo = relationship('Acuerdo', back_populates='certificados')
-    secretario = relationship('Miembro', foreign_keys=[secretario_id], lazy='selectin')
-    presidente = relationship('Miembro', foreign_keys=[presidente_id], lazy='selectin')
+    secretario = relationship('Contacto', foreign_keys=[secretario_id], lazy='selectin')
+    presidente = relationship('Contacto', foreign_keys=[presidente_id], lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<CertificadoAcuerdo(numero='{self.numero_certificado}')>"

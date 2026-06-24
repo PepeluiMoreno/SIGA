@@ -160,7 +160,7 @@ class AsistenteReunionSecretaria(BaseModel):
         Uuid, ForeignKey('sec_reuniones.id', ondelete='CASCADE'), nullable=False, index=True
     )
     miembro_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('miembros.id'), nullable=False, index=True
+        Uuid, ForeignKey('contactos.id'), nullable=False, index=True
     )
 
     # Forma de asistencia
@@ -170,7 +170,7 @@ class AsistenteReunionSecretaria(BaseModel):
 
     # Si asiste representado
     representado_por_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('miembros.id'), nullable=True
+        Uuid, ForeignKey('contactos.id'), nullable=True
     )
 
     # Cargo que ostenta en la reunión (si es órgano directivo)
@@ -178,8 +178,8 @@ class AsistenteReunionSecretaria(BaseModel):
 
     # Relaciones
     reunion = relationship('Reunion', back_populates='asistentes')
-    miembro = relationship('Miembro', foreign_keys=[miembro_id], lazy='selectin')
-    representado_por = relationship('Miembro', foreign_keys=[representado_por_id], lazy='selectin')
+    miembro = relationship('Contacto', foreign_keys=[miembro_id], lazy='selectin')
+    representado_por = relationship('Contacto', foreign_keys=[representado_por_id], lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<AsistenteReunionSecretaria(reunion_id='{self.reunion_id}', miembro_id='{self.miembro_id}')>"
@@ -248,7 +248,7 @@ class Acuerdo(BaseModel):
 
     # Seguimiento
     responsable_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('miembros.id'), nullable=True
+        Uuid, ForeignKey('contactos.id'), nullable=True
     )
     fecha_limite_ejecucion: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     estado_ejecucion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
@@ -263,7 +263,7 @@ class Acuerdo(BaseModel):
     # Relaciones
     punto_orden_dia = relationship('PuntoOrdenDia', back_populates='acuerdos')
     votacion = relationship('VotacionAcuerdo', back_populates='acuerdo', uselist=False, lazy='selectin')
-    responsable = relationship('Miembro', foreign_keys=[responsable_id], lazy='selectin')
+    responsable = relationship('Contacto', foreign_keys=[responsable_id], lazy='selectin')
     certificados = relationship('CertificadoAcuerdo', back_populates='acuerdo', lazy='selectin')
 
     def __repr__(self) -> str:

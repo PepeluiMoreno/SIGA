@@ -71,7 +71,7 @@ class Pago(BaseModel):
     moneda: Mapped[str] = mapped_column(String(3), default="EUR", nullable=False)
 
     email_pagador: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    miembro_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey("miembros.id"), nullable=True, index=True)
+    miembro_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey("contactos.id"), nullable=True, index=True)
 
     id_externo_principal: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     id_externo_secundario: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
@@ -82,7 +82,7 @@ class Pago(BaseModel):
     proveedor = relationship('ProveedorPago', lazy='selectin')
     tipo_pago = relationship('TipoPago', lazy='selectin')
     estado = relationship('EstadoPago', foreign_keys=[estado_id], lazy='selectin')
-    miembro = relationship('Miembro', foreign_keys=[miembro_id], lazy='selectin')
+    miembro = relationship('Contacto', foreign_keys=[miembro_id], lazy='selectin')
     suscripcion = relationship('Suscripcion', back_populates='pagos', lazy='selectin')
 
     def __repr__(self) -> str:

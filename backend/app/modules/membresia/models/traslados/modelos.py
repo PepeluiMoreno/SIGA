@@ -33,7 +33,7 @@ class SolicitudTraslado(BaseModel):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
 
     miembro_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('miembros.id'), nullable=False, index=True
+        Uuid, ForeignKey('contactos.id'), nullable=False, index=True
     )
     agrupacion_origen_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey('unidades_organizativas.id'), nullable=False
@@ -73,7 +73,7 @@ class SolicitudTraslado(BaseModel):
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Relaciones
-    miembro = relationship('Miembro', lazy='selectin')
+    miembro = relationship('Contacto', lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<SolicitudTraslado(miembro={self.miembro_id}, estado='{self.estado}')>"

@@ -124,11 +124,11 @@ class DelegacionFirma(BaseModel):
 
     # Delegante (normalmente el Presidente)
     delegante_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('miembros.id'), nullable=False, index=True
+        Uuid, ForeignKey('contactos.id'), nullable=False, index=True
     )
     # Delegado
     delegado_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('miembros.id'), nullable=False, index=True
+        Uuid, ForeignKey('contactos.id'), nullable=False, index=True
     )
 
     # Alcance
@@ -156,8 +156,8 @@ class DelegacionFirma(BaseModel):
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Relaciones
-    delegante = relationship('Miembro', foreign_keys=[delegante_id], lazy='selectin')
-    delegado = relationship('Miembro', foreign_keys=[delegado_id], lazy='selectin')
+    delegante = relationship('Contacto', foreign_keys=[delegante_id], lazy='selectin')
+    delegado = relationship('Contacto', foreign_keys=[delegado_id], lazy='selectin')
     acuerdo_autorizacion = relationship('Acuerdo', foreign_keys=[acuerdo_autorizacion_id])
 
     def __repr__(self) -> str:

@@ -37,7 +37,7 @@ class CuentasAnuales(BaseModel):
     # Aprobación por junta (D10.3)
     fecha_aprobacion: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     aprobado_por_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey("miembros.id"), nullable=True, index=True
+        Uuid, ForeignKey("contactos.id"), nullable=True, index=True
     )
     acta_referencia: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
 
@@ -47,7 +47,7 @@ class CuentasAnuales(BaseModel):
 
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    aprobador = relationship("Miembro", foreign_keys=[aprobado_por_id], lazy="selectin")
+    aprobador = relationship("Contacto", foreign_keys=[aprobado_por_id], lazy="selectin")
 
     def __repr__(self) -> str:
         return f"<CuentasAnuales(ejercicio={self.ejercicio}, estado={self.estado})>"

@@ -103,7 +103,7 @@ class Actividad(BaseModel):
         Uuid, ForeignKey('grupos_trabajo.id'), nullable=True, index=True
     )
     responsable_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('miembros.id'), nullable=True, index=True
+        Uuid, ForeignKey('contactos.id'), nullable=True, index=True
     )
 
     # Temporal
@@ -161,7 +161,7 @@ class Actividad(BaseModel):
     aprobado_por = relationship('Usuario', foreign_keys=[aprobado_por_id], lazy='selectin')
     campania = relationship('Campania', foreign_keys=[campania_id], back_populates='actividades', lazy='selectin')
     grupo = relationship('GrupoTrabajo', foreign_keys=[grupo_id], lazy='selectin')
-    responsable = relationship('Miembro', foreign_keys=[responsable_id], lazy='selectin')
+    responsable = relationship('Contacto', foreign_keys=[responsable_id], lazy='selectin')
     padre = relationship(
         'Actividad', remote_side='Actividad.id',
         foreign_keys=[padre_id], lazy='selectin',
@@ -248,7 +248,7 @@ class RegistroTrabajoActividad(BaseModel):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     actividad_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('actividades.id', ondelete='CASCADE'), nullable=False, index=True)
-    miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('miembros.id'), nullable=False, index=True)
+    miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('contactos.id'), nullable=False, index=True)
     fecha: Mapped[date] = mapped_column(Date, nullable=False)
     horas: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False)
     descripcion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -256,7 +256,7 @@ class RegistroTrabajoActividad(BaseModel):
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     actividad = relationship('Actividad', back_populates='registros_trabajo', lazy='selectin')
-    miembro = relationship('Miembro', foreign_keys=[miembro_id], lazy='selectin')
+    miembro = relationship('Contacto', foreign_keys=[miembro_id], lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<RegistroTrabajoActividad(miembro_id='{self.miembro_id}', horas={self.horas})>"
