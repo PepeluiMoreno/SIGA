@@ -40,7 +40,8 @@ from app.modules.core.geografico.nivel_organizativo import (
 )
 from app.modules.membresia.models.estado_miembro import EstadoMiembro
 from app.modules.membresia.models.historial_nombramiento import HistorialNombramiento
-from app.modules.membresia.models.miembro import Miembro, TipoMiembro
+from app.modules.membresia.models.miembro import TipoMiembro
+from app.modules.membresia.models.contacto import Contacto
 from app.modules.economico.models.cobro.forma_pago import FormaPago  # noqa: F401 — registra mapper
 from app.scripts.seeding.seed_init_accesos import seed as seed_roles_funcionales
 from app.scripts.seeding.seed_comunicacion import seed_comunicacion
@@ -792,7 +793,7 @@ async def ensure_coordinadores_usuarios(session) -> None:
 
     for nombramiento in nombramientos:
         miembro = (await session.execute(
-            select(Miembro).where(Miembro.id == nombramiento.miembro_id)
+            select(Contacto).where(Contacto.id == nombramiento.miembro_id)
         )).scalar_one_or_none()
 
         if not miembro or not miembro.email:
@@ -800,10 +801,10 @@ async def ensure_coordinadores_usuarios(session) -> None:
 
         email = miembro.email.lower().strip()
 
-        # Buscar primero por miembro_id (constraint único): un miembro tiene como
+        # Buscar primero por contacto_id (constraint único): un contacto tiene como
         # mucho un usuario, aunque su email haya cambiado respecto al de la cuenta.
         usuario = (await session.execute(
-            select(Usuario).where(Usuario.miembro_id == miembro.id, Usuario.eliminado == False)
+            select(Usuario).where(Usuario.contacto_id == miembro.id, Usuario.eliminado == False)
         )).scalar_one_or_none()
         if usuario is None:
             usuario = (await session.execute(
@@ -816,7 +817,7 @@ async def ensure_coordinadores_usuarios(session) -> None:
                 email=email,
                 password_hash=pwd_hash,
                 activo=True,
-                miembro_id=miembro.id,
+                contacto_id=miembro.id,
                 intentos_login=0,
                 eliminado=False,
                 fecha_creacion=now,

@@ -15,7 +15,7 @@ import uuid
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.acceso.models.usuario import TipoVinculacion
+from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
 from app.modules.configuracion.models.estados import (
     EstadoCuota, EstadoTarea, EstadoParticipante, EstadoOrdenCobro,
     EstadoRemesa, EstadoDonacion, EstadoNotificacion,
@@ -51,13 +51,14 @@ _MOTIVOS_REDUCCION_CUOTA = [
     {"codigo": "BECA",     "nombre": "Beca / situación social",  "descripcion": "Reducción total por beca o situación social acreditada",                  "porcentaje_reduccion": 100, "orden": 50, "activo": True},
 ]
 
+# Catálogo canónico de tipos de vinculación (codigo estable; ver migración p2).
 _TIPOS_VINCULACION = [
-    {"nombre": "Socio",                              "requiere_entidad": False, "activo": True},
-    {"nombre": "Simpatizante",                       "requiere_entidad": False, "activo": True},
-    {"nombre": "Trabajador autónomo",                "requiere_entidad": False, "activo": True},
-    {"nombre": "Socio de asociación amiga",          "requiere_entidad": True,  "activo": True},
-    {"nombre": "Empleado de servicio externo contratado", "requiere_entidad": True, "activo": True},
-    {"nombre": "Sistema",                            "requiere_entidad": False, "activo": True},
+    {"nombre": "Firmante",     "codigo": "FIRMANTE",     "ambito": "central",     "area_responsable": "COMUNICACION_FIRMAS",            "requiere_satelite": False, "activo": True},
+    {"nombre": "Simpatizante", "codigo": "SIMPATIZANTE", "ambito": "central",     "area_responsable": "COMUNICACION_SIMPATIZANTES",     "requiere_satelite": False, "activo": True},
+    {"nombre": "Socio",        "codigo": "SOCIO",        "ambito": "territorial", "area_responsable": "MEMBRESIA_SOCIO_GESTIONAR",      "requiere_satelite": True,  "activo": True},
+    {"nombre": "Voluntario",   "codigo": "VOLUNTARIO",   "ambito": "territorial", "area_responsable": "MEMBRESIA_VOLUNTARIO_GESTIONAR", "requiere_satelite": True,  "activo": True},
+    {"nombre": "Donante",      "codigo": "DONANTE",      "ambito": "central",     "area_responsable": "TESORERIA_DONANTES",             "requiere_satelite": False, "activo": True},
+    {"nombre": "Empleado",     "codigo": "EMPLEADO",     "ambito": "central",     "area_responsable": "RECURSOS_HUMANOS",               "requiere_satelite": True,  "activo": True},
 ]
 
 _FORMAS_PAGO = [
