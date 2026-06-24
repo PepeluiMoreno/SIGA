@@ -2,16 +2,16 @@
 
 ## Por qué
 
-El VPS **solo admite SSH por la VPN** (`10.9.0.x`): no es accesible por SSH desde
-Internet (el `22` está filtrado upstream y el `35004` público no llega al sshd).
-Por eso un runner GitHub-hosted no puede entrar por `scp`/`ssh`.
+El sshd del VPS **solo es accesible dentro de la VPN** (`10.9.0.x`): el `22` está
+filtrado aguas arriba y el `35004` público no llega al sshd. Un runner
+**GitHub-hosted** vive en la nube de GitHub, **fuera de la VPN**, así que no tiene
+ruta hasta el SSH del VPS y no puede desplegar por `scp`/`ssh` (de ahí los
+timeouts y el `handshake EOF`).
 
-La solución operativa **sin perder seguridad** es un **runner self-hosted** en el
-propio VPS:
-
-- Solo abre conexiones **salientes** a GitHub (long-poll HTTPS). **No expone
-  ningún puerto entrante** → cero superficie de ataque nueva.
-- Ejecuta el despliegue **localmente**, junto a Docker. Ya no hay scp/ssh/VPN.
+Por tanto el runner **tiene que estar en el VPS, no en GitHub**: corriendo dentro
+del propio VPS despliega **en local**, junto a Docker, y ya no necesita SSH ni VPN.
+Además solo abre conexiones **salientes** a GitHub (long-poll HTTPS): no expone
+ningún puerto entrante nuevo.
 
 El workflow (`.github/workflows/deploy.yml`) selecciona el runner por **labels**:
 
@@ -29,41 +29,18 @@ El runner corre bajo el usuario **`deployer`** (el mismo que ya despliega la app
 No hace falta crear un usuario nuevo.
 
 1. **Docker** y **docker compose** funcionando.
-2. `deployer` debe poder hablar con Docker. Ver **"Acceso a Docker y seguridad"**
-   más abajo para elegir entre grupo `docker` (simple, root-equivalente) o
-   **Docker rootless** (recomendado, mínimo privilegio).
-3. `deployer` debe tener escritura sobre el directorio de deploy
-   (`/opt/docker/apps/SIGA`). Como ya despliega hoy, normalmente ya la tiene.
-   Comprobar:
+2. `deployer` en el grupo `docker` (para ejecutar `docker compose`):
    ```bash
-   groups deployer              # ver si está en "docker" (solo si vas por grupo docker)
+   sudo usermod -aG docker deployer
+   ```
+3. `deployer` con escritura sobre el directorio de deploy
+   (`/opt/docker/apps/SIGA`). Como ya despliega hoy, normalmente ya la tiene.
+
+   Comprobar ambos:
+   ```bash
+   groups deployer              # debe aparecer "docker"
    ls -ld /opt/docker/apps/SIGA # deployer debe poder escribir ahí
    ```
-
-## Acceso a Docker y seguridad
-
-> **Importante:** pertenecer al grupo `docker` equivale a ser **root** en el host
-> (`docker run -v /:/host ... chroot /host` da control total). Además el runner
-> **ejecuta el contenido de los workflows**. Elige el modelo de acceso conscientemente.
-
-**Opción recomendada — Docker rootless** (el daemon corre como `deployer`, sin root;
-un escape de contenedor te deja como usuario sin privilegios, no como root):
-```bash
-sudo -iu deployer
-dockerd-rootless-setuptool.sh install
-# exportar el socket del usuario (añadir también al entorno del runner, ver abajo)
-echo 'export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock' >> ~/.bashrc
-# permitir que el daemon siga vivo sin sesión interactiva
-sudo loginctl enable-linger deployer
-```
-Notas: puertos <1024 necesitan ajuste; `--privileged` no aplica. Para un compose
-de app + db suele funcionar sin cambios.
-
-**Opción simple — grupo `docker`** (root-equivalente; acéptalo solo con candados:
-usuario dedicado, *GitHub Environment* con aprobación requerida y branch protection):
-```bash
-sudo usermod -aG docker deployer
-```
 
 ## Instalar y registrar el runner (STAGING / VPS2)
 
@@ -97,11 +74,6 @@ sudo usermod -aG docker deployer
    sudo ./svc.sh start
    sudo ./svc.sh status
    ```
-   > **Con Docker rootless**, el servicio necesita ver el socket del usuario.
-   > Asegúrate de que `DOCKER_HOST=unix:///run/user/<uid>/docker.sock` esté en
-   > el entorno del runner: añádelo a `~/actions-runner/.env` (lo lee el runner)
-   > o exporta `DOCKER_HOST` en el `.bashrc` de `deployer` antes de instalar el
-   > servicio. Verifica con un job de prueba que `docker ps` responde.
 
 ## Producción (VPS1)
 
