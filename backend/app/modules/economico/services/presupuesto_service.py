@@ -162,9 +162,11 @@ class PresupuestoService:
         Si no hay datos de CuotaAnual para el origen, aplica fallback nominal
         (ratio de importes BASE de ImporteCuotaAnio).
         """
-        from sqlalchemy import func
+        from sqlalchemy import func, and_
         from ..models.cuotas import CuotaAnual, ImporteCuotaAnio
-        from app.modules.membresia.models.miembro import Miembro
+        from app.modules.membresia.models.vinculacion import Vinculacion
+        from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
+        from app.modules.membresia.models.participacion import Participacion, Membresia
 
         # ── Datos reales del ejercicio origen ───────────────────────────────
         r = await self.session.execute(
@@ -207,10 +209,22 @@ class PresupuestoService:
             return None  # sin tarifas del nuevo ejercicio
 
         # ── Proyección: socios activos × tarifa nueva ────────────────────────
+        # Socio activo = vinculación SOCIO 'activa'; el tipo sale de su Membresía.
         r_members = await self.session.execute(
-            select(Miembro.tipo_miembro_id, func.count(Miembro.id))
-            .where(Miembro.activo == True, Miembro.eliminado == False)
-            .group_by(Miembro.tipo_miembro_id)
+            select(Membresia.tipo_miembro_id, func.count(Vinculacion.id))
+            .select_from(Vinculacion)
+            .join(TipoVinculacion, Vinculacion.tipo_vinculacion_id == TipoVinculacion.id)
+            .outerjoin(Participacion, and_(
+                Participacion.contacto_id == Vinculacion.contacto_id,
+                Participacion.tipo == "MEMBRESIA",
+            ))
+            .outerjoin(Membresia, Membresia.participacion_id == Participacion.id)
+            .where(
+                TipoVinculacion.codigo == "SOCIO",
+                Vinculacion.estado == "activa",
+                Vinculacion.eliminado == False,
+            )
+            .group_by(Membresia.tipo_miembro_id)
         )
         total_nominal_nuevo = Decimal("0")
         for tipo_id, count in r_members.all():
