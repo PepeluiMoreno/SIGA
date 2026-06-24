@@ -26,7 +26,7 @@
   --t-text-main:  #111827;
   --t-text-muted: #6b7280;
   --t-border:     #e5e7eb;
-  --font-main: 'Inter', sans-serif;
+  --font-main: 'Plus Jakarta Sans Variable', 'Inter', system-ui, sans-serif;
 }
 
 [data-theme="azul"] {
@@ -144,3 +144,103 @@ body { font-family: var(--font-main); color: var(--t-text-main); }
 .focus\:border-purple-500:focus { border-color: var(--t-500) !important; }
 .focus\:ring-purple-400:focus   { --tw-ring-color: var(--t-400); }
 .focus\:ring-purple-500:focus   { --tw-ring-color: var(--t-500); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ENMARCADO BASE DE CONTROLES DE FORMULARIO
+   Usa :where() → especificidad 0, de modo que cualquier clase utility de
+   Tailwind en un control concreto siempre prevalece (no rompe lo existente).
+   Da un suelo coherente y enmarcado a los 451 inputs / 163 selects / 61
+   textareas crudos de la app, con foco y colores tematizados (--t-*).
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer base {
+  :where(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"])
+         :not([type="file"]):not([type="color"]):not([type="submit"])
+         :not([type="button"]):not([type="reset"]):not([type="image"]),
+    select,
+    textarea
+  ) {
+    border: 1px solid var(--t-border, #e5e7eb);
+    border-radius: 0.5rem;
+    background-color: var(--t-card-bg, #fff);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: var(--t-text-main, #111827);
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+
+  :where(input, textarea)::placeholder { color: #9ca3af; }
+
+  :where(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"])
+         :not([type="file"]):not([type="color"]),
+    select,
+    textarea
+  ):focus {
+    outline: none;
+    border-color: var(--t-500, #8b5cf6);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--t-500, #8b5cf6) 22%, transparent);
+  }
+
+  :where(
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea
+  ):disabled {
+    background-color: #f9fafb;
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  :where(input[type="checkbox"], input[type="radio"]) {
+    accent-color: var(--t-600, #7c3aed);
+    width: 1rem;
+    height: 1rem;
+  }
+
+  :where(textarea) { min-height: 5rem; resize: vertical; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CLASES DE COMPONENTE REUTILIZABLES — building blocks DRY
+   Para usar directamente en plantillas o desde las primitivas App*.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer components {
+  /* Superficie / tarjeta */
+  .card {
+    @apply bg-white border border-gray-200 rounded-xl shadow-sm;
+  }
+
+  /* Grupo de campos enmarcado y titulado */
+  .fieldset {
+    @apply card p-5 space-y-4;
+  }
+  .fieldset-legend {
+    @apply flex items-center gap-2 text-sm font-semibold text-gray-900
+           pb-2 mb-1 border-b border-gray-100;
+  }
+
+  /* Etiquetas y textos auxiliares de campo */
+  .field-label   { @apply text-sm font-medium text-slate-700 leading-tight; }
+  .field-help    { @apply text-xs text-slate-500 leading-snug; }
+  .field-error   { @apply text-xs text-red-600 leading-snug flex items-center gap-1; }
+
+  /* Control de formulario canónico (mismo aspecto que el enmarcado base,
+     pero como clase explícita para adopción uniforme) */
+  .control {
+    @apply w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white
+           text-gray-900 transition-colors
+           focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/25
+           disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed;
+  }
+
+  /* Anchos proporcionales al contenido esperado del campo */
+  .w-field-xs { @apply w-full sm:w-24; }   /* CP, nº, año */
+  .w-field-sm { @apply w-full sm:w-40; }   /* fecha, DNI, teléfono */
+  .w-field-md { @apply w-full sm:w-64; }   /* nombre, email corto */
+  .w-field-lg { @apply w-full sm:w-96; }   /* email largo, asunto */
+
+  /* Cabecera y cuerpo de página (layout único de vistas) */
+  .page-body { @apply space-y-6; }
+}

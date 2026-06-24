@@ -6,6 +6,9 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans Variable"', 'Inter', 'system-ui', 'sans-serif'],
+      },
       colors: {
         primary: {
           50: '#faf5ff',
