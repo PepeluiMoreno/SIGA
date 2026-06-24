@@ -1,6 +1,8 @@
 from pydantic_settings import BaseSettings
-from pydantic import computed_field
+from pydantic import computed_field, model_validator
 from functools import lru_cache
+
+from app.core.secrets import read_secret_file
 
 
 class Settings(BaseSettings):
@@ -27,6 +29,19 @@ class Settings(BaseSettings):
     smtp_password: str = ""       # env: SMTP_PASSWORD
     smtp_from: str = ""           # env: SMTP_FROM  (si vacío usa smtp_username)
     smtp_encryption: str = "tls"  # env: SMTP_ENCRYPTION  (tls | ssl | none)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _aplicar_docker_secrets(cls, data):
+        """Para cada campo, si existe ``<CAMPO>_FILE`` apuntando a un Docker
+        secret legible, su valor prevalece sobre la variable de entorno.
+        Conforme al Estándar de Ingeniería §4.5."""
+        if isinstance(data, dict):
+            for name in cls.model_fields:
+                valor = read_secret_file(name.upper())
+                if valor is not None:
+                    data[name] = valor
+        return data
 
     @computed_field
     @property

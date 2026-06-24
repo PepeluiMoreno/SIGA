@@ -39,7 +39,9 @@ data/
 *.pem
 *.p12
 *.pfx
-secrets/
+# Secretos montados como fichero (Docker secret): carpeta versionada vacía
+secrets/*
+!secrets/.gitkeep
 credentials/
 
 # Frontend

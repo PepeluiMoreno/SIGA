@@ -22,6 +22,7 @@ import uuid
 from sqlalchemy import select
 
 from app.core.database import async_session
+from app.core.secrets import read_secret_env
 from app.core.security import hash_password, verify_password
 from app.modules.acceso.models.rol import Rol, TipoRol
 from app.modules.acceso.models.rol_transaccion import RolTransaccion
@@ -228,7 +229,7 @@ async def ensure_admin_user(session, superadmin: Rol) -> Optional[Usuario]:
     anteriores).
     """
     raw_emails = os.getenv("INITIAL_ADMIN_EMAIL", "")
-    password = os.getenv("INITIAL_ADMIN_PASSWORD")
+    password = read_secret_env("INITIAL_ADMIN_PASSWORD") or None
     emails = [e.strip() for e in raw_emails.split(",") if e.strip()]
     if not emails or not password:
         print(
