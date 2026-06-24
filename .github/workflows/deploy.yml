@@ -71,10 +71,9 @@ jobs:
           cache-to: type=inline
 
   # El deploy corre en un runner SELF-HOSTED instalado en el propio VPS.
-  # Motivo: el VPS solo admite SSH por la VPN (10.9.0.x); no es accesible por SSH
-  # desde Internet, así que un runner GitHub-hosted no puede entrar por scp/ssh.
   # El runner self-hosted solo abre conexiones SALIENTES a GitHub (no expone
-  # ningún puerto entrante) y ejecuta el despliegue localmente, junto a Docker.
+  # ningún puerto entrante) y ejecuta el despliegue localmente, junto a Docker,
+  # sin depender de SSH/scp entrante hacia el VPS.
   #
   # Requisitos de registro del runner (ver scripts no incluidos):
   #   - STAGING (VPS2):     labels  self-hosted, siga-staging

@@ -2,16 +2,18 @@
 
 ## Por qué
 
-El sshd del VPS **solo es accesible dentro de la VPN** (`10.9.0.x`): el `22` está
-filtrado aguas arriba y el `35004` público no llega al sshd. Un runner
-**GitHub-hosted** vive en la nube de GitHub, **fuera de la VPN**, así que no tiene
-ruta hasta el SSH del VPS y no puede desplegar por `scp`/`ssh` (de ahí los
-timeouts y el `handshake EOF`).
+El runner self-hosted corre **dentro del propio VPS**: despliega **en local**,
+junto a Docker, y solo abre conexiones **salientes** a GitHub (long-poll HTTPS).
+Con ello el deploy **no depende de SSH/scp entrante** hacia el VPS ni de estar en
+la VPN, y no expone ningún puerto entrante nuevo.
 
-Por tanto el runner **tiene que estar en el VPS, no en GitHub**: corriendo dentro
-del propio VPS despliega **en local**, junto a Docker, y ya no necesita SSH ni VPN.
-Además solo abre conexiones **salientes** a GitHub (long-poll HTTPS): no expone
-ningún puerto entrante nuevo.
+> **Pendiente de verificar (no asumir):** el motivo concreto por el que el deploy
+> anterior por SSH (`appleboy/ssh-action` desde un runner GitHub-hosted) fallaba.
+> Antes de dar por buena esta arquitectura conviene confirmar con un test real:
+> ¿es alcanzable el sshd de `vps2.europalaica.org` desde fuera de la VPN, y por
+> qué puerto? Si lo es, el deploy por SSH también sería viable corrigiendo el
+> puerto/clave del action; el runner self-hosted sigue siendo válido porque
+> elimina la dependencia de SSH entrante por completo.
 
 El workflow (`.github/workflows/deploy.yml`) selecciona el runner por **labels**:
 
