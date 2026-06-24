@@ -85,7 +85,9 @@ class CuotaAnual(BaseModel):
     __tablename__ = "cuotas_anuales"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("contactos.id"), nullable=False, index=True)
+    # Pureza Party-Role: la cuota pertenece a la VINCULACIÓN de socio, no a la
+    # persona directamente (la migración dropeó miembro_id y añadió este FK).
+    vinculacion_socio_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("vinculaciones.id"), nullable=False, index=True)
     ejercicio: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     agrupacion_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("unidades_organizativas.id"), nullable=False, index=True)
 
@@ -118,7 +120,7 @@ class CuotaAnual(BaseModel):
     )
 
     # Relaciones
-    miembro = relationship('Contacto', foreign_keys=[miembro_id], lazy='selectin')
+    vinculacion_socio = relationship('Vinculacion', foreign_keys=[vinculacion_socio_id], lazy='selectin')
     agrupacion = relationship('UnidadOrganizativa', foreign_keys=[agrupacion_id], lazy='selectin')
     importe_cuota_anio = relationship('ImporteCuotaAnio', foreign_keys=[importe_cuota_anio_id], lazy='selectin')
     estado = relationship('EstadoCuota', foreign_keys=[estado_id], lazy='selectin')

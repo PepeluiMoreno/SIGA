@@ -35,7 +35,7 @@ class Recibo(BaseModel):
     concepto: Mapped[str] = mapped_column(String(300), nullable=False)
 
     # Destinatario y vinculaciones
-    miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("contactos.id"), nullable=False, index=True)
+    vinculacion_socio_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("vinculaciones.id"), nullable=False, index=True)
     cuota_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid, ForeignKey("cuotas_anuales.id", ondelete="SET NULL"), nullable=True, index=True
     )
@@ -71,7 +71,7 @@ class Recibo(BaseModel):
     )
 
     # Relaciones
-    miembro = relationship("Contacto", foreign_keys=[miembro_id], lazy="selectin")
+    vinculacion_socio = relationship("Vinculacion", foreign_keys=[vinculacion_socio_id], lazy="selectin")
     cuota = relationship("CuotaAnual", foreign_keys=[cuota_id], lazy="selectin")
     orden_cobro = relationship("OrdenCobro", foreign_keys=[orden_cobro_id], lazy="selectin")
     plantilla_email_aviso = relationship("PlantillaEmail", foreign_keys=[plantilla_email_aviso_id], lazy="selectin")
