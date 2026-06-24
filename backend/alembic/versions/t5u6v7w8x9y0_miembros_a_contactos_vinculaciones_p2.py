@@ -24,17 +24,50 @@ branch_labels = None
 depends_on = None
 
 
+def _has_column(table: str, column: str) -> bool:
+    """¿Existe `table.column`? (el dialecto asyncpg no expone `has_column`)."""
+    insp = sa.inspect(op.get_bind())
+    return column in {c["name"] for c in insp.get_columns(table)}
+
+
+def _drop_fks_on_column(table: str, column: str) -> None:
+    """Elimina cualquier FK que restrinja `table.column`, sea cual sea su nombre.
+
+    Robusto frente a las dos formas de crear el esquema base: por migraciones
+    (nombres tipo `fk_...`) o por `create_all` (nombres `{tabla}_{col}_fkey`).
+    """
+    op.execute(f"""
+        DO $$
+        DECLARE r record;
+        BEGIN
+            FOR r IN
+                SELECT con.conname
+                FROM pg_constraint con
+                JOIN pg_attribute a
+                  ON a.attrelid = con.conrelid AND a.attnum = ANY(con.conkey)
+                WHERE con.contype = 'f'
+                  AND con.conrelid = '{table}'::regclass
+                  AND a.attname = '{column}'
+            LOOP
+                EXECUTE format('ALTER TABLE {table} DROP CONSTRAINT %I', r.conname);
+            END LOOP;
+        END $$;
+    """)
+
+
 def upgrade() -> None:
     # ========== 1. Insertar tipos_vinculacion base ==========
+    # id explícito con gen_random_uuid(): la tabla preexistente (catálogo de
+    # acceso) no tiene server-default en `id` (el modelo usa default de Python).
     op.execute("""
-        INSERT INTO tipos_vinculacion (nombre, codigo, ambito, area_responsable, requiere_satelite, activo)
+        INSERT INTO tipos_vinculacion (id, nombre, codigo, ambito, area_responsable, requiere_satelite, activo)
         VALUES
-            ('Firmante', 'FIRMANTE', 'central', 'COMUNICACION_FIRMAS', FALSE, TRUE),
-            ('Simpatizante', 'SIMPATIZANTE', 'central', 'COMUNICACION_SIMPATIZANTES', FALSE, TRUE),
-            ('Socio', 'SOCIO', 'territorial', 'MEMBRESIA_SOCIO_GESTIONAR', TRUE, TRUE),
-            ('Voluntario', 'VOLUNTARIO', 'territorial', 'MEMBRESIA_VOLUNTARIO_GESTIONAR', TRUE, TRUE),
-            ('Donante', 'DONANTE', 'central', 'TESORERIA_DONANTES', FALSE, TRUE),
-            ('Empleado', 'EMPLEADO', 'central', 'RECURSOS_HUMANOS', TRUE, TRUE)
+            (gen_random_uuid(), 'Firmante', 'FIRMANTE', 'central', 'COMUNICACION_FIRMAS', FALSE, TRUE),
+            (gen_random_uuid(), 'Simpatizante', 'SIMPATIZANTE', 'central', 'COMUNICACION_SIMPATIZANTES', FALSE, TRUE),
+            (gen_random_uuid(), 'Socio', 'SOCIO', 'territorial', 'MEMBRESIA_SOCIO_GESTIONAR', TRUE, TRUE),
+            (gen_random_uuid(), 'Voluntario', 'VOLUNTARIO', 'territorial', 'MEMBRESIA_VOLUNTARIO_GESTIONAR', TRUE, TRUE),
+            (gen_random_uuid(), 'Donante', 'DONANTE', 'central', 'TESORERIA_DONANTES', FALSE, TRUE),
+            (gen_random_uuid(), 'Empleado', 'EMPLEADO', 'central', 'RECURSOS_HUMANOS', TRUE, TRUE)
         ON CONFLICT (codigo) DO NOTHING
     """)
 
@@ -52,6 +85,16 @@ def upgrade() -> None:
     """)
     op.execute("ALTER TABLE contactos_temp ADD PRIMARY KEY (id)")
 
+    # contactos_temp se creó copiando columnas de `miembros`; faltan las columnas
+    # propias del modelo Contacto (discriminador + datos de persona jurídica).
+    # Todos los miembros migrados son personas físicas.
+    op.execute("ALTER TABLE contactos_temp ADD COLUMN tipo VARCHAR(20) NOT NULL DEFAULT 'PERSONA_FISICA'")
+    op.execute("ALTER TABLE contactos_temp ADD COLUMN razon_social VARCHAR(255)")
+    op.execute("ALTER TABLE contactos_temp ADD COLUMN cif VARCHAR(20)")
+    op.execute("ALTER TABLE contactos_temp ADD COLUMN tipo_entidad_juridica_id UUID")
+    op.execute("ALTER TABLE contactos_temp ADD COLUMN actividad_principal VARCHAR(500)")
+    op.execute("ALTER TABLE contactos_temp ADD COLUMN representante_legal_id UUID")
+
     # ========== 3. Crear vinculaciones (TODAS ANTES de renombrar miembros) ==========
     
     # 3a. Simpatizantes
@@ -62,23 +105,26 @@ def upgrade() -> None:
                     WHEN m.activo = FALSE THEN 'inactiva' ELSE 'activa' END,
                m.agrupacion_id, COALESCE(m.fecha_creacion, NOW()), m.creado_por_id
         FROM miembros m
-        JOIN tipos_miembro tm ON m.tipo_miembro_id = tm.id AND tm.codigo = 'SIMPATIZANTE'
+        JOIN tipos_miembro tm ON m.tipo_miembro_id = tm.id AND tm.nombre = 'Simpatizante'
         JOIN tipos_vinculacion tv ON tv.codigo = 'SIMPATIZANTE'
     """)
+    # NOTA: tipos_miembro y estados_miembro NO tienen columna `codigo`; se
+    # identifican por `nombre`. Verificar que los nombres canónicos del despliegue
+    # real coinciden ('Simpatizante', 'Alta', 'Suspendido') antes de aplicar.
 
     # 3b. Socios (NO simpatizantes)
     op.execute("""
         INSERT INTO vinculaciones (miembro_id, tipo_vinculacion_id, fecha_inicio, fecha_fin, estado, agrupacion_id, fecha_creacion, creado_por_id)
         SELECT m.id, tv.id, m.fecha_alta, m.fecha_baja,
                CASE WHEN m.fecha_baja IS NOT NULL THEN 'cerrada'
-                    WHEN em.codigo = 'ACTIVO' THEN 'activa'
-                    WHEN em.codigo = 'SUSPENDIDO' THEN 'inactiva' ELSE 'cerrada' END,
+                    WHEN em.nombre = 'Alta' THEN 'activa'
+                    WHEN em.nombre = 'Suspendido' THEN 'inactiva' ELSE 'cerrada' END,
                m.agrupacion_id, COALESCE(m.fecha_creacion, NOW()), m.creado_por_id
         FROM miembros m
         LEFT JOIN tipos_miembro tm ON m.tipo_miembro_id = tm.id
         LEFT JOIN estados_miembro em ON m.estado_id = em.id
         JOIN tipos_vinculacion tv ON tv.codigo = 'SOCIO'
-        WHERE tm.codigo IS NULL OR tm.codigo != 'SIMPATIZANTE'
+        WHERE tm.nombre IS NULL OR tm.nombre != 'Simpatizante'
     """)
 
     # 3c. Voluntarios
@@ -101,8 +147,8 @@ def upgrade() -> None:
                            motivo_reduccion_id, motivo_baja_id, motivo_baja_texto, fecha_creacion, fecha_modificacion)
         SELECT v.id, NULL, NULL, m.incremento_cuota, m.incremento_cuota_obs, m.iban, m.swift_bic, m.referencia_pago,
                m.forma_pago_id, CASE WHEN m.fecha_baja IS NOT NULL THEN 'baja'
-                                     WHEN em.codigo = 'ACTIVO' THEN 'activo'
-                                     WHEN em.codigo = 'SUSPENDIDO' THEN 'suspendido' ELSE 'baja' END,
+                                     WHEN em.nombre = 'Alta' THEN 'activo'
+                                     WHEN em.nombre = 'Suspendido' THEN 'suspendido' ELSE 'baja' END,
                m.es_socio_honor, m.motivo_reduccion_id, m.motivo_baja_id, m.motivo_baja_texto,
                COALESCE(m.fecha_creacion, NOW()), m.fecha_modificacion
         FROM miembros m
@@ -140,8 +186,10 @@ def upgrade() -> None:
     """)
 
     # ========== 7. Redirigir usuario.miembro_id → usuario.contacto_id ==========
+    # Quitar primero la FK vieja (apunta a miembros, que pasará a miembros_legacy)
+    # sea cual sea su nombre, luego renombrar la columna y enlazar a contactos.
+    _drop_fks_on_column('usuarios', 'miembro_id')
     op.execute("ALTER TABLE usuarios RENAME COLUMN miembro_id TO contacto_id")
-    op.execute("ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS fk_usuarios_miembro")
     op.execute("""
         ALTER TABLE usuarios
         ADD CONSTRAINT fk_usuarios_contacto
@@ -151,7 +199,7 @@ def upgrade() -> None:
     # ========== 8. Redirigir FKs económicas: miembro_id → vinculacion_socio_id ==========
     fk_economicas = ['cuotas_anuales', 'pagos', 'recibos', 'suscripciones']
     for tabla in fk_economicas:
-        if op.get_bind().dialect.has_column(tabla, 'miembro_id'):
+        if _has_column(tabla, 'miembro_id'):
             op.add_column(tabla, sa.Column('vinculacion_socio_id', sa.Uuid(), nullable=True))
             op.execute(f"""
                 UPDATE {tabla} t
@@ -165,15 +213,20 @@ def upgrade() -> None:
                 tabla, 'vinculaciones',
                 ['vinculacion_socio_id'], ['id']
             )
-            op.drop_constraint(f'fk_{tabla}_miembro_id', tabla, type_='foreignkey')
+            # Quitar la FK vieja sobre miembro_id (nombre variable) y la columna.
+            _drop_fks_on_column(tabla, 'miembro_id')
             op.drop_column(tabla, 'miembro_id')
 
-    # ========== 9. Redirigir firmas_campania: contacto_id ya está en su sitio ==========
-    op.execute("""
-        UPDATE firmas_campania
-        SET contacto_id = COALESCE(contacto_id, firmante_id)
-    """)
+    # ========== 9. firmas_campania: fijar contacto_id, FK a contactos, soltar firmante_id ==========
+    op.execute("UPDATE firmas_campania SET contacto_id = COALESCE(contacto_id, firmante_id)")
+    # Soltar cualquier FK previa sobre firmante_id/contacto_id y la columna vieja.
+    _drop_fks_on_column('firmas_campania', 'firmante_id')
+    _drop_fks_on_column('firmas_campania', 'contacto_id')
     op.drop_column('firmas_campania', 'firmante_id')
+    op.create_foreign_key(
+        'fk_firmas_campania_contacto', 'firmas_campania', 'contactos',
+        ['contacto_id'], ['id']
+    )
 
 
 def downgrade() -> None:

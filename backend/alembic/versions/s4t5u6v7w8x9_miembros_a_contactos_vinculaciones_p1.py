@@ -8,7 +8,7 @@ Crea las nuevas tablas sin tocar datos aún:
   - Modifica FIRMA_CAMPANIA: firmante_id → contacto_id (pero aún cuelga de miembros)
 
 Revision ID: s4t5u6v7w8x9
-Revises: q2r3s4t5u6v7
+Revises: f3d4e5f6a7b8
 Create Date: 2026-06-24 12:00:00.000000
 """
 from alembic import op
@@ -16,7 +16,10 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 revision = 's4t5u6v7w8x9'
-down_revision = 'q2r3s4t5u6v7'
+# Rebasado sobre el head real de la línea principal (antes colgaba de
+# q2r3s4t5u6v7/fase2, lo que dejaba dos heads). El refactor CRM debe aplicarse
+# el último, tras secretaría/convenios/plataformas.
+down_revision = 'f3d4e5f6a7b8'
 branch_labels = None
 depends_on = None
 
@@ -39,6 +42,17 @@ def upgrade() -> None:
             eliminado BOOLEAN DEFAULT FALSE
         )
     """)
+    # Si la tabla ya existía (catálogo `tipos_vinculacion` del módulo acceso, con
+    # solo nombre/requiere_entidad/activo), añadir las columnas de gobierno nuevas
+    # de forma idempotente para que el catálogo CRM las tenga.
+    op.execute("ALTER TABLE tipos_vinculacion ADD COLUMN IF NOT EXISTS codigo VARCHAR(50)")
+    op.execute("ALTER TABLE tipos_vinculacion ADD COLUMN IF NOT EXISTS ambito VARCHAR(20) DEFAULT 'central'")
+    op.execute("ALTER TABLE tipos_vinculacion ADD COLUMN IF NOT EXISTS area_responsable VARCHAR(200)")
+    op.execute("ALTER TABLE tipos_vinculacion ADD COLUMN IF NOT EXISTS requiere_satelite BOOLEAN DEFAULT FALSE")
+    # La tabla preexistente del módulo acceso traía `requiere_entidad NOT NULL`
+    # sin default; el catálogo CRM no lo usa. Se retira para no bloquear inserts.
+    op.execute("ALTER TABLE tipos_vinculacion DROP COLUMN IF EXISTS requiere_entidad")
+    op.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_tipos_vinculacion_codigo ON tipos_vinculacion(codigo)")
     op.execute("CREATE INDEX IF NOT EXISTS ix_tipos_vinculacion_codigo ON tipos_vinculacion(codigo)")
     op.execute("CREATE INDEX IF NOT EXISTS ix_tipos_vinculacion_ambito ON tipos_vinculacion(ambito)")
     op.execute("CREATE INDEX IF NOT EXISTS ix_tipos_vinculacion_activo ON tipos_vinculacion(activo)")
@@ -118,18 +132,12 @@ def upgrade() -> None:
     """)
     op.execute("CREATE INDEX IF NOT EXISTS ix_voluntarios_vinculacion_id ON voluntarios(vinculacion_id)")
 
-    # ========== PASO 5: Modificar FIRMA_CAMPANIA: cambiar firmante_id → contacto_id ==========
-    # (Aún apuntará a miembros, lo rediremos después a contactos)
-    if not op.get_bind().dialect.has_column('firmas_campania', 'contacto_id'):
-        op.add_column('firmas_campania', sa.Column('contacto_id', sa.Uuid(), nullable=True))
-        op.execute("UPDATE firmas_campania SET contacto_id = firmante_id")
-        op.create_foreign_key(
-            'fk_firmas_campania_contacto',
-            'firmas_campania', 'miembros',
-            ['contacto_id'], ['id']
-        )
-        op.create_index('ix_firmas_campania_contacto_id', 'firmas_campania', ['contacto_id'])
-        # firmante_id se eliminará en el paso 2
+    # ========== PASO 5: FIRMA_CAMPANIA: añadir contacto_id (copia de firmante_id) ==========
+    # Sin FK todavía: `contactos` se crea en p2, que también re-apunta la FK.
+    # firmante_id se eliminará en p2.
+    op.execute("ALTER TABLE firmas_campania ADD COLUMN IF NOT EXISTS contacto_id UUID")
+    op.execute("UPDATE firmas_campania SET contacto_id = firmante_id WHERE contacto_id IS NULL")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_firmas_campania_contacto_id ON firmas_campania(contacto_id)")
 
 
 def downgrade() -> None:
@@ -138,9 +146,7 @@ def downgrade() -> None:
     op.drop_table('socios', if_exists=True)
     op.drop_table('vinculaciones', if_exists=True)
     op.drop_table('tipos_vinculacion', if_exists=True)
-    
-    # Revertir cambios en firmas_campania
-    if op.get_bind().dialect.has_column('firmas_campania', 'contacto_id'):
-        op.drop_index('ix_firmas_campania_contacto_id', 'firmas_campania', if_exists=True)
-        op.drop_constraint('fk_firmas_campania_contacto', 'firmas_campania', type_='foreignkey')
-        op.drop_column('firmas_campania', 'contacto_id')
+
+    # Revertir cambios en firmas_campania (idempotente)
+    op.execute("DROP INDEX IF EXISTS ix_firmas_campania_contacto_id")
+    op.execute("ALTER TABLE firmas_campania DROP COLUMN IF EXISTS contacto_id")
