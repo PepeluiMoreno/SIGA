@@ -48,24 +48,27 @@ El runner corre bajo un usuario **dedicado `deployer`**, separado del usuario
 admin/SSH `elaicatec`. Es deliberado: el runner ejecuta el contenido de los
 workflows, así que conviene aislarlo en un usuario de **mínimo privilegio**.
 
+`deployer` es una **cuenta de servicio no interactiva** (sin shell de login). Eso
+es correcto: el runner se instala como **servicio systemd** y no necesita shell.
+Por eso los comandos de instalación se lanzan con `sudo -u deployer <comando>`
+(no `sudo -iu`, que exige login) y desde un directorio dedicado.
+
 1. **Docker** y **docker compose** funcionando.
-2. Crear `deployer` si no existe y meterlo en el grupo `docker`:
+2. `deployer` (ya existe) en el grupo `docker`:
    ```bash
-   id deployer >/dev/null 2>&1 || sudo useradd -m -s /bin/bash deployer
    sudo usermod -aG docker deployer
    ```
-3. Dar a `deployer` escritura sobre el directorio de deploy
-   (`/opt/docker/apps/SIGA`). Si ya existe con datos (secrets/, backups/,
-   .env.production), basta con darle propiedad/escritura sobre ese árbol:
+3. Dar a `deployer` escritura sobre el directorio de deploy y crear el directorio
+   del runner:
    ```bash
-   sudo mkdir -p /opt/docker/apps/SIGA
    sudo chown -R deployer:deployer /opt/docker/apps/SIGA
+   sudo mkdir -p /opt/actions-runner
+   sudo chown deployer:deployer /opt/actions-runner
    ```
 
-   Comprobar ambos:
+   Comprobar Docker como `deployer` (sin login shell):
    ```bash
-   groups deployer               # debe aparecer "docker"
-   ls -ld /opt/docker/apps/SIGA  # deployer debe poder escribir ahí
+   sudo -u deployer bash -c 'id -nG | tr " " "\n" | grep -qx docker && echo "grupo docker OK"; docker ps >/dev/null 2>&1 && echo "docker OK" || echo "docker NO"'
    ```
 
 ## Instalar y registrar el runner (STAGING / VPS2)
@@ -74,28 +77,33 @@ workflows, así que conviene aislarlo en un usuario de **mínimo privilegio**.
    Linux**. Te dará un bloque con la URL de descarga y un **token de registro**
    (caduca en ~1 h). Cópialo.
 
-2. En el VPS, como el usuario `deployer`:
+2. En el VPS, en `/opt/actions-runner`, ejecutando **como `deployer`** con
+   `sudo -u deployer` (cuenta no interactiva). Descarga y extracción:
    ```bash
-   sudo -iu deployer
-   mkdir -p ~/actions-runner && cd ~/actions-runner
-   # (usa la URL/versión que muestre GitHub en ese momento)
-   curl -o actions-runner-linux-x64.tar.gz -L \
-     https://github.com/actions/runner/releases/download/vX.Y.Z/actions-runner-linux-x64-X.Y.Z.tar.gz
-   tar xzf actions-runner-linux-x64.tar.gz
-
-   ./config.sh \
-     --url https://github.com/pepeluimoreno/siga \
-     --token <TOKEN_DE_REGISTRO> \
-     --name siga-staging-vps2 \
-     --labels siga-staging \
-     --unattended --replace
+   # (usa la URL/versión que muestre GitHub en el bloque "Download")
+   sudo -u deployer bash -c 'cd /opt/actions-runner && \
+     curl -o actions-runner-linux-x64.tar.gz -L \
+       https://github.com/actions/runner/releases/download/vX.Y.Z/actions-runner-linux-x64-X.Y.Z.tar.gz && \
+     tar xzf actions-runner-linux-x64.tar.gz'
+   ```
+   Registro (config.sh **debe** correr como `deployer`, nunca root):
+   ```bash
+   sudo -u deployer env HOME=/opt/actions-runner bash -c 'cd /opt/actions-runner && \
+     ./config.sh \
+       --url https://github.com/pepeluimoreno/siga \
+       --token <TOKEN_DE_REGISTRO> \
+       --name siga-staging-vps2 \
+       --labels siga-staging \
+       --unattended --replace'
    ```
    > `config.sh` añade automáticamente el label base `self-hosted`; con
    > `--labels siga-staging` el runner queda con **`self-hosted, siga-staging`**,
    > que es lo que pide el workflow.
 
-3. Instalar como servicio (arranca solo y sobrevive a reinicios):
+3. Instalar como servicio (arranca solo y sobrevive a reinicios). Se ejecuta como
+   root pero el servicio **corre como `deployer`**:
    ```bash
+   cd /opt/actions-runner
    sudo ./svc.sh install deployer
    sudo ./svc.sh start
    sudo ./svc.sh status
