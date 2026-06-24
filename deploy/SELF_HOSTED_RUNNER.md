@@ -25,19 +25,45 @@ El workflow (`.github/workflows/deploy.yml`) selecciona el runner por **labels**
 
 ## Requisitos previos en el VPS
 
+El runner corre bajo el usuario **`deployer`** (el mismo que ya despliega la app).
+No hace falta crear un usuario nuevo.
+
 1. **Docker** y **docker compose** funcionando.
-2. Un usuario de servicio (p. ej. `gh-runner`) en el **grupo `docker`**:
+2. `deployer` debe poder hablar con Docker. Ver **"Acceso a Docker y seguridad"**
+   más abajo para elegir entre grupo `docker` (simple, root-equivalente) o
+   **Docker rootless** (recomendado, mínimo privilegio).
+3. `deployer` debe tener escritura sobre el directorio de deploy
+   (`/opt/docker/apps/SIGA`). Como ya despliega hoy, normalmente ya la tiene.
+   Comprobar:
    ```bash
-   sudo useradd -m -s /bin/bash gh-runner
-   sudo usermod -aG docker gh-runner
+   groups deployer              # ver si está en "docker" (solo si vas por grupo docker)
+   ls -ld /opt/docker/apps/SIGA # deployer debe poder escribir ahí
    ```
-3. Permisos de escritura sobre el directorio de deploy:
-   ```bash
-   sudo mkdir -p /opt/docker/apps/SIGA
-   sudo chown -R gh-runner:gh-runner /opt/docker/apps/SIGA
-   ```
-   > Si ya existe con datos (secrets/, backups/, .env.production), basta con dar
-   > propiedad/escritura al usuario del runner sobre ese árbol.
+
+## Acceso a Docker y seguridad
+
+> **Importante:** pertenecer al grupo `docker` equivale a ser **root** en el host
+> (`docker run -v /:/host ... chroot /host` da control total). Además el runner
+> **ejecuta el contenido de los workflows**. Elige el modelo de acceso conscientemente.
+
+**Opción recomendada — Docker rootless** (el daemon corre como `deployer`, sin root;
+un escape de contenedor te deja como usuario sin privilegios, no como root):
+```bash
+sudo -iu deployer
+dockerd-rootless-setuptool.sh install
+# exportar el socket del usuario (añadir también al entorno del runner, ver abajo)
+echo 'export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock' >> ~/.bashrc
+# permitir que el daemon siga vivo sin sesión interactiva
+sudo loginctl enable-linger deployer
+```
+Notas: puertos <1024 necesitan ajuste; `--privileged` no aplica. Para un compose
+de app + db suele funcionar sin cambios.
+
+**Opción simple — grupo `docker`** (root-equivalente; acéptalo solo con candados:
+usuario dedicado, *GitHub Environment* con aprobación requerida y branch protection):
+```bash
+sudo usermod -aG docker deployer
+```
 
 ## Instalar y registrar el runner (STAGING / VPS2)
 
@@ -45,9 +71,9 @@ El workflow (`.github/workflows/deploy.yml`) selecciona el runner por **labels**
    Linux**. Te dará un bloque con la URL de descarga y un **token de registro**
    (caduca en ~1 h). Cópialo.
 
-2. En el VPS, como el usuario del runner:
+2. En el VPS, como el usuario `deployer`:
    ```bash
-   sudo -iu gh-runner
+   sudo -iu deployer
    mkdir -p ~/actions-runner && cd ~/actions-runner
    # (usa la URL/versión que muestre GitHub en ese momento)
    curl -o actions-runner-linux-x64.tar.gz -L \
@@ -67,10 +93,15 @@ El workflow (`.github/workflows/deploy.yml`) selecciona el runner por **labels**
 
 3. Instalar como servicio (arranca solo y sobrevive a reinicios):
    ```bash
-   sudo ./svc.sh install gh-runner
+   sudo ./svc.sh install deployer
    sudo ./svc.sh start
    sudo ./svc.sh status
    ```
+   > **Con Docker rootless**, el servicio necesita ver el socket del usuario.
+   > Asegúrate de que `DOCKER_HOST=unix:///run/user/<uid>/docker.sock` esté en
+   > el entorno del runner: añádelo a `~/actions-runner/.env` (lo lee el runner)
+   > o exporta `DOCKER_HOST` en el `.bashrc` de `deployer` antes de instalar el
+   > servicio. Verifica con un job de prueba que `docker ps` responde.
 
 ## Producción (VPS1)
 
