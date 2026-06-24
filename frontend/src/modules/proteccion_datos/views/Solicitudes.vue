@@ -46,7 +46,7 @@
     </div>
 
     <!-- Modal alta nueva solicitud -->
-    <BaseModal v-model="modalAlta" title="Registrar solicitud de derecho" size="xl">
+    <AppDrawer v-model="modalAlta" title="Registrar solicitud de derecho" size="xl">
       <form @submit.prevent="crear" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
@@ -96,10 +96,10 @@
           </button>
         </div>
       </form>
-    </BaseModal>
+    </AppDrawer>
 
     <!-- Modal detalle / tramitación -->
-    <BaseModal v-model="modalDetalle" :title="seleccionada ? `Solicitud ${seleccionada.codigoInterno}` : ''" size="xl">
+    <AppDrawer v-model="modalDetalle" :title="seleccionada ? `Solicitud ${seleccionada.codigoInterno}` : ''" size="xl">
       <div v-if="seleccionada" class="space-y-4">
         <div class="grid grid-cols-2 gap-3 text-sm">
           <div><span class="text-slate-500">Tipo:</span> <strong>{{ seleccionada.tipo }}</strong></div>
@@ -161,10 +161,10 @@
           </button>
         </div>
       </div>
-    </BaseModal>
+    </AppDrawer>
 
     <!-- Modal prórroga -->
-    <BaseModal v-model="modalProrroga" title="Prorrogar plazo a 3 meses" size="md">
+    <AppDrawer v-model="modalProrroga" title="Prorrogar plazo a 3 meses" size="md">
       <form @submit.prevent="prorrogar" class="space-y-3">
         <p class="text-sm text-slate-600">
           La prórroga (art. 12.3 RGPD) debe motivarse y notificarse al interesado dentro del primer mes.
@@ -180,10 +180,10 @@
             class="text-sm px-4 h-9 rounded-lg bg-amber-600 text-white hover:bg-amber-700">Prorrogar</button>
         </div>
       </form>
-    </BaseModal>
+    </AppDrawer>
 
     <!-- Modal resolución -->
-    <BaseModal v-model="modalResolucion"
+    <AppDrawer v-model="modalResolucion"
       :title="modoDenegar ? 'Denegar solicitud' : 'Resolver solicitud favorablemente'" size="lg">
       <form @submit.prevent="resolver" class="space-y-3">
         <div>
@@ -205,7 +205,7 @@
           </button>
         </div>
       </form>
-    </BaseModal>
+    </AppDrawer>
   </AppLayout>
 </template>
 
@@ -216,7 +216,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
-import BaseModal from '@/components/common/BaseModal.vue'
+import AppDrawer from '@/components/common/AppDrawer.vue'
 import { executeQuery, executeMutation } from '@/graphql/client'
 import {
   GET_SOLICITUDES, REGISTRAR_SOLICITUD,

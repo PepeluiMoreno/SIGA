@@ -46,7 +46,7 @@
     </div>
 
     <!-- Modal alta -->
-    <BaseModal v-model="modalAlta" title="Registrar brecha de seguridad" size="xl">
+    <AppDrawer v-model="modalAlta" title="Registrar brecha de seguridad" size="xl">
       <form @submit.prevent="crear" class="space-y-4">
         <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
           ⏰ El plazo de notificación a la AEPD (art. 33 RGPD) es de <strong>72 horas</strong> desde
@@ -111,11 +111,11 @@
           </button>
         </div>
       </form>
-    </BaseModal>
+    </AppDrawer>
 
     <!-- Modal detalle / asistente -->
-    <BaseModal v-model="modalDetalle"
-      :title="seleccionada ? `Brecha ${seleccionada.codigoInterno}` : ''" size="2xl">
+    <AppDrawer v-model="modalDetalle"
+      :title="seleccionada ? `Brecha ${seleccionada.codigoInterno}` : ''" size="xl">
       <div v-if="seleccionada" class="space-y-4">
         <div class="grid grid-cols-2 gap-3 text-sm">
           <div><span class="text-slate-500">Severidad:</span>
@@ -183,10 +183,10 @@
           </button>
         </div>
       </div>
-    </BaseModal>
+    </AppDrawer>
 
     <!-- Modal notificar AEPD -->
-    <BaseModal v-model="modalNotificar" title="Notificar brecha a la AEPD" size="lg">
+    <AppDrawer v-model="modalNotificar" title="Notificar brecha a la AEPD" size="lg">
       <form @submit.prevent="notificar" class="space-y-3">
         <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-xs text-indigo-800">
           📋 Sede electrónica AEPD: <a href="https://sedeagpd.gob.es" target="_blank" class="underline">sedeagpd.gob.es</a>
@@ -211,10 +211,10 @@
             class="text-sm px-4 h-9 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Registrar notificación</button>
         </div>
       </form>
-    </BaseModal>
+    </AppDrawer>
 
     <!-- Modal cerrar -->
-    <BaseModal v-model="modalCerrar" title="Cerrar brecha" size="lg">
+    <AppDrawer v-model="modalCerrar" title="Cerrar brecha" size="lg">
       <form @submit.prevent="cerrar" class="space-y-3">
         <div>
           <label class="lbl">Medidas correctivas adoptadas <span class="req">*</span></label>
@@ -228,7 +228,7 @@
             class="text-sm px-4 h-9 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Cerrar brecha</button>
         </div>
       </form>
-    </BaseModal>
+    </AppDrawer>
   </AppLayout>
 </template>
 
@@ -239,7 +239,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
-import BaseModal from '@/components/common/BaseModal.vue'
+import AppDrawer from '@/components/common/AppDrawer.vue'
 import { executeQuery, executeMutation } from '@/graphql/client'
 import {
   GET_BRECHAS, REGISTRAR_BRECHA, NOTIFICAR_BRECHA_AEPD, CERRAR_BRECHA,

@@ -44,10 +44,10 @@
       </ResponsiveTable>
     </div>
 
-    <BaseModal
+    <AppDrawer
       v-model="modalAbierto"
       :title="modoEdicion ? 'Editar actividad RAT' : 'Nueva actividad RAT'"
-      size="2xl">
+      size="xl">
       <form @submit.prevent="guardar" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div class="md:col-span-2">
@@ -151,7 +151,7 @@
           </button>
         </div>
       </form>
-    </BaseModal>
+    </AppDrawer>
   </AppLayout>
 </template>
 
@@ -163,7 +163,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
-import BaseModal from '@/components/common/BaseModal.vue'
+import AppDrawer from '@/components/common/AppDrawer.vue'
 import { executeQuery, executeMutation } from '@/graphql/client'
 import {
   GET_ACTIVIDADES_TRATAMIENTO,

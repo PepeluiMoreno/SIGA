@@ -35,12 +35,13 @@ from app.modules.economico.models.cobro import ProveedorPago, Pago, EventoPago
 from app.modules.economico.models.tesoreria import TipoApunte, OrigenApunte
 from app.modules.economico.services.tesoreria_service import TesoreriaService
 from app.modules.economico.services.registro_contable import RegistroContable
+from app.core.secrets import read_secret_env
 
 
 PAYPAL_MODE = os.getenv("PAYPAL_MODE", "sandbox")
-PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID", "")
-PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET", "")
-PAYPAL_WEBHOOK_ID = os.getenv("PAYPAL_WEBHOOK_ID", "")
+PAYPAL_CLIENT_ID = read_secret_env("PAYPAL_CLIENT_ID")
+PAYPAL_CLIENT_SECRET = read_secret_env("PAYPAL_CLIENT_SECRET")
+PAYPAL_WEBHOOK_ID = read_secret_env("PAYPAL_WEBHOOK_ID")
 
 _BASE_URL = {
     "sandbox": "https://api-m.sandbox.paypal.com",

@@ -31,6 +31,7 @@ services:
 
   frontend:
     image: node:22-alpine
+    build: !reset null            # en dev el front corre con Vite (node), NO se construye su imagen
     container_name: siga_dev_frontend
     restart: unless-stopped
     working_dir: /app

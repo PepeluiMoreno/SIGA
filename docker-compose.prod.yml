@@ -1,0 +1,90 @@
+# Override para STAGING (VPS2) y PRODUCCIÓN (VPS1).
+# Se superpone al base:  -f docker-compose.yml -f docker-compose.prod.yml
+# La imagen viene de GHCR (publicada por el workflow). En desarrollo NO se usa.
+#
+# Las credenciales sensibles se entregan como Docker secret (fichero en
+# /run/secrets), nunca como variable de entorno plana. El script de despliegue
+# (scripts/deploy-remote-pull.sh) las materializa en ./secrets/*.txt y hace
+# `unset`, de modo que las variables planas heredadas del base quedan vacías y
+# el código lee el valor real vía el patrón <VAR>_FILE.
+services:
+  backend:
+    image: ${IMAGE_NAME_BACKEND:-ghcr.io/pepeluimoreno/siga-backend}:${IMAGE_TAG:-latest}
+    pull_policy: always
+    environment:
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      SMTP_PASSWORD_FILE: /run/secrets/smtp_password
+      ENCRYPTION_KEY_FILE: /run/secrets/encryption_key
+      PAYPAL_CLIENT_SECRET_FILE: /run/secrets/paypal_client_secret
+      INITIAL_ADMIN_PASSWORD_FILE: /run/secrets/initial_admin_password
+    secrets:
+      - db_password
+      - jwt_secret
+      - smtp_password
+      - encryption_key
+      - paypal_client_secret
+      - initial_admin_password
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket; socket.create_connection(('localhost',8000),timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 40s
+    networks:
+      - internal
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_public"
+      - "traefik.http.routers.${APP_PREFIX}-api.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.${APP_PREFIX}-api.entrypoints=websecure"
+      - "traefik.http.routers.${APP_PREFIX}-api.tls=true"
+      - "traefik.http.routers.${APP_PREFIX}-api.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}"
+      - "traefik.http.routers.${APP_PREFIX}-api.middlewares=${APP_PREFIX}-stripapi"
+      - "traefik.http.middlewares.${APP_PREFIX}-stripapi.stripprefix.prefixes=/api"
+      - "traefik.http.services.${APP_PREFIX}-api.loadbalancer.server.port=8000"
+
+  frontend:
+    image: ${IMAGE_NAME_FRONTEND:-ghcr.io/pepeluimoreno/siga-frontend}:${IMAGE_TAG:-latest}
+    pull_policy: always
+    networks:
+      - internal
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_public"
+      - "traefik.http.routers.${APP_PREFIX}-web.rule=Host(`${APP_DOMAIN}`)"
+      - "traefik.http.routers.${APP_PREFIX}-web.entrypoints=websecure"
+      - "traefik.http.routers.${APP_PREFIX}-web.tls=true"
+      - "traefik.http.routers.${APP_PREFIX}-web.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}"
+      - "traefik.http.services.${APP_PREFIX}-web.loadbalancer.server.port=80"
+
+  db:
+    environment:
+      # El secreto db_password sustituye a POSTGRES_PASSWORD plana.
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+
+# Datos intocables: volúmenes externos con nombre fijo; nunca se recrean en deploy.
+volumes:
+  pgdata:
+    external: true
+    name: ${APP_PREFIX:-siga}_pgdata
+  media_fotos:
+    external: true
+    name: ${APP_PREFIX:-siga}_media_fotos
+
+networks:
+  internal:
+  traefik_public:
+    external: true
+
+secrets:
+  db_password:            { file: ./secrets/db_password.txt }
+  jwt_secret:             { file: ./secrets/jwt_secret.txt }
+  smtp_password:          { file: ./secrets/smtp_password.txt }
+  encryption_key:         { file: ./secrets/encryption_key.txt }
+  paypal_client_secret:   { file: ./secrets/paypal_client_secret.txt }
+  initial_admin_password: { file: ./secrets/initial_admin_password.txt }

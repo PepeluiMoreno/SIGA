@@ -9,6 +9,8 @@ from typing import Optional, Dict, Any
 
 from cryptography.fernet import Fernet
 
+from app.core.secrets import read_secret_env
+
 logger = logging.getLogger(__name__)
 
 
@@ -21,7 +23,7 @@ class EncriptacionService:
 
     def _initialize_cipher(self) -> None:
         """Inicializa el cipher con la clave del entorno."""
-        key = os.getenv('ENCRYPTION_KEY') or os.getenv('FERNET_KEY')
+        key = read_secret_env('ENCRYPTION_KEY') or read_secret_env('FERNET_KEY')
         if not key:
             # Generar clave temporal para desarrollo
             logger.warning("No se encontró ENCRYPTION_KEY, generando clave temporal")
