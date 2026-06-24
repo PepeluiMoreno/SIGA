@@ -56,9 +56,9 @@
       </table>
     </div>
 
-    <BaseModal v-model="modalAbierto"
+    <AppDrawer v-model="modalAbierto"
       :title="modoEdicion ? 'Editar plataforma' : 'Nueva plataforma telemática'"
-      size="2xl">
+      size="xl">
       <form @submit.prevent="guardar" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
@@ -117,7 +117,7 @@
           </button>
         </div>
       </form>
-    </BaseModal>
+    </AppDrawer>
   </AppLayout>
 </template>
 
@@ -127,7 +127,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { ref, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
-import BaseModal from '@/components/common/BaseModal.vue'
+import AppDrawer from '@/components/common/AppDrawer.vue'
 import { ArrowLeftIcon, PlusIcon } from '@heroicons/vue/24/outline'
 import { executeQuery, executeMutation } from '@/graphql/client'
 import {

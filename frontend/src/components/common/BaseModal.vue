@@ -17,7 +17,9 @@
 
         <!-- Panel -->
         <div
-          class="relative bg-white rounded-xl shadow-xl w-full flex flex-col max-h-[90vh]"
+          ref="panel"
+          tabindex="-1"
+          class="relative bg-white rounded-xl shadow-xl w-full flex flex-col max-h-[90vh] focus:outline-none"
           :class="widthClass"
         >
           <!-- Cabecera -->
@@ -51,8 +53,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, useId } from 'vue'
+import { computed, ref } from 'vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 
 const props = defineProps({
   modelValue:      { type: Boolean, default: false },
@@ -66,6 +69,9 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'close'])
 
 const titleId = `modal-title-${Math.random().toString(36).slice(2)}`
+
+const panel = ref(null)
+useFocusTrap(panel, () => props.modelValue)
 
 const WIDTH = {
   sm:   'max-w-sm',
@@ -82,12 +88,6 @@ function cerrar() {
   emit('update:modelValue', false)
   emit('close')
 }
-
-function onKeydown(e) {
-  if (e.key === 'Escape' && props.modelValue) cerrar()
-}
-onMounted(() => document.addEventListener('keydown', onKeydown))
-onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 </script>
 
 <style scoped>

@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import router from '@/router'
+import '@fontsource-variable/plus-jakarta-sans'
 import '@/style.css'
 import App from '@/App.vue'
 import { useDebugStore } from '@/stores/debug.js'

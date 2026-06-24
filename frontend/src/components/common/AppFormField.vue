@@ -1,7 +1,7 @@
 <template>
   <div :class="['flex flex-col gap-1', spanClass]">
     <!-- Label -->
-    <label v-if="label" :for="fieldId" class="text-sm font-medium text-slate-700 leading-tight">
+    <label v-if="label" :for="fieldId" class="field-label">
       {{ label }}
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
       <span v-if="optional" class="text-slate-400 font-normal text-xs ml-1">(opcional)</span>
@@ -11,12 +11,12 @@
     <slot :id="fieldId" :aria-describedby="helpId || errorId" :aria-invalid="!!error" />
 
     <!-- Texto de ayuda -->
-    <p v-if="help && !error" :id="helpId" class="text-xs text-slate-500 leading-snug">
+    <p v-if="help && !error" :id="helpId" class="field-help">
       {{ help }}
     </p>
 
     <!-- Error -->
-    <p v-if="error" :id="errorId" class="text-xs text-red-600 leading-snug flex items-center gap-1">
+    <p v-if="error" :id="errorId" class="field-error">
       <ExclamationCircleIcon class="w-3.5 h-3.5 shrink-0" />
       {{ error }}
     </p>

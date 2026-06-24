@@ -1,133 +1,129 @@
 <template>
   <AppLayout title="Reglas contables" subtitle="Configuración del mapeo automático apunte → asiento PCESFL">
+    <div class="page-body">
+      <ErrorAlert variant="info">
+        Cada regla define qué cuentas contables se usan al registrar automáticamente un asiento
+        cuando entra un apunte de caja. El sistema busca la regla más específica (con origen)
+        antes de la comodín (sin origen).
+      </ErrorAlert>
 
-    <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
-      Cada regla define qué cuentas contables se usan al registrar automáticamente
-      un asiento cuando entra un apunte de caja. El sistema busca la regla más
-      específica (con origen) antes de la comodín (sin origen).
-    </div>
-
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="font-semibold text-gray-800">Reglas activas</h3>
-      <button @click="abrirNuevaRegla" class="btn-primary">+ Nueva regla</button>
-    </div>
-
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-sm">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Origen</th>
-            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Tipo</th>
-            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500">Cuenta DEBE</th>
-            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500">Cuenta HABER</th>
-            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Descripción</th>
-            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500">Orden</th>
-            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500">Activa</th>
-            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500">Acciones</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          <tr v-for="r in reglas" :key="r.id" class="hover:bg-gray-50" :class="!r.activa ? 'opacity-40' : ''">
-            <td class="px-3 py-2">
-              <span v-if="r.origen" class="text-xs bg-purple-100 text-purple-700 rounded px-1.5 py-0.5">{{ r.origen }}</span>
-              <span v-else class="text-xs text-gray-400 italic">Comodín</span>
-            </td>
-            <td class="px-3 py-2">
-              <span class="text-xs rounded px-1.5 py-0.5"
-                :class="r.tipoApunte === 'INGRESO' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
-                {{ r.tipoApunte }}
-              </span>
-            </td>
-            <td class="px-3 py-2 text-center font-mono font-bold text-gray-700">{{ r.cuentaDebeCodig }}</td>
-            <td class="px-3 py-2 text-center font-mono font-bold text-gray-700">{{ r.cuentaHaberCodigo }}</td>
-            <td class="px-3 py-2 text-gray-600 text-xs max-w-xs truncate">{{ r.descripcion }}</td>
-            <td class="px-3 py-2 text-center text-gray-500">{{ r.orden }}</td>
-            <td class="px-3 py-2 text-center">
-              <span v-if="r.activa" class="text-green-500">✓</span>
-              <span v-else class="text-gray-300">✗</span>
-            </td>
-            <td class="px-3 py-2 text-center">
-              <button @click="editarRegla(r)" class="text-xs text-purple-600 hover:underline mr-2">Editar</button>
-              <button v-if="r.activa" @click="desactivarRegla(r.id)" class="text-xs text-red-500 hover:underline">Desactivar</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <p v-if="!reglas.length" class="text-center text-gray-400 py-8">
-      No hay reglas. El sistema usará el mapa por defecto hardcodeado.
-    </p>
-
-    <LoadSpinner v-if="loading" />
-
-    <!-- MODAL regla -->
-    <div v-if="modalRegla" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="modalRegla = false">
-      <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg mx-4">
-        <h3 class="text-lg font-semibold mb-4">{{ editando ? 'Editar regla' : 'Nueva regla contable' }}</h3>
-        <div class="space-y-3">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="label">Origen (vacío = comodín)</label>
-              <select v-model="form.origen" class="input">
-                <option value="">-- Comodín (cualquier origen) --</option>
-                <option value="CUOTA">CUOTA</option>
-                <option value="DONACION">DONACION</option>
-                <option value="REMESA">REMESA</option>
-                <option value="PAGO">PAGO</option>
-                <option value="MANUAL">MANUAL</option>
-              </select>
-            </div>
-            <div>
-              <label class="label">Tipo de apunte *</label>
-              <select v-model="form.tipoApunte" class="input">
-                <option value="INGRESO">INGRESO</option>
-                <option value="GASTO">GASTO</option>
-              </select>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="label">Cuenta DEBE (código) *</label>
-              <input v-model="form.cuentaDebe" class="input font-mono" placeholder="572" />
-              <p class="text-xs text-gray-400 mt-1">Ej: 572 = Bancos c/c</p>
-            </div>
-            <div>
-              <label class="label">Cuenta HABER (código) *</label>
-              <input v-model="form.cuentaHaber" class="input font-mono" placeholder="721" />
-              <p class="text-xs text-gray-400 mt-1">Ej: 721 = Cuotas socios</p>
-            </div>
-          </div>
-          <div>
-            <label class="label">Descripción</label>
-            <input v-model="form.descripcion" class="input" placeholder="Ej: Cobro cuota socio → Banco / Cuotas" />
-          </div>
-          <div>
-            <label class="label">Orden (menor = mayor prioridad)</label>
-            <input type="number" v-model="form.orden" class="input" min="1" max="999" />
-          </div>
+      <div class="card overflow-hidden">
+        <div class="flex justify-between items-center p-4 border-b border-slate-100">
+          <h3 class="font-semibold text-gray-800">Reglas activas</h3>
+          <AppButton size="sm" :icon="PlusIcon" @click="abrirNuevaRegla">Nueva regla</AppButton>
         </div>
-        <ErrorAlert v-if="errorModal" :message="errorModal" />
-        <div class="flex justify-end gap-3 mt-5">
-          <button @click="modalRegla = false" class="btn-secondary">Cancelar</button>
-          <button @click="guardarRegla" :disabled="guardando" class="btn-primary">
-            {{ guardando ? 'Guardando…' : 'Guardar' }}
-          </button>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Origen</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Tipo</th>
+                <th class="px-3 py-2 text-center text-xs font-medium text-gray-500">Cuenta DEBE</th>
+                <th class="px-3 py-2 text-center text-xs font-medium text-gray-500">Cuenta HABER</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Descripción</th>
+                <th class="px-3 py-2 text-center text-xs font-medium text-gray-500">Orden</th>
+                <th class="px-3 py-2 text-center text-xs font-medium text-gray-500">Activa</th>
+                <th class="px-3 py-2 text-center text-xs font-medium text-gray-500">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr v-for="r in reglas" :key="r.id" class="hover:bg-gray-50" :class="!r.activa ? 'opacity-40' : ''">
+                <td class="px-3 py-2">
+                  <span v-if="r.origen" class="text-xs bg-purple-100 text-purple-700 rounded px-1.5 py-0.5">{{ r.origen }}</span>
+                  <span v-else class="text-xs text-gray-400 italic">Comodín</span>
+                </td>
+                <td class="px-3 py-2">
+                  <span class="text-xs rounded px-1.5 py-0.5"
+                    :class="r.tipoApunte === 'INGRESO' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+                    {{ r.tipoApunte }}
+                  </span>
+                </td>
+                <td class="px-3 py-2 text-center font-mono font-bold text-gray-700">{{ r.cuentaDebeCodig }}</td>
+                <td class="px-3 py-2 text-center font-mono font-bold text-gray-700">{{ r.cuentaHaberCodigo }}</td>
+                <td class="px-3 py-2 text-gray-600 text-xs max-w-xs truncate">{{ r.descripcion }}</td>
+                <td class="px-3 py-2 text-center text-gray-500">{{ r.orden }}</td>
+                <td class="px-3 py-2 text-center">
+                  <span v-if="r.activa" class="text-green-500">✓</span>
+                  <span v-else class="text-gray-300">✗</span>
+                </td>
+                <td class="px-3 py-2 text-center whitespace-nowrap">
+                  <AppButton variant="link" size="xs" @click="editarRegla(r)">Editar</AppButton>
+                  <AppButton v-if="r.activa" variant="link" size="xs" class="text-red-500 ml-2" @click="desactivarRegla(r.id)">Desactivar</AppButton>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+
+        <p v-if="!reglas.length && !loading" class="text-center text-gray-400 py-8">
+          No hay reglas. El sistema usará el mapa por defecto hardcodeado.
+        </p>
+        <EstadoCarga v-if="loading" mensaje="Cargando reglas…" />
       </div>
     </div>
 
+    <!-- Alta / edición (drawer; los modales quedan para advertencias) -->
+    <AppDrawer v-model="modalRegla" :title="editando ? 'Editar regla' : 'Nueva regla contable'" size="lg">
+      <div class="space-y-4">
+        <AppFormGrid cols="2">
+          <AppFormField label="Origen (vacío = comodín)">
+            <AppSelect v-model="form.origen" width="md">
+              <option value="">-- Comodín (cualquier origen) --</option>
+              <option value="CUOTA">CUOTA</option>
+              <option value="DONACION">DONACION</option>
+              <option value="REMESA">REMESA</option>
+              <option value="PAGO">PAGO</option>
+              <option value="MANUAL">MANUAL</option>
+            </AppSelect>
+          </AppFormField>
+          <AppFormField label="Tipo de apunte" required>
+            <AppSelect v-model="form.tipoApunte" width="sm">
+              <option value="INGRESO">INGRESO</option>
+              <option value="GASTO">GASTO</option>
+            </AppSelect>
+          </AppFormField>
+        </AppFormGrid>
+
+        <AppFormGrid cols="2">
+          <AppFormField label="Cuenta DEBE (código)" required help="Ej: 572 = Bancos c/c">
+            <AppInput v-model="form.cuentaDebe" width="sm" class="font-mono" placeholder="572" />
+          </AppFormField>
+          <AppFormField label="Cuenta HABER (código)" required help="Ej: 721 = Cuotas socios">
+            <AppInput v-model="form.cuentaHaber" width="sm" class="font-mono" placeholder="721" />
+          </AppFormField>
+        </AppFormGrid>
+
+        <AppFormField label="Descripción">
+          <AppInput v-model="form.descripcion" placeholder="Ej: Cobro cuota socio → Banco / Cuotas" />
+        </AppFormField>
+
+        <AppFormField label="Orden" help="Menor = mayor prioridad">
+          <AppInput v-model="form.orden" type="number" width="xs" />
+        </AppFormField>
+
+        <ErrorAlert v-if="errorModal" :message="errorModal" />
+      </div>
+
+      <template #footer>
+        <AppButton variant="secondary" @click="modalRegla = false">Cancelar</AppButton>
+        <AppButton :loading="guardando" @click="guardarRegla">Guardar</AppButton>
+      </template>
+    </AppDrawer>
   </AppLayout>
 </template>
 
 <script setup>
-import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import { useConfirm } from '@/composables/useConfirm'
 import { ref, onMounted } from 'vue'
-import AppLayout from '@/components/common/AppLayout.vue'
-import LoadSpinner from '@/components/common/LoadSpinner.vue'
+import { PlusIcon } from '@heroicons/vue/24/outline'
+import {
+  AppLayout, AppButton, AppDrawer,
+  AppFormField, AppFormGrid, AppInput, AppSelect, EstadoCarga, ErrorAlert,
+} from '@/components/common'
+import { useConfirm } from '@/composables/useConfirm'
 import { useGraphQL } from '@/composables/useGraphQL'
-const confirmDialog = useConfirm()
 
+const confirmDialog = useConfirm()
 const { query, mutation, loading } = useGraphQL()
 
 const reglas = ref([])
@@ -193,10 +189,3 @@ const desactivarRegla = async (id) => {
 
 onMounted(cargarReglas)
 </script>
-
-<style scoped>
-.btn-primary { @apply px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium disabled:opacity-50; }
-.btn-secondary { @apply px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium; }
-.label { @apply block text-sm font-medium text-gray-700 mb-1; }
-.input { @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400; }
-</style>
