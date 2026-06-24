@@ -129,16 +129,29 @@ class SocioVistaType:
     estado: Optional[EstadoSocioBadge] = None
 
 
-async def _construir_socios(session, contacto_id: Optional[uuid.UUID] = None) -> List[SocioVistaType]:
+async def _construir_socios(
+    session,
+    contacto_id: Optional[uuid.UUID] = None,
+    *,
+    agrupacion_id: Optional[uuid.UUID] = None,
+    activo: Optional[bool] = None,
+    es_voluntario: Optional[bool] = None,
+    eliminado: bool = False,
+) -> List[SocioVistaType]:
     """Reconstruye los `SocioVistaType` con consultas por lote (sin N+1)."""
-    # 1) Vinculaciones SOCIO (+ satélite + contacto)
+    # 1) Vinculaciones SOCIO (+ satélite + contacto), con filtros opcionales.
     q = (
         select(Vinculacion)
         .join(TipoVinculacion, Vinculacion.tipo_vinculacion_id == TipoVinculacion.id)
-        .where(TipoVinculacion.codigo == "SOCIO", Vinculacion.eliminado == False)  # noqa: E712
+        .join(Contacto, Vinculacion.contacto_id == Contacto.id)
+        .where(TipoVinculacion.codigo == "SOCIO", Vinculacion.eliminado == eliminado)
     )
     if contacto_id is not None:
         q = q.where(Vinculacion.contacto_id == contacto_id)
+    if agrupacion_id is not None:
+        q = q.where(Contacto.agrupacion_id == agrupacion_id)
+    if activo is not None:
+        q = q.where(Contacto.activo == activo)
     vincs = list((await session.execute(q)).scalars().all())
     if not vincs:
         return []
@@ -254,15 +267,30 @@ async def _construir_socios(session, contacto_id: Optional[uuid.UUID] = None) ->
                 color=_ESTADO_COLOR.get(estado_socio, "#6B7280"),
             ),
         ))
+    if es_voluntario is not None:
+        socios = [x for x in socios if x.es_voluntario == es_voluntario]
     return socios
 
 
 @strawberry.type
 class SociosQuery:
     @strawberry.field(permission_classes=[RequireTransaction("SOC_VIEW")])
-    async def socios(self, info: strawberry.Info) -> List[SocioVistaType]:
-        """Listado denormalizado de socios (sustituye a la antigua query `miembros`)."""
-        return await _construir_socios(info.context.session)
+    async def socios(
+        self,
+        info: strawberry.Info,
+        agrupacion_id: Optional[uuid.UUID] = None,
+        activo: Optional[bool] = None,
+        es_voluntario: Optional[bool] = None,
+        eliminado: bool = False,
+    ) -> List[SocioVistaType]:
+        """Listado denormalizado de socios (sustituye a la antigua query `miembros`).
+
+        Filtros opcionales planos: agrupacionId, activo, esVoluntario, eliminado.
+        """
+        return await _construir_socios(
+            info.context.session, agrupacion_id=agrupacion_id, activo=activo,
+            es_voluntario=es_voluntario, eliminado=eliminado,
+        )
 
     @strawberry.field(permission_classes=[RequireTransaction("SOC_VIEW")])
     async def socio(self, info: strawberry.Info, id: uuid.UUID) -> Optional[SocioVistaType]:
