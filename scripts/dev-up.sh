@@ -44,8 +44,11 @@ case "${1:-up}" in
     arrancar --build
     ;;
   resetdb)
-    echo "Reiniciando la BD: se borra el volumen pgdata_dev (no hay datos que conservar en dev)…"
-    "${COMPOSE[@]}" rm -fsv db
+    echo "Reiniciando la BD: se borra SOLO el volumen de Postgres (conserva node_modules y uploads)…"
+    "${COMPOSE[@]}" stop db backend
+    "${COMPOSE[@]}" rm -f db backend
+    # pgdata_dev es un volumen con nombre: 'compose rm -v' no lo borra; hay que quitarlo aparte.
+    docker volume ls -q | grep -E '_pgdata_dev$' | xargs -r docker volume rm
     arrancar
     ;;
   down)
