@@ -229,6 +229,45 @@ def upgrade() -> None:
         ['contacto_id'], ['id']
     )
 
+    # ========== 10. Redirigir el RESTO de FKs de identidad a contactos ==========
+    # Cualquier columna que aún referencie miembros_legacy es una referencia a una
+    # persona (responsable_id, coordinador_id, firmante_id, miembro_id, …). Como
+    # contacto.id == miembro.id, basta re-apuntar la FK a contactos conservando el
+    # nombre de columna (el código repunta la relación a Contacto). Se excluye
+    # `participaciones` (tabla antigua de actividades; requiere split estructural
+    # propio a Participacion base + asistencias_actividad).
+    op.execute("""
+        DO $$
+        DECLARE r record;
+        BEGIN
+            FOR r IN
+                SELECT con.conname, con.conrelid::regclass::text AS tbl, a.attname AS col
+                FROM pg_constraint con
+                JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = ANY(con.conkey)
+                WHERE con.contype = 'f'
+                  AND con.confrelid = 'miembros_legacy'::regclass
+                  AND con.conrelid::regclass::text NOT IN ('participaciones')
+            LOOP
+                EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', r.tbl, r.conname);
+                EXECUTE format(
+                    'ALTER TABLE %I ADD CONSTRAINT %I FOREIGN KEY (%I) REFERENCES contactos(id) ON DELETE SET NULL',
+                    r.tbl, r.conname, r.col
+                );
+            END LOOP;
+        END $$;
+    """)
+
+    # ========== 11. Donaciones y RGPD: renombrar miembro_id → contacto_id ==========
+    # Estos modelos sí renombraron la columna a contacto_id.
+    for tabla in ['donaciones', 'rgpd_consentimientos', 'rgpd_solicitudes_derechos']:
+        if _has_column(tabla, 'miembro_id'):
+            _drop_fks_on_column(tabla, 'miembro_id')
+            op.execute(f"ALTER TABLE {tabla} RENAME COLUMN miembro_id TO contacto_id")
+            op.execute(
+                f"ALTER TABLE {tabla} ADD CONSTRAINT fk_{tabla}_contacto "
+                f"FOREIGN KEY (contacto_id) REFERENCES contactos(id) ON DELETE SET NULL"
+            )
+
 
 def downgrade() -> None:
     # Reversión completa: restaurar todo
