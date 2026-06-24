@@ -1,15 +1,12 @@
 """Catálogo de niveles de estudios."""
 
 import uuid
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 
 from sqlalchemy import String, Integer, Boolean, Uuid
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from ....infrastructure.base_model import BaseModel, InmutableMixin
-
-if TYPE_CHECKING:
-    from .miembro import Miembro
 
 
 class NivelEstudios(InmutableMixin, BaseModel):
@@ -21,7 +18,6 @@ class NivelEstudios(InmutableMixin, BaseModel):
     orden: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
-    miembros: Mapped[list['Miembro']] = relationship('Miembro', back_populates='nivel_estudios_rel', lazy='noload')
 
     def __repr__(self) -> str:
         return f"<NivelEstudios(nombre='{self.nombre}')>"

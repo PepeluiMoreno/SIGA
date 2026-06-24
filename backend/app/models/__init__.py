@@ -34,14 +34,14 @@ from ..modules.configuracion.models import (
     EstadoRemesa, EstadoDonacion, EstadoNotificacion, HistorialEstado,
 )
 
-# Organizaciones
-from ..modules.organizaciones.models import (
-    TipoOrganizacion, Organizacion, EstadoConvenio, Convenio,
-)
+# Organizaciones: OBSOLETO (sustituido por UnidadOrganizativa + Contacto PJ)
+# Las clases TipoOrganizacion, Organizacion, EstadoConvenio, Convenio fueron eliminadas.
 
-# Membresía
+# Membresía — incluye el núcleo CRM (Contacto/Vinculacion/Participacion)
 from ..modules.membresia.models import (
-    TipoMiembro, EstadoMiembro, MotivoBaja, Miembro,
+    Contacto, TipoEntidadJuridica, TipoVinculacion, Vinculacion, Socio, Voluntario,
+    Participacion, Membresia,
+    TipoMiembro, EstadoMiembro, MotivoBaja,
     JuntaDirectiva, HistorialNombramiento, CoordinacionTerritorial,
     Habilidad, MiembroHabilidad, FranjaDisponibilidad,
     HistorialAgrupacion, SolicitudTraslado, EstadoTraslado,
@@ -52,9 +52,8 @@ from ..modules.membresia.models import (
 # Actividades
 from ..modules.actividades.models import (
     TipoActividad, TipoAccion as TipoAccionActividades,
-    Actividad, Accion, Participacion, Tarea,
-    TipoCampania, Campania, RolParticipante, ParticipanteCampania,
-    Firmante, FirmaCampania,
+    Actividad, Accion, AsistenciaActividad, Tarea,
+    TipoCampania, Campania, FirmaCampania,
     TipoGrupo, RolGrupo, GrupoTrabajo, MiembroGrupo,
     GrupoIniciativa, ReunionGrupo, AsistenteReunion,
     RequisitoRecurso, AportacionHoras,

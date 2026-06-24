@@ -53,7 +53,7 @@ class SolicitudDerechoRGPD(BaseModel):
 
     # Solicitante
     miembro_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('miembros.id', ondelete='SET NULL'), nullable=True, index=True
+        Uuid, ForeignKey('contactos.id', ondelete='SET NULL'), nullable=True, index=True
     )
     usuario_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid, ForeignKey('usuarios.id', ondelete='SET NULL'), nullable=True, index=True

@@ -34,7 +34,6 @@ class SQLRoleRepository:
         self, user_id: str, territory_id: Optional[str]
     ) -> Set[str]:
         """Roles derivados del cargo activo del usuario en una agrupación."""
-        from ...membresia.models.miembro import Miembro
         from ...core.geografico.models import UnidadOrganizativa
 
         q = (

@@ -355,7 +355,7 @@ async function cargarDatos() {
     const [juntas, tiposRes, miembrosRes] = await Promise.all([
       graphqlClient.request(GET_JUNTA_ACTIVA, { agrupacionId }),
       graphqlClient.request(GET_TIPOS_CARGO),
-      graphqlClient.request(`query { miembros { id nombre apellido1 apellido2 email } }`),
+      graphqlClient.request(`query { miembros: socios { id nombre apellido1 apellido2 email } }`),
     ])
     junta.value      = juntas.juntasDirectivas?.[0] || null
     tiposCargo.value = (tiposRes.tiposCargo || []).sort((a, b) => a.orden - b.orden)

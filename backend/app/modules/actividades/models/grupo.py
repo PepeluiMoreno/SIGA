@@ -11,7 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ....infrastructure.base_model import BaseModel, InmutableMixin
 
 if TYPE_CHECKING:
-    from ...membresia.models.miembro import Miembro
+    from ...membresia.models.contacto import Contacto
 
 
 class TipoGrupo(InmutableMixin, BaseModel):
@@ -61,7 +61,7 @@ class GrupoTrabajo(BaseModel):
 
     # Coordinador principal del grupo (miembro responsable)
     coordinador_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('miembros.id', name='fk_grupos_trabajo_coordinador_id'), nullable=True, index=True
+        Uuid, ForeignKey('contactos.id', name='fk_grupos_trabajo_coordinador_id'), nullable=True, index=True
     )
 
     campania_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, nullable=True, index=True)
@@ -79,7 +79,7 @@ class GrupoTrabajo(BaseModel):
     )
 
     tipo_grupo = relationship('TipoGrupo', back_populates='grupos', lazy='selectin')
-    coordinador = relationship('Miembro', foreign_keys=[coordinador_id], lazy='selectin')
+    coordinador = relationship('Contacto', foreign_keys=[coordinador_id], lazy='selectin')
     agrupacion = relationship('UnidadOrganizativa', lazy='selectin')
     miembros = relationship('MiembroGrupo', back_populates='grupo', lazy='selectin')
     tareas = relationship('Tarea', back_populates='grupo', foreign_keys='Tarea.grupo_id', lazy='selectin')
@@ -102,7 +102,7 @@ class MiembroGrupo(BaseModel):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     grupo_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('grupos_trabajo.id'), nullable=False, index=True)
     miembro_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('miembros.id', ondelete='CASCADE'), nullable=False, index=True
+        Uuid, ForeignKey('contactos.id', ondelete='CASCADE'), nullable=False, index=True
     )
     rol_grupo_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('roles_grupo.id'), nullable=False, index=True)
 
@@ -115,7 +115,7 @@ class MiembroGrupo(BaseModel):
 
     grupo = relationship('GrupoTrabajo', back_populates='miembros', lazy='selectin')
     rol_grupo = relationship('RolGrupo', back_populates='miembros_grupo', lazy='selectin')
-    miembro: Mapped['Miembro'] = relationship('Miembro', foreign_keys=[miembro_id], lazy='selectin')
+    miembro: Mapped['Contacto'] = relationship('Contacto', foreign_keys=[miembro_id], lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<MiembroGrupo(miembro_id='{self.miembro_id}', grupo_id='{self.grupo_id}')>"
@@ -177,7 +177,7 @@ class AportacionHoras(BaseModel):
         Uuid, ForeignKey('requisitos_recurso.id'), nullable=False, index=True
     )
     miembro_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('miembros.id', ondelete='CASCADE'), nullable=False, index=True
+        Uuid, ForeignKey('contactos.id', ondelete='CASCADE'), nullable=False, index=True
     )
 
     horas_comprometidas: Mapped[Decimal] = mapped_column(Numeric(6, 2), nullable=False)
@@ -187,7 +187,7 @@ class AportacionHoras(BaseModel):
     observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     requisito = relationship('RequisitoRecurso', back_populates='aportaciones', lazy='selectin')
-    miembro = relationship('Miembro', foreign_keys=[miembro_id], lazy='selectin')
+    miembro = relationship('Contacto', foreign_keys=[miembro_id], lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<AportacionHoras(miembro_id='{self.miembro_id}', horas={self.horas_comprometidas})>"

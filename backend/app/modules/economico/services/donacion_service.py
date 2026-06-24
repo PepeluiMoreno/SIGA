@@ -37,13 +37,49 @@ class DonacionService:
 
     # ── A1 — Registrar ──────────────────────────────────────────────────────
 
+    async def _resolver_contacto_donante(
+        self, *, contacto_id: Optional[UUID], donante_nombre: Optional[str],
+        donante_dni: Optional[str], donante_email: Optional[str],
+        donante_telefono: Optional[str], anonima: bool,
+    ) -> Optional[UUID]:
+        """Resuelve el donante a un Contacto. Anónima -> None. Con contacto_id ->
+        ese. Si no, busca por NIF (numero_documento) y, si no existe y hay datos,
+        crea un Contacto PERSONA_FISICA al vuelo."""
+        if anonima:
+            return None
+        if contacto_id:
+            return contacto_id
+        from app.modules.membresia.models.contacto import Contacto
+        nif = (donante_dni or "").strip().upper() or None
+        if nif:
+            existente = await self.session.scalar(
+                select(Contacto).where(
+                    func.upper(Contacto.numero_documento) == nif,
+                    Contacto.eliminado.is_(False),
+                )
+            )
+            if existente:
+                return existente.id
+        if not (donante_nombre or nif or donante_email):
+            return None  # donación sin datos de donante -> sin contacto
+        contacto = Contacto(
+            tipo="PERSONA_FISICA",
+            nombre=donante_nombre or "Donante",
+            numero_documento=nif,
+            email=donante_email,
+            telefono=donante_telefono,
+        )
+        self.session.add(contacto)
+        await self.session.flush()
+        return contacto.id
+
     async def registrar(
         self,
         importe: Decimal,
         fecha_donacion: date,
         tipo: str = "DINERARIA",
         caracter: str = "PUNTUAL",
-        miembro_id: Optional[UUID] = None,
+        contacto_id: Optional[UUID] = None,
         donante_nombre: Optional[str] = None,
         donante_dni: Optional[str] = None,
         donante_email: Optional[str] = None,
@@ -76,14 +112,18 @@ class DonacionService:
         if not est_registrada:
             raise ValueError("Estado 'REGISTRADA' no encontrado en estados_donacion.")
 
+        # El donante es un Contacto. Si no se pasa contacto_id y la donación no es
+        # anónima, se busca-o-crea por NIF (decisión: el externo se registra como
+        # contacto salvo que se marque anónima).
+        contacto_id = await self._resolver_contacto_donante(
+            contacto_id=contacto_id, donante_nombre=donante_nombre, donante_dni=donante_dni,
+            donante_email=donante_email, donante_telefono=donante_telefono, anonima=anonima,
+        )
+
         donacion = Donacion(
-            miembro_id=miembro_id,
+            contacto_id=contacto_id,
             concepto_id=concepto_id,
             campania_id=campania_id,
-            donante_nombre=donante_nombre,
-            donante_dni=donante_dni,
-            donante_email=donante_email,
-            donante_telefono=donante_telefono,
             tipo=tipo,
             caracter=caracter,
             descripcion_especie=descripcion_especie,
@@ -146,7 +186,7 @@ class DonacionService:
 
         # Dineraria: crear ApunteCaja
         if donacion.tipo == "DINERARIA":
-            concepto = f"Donación de {donacion.donante_nombre or donacion.donante_dni or 'donante'}"
+            concepto = f"Donación de {(donacion.contacto.nombre_completo if donacion.contacto else None) or 'donante'}"
             apunte = ApunteCaja(
                 cuenta_bancaria_id=cuenta_bancaria_id,
                 fecha=f_cobro,
@@ -266,18 +306,12 @@ class DonacionService:
         # Agrupar por (donante_clave, tipo)
         agrupado: dict[tuple, dict] = {}
         for d in donaciones:
-            # Resolver NIF / nombre
-            nif = (d.donante_dni or "").strip().upper() or None
-            nombre = d.donante_nombre or ""
-            if d.miembro_id:
-                from app.modules.membresia.models.miembro import Miembro
-                mr = await self.session.execute(
-                    select(Miembro).where(Miembro.id == d.miembro_id)
-                )
-                m = mr.scalars().first()
-                if m:
-                    nif = (getattr(m, "numero_documento", None) or nif)
-                    nombre = nombre or f"{m.apellido1 or ''} {m.apellido2 or ''} {m.nombre or ''}".strip()
+            # El donante es un Contacto; NIF y nombre salen de él.
+            c = d.contacto
+            if not c:
+                continue  # sin contacto no es certificable
+            nif = (getattr(c, "numero_documento", None) or "").strip().upper() or None
+            nombre = c.nombre_completo or ""
             if not nif:
                 continue  # no certificable sin NIF
             clave = (nif, d.tipo)
@@ -332,19 +366,13 @@ class DonacionService:
         donaciones_donante = []
         nombre = ""
         for d in donaciones:
-            nif = (d.donante_dni or "").strip().upper() or None
-            if d.miembro_id and not nif:
-                from app.modules.membresia.models.miembro import Miembro
-                mr = await self.session.execute(
-                    select(Miembro).where(Miembro.id == d.miembro_id)
-                )
-                m = mr.scalars().first()
-                if m:
-                    nif = (getattr(m, "numero_documento", None) or "").strip().upper() or None
-                    nombre = nombre or f"{m.apellido1 or ''} {m.apellido2 or ''} {m.nombre or ''}".strip()
+            c = d.contacto
+            if not c:
+                continue
+            nif = (getattr(c, "numero_documento", None) or "").strip().upper() or None
             if nif == nif_norm:
                 donaciones_donante.append(d)
-                nombre = nombre or (d.donante_nombre or "")
+                nombre = nombre or (c.nombre_completo or "")
 
         if not donaciones_donante:
             raise ValueError(

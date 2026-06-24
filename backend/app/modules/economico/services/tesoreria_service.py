@@ -898,9 +898,10 @@ class TesoreriaService:
             cuota.referencia_pago = referencia
         self.session.add(cuota)
 
-        # Miembro nombre para el concepto
-        miembro = cuota.miembro
-        nombre_miembro = f"{miembro.nombre} {miembro.apellido1}" if miembro else str(cuota.miembro_id)
+        # Nombre del socio (vía la vinculación) para el concepto
+        vs = cuota.vinculacion_socio
+        contacto = vs.contacto if vs else None
+        nombre_miembro = contacto.nombre_completo if contacto else str(cuota.vinculacion_socio_id)
 
         apunte = await self.registrar_apunte(
             cuenta_id=cuenta_bancaria_id,

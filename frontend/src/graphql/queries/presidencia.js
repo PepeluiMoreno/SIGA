@@ -93,7 +93,7 @@ export const GET_MANDATOS_VIGENTES = `
 
 export const GET_KPI_SOCIOS = `
   query KpiSocios {
-    miembros(filter: { eliminado: { eq: false } }) {
+    miembros: socios {
       id
       activo
       fechaAlta

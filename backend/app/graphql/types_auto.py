@@ -59,7 +59,9 @@ class FlujoAprobacionType:
 
 
 # === VINCULACIÓN Y USUARIOS ===
-from ..modules.acceso.models import TipoVinculacion, Usuario, UsuarioRol
+# TipoVinculacion es ahora el catálogo CRM canónico (módulo membresía).
+from ..modules.membresia.models import TipoVinculacion
+from ..modules.acceso.models import Usuario, UsuarioRol
 
 @strawchemy.type(TipoVinculacion, include="all", override=True)
 class TipoVinculacionType:
@@ -67,7 +69,7 @@ class TipoVinculacionType:
 
 @strawchemy.type(Usuario, exclude=["password_hash"], override=True)
 class UsuarioType:
-    tipo_vinculacion: Optional['TipoVinculacionType'] = None
+    pass
 
 @strawchemy.type(UsuarioRol, include="all", override=True)
 class UsuarioRolType:
@@ -274,7 +276,11 @@ class ImporteCuotaAnioType:
 
 @strawchemy.type(CuotaAnual, include="all", override=True)
 class CuotaAnualType:
-    pass
+    @strawberry.field
+    def miembro(self) -> Optional['ContactoType']:
+        """Compat: la cuota cuelga de la vinculación de socio; expone su contacto."""
+        vs = getattr(self, 'vinculacion_socio', None)
+        return vs.contacto if vs else None
 
 @strawchemy.type(MotivoReduccionCuota, include="all", override=True)
 class MotivoReduccionCuotaType:
@@ -290,7 +296,7 @@ class MotivoReduccionCuotaType:
 @strawchemy.type(SolicitudReduccionCuota, include="all", override=True)
 class SolicitudReduccionCuotaType:
     # resolutor sale de resuelto_por_id (nullable mientras está PRESENTADA)
-    resolutor: Optional['MiembroType'] = None
+    resolutor: Optional['ContactoType'] = None
 
 @strawchemy.type(SolicitudReduccionCuotaDocumento, include="all", override=True)
 class SolicitudReduccionCuotaDocumentoType:
@@ -302,7 +308,25 @@ class DonacionConceptoType:
 
 @strawchemy.type(Donacion, include="all", override=True)
 class DonacionType:
-    pass
+    # Marker para que strawchemy procese el body con campos custom escalares.
+    observaciones: Optional[str] = None
+
+    # Compat: los datos del donante salen del Contacto (ya no hay donante_* en Donacion).
+    @strawberry.field
+    def donante_nombre(self) -> Optional[str]:
+        return self.contacto.nombre_completo if self.contacto else None
+
+    @strawberry.field
+    def donante_dni(self) -> Optional[str]:
+        return self.contacto.numero_documento if self.contacto else None
+
+    @strawberry.field
+    def donante_email(self) -> Optional[str]:
+        return self.contacto.email if self.contacto else None
+
+    @strawberry.field
+    def donante_telefono(self) -> Optional[str]:
+        return self.contacto.telefono if self.contacto else None
 
 @strawchemy.type(Remesa, include="all", override=True)
 class RemesaType:
@@ -314,19 +338,23 @@ class OrdenCobroType:
 
 @strawchemy.type(Recibo, include="all", override=True)
 class ReciboType:
-    pass
+    @strawberry.field
+    def miembro(self) -> Optional['ContactoType']:
+        """Compat: el recibo cuelga de la vinculación de socio; expone su contacto."""
+        vs = getattr(self, 'vinculacion_socio', None)
+        return vs.contacto if vs else None
 
 @strawchemy.type(JustificanteGasto, include="all", override=True)
 class JustificanteGastoType:
     # Relaciones que pueden estar vacías mientras el justificante avanza por estados
-    aceptador: Optional['MiembroType'] = None
-    aprobador: Optional['MiembroType'] = None
+    aceptador: Optional['ContactoType'] = None
+    aprobador: Optional['ContactoType'] = None
     partida_actividad: Optional['PartidaPresupuestoActividadType'] = None
     agrupacion: Optional['UnidadOrganizativaType'] = None
     cuenta_bancaria: Optional['CuentaBancariaType'] = None
     apunte_caja: Optional['ApunteCajaType'] = None
     cuenta_contable: Optional['CuentaContableType'] = None
-    presentado_por_tesorero: Optional['MiembroType'] = None
+    presentado_por_tesorero: Optional['ContactoType'] = None
 
 @strawchemy.type(JustificanteGastoLinea, include="all", override=True)
 class JustificanteGastoLineaType:
@@ -413,28 +441,14 @@ class ReglaContableType:
 
 
 # === COLABORACIONES ===
-from ..modules.organizaciones.models import Organizacion, TipoOrganizacion, Convenio, EstadoConvenio
-
-@strawchemy.type(TipoOrganizacion, include="all", override=True)
-class TipoOrganizacionType:
-    pass
-
-@strawchemy.type(Organizacion, include="all", override=True)
-class OrganizacionType:
-    pass
-
-@strawchemy.type(EstadoConvenio, include="all", override=True)
-class EstadoConvenioType:
-    pass
-
-@strawchemy.type(Convenio, include="all", override=True)
-class ConvenioType:
-    pass
+# El módulo `organizaciones` quedó obsoleto: TipoOrganizacion/Organizacion/
+# EstadoConvenio/Convenio fueron sustituidos por Contacto PJ + TipoEntidadJuridica
+# y el satélite Convenio de secretaría (resolvers propios en secretaria_resolvers).
 
 
 # === MIEMBROS ===
 from ..modules.membresia.models import (
-    TipoMiembro, Miembro, EstadoMiembro, MotivoBaja, MiembroSegmentacion,
+    TipoMiembro, Contacto, EstadoMiembro, MotivoBaja,
     NivelEstudios, NivelHabilidad,
     CategoriaHabilidad, Habilidad, MiembroHabilidad, FranjaDisponibilidad,
     HistorialAgrupacion, SolicitudTraslado,
@@ -460,35 +474,29 @@ class JuntaDirectivaType:
 @strawchemy.type(HistorialNombramiento, include="all", override=True)
 class HistorialNombramientoType:
     rol: Optional['RolType'] = None
-    miembro: Optional['MiembroType'] = None
+    miembro: Optional['ContactoType'] = None
     agrupacion: Optional['UnidadOrganizativaType'] = None
     cargo: Optional['CargoType'] = None
 
 @strawchemy.type(CoordinacionTerritorial, include="all", exclude=["fecha_asignacion"], override=True)
 class CoordinacionTerritorialType:
-    miembro: Optional['MiembroType'] = None
+    miembro: Optional['ContactoType'] = None
     agrupacion: Optional['UnidadOrganizativaType'] = None
 
-@strawchemy.type(Miembro, include="all", override=True)
-class MiembroType:
-    # Hacer nullable las relaciones opcionales que Strawchemy infiere como no-nullable
-    agrupacion: Optional['UnidadOrganizativaType'] = None
-    provincia: Optional['ProvinciaType'] = None
-    pais_documento: Optional['PaisType'] = None
-    pais_domicilio: Optional['PaisType'] = None
-    pais_nacimiento: Optional['PaisType'] = None
-    motivo_baja_rel: Optional['MotivoBajaType'] = None
-    motivo_reduccion: Optional['MotivoReduccionCuotaType'] = None
-    usuario: Optional['UsuarioType'] = None
-    nivel_estudios_rel: Optional['NivelEstudiosType'] = None
-
-    @strawberry.field
-    def tiene_acceso(self) -> bool:
-        return self.usuario is not None
-
-@strawchemy.type(MiembroSegmentacion, include="all", override=True)
-class MiembroSegmentacionType:
-    """Vista materializada para segmentación de miembros en campañas."""
+# El antiguo MiembroType se sustituye por ContactoType (la identidad viva es el
+# Contacto). Se exponen las columnas escalares; las relaciones de membresía
+# (vinculaciones/participaciones/firmas) se consultan vía resolvers dedicados, así
+# que se excluyen aquí para no exigir tipos GraphQL que aún no existen
+# (p.ej. VinculacionType) ni colisionar con ParticipacionType (=AsistenciaActividad).
+@strawchemy.type(
+    Contacto, include="all", override=True,
+    exclude=[
+        "vinculaciones", "participaciones", "firmas_campania",
+        "contactos_donde_represento", "representante_legal",
+    ],
+)
+class ContactoType:
+    """Identidad viva (persona física o jurídica)."""
     pass
 
 
@@ -533,7 +541,7 @@ from ..modules.actividades.models import (
     TipoCampania, TipoMeta, TipoCanalDifusion,
     Campania, MetaCampania, CanalDifusionCampania, PartidaPresupuestoCampania,
     PlantillaCampania, PlantillaMeta, PlantillaPartida, PlantillaActividad, PlantillaTarea,
-    RolParticipante, ParticipanteCampania, Firmante, FirmaCampania,
+    FirmaCampania,
 )
 
 @strawchemy.type(TipoMeta, include="all", override=True)
@@ -584,19 +592,10 @@ class PlantillaCampaniaType:
 @strawchemy.type(Campania, include="all", override=True)
 class CampaniaType:
     agrupacion: Optional['UnidadOrganizativaType'] = None
-    responsable: Optional['MiembroType'] = None
+    responsable: Optional['ContactoType'] = None
 
-@strawchemy.type(RolParticipante, include="all", override=True)
-class RolParticipanteType:
-    pass
-
-@strawchemy.type(ParticipanteCampania, include="all", override=True)
-class ParticipanteCampaniaType:
-    pass
-
-@strawchemy.type(Firmante, include="all", override=True)
-class FirmanteType:
-    pass
+# RolParticipante/ParticipanteCampania/Firmante se disolvieron en el modelo
+# Contacto + Participacion + Vinculacion; sus tipos GraphQL quedan retirados.
 
 @strawchemy.type(FirmaCampania, include="all", override=True)
 class FirmaCampaniaType:
@@ -605,7 +604,7 @@ class FirmaCampaniaType:
 
 # === ACTIVIDADES ===
 from ..modules.actividades.models import (
-    TipoActividad, TipoAccion, Actividad, Accion, Tarea, Participacion,
+    TipoActividad, TipoAccion, Actividad, Accion, Tarea, AsistenciaActividad,
     PartidaPresupuestoActividad, RegistroTrabajoActividad, DocumentoActividad, DocumentoPartida,
 )
 
@@ -622,7 +621,7 @@ class ActividadType:
     tipo_actividad: Optional['TipoActividadType'] = None
     estado: Optional['EstadoAccionType'] = None
     campania: Optional['CampaniaType'] = None
-    responsable: Optional['MiembroType'] = None
+    responsable: Optional['ContactoType'] = None
 
 # Alias de compatibilidad
 AccionType = ActividadType
@@ -630,13 +629,15 @@ AccionType = ActividadType
 @strawchemy.type(Tarea, include="all", override=True)
 class TareaType:
     estado: Optional['EstadoTareaType'] = None
-    responsable: Optional['MiembroType'] = None
+    responsable: Optional['ContactoType'] = None
     habilidad: Optional['HabilidadType'] = None
     nivel_habilidad: Optional['NivelHabilidadType'] = None
 
-@strawchemy.type(Participacion, include="all", override=True)
+# `Participacion` (actividades) se renombró a `AsistenciaActividad`. Se conserva
+# el nombre GraphQL `ParticipacionType` por compatibilidad con el frontend.
+@strawchemy.type(AsistenciaActividad, include="all", override=True)
 class ParticipacionType:
-    miembro: Optional['MiembroType'] = None
+    miembro: Optional['ContactoType'] = None
 
 @strawchemy.type(PartidaPresupuestoActividad, include="all", override=True)
 class PartidaPresupuestoActividadType:
@@ -644,7 +645,7 @@ class PartidaPresupuestoActividadType:
 
 @strawchemy.type(RegistroTrabajoActividad, include="all", override=True)
 class RegistroTrabajoActividadType:
-    miembro: Optional['MiembroType'] = None
+    miembro: Optional['ContactoType'] = None
 
 @strawchemy.type(DocumentoActividad, include="all", override=True)
 class DocumentoActividadType:

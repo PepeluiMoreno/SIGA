@@ -217,24 +217,6 @@ class PlantillaTarea(BaseModel):
 
 # ── Campaña principal ─────────────────────────────────────────────────────────
 
-class RolParticipante(BaseModel):
-    """Roles que pueden tener los participantes en una campaña."""
-    __tablename__ = 'roles_participante'
-
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    nombre: Mapped[str] = mapped_column(String(100), nullable=False)
-
-    es_voluntario: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    es_coordinador: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    es_donante: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
-
-    participantes = relationship('ParticipanteCampania', back_populates='rol_participante', lazy='selectin')
-
-    def __repr__(self) -> str:
-        return f"<RolParticipante(nombre='{self.nombre}')>"
-
-
 class Campania(BaseModel):
     """Campaña de la organización."""
     __tablename__ = 'campanias'
@@ -276,7 +258,7 @@ class Campania(BaseModel):
     objetivos_cumplidos: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
 
     # Responsable y ubicación organizativa
-    responsable_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('miembros.id'), nullable=True, index=True)
+    responsable_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('contactos.id'), nullable=True, index=True)
     agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('unidades_organizativas.id'), nullable=True, index=True)
 
     # Notificación a la membresía (flag one-shot)
@@ -292,12 +274,11 @@ class Campania(BaseModel):
     tipo_campania = relationship('TipoCampania', back_populates='campanias', lazy='selectin')
     estado = relationship('EstadoCampania', foreign_keys=[estado_id], lazy='selectin')
     agrupacion = relationship('UnidadOrganizativa', lazy='selectin')
-    responsable = relationship('Miembro', foreign_keys=[responsable_id], lazy='selectin')
+    responsable = relationship('Contacto', foreign_keys=[responsable_id], lazy='selectin')
     aprobado_por = relationship('Usuario', foreign_keys=[aprobado_por_id], lazy='selectin')
     padre = relationship('Campania', remote_side='Campania.id', foreign_keys=[padre_id], lazy='selectin')
     ediciones = relationship('Campania', back_populates='padre', foreign_keys=[padre_id], lazy='selectin')
     actividades = relationship('Actividad', back_populates='campania', foreign_keys='Actividad.campania_id', lazy='selectin')
-    participantes = relationship('ParticipanteCampania', back_populates='campania', lazy='selectin')
     firmas = relationship('FirmaCampania', back_populates='campania', lazy='selectin')
     metas = relationship('MetaCampania', back_populates='campania', cascade='all, delete-orphan', lazy='selectin')
     canales = relationship('CanalDifusionCampania', back_populates='campania', cascade='all, delete-orphan', lazy='selectin')
@@ -317,63 +298,21 @@ class Campania(BaseModel):
         return f"<Campania(nombre='{self.nombre}', estado_id='{self.estado_id}')>"
 
 
-class ParticipanteCampania(BaseModel):
-    """Participantes en una campaña con su rol."""
-    __tablename__ = 'participantes_campania'
-
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    campania_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('campanias.id'), nullable=False, index=True)
-    miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
-    rol_participante_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('roles_participante.id'), nullable=False, index=True)
-
-    horas_aportadas: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2), nullable=True)
-    confirmado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
-    asistio: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
-
-    fecha_inscripcion: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
-    fecha_confirmacion: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-
-    observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-
-    campania = relationship('Campania', back_populates='participantes', lazy='selectin')
-    rol_participante = relationship('RolParticipante', back_populates='participantes', lazy='selectin')
-
-    def __repr__(self) -> str:
-        return f"<ParticipanteCampania(miembro_id='{self.miembro_id}', confirmado={self.confirmado})>"
-
-
-class Firmante(BaseModel):
-    """Persona que firma campañas (datos recogidos desde formularios web)."""
-    __tablename__ = 'firmantes'
-
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-
-    documento: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    tipo_documento: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    nombre: Mapped[str] = mapped_column(String(100), nullable=False)
-    apellidos: Mapped[str] = mapped_column(String(200), nullable=False)
-
-    email: Mapped[str] = mapped_column(String(200), unique=True, nullable=False, index=True)
-
-    pais_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('paises.id'), nullable=True, index=True)
-    codigo_postal: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-
-    acepta_comunicaciones: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-
-    pais = relationship('Pais', lazy='selectin')
-    firmas = relationship('FirmaCampania', back_populates='firmante', lazy='selectin')
-
-    def __repr__(self) -> str:
-        return f"<Firmante(email='{self.email}', nombre='{self.nombre} {self.apellidos}')>"
-
-
 class FirmaCampania(BaseModel):
-    """Relación N:M entre Firmante y Campaña."""
+    """Satélite de Participacion: firma de un contacto a una campaña.
+
+    El antiguo modelo `Firmante` se disolvió: un firmante es un Contacto (PF)
+    con al menos una FirmaCampania. Los datos personales viven en Contacto.
+    """
     __tablename__ = 'firmas_campania'
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    participacion_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('participaciones.id', ondelete='CASCADE'),
+        nullable=False, unique=True, index=True
+    )
     campania_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('campanias.id'), nullable=False, index=True)
-    firmante_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('firmantes.id'), nullable=False, index=True)
+    contacto_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('contactos.id'), nullable=False, index=True)
 
     fecha_firma: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False, index=True)
     acepta_terminos: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -383,7 +322,8 @@ class FirmaCampania(BaseModel):
     ip_origen: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
 
     campania = relationship('Campania', back_populates='firmas', lazy='selectin')
-    firmante = relationship('Firmante', back_populates='firmas', lazy='selectin')
+    contacto = relationship('Contacto', back_populates='firmas_campania', foreign_keys=[contacto_id], lazy='selectin')
+    participacion = relationship('Participacion', back_populates='firma_campania', foreign_keys=[participacion_id], lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<FirmaCampania(campania_id='{self.campania_id}', fecha='{self.fecha_firma}')>"

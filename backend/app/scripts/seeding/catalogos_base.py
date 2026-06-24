@@ -15,7 +15,7 @@ import uuid
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.acceso.models.usuario import TipoVinculacion
+from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
 from app.modules.configuracion.models.estados import (
     EstadoCuota, EstadoTarea, EstadoParticipante, EstadoOrdenCobro,
     EstadoRemesa, EstadoDonacion, EstadoNotificacion,
@@ -26,7 +26,7 @@ from app.modules.economico.models.presupuesto import EstadoPlanificacion
 from app.modules.membresia.models.motivo_baja import MotivoBaja
 from app.modules.membresia.models.nivel_estudios import NivelEstudios
 from app.modules.membresia.models.nivel_habilidad import NivelHabilidad
-from app.modules.organizaciones.models.organizacion import TipoOrganizacion
+from app.modules.membresia.models.tipo_entidad_juridica import TipoEntidadJuridica
 from app.modules.proteccion_datos.models import ClausulaInformativa
 from app.modules.secretaria.models.reunion import TipoReunion
 from app.modules.secretaria.models.convenio import TipoConvenio
@@ -51,13 +51,14 @@ _MOTIVOS_REDUCCION_CUOTA = [
     {"codigo": "BECA",     "nombre": "Beca / situación social",  "descripcion": "Reducción total por beca o situación social acreditada",                  "porcentaje_reduccion": 100, "orden": 50, "activo": True},
 ]
 
+# Catálogo canónico de tipos de vinculación (codigo estable; ver migración p2).
 _TIPOS_VINCULACION = [
-    {"nombre": "Socio",                              "requiere_entidad": False, "activo": True},
-    {"nombre": "Simpatizante",                       "requiere_entidad": False, "activo": True},
-    {"nombre": "Trabajador autónomo",                "requiere_entidad": False, "activo": True},
-    {"nombre": "Socio de asociación amiga",          "requiere_entidad": True,  "activo": True},
-    {"nombre": "Empleado de servicio externo contratado", "requiere_entidad": True, "activo": True},
-    {"nombre": "Sistema",                            "requiere_entidad": False, "activo": True},
+    {"nombre": "Firmante",     "codigo": "FIRMANTE",     "ambito": "central",     "area_responsable": "COMUNICACION_FIRMAS",            "requiere_satelite": False, "activo": True},
+    {"nombre": "Simpatizante", "codigo": "SIMPATIZANTE", "ambito": "central",     "area_responsable": "COMUNICACION_SIMPATIZANTES",     "requiere_satelite": False, "activo": True},
+    {"nombre": "Socio",        "codigo": "SOCIO",        "ambito": "territorial", "area_responsable": "MEMBRESIA_SOCIO_GESTIONAR",      "requiere_satelite": True,  "activo": True},
+    {"nombre": "Voluntario",   "codigo": "VOLUNTARIO",   "ambito": "territorial", "area_responsable": "MEMBRESIA_VOLUNTARIO_GESTIONAR", "requiere_satelite": True,  "activo": True},
+    {"nombre": "Donante",      "codigo": "DONANTE",      "ambito": "central",     "area_responsable": "TESORERIA_DONANTES",             "requiere_satelite": False, "activo": True},
+    {"nombre": "Empleado",     "codigo": "EMPLEADO",     "ambito": "central",     "area_responsable": "RECURSOS_HUMANOS",               "requiere_satelite": True,  "activo": True},
 ]
 
 _FORMAS_PAGO = [
@@ -216,15 +217,15 @@ _TIPOS_CONVENIO = [
 ]
 
 _TIPOS_ORGANIZACION = [
-    {"nombre": "Asociación",                "descripcion": "Asociación sin ánimo de lucro (Ley Orgánica 1/2002)", "categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": False, "orden": 1,  "activo": True},
-    {"nombre": "Fundación",                 "descripcion": "Fundación (Ley 50/2002)",                             "categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": False, "orden": 2,  "activo": True},
-    {"nombre": "Cooperativa",               "descripcion": "Sociedad cooperativa",                                "categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": False, "orden": 3,  "activo": True},
-    {"nombre": "Federación / Confederación","descripcion": "Agrupación de asociaciones u otras entidades",         "categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": True,  "orden": 4,  "activo": True},
-    {"nombre": "Administración Pública",    "descripcion": "Ayuntamiento, Comunidad Autónoma, Diputación, Estado","categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": False, "orden": 5,  "activo": True},
-    {"nombre": "Empresa",                   "descripcion": "Persona jurídica privada con ánimo de lucro",         "categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": False, "orden": 6,  "activo": True},
-    {"nombre": "Partido político",          "descripcion": "Formación política (Ley Orgánica 6/2002)",            "categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": False, "orden": 7,  "activo": True},
-    {"nombre": "Sindicato",                 "descripcion": "Organización sindical",                                "categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": False, "orden": 8,  "activo": True},
-    {"nombre": "Otra",                      "descripcion": "Otra forma jurídica",                                 "categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": False, "orden": 99, "activo": True},
+    {"nombre": "Asociación",                "descripcion": "Asociación sin ánimo de lucro (Ley Orgánica 1/2002)", "permite_convenios": True,  "permite_jerarquia": False, "orden": 1,  "activo": True},
+    {"nombre": "Fundación",                 "descripcion": "Fundación (Ley 50/2002)",                             "permite_convenios": True,  "permite_jerarquia": False, "orden": 2,  "activo": True},
+    {"nombre": "Cooperativa",               "descripcion": "Sociedad cooperativa",                                "permite_convenios": True,  "permite_jerarquia": False, "orden": 3,  "activo": True},
+    {"nombre": "Federación / Confederación","descripcion": "Agrupación de asociaciones u otras entidades",         "permite_convenios": True,  "permite_jerarquia": True,  "orden": 4,  "activo": True},
+    {"nombre": "Administración Pública",    "descripcion": "Ayuntamiento, Comunidad Autónoma, Diputación, Estado","permite_convenios": True,  "permite_jerarquia": False, "orden": 5,  "activo": True},
+    {"nombre": "Empresa",                   "descripcion": "Persona jurídica privada con ánimo de lucro",         "permite_convenios": True,  "permite_jerarquia": False, "orden": 6,  "activo": True},
+    {"nombre": "Partido político",          "descripcion": "Formación política (Ley Orgánica 6/2002)",            "permite_convenios": True,  "permite_jerarquia": False, "orden": 7,  "activo": True},
+    {"nombre": "Sindicato",                 "descripcion": "Organización sindical",                                "permite_convenios": True,  "permite_jerarquia": False, "orden": 8,  "activo": True},
+    {"nombre": "Otra",                      "descripcion": "Otra forma jurídica",                                 "permite_convenios": True,  "permite_jerarquia": False, "orden": 99, "activo": True},
 ]
 
 
@@ -419,7 +420,7 @@ async def ensure_catalogos_base(session: AsyncSession) -> None:
         (NivelHabilidad, _NIVELES_HABILIDAD),
         (TipoReunion, _TIPOS_REUNION),
         (TipoConvenio, _TIPOS_CONVENIO),
-        (TipoOrganizacion, _TIPOS_ORGANIZACION),
+        (TipoEntidadJuridica, _TIPOS_ORGANIZACION),
     ):
         n = await _ensure_by_field(session, model, "nombre", items)
         if n:

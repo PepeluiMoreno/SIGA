@@ -37,7 +37,7 @@ const ME_QUERY = gql`
 // Perfil del miembro vinculado al usuario (para el avatar del sidebar).
 const MIEMBRO_PERFIL_QUERY = gql`
   query MiembroPerfil($id: UUID!) {
-    miembros(filter: { id: { eq: $id } }) {
+    miembros: socios(contactoId: $id) {
       fotoUrl nombre apellido1
     }
   }

@@ -174,7 +174,7 @@ const QUERY = gql`
       web
       activo
     }
-    miembros {
+    miembros: socios {
       id
       agrupacionId
     }

@@ -63,7 +63,7 @@ class ReciboService:
         ejercicio: int,
         tipo: str = "CUOTA_ORDINARIA",
         concepto: Optional[str] = None,
-        miembro_ids: Optional[List[UUID]] = None,
+        vinculacion_socio_ids: Optional[List[UUID]] = None,
         agrupacion_id: Optional[UUID] = None,
         fecha_emision: Optional[date] = None,
         fecha_vencimiento: Optional[date] = None,
@@ -99,8 +99,8 @@ class ReciboService:
             CuotaAnual.ejercicio == ejercicio,
             CuotaAnual.estado_id == est_pend.id,
         )
-        if miembro_ids:
-            q = q.where(CuotaAnual.miembro_id.in_(miembro_ids))
+        if vinculacion_socio_ids:
+            q = q.where(CuotaAnual.vinculacion_socio_id.in_(vinculacion_socio_ids))
         if agrupacion_id:
             q = q.where(CuotaAnual.agrupacion_id == agrupacion_id)
 
@@ -126,7 +126,7 @@ class ReciboService:
                 ejercicio=ejercicio,
                 tipo=tipo,
                 concepto=concepto,
-                miembro_id=cuota.miembro_id,
+                vinculacion_socio_id=cuota.vinculacion_socio_id,
                 cuota_id=cuota.id,
                 importe=importe_pendiente,
                 importe_pagado=Decimal("0.00"),
@@ -147,7 +147,7 @@ class ReciboService:
     async def emitir_recibo_individual(
         self,
         ejercicio: int,
-        miembro_id: UUID,
+        vinculacion_socio_id: UUID,
         concepto: str,
         importe: Decimal,
         tipo: str = "EXTRAORDINARIA",
@@ -162,7 +162,7 @@ class ReciboService:
             ejercicio=ejercicio,
             tipo=tipo,
             concepto=concepto,
-            miembro_id=miembro_id,
+            vinculacion_socio_id=vinculacion_socio_id,
             cuota_id=cuota_id,
             importe=importe,
             importe_pagado=Decimal("0.00"),
@@ -182,7 +182,7 @@ class ReciboService:
         self,
         ejercicio: Optional[int] = None,
         estado: Optional[str] = None,
-        miembro_id: Optional[UUID] = None,
+        vinculacion_socio_id: Optional[UUID] = None,
         tipo: Optional[str] = None,
     ) -> List[Recibo]:
         q = select(Recibo)
@@ -191,8 +191,8 @@ class ReciboService:
             filtros.append(Recibo.ejercicio == ejercicio)
         if estado:
             filtros.append(Recibo.estado == estado)
-        if miembro_id:
-            filtros.append(Recibo.miembro_id == miembro_id)
+        if vinculacion_socio_id:
+            filtros.append(Recibo.vinculacion_socio_id == vinculacion_socio_id)
         if tipo:
             filtros.append(Recibo.tipo == tipo)
         if filtros:

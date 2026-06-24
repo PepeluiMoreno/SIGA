@@ -79,28 +79,11 @@ class Modelo182Service:
         agregado: dict[tuple[str, str], dict] = {}
         excluidos: list[dict] = []
 
-        # Para resolver NIFs y nombres de miembros, cargamos diccionario
-        # de miembros referenciados
-        miembro_ids = {d.miembro_id for d in donaciones if d.miembro_id}
-        miembros = {}
-        if miembro_ids:
-            from app.modules.membresia.models.miembro import Miembro
-            mr = await self.session.execute(
-                select(Miembro).where(Miembro.id.in_(miembro_ids))
-            )
-            miembros = {m.id: m for m in mr.scalars().all()}
-
         for d in donaciones:
-            # Resolver NIF y nombre del donante
-            nif_raw: Optional[str] = None
-            nombre: Optional[str] = None
-            if d.miembro_id and d.miembro_id in miembros:
-                m = miembros[d.miembro_id]
-                nif_raw = getattr(m, "numero_documento", None)
-                nombre = f"{m.apellido1 or ''} {m.apellido2 or ''} {m.nombre or ''}".strip()
-            if not nif_raw:
-                nif_raw = d.donante_dni
-                nombre = nombre or d.donante_nombre
+            # El donante es un Contacto; NIF y nombre salen de él.
+            c = d.contacto
+            nif_raw: Optional[str] = getattr(c, "numero_documento", None) if c else None
+            nombre: Optional[str] = (c.nombre_completo if c else None)
 
             nif = _normalizar_nif(nif_raw or "")
             if not nif:

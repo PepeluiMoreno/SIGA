@@ -95,20 +95,23 @@ async def miembros_de_campanias_coordinadas(
     """
     from app.modules.acceso.models.usuario import Usuario
     from app.modules.actividades.models.campana import Campania
-    from app.modules.actividades.models.actividad import Actividad, Participacion
+    from app.modules.actividades.models.actividad import Actividad, AsistenciaActividad
+    from app.modules.membresia.models.participacion import Participacion
 
-    miembro_id = await session.scalar(select(Usuario.miembro_id).where(Usuario.id == usuario_id))
-    if not miembro_id:
+    contacto_id = await session.scalar(select(Usuario.contacto_id).where(Usuario.id == usuario_id))
+    if not contacto_id:
         return set()
     camp_ids = (await session.execute(
-        select(Campania.id).where(Campania.responsable_id == miembro_id)
+        select(Campania.id).where(Campania.responsable_id == contacto_id)
     )).scalars().all()
     if not camp_ids:
         return set()
+    # Contactos que asistieron a actividades de esas campañas (vía Participacion)
     rows = await session.execute(
-        select(Participacion.miembro_id)
-        .join(Actividad, Actividad.id == Participacion.actividad_id)
-        .where(Actividad.campania_id.in_(camp_ids), Participacion.miembro_id.isnot(None))
+        select(Participacion.contacto_id)
+        .join(AsistenciaActividad, AsistenciaActividad.participacion_id == Participacion.id)
+        .join(Actividad, Actividad.id == AsistenciaActividad.actividad_id)
+        .where(Actividad.campania_id.in_(camp_ids), Participacion.contacto_id.isnot(None))
     )
     return {r[0] for r in rows.all()}
 
@@ -127,7 +130,7 @@ async def ensure_rol_coordinador_campania(
     from app.modules.acceso.models.usuario import Usuario
     from app.modules.acceso.models.rol import Rol
 
-    usuario_id = await session.scalar(select(Usuario.id).where(Usuario.miembro_id == miembro_id))
+    usuario_id = await session.scalar(select(Usuario.id).where(Usuario.contacto_id == miembro_id))
     if not usuario_id:
         return  # el socio no tiene cuenta de acceso
     rol_id = await session.scalar(select(Rol.id).where(Rol.codigo == "COORDINADOR_CAMPANA"))
@@ -157,9 +160,9 @@ async def assert_miembro_en_ambito(
     ambito = await agrupaciones_en_ambito(session, usuario_id)
     if ambito is None:
         return  # global
-    from app.modules.membresia.models.miembro import Miembro
+    from app.modules.membresia.models.contacto import Contacto
     m_agr = await session.scalar(
-        select(Miembro.agrupacion_id).where(Miembro.id == miembro_id)
+        select(Contacto.agrupacion_id).where(Contacto.id == miembro_id)
     )
     if m_agr is not None and m_agr in ambito:
         return

@@ -103,7 +103,7 @@ class Actividad(BaseModel):
         Uuid, ForeignKey('grupos_trabajo.id'), nullable=True, index=True
     )
     responsable_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('miembros.id'), nullable=True, index=True
+        Uuid, ForeignKey('contactos.id'), nullable=True, index=True
     )
 
     # Temporal
@@ -161,7 +161,7 @@ class Actividad(BaseModel):
     aprobado_por = relationship('Usuario', foreign_keys=[aprobado_por_id], lazy='selectin')
     campania = relationship('Campania', foreign_keys=[campania_id], back_populates='actividades', lazy='selectin')
     grupo = relationship('GrupoTrabajo', foreign_keys=[grupo_id], lazy='selectin')
-    responsable = relationship('Miembro', foreign_keys=[responsable_id], lazy='selectin')
+    responsable = relationship('Contacto', foreign_keys=[responsable_id], lazy='selectin')
     padre = relationship(
         'Actividad', remote_side='Actividad.id',
         foreign_keys=[padre_id], lazy='selectin',
@@ -174,7 +174,7 @@ class Actividad(BaseModel):
         'Tarea', back_populates='actividad',
         foreign_keys='Tarea.actividad_id', lazy='selectin',
     )
-    participaciones = relationship('Participacion', back_populates='actividad', lazy='selectin')
+    asistencias = relationship('AsistenciaActividad', back_populates='actividad', lazy='selectin')
     partidas = relationship('PartidaPresupuestoActividad', back_populates='actividad', lazy='selectin', cascade='all, delete-orphan')
     registros_trabajo = relationship('RegistroTrabajoActividad', back_populates='actividad', lazy='selectin', cascade='all, delete-orphan')
     documentos = relationship('DocumentoActividad', back_populates='actividad', lazy='selectin', cascade='all, delete-orphan')
@@ -187,21 +187,24 @@ class Actividad(BaseModel):
 Accion = Actividad
 
 
-class Participacion(BaseModel):
-    """Participación de una persona (socio o externo) en una actividad."""
-    __tablename__ = 'participaciones'
+class AsistenciaActividad(BaseModel):
+    """Asistencia/inscripción de un contacto a una actividad concreta.
+
+    Es una forma de participación: satélite de Participacion (base).
+    Otorga/mantiene la vinculación correspondiente (voluntario, o participante).
+    El antiguo par nombre_externo/email_externo desaparece: un externo es
+    simplemente un Contacto creado al vuelo.
+    """
+    __tablename__ = 'asistencias_actividad'
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    participacion_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('participaciones.id', ondelete='CASCADE'),
+        nullable=False, unique=True, index=True
+    )
     actividad_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey('actividades.id'), nullable=False, index=True
     )
-
-    # Uno de los dos debe estar poblado:
-    miembro_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('miembros.id'), nullable=True, index=True
-    )
-    nombre_externo: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    email_externo: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
 
     rol: Mapped[str] = mapped_column(String(50), nullable=False, default='asistente')
     confirmado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -210,11 +213,14 @@ class Participacion(BaseModel):
         Numeric(6, 2), default=Decimal('0.00'), nullable=False
     )
 
-    actividad = relationship('Actividad', back_populates='participaciones', lazy='selectin')
-    miembro = relationship('Miembro', foreign_keys=[miembro_id], lazy='selectin')
+    actividad = relationship('Actividad', back_populates='asistencias', lazy='selectin')
+    participacion = relationship(
+        'Participacion', back_populates='asistencia_actividad',
+        foreign_keys=[participacion_id], lazy='selectin'
+    )
 
     def __repr__(self) -> str:
-        return f"<Participacion(actividad_id='{self.actividad_id}', rol='{self.rol}')>"
+        return f"<AsistenciaActividad(actividad_id='{self.actividad_id}', rol='{self.rol}')>"
 
 
 class PartidaPresupuestoActividad(BaseModel):
@@ -242,7 +248,7 @@ class RegistroTrabajoActividad(BaseModel):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     actividad_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('actividades.id', ondelete='CASCADE'), nullable=False, index=True)
-    miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('miembros.id'), nullable=False, index=True)
+    miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('contactos.id'), nullable=False, index=True)
     fecha: Mapped[date] = mapped_column(Date, nullable=False)
     horas: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False)
     descripcion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -250,7 +256,7 @@ class RegistroTrabajoActividad(BaseModel):
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     actividad = relationship('Actividad', back_populates='registros_trabajo', lazy='selectin')
-    miembro = relationship('Miembro', foreign_keys=[miembro_id], lazy='selectin')
+    miembro = relationship('Contacto', foreign_keys=[miembro_id], lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<RegistroTrabajoActividad(miembro_id='{self.miembro_id}', horas={self.horas})>"

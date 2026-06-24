@@ -7,11 +7,11 @@ from datetime import datetime
 import strawberry
 from sqlalchemy import select
 
-from app.modules.membresia.models.miembro import Miembro
+from app.modules.membresia.models.contacto import Contacto
 from app.modules.actividades.models.actividad import Actividad
 from app.modules.actividades.models.grupo import GrupoTrabajo
 from app.modules.actividades.models.campana import Campania
-from app.graphql.types_auto import MiembroType, ActividadType, GrupoTrabajoType, CampaniaType
+from app.graphql.types_auto import ContactoType, ActividadType, GrupoTrabajoType, CampaniaType
 from app.graphql.permissions import RequireTransaction
 
 
@@ -19,14 +19,14 @@ from app.graphql.permissions import RequireTransaction
 class PapeleraResolverMutation:
 
     @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_EDITAR")])
-    async def restaurar_miembro(self, info: strawberry.Info, id: uuid.UUID) -> MiembroType:
+    async def restaurar_miembro(self, info: strawberry.Info, id: uuid.UUID) -> ContactoType:
         session = info.context.session
-        result = await session.execute(select(Miembro).where(Miembro.id == id))
+        result = await session.execute(select(Contacto).where(Contacto.id == id))
         obj = result.scalar_one()
         obj.eliminado = False
         obj.fecha_eliminacion = None
         await session.commit()
-        result = await session.execute(select(Miembro).where(Miembro.id == id))
+        result = await session.execute(select(Contacto).where(Contacto.id == id))
         return result.scalar_one()
 
     @strawberry.mutation(permission_classes=[RequireTransaction("EVENTO_EDITAR")])

@@ -20,7 +20,7 @@ class CoordinacionTerritorial(BaseModel):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
 
     miembro_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('miembros.id', ondelete='RESTRICT'), nullable=False, index=True
+        Uuid, ForeignKey('contactos.id', ondelete='RESTRICT'), nullable=False, index=True
     )
     agrupacion_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey('unidades_organizativas.id', ondelete='RESTRICT'), nullable=False, index=True
@@ -30,7 +30,7 @@ class CoordinacionTerritorial(BaseModel):
     observaciones: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
     # Relaciones
-    miembro = relationship('Miembro', lazy='selectin')
+    miembro = relationship('Contacto', lazy='selectin')
     agrupacion = relationship('UnidadOrganizativa', lazy='selectin')
 
     def __repr__(self) -> str:

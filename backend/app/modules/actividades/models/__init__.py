@@ -9,7 +9,7 @@ from .actividad import (
     TipoAccion,  # alias de compatibilidad
     Actividad,
     Accion,      # alias de compatibilidad
-    Participacion,
+    AsistenciaActividad,
     PartidaPresupuestoActividad,
     RegistroTrabajoActividad,
     DocumentoActividad,
@@ -29,9 +29,6 @@ from .campana import (
     PlantillaPartida,
     PlantillaActividad,
     PlantillaTarea,
-    RolParticipante,
-    ParticipanteCampania,
-    Firmante,
     FirmaCampania,
 )
 from .grupo import (
@@ -55,7 +52,7 @@ __all__ = [
     'TipoAccion',
     'Actividad',
     'Accion',
-    'Participacion',
+    'AsistenciaActividad',
     'PartidaPresupuestoActividad',
     'RegistroTrabajoActividad',
     'DocumentoActividad',
@@ -74,9 +71,6 @@ __all__ = [
     'PlantillaPartida',
     'PlantillaActividad',
     'PlantillaTarea',
-    'RolParticipante',
-    'ParticipanteCampania',
-    'Firmante',
     'FirmaCampania',
     # Grupos de trabajo
     'TipoGrupo',

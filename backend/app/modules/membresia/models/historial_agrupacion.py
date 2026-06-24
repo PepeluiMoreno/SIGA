@@ -19,7 +19,7 @@ class HistorialAgrupacion(BaseModel):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     miembro_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('miembros.id', ondelete='CASCADE'), nullable=False, index=True
+        Uuid, ForeignKey('contactos.id', ondelete='CASCADE'), nullable=False, index=True
     )
     agrupacion_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey('unidades_organizativas.id'), nullable=False, index=True
@@ -29,7 +29,7 @@ class HistorialAgrupacion(BaseModel):
     fecha_fin: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     motivo: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
-    miembro = relationship('Miembro', lazy='selectin')
+    miembro = relationship('Contacto', lazy='selectin')
 
     def __repr__(self) -> str:
         fin = self.fecha_fin or 'actual'

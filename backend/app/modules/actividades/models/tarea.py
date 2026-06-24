@@ -24,7 +24,7 @@ class Tarea(BaseModel):
 
     estado_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('estados_tarea.id'), nullable=False, index=True)
     responsable_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('miembros.id'), nullable=True, index=True
+        Uuid, ForeignKey('contactos.id'), nullable=True, index=True
     )
 
     horas_estimadas: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2), nullable=True)
@@ -49,7 +49,7 @@ class Tarea(BaseModel):
     )
 
     estado = relationship('EstadoTarea', foreign_keys=[estado_id], lazy='selectin')
-    responsable = relationship('Miembro', foreign_keys=[responsable_id], lazy='selectin')
+    responsable = relationship('Contacto', foreign_keys=[responsable_id], lazy='selectin')
     habilidad = relationship('Habilidad', foreign_keys=[habilidad_id], lazy='selectin')
     nivel_habilidad = relationship('NivelHabilidad', foreign_keys=[nivel_habilidad_id], lazy='selectin')
     actividad = relationship('Actividad', back_populates='tareas', foreign_keys=[actividad_id], lazy='selectin')

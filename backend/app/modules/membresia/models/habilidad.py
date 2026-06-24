@@ -47,7 +47,7 @@ class MiembroHabilidad(BaseModel):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     miembro_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('miembros.id', ondelete='CASCADE'), nullable=False, index=True
+        Uuid, ForeignKey('contactos.id', ondelete='CASCADE'), nullable=False, index=True
     )
     habilidad_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey('habilidades.id', ondelete='CASCADE'), nullable=False, index=True

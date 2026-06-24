@@ -32,7 +32,7 @@ class Suscripcion(BaseModel):
 
     proveedor_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("proveedores_pago.id"), nullable=False, index=True)
     estado_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("estados_suscripcion.id"), nullable=False, index=True)
-    miembro_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey("miembros.id"), nullable=True, index=True)
+    vinculacion_socio_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey("vinculaciones.id"), nullable=True, index=True)
 
     importe: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     moneda: Mapped[str] = mapped_column(String(3), default="EUR", nullable=False)
@@ -42,7 +42,7 @@ class Suscripcion(BaseModel):
 
     proveedor = relationship('ProveedorPago', lazy='selectin')
     estado = relationship('EstadoSuscripcion', foreign_keys=[estado_id], lazy='selectin')
-    miembro = relationship('Miembro', foreign_keys=[miembro_id], lazy='selectin')
+    vinculacion_socio = relationship('Vinculacion', foreign_keys=[vinculacion_socio_id], lazy='selectin')
     pagos = relationship('Pago', back_populates='suscripcion', lazy='selectin')
 
     def __repr__(self) -> str:

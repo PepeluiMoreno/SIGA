@@ -340,7 +340,7 @@ const Q_HIJOS = `
 `
 const Q_MIEMBROS = `
   query MiembrosAgrupacion($agrupacionId: UUID!) {
-    miembros(filter: { agrupacionId: { eq: $agrupacionId }, eliminado: { eq: false } }) {
+    miembros: socios(agrupacionId: $agrupacionId) {
       id nombre apellido1
     }
   }

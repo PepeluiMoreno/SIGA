@@ -48,7 +48,7 @@ from app.modules.acceso.models.cargo import CargoRol
 from app.modules.acceso.models.transaccion import Transaccion
 from app.modules.acceso.models.rol_transaccion import RolTransaccion
 from app.modules.acceso.models.funcionalidad import RolFuncionalidad, FuncionalidadTransaccion
-from app.modules.membresia.models.miembro import Miembro
+from app.modules.membresia.models.contacto import Contacto
 from app.modules.membresia.models.nombramiento_vigente import NombramientoVigente
 
 
@@ -286,7 +286,7 @@ class DestinatarioResolver:
             return set()
         result = await self._session.execute(
             select(Usuario.id).where(
-                Usuario.miembro_id.in_(miembro_ids),
+                Usuario.contacto_id.in_(miembro_ids),
                 Usuario.activo == True,        # noqa: E712
                 Usuario.eliminado == False,    # noqa: E712
             )
@@ -315,14 +315,14 @@ class DestinatarioResolver:
 
         destinatarios: list[Destinatario] = []
         for u in usuarios:
-            miembro: Optional[Miembro] = u.miembro
-            nombre = miembro.nombre_completo if miembro else u.email
+            contacto: Optional[Contacto] = u.contacto
+            nombre = contacto.nombre_completo if contacto else u.email
             destinatarios.append(
                 Destinatario(
                     usuario_id=u.id,
                     email=u.email,
                     nombre=nombre,
-                    miembro_id=u.miembro_id,
+                    miembro_id=u.contacto_id,
                 )
             )
         # Orden estable por nombre para salidas reproducibles

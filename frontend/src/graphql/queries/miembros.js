@@ -6,7 +6,7 @@
 // Query para obtener miembros
 export const GET_MIEMBROS = `
   query Miembros {
-    miembros(filter: { eliminado: { eq: false } }) {
+    miembros: socios {
       id
       nombre
       apellido1
@@ -27,7 +27,7 @@ export const GET_MIEMBROS = `
         email
         activo
         ultimoAcceso
-        tipoVinculacion { id nombre }
+        tipoVinculacionId
         roles {
           id
           activo
@@ -78,7 +78,7 @@ export const GET_NOMBRAMIENTOS_ACTIVOS = `
 // Query para obtener un miembro por ID
 export const GET_MIEMBRO_BY_ID = `
   query Miembro($id: UUID!) {
-    miembros(filter: {id: {eq: $id}}) {
+    miembros: socios(contactoId: $id) {
       id
       tipoMiembroId
       estadoId
@@ -111,7 +111,6 @@ export const GET_MIEMBRO_BY_ID = `
       fechaAlta
       fechaBaja
       motivoBajaTexto
-      observaciones
       solicitaSupresionDatos
       datosAnonimizados
       fechaSolicitudSupresion
@@ -164,10 +163,6 @@ export const CREATE_MIEMBRO = `
       apellido2
       email
       telefono
-      tipoMiembro { id nombre }
-      estado { id nombre }
-      agrupacion { id nombre }
-      fechaAlta
       activo
     }
   }
@@ -258,7 +253,7 @@ export const GET_AGRUPACIONES = `
 // Query para contar miembros (estadísticas básicas)
 export const GET_MIEMBROS_COUNT = `
   query MiembrosCount {
-    miembros {
+    miembros: socios {
       id
     }
   }

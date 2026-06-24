@@ -815,7 +815,7 @@ export const GET_AGRUPACIONES_TERRITORIALES = `
       agrupacionId
       miembro { id nombre apellido1 fotoUrl }
     }
-    miembros {
+    miembros: socios {
       agrupacionId
       esVoluntario
       activo

@@ -20,12 +20,13 @@ from .secretaria_resolvers import SecretariaQuery, SecretariaResolverMutation
 from .comunicacion_resolvers import ComunicacionQuery
 from .chat_resolvers import ChatQuery
 from .membresia_resolvers import MembresiaQuery
+from .socios_resolvers import SociosQuery
 from .types_auto import *  # Importar todos los tipos generados
 from .inputs_auto import *  # Importar inputs y filtros
 
 
 @strawberry.type
-class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, CategoriaFiscalQuery, CategorizacionQuery, PresupuestoQuery, SecretariaQuery, ComunicacionQuery, ChatQuery, MembresiaQuery):
+class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, CategoriaFiscalQuery, CategorizacionQuery, PresupuestoQuery, SecretariaQuery, ComunicacionQuery, ChatQuery, MembresiaQuery, SociosQuery):
     """Queries GraphQL del sistema SIGA con generación automática.
 
     IMPORTANTE: Todos los nombres usan camelCase para consistencia con GraphQL.
@@ -121,16 +122,14 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
     planificacionesAnuales: list[PlanificacionAnualType] = strawchemy.field()
 
     # === COLABORACIONES ===
-    tiposOrganizacion: list[TipoOrganizacionType] = strawchemy.field(filter_input=TipoOrganizacionFilter)
-    organizaciones: list[OrganizacionType] = strawchemy.field(filter_input=OrganizacionFilter)
-    estadosConvenio: list[EstadoConvenioType] = strawchemy.field(filter_input=EstadoConvenioFilter)
-    convenios: list[ConvenioType] = strawchemy.field(filter_input=ConvenioFilter)
+    # Módulo `organizaciones` obsoleto; los convenios de secretaría se consultan
+    # vía SecretariaQuery (resolvers propios).
 
     # === MIEMBROS ===
     tiposMiembro: list[TipoMiembroType] = strawchemy.field(filter_input=TipoMiembroFilter)
     estadosMiembro: list[EstadoMiembroType] = strawchemy.field(filter_input=EstadoMiembroFilter)
     motivosBaja: list[MotivoBajaType] = strawchemy.field(filter_input=MotivoBajaFilter)
-    miembros: list[MiembroType] = strawchemy.field(filter_input=MiembroFilter)
+    contactos: list[ContactoType] = strawchemy.field(filter_input=ContactoFilter)
 
     # === JUNTA DIRECTIVA ===
     juntasDirectivas: list[JuntaDirectivaType] = strawchemy.field(filter_input=JuntaDirectivaFilter)
@@ -154,8 +153,7 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
     # === CAMPAÑAS ===
     tiposCampania: list[TipoCampaniaType] = strawchemy.field(filter_input=TipoCampaniaFilter)
     campanias: list[CampaniaType] = strawchemy.field(filter_input=CampaniaFilter)
-    rolesParticipante: list[RolParticipanteType] = strawchemy.field(filter_input=RolParticipanteFilter)
-    participantesCampania: list[ParticipanteCampaniaType] = strawchemy.field(filter_input=ParticipanteCampaniaFilter)
+    # rolesParticipante / participantesCampania disueltos en Contacto + Participacion + Vinculacion.
     tiposMetaCampania: list[TipoMetaType] = strawchemy.field(filter_input=TipoMetaFilter)
     tiposCanalDifusion: list[TipoCanalDifusionType] = strawchemy.field(filter_input=TipoCanalDifusionFilter)
     plantillasCampania: list[PlantillaCampaniaType] = strawchemy.field(filter_input=PlantillaCampaniaFilter)

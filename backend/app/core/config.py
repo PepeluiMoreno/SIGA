@@ -30,6 +30,22 @@ class Settings(BaseSettings):
     smtp_from: str = ""           # env: SMTP_FROM  (si vacío usa smtp_username)
     smtp_encryption: str = "tls"  # env: SMTP_ENCRYPTION  (tls | ssl | none)
 
+    # --- Formulario público de firmas (laicismo.org) ---
+    # Captcha anti-bot. Proveedor: turnstile | hcaptcha | disabled (solo dev).
+    captcha_provider: str = "turnstile"
+    captcha_secret: str = ""            # env: CAPTCHA_SECRET
+
+    # Base pública del API SIGA para los enlaces de verificación del email.
+    # Si queda vacío, se usa app_url. Ej: https://api.laicismo.org
+    siga_api_url: str = ""              # env: SIGA_API_URL
+
+    # Orígenes CORS permitidos para el formulario público (coma-separados).
+    # Ej: "https://laicismo.org,https://www.laicismo.org"
+    firmas_cors_origins: str = ""       # env: FIRMAS_CORS_ORIGINS
+
+    # Página de agradecimiento tras confirmar la firma (en laicismo.org).
+    firmas_gracias_url: str = ""        # env: FIRMAS_GRACIAS_URL
+
     @model_validator(mode="before")
     @classmethod
     def _aplicar_docker_secrets(cls, data):

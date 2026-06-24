@@ -31,27 +31,20 @@ class LibroSociosService:
         if fecha_corte is None:
             fecha_corte = date.today()
 
-        # Importación diferida para evitar circularidad
-        from ...membresia.models.miembro import Miembro
+        # Importación diferida para evitar circularidad. El "socio" ahora es una
+        # VINCULACIÓN de tipo SOCIO (no la persona): activa = estado 'activa'.
+        from ...membresia.models.vinculacion import Vinculacion
+        from ...membresia.models.tipo_vinculacion import TipoVinculacion
 
-        # Socios activos en la fecha de corte
-        # (fecha_alta <= fecha_corte y (sin baja o fecha_baja > fecha_corte))
-        activos_result = await self.session.execute(
-            select(func.count(Miembro.id)).where(
-                and_(
-                    Miembro.eliminado == False,
-                    # Estado activo: simplificado; el proyecto usa estado_id
-                    # La lógica exacta depende de los estados configurados
-                    # Esta query se refinará al conectar con el servicio de membresía
-                )
-            )
+        base = (
+            select(func.count(Vinculacion.id))
+            .join(TipoVinculacion, Vinculacion.tipo_vinculacion_id == TipoVinculacion.id)
+            .where(TipoVinculacion.codigo == "SOCIO", Vinculacion.eliminado == False)
         )
-        total_activos = activos_result.scalar() or 0
-
-        historico_result = await self.session.execute(
-            select(func.count(Miembro.id)).where(Miembro.eliminado == False)
-        )
-        total_historico = historico_result.scalar() or 0
+        total_historico = (await self.session.execute(base)).scalar() or 0
+        total_activos = (
+            await self.session.execute(base.where(Vinculacion.estado == "activa"))
+        ).scalar() or 0
         total_baja = total_historico - total_activos
 
         snapshot = LibroSociosSnapshot(

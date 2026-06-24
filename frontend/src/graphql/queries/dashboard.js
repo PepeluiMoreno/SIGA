@@ -5,7 +5,7 @@
 // Query básica para obtener estadísticas usando queries existentes
 export const GET_DASHBOARD_MIEMBROS = `
   query DashboardMiembros {
-    miembros {
+    miembros: socios {
       id
       activo
       esVoluntario

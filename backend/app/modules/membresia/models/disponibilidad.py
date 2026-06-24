@@ -18,7 +18,7 @@ class FranjaDisponibilidad(BaseModel):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     miembro_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('miembros.id', ondelete='CASCADE'), nullable=False, index=True
+        Uuid, ForeignKey('contactos.id', ondelete='CASCADE'), nullable=False, index=True
     )
 
     dia_semana: Mapped[int] = mapped_column(Integer, nullable=False)
