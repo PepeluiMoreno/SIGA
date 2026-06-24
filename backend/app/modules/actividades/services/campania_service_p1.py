@@ -159,7 +159,7 @@ class CampaniaService:
         """Renderiza la plantilla con datos reales SIN enviar. Devuelve dict con asunto/cuerpo/total."""
         from app.modules.core.comunicacion.plantilla_email import PlantillaEmail
         from app.modules.actividades.models.grupo import RequisitoRecurso, GrupoIniciativa
-        from app.modules.membresia.models.miembro import Miembro
+        from app.modules.membresia.models.contacto import Contacto
 
         campania = await self._get(campania_id)
         codigo = plantilla_codigo or "CAMP_APROBACION"
@@ -189,9 +189,9 @@ class CampaniaService:
         total_destinatarios = 0
         if campania.agrupacion_id:
             total_destinatarios = len((await self.session.execute(
-                select(Miembro).where(
-                    Miembro.agrupacion_id == campania.agrupacion_id,
-                    Miembro.email.isnot(None), Miembro.eliminado == False,
+                select(Contacto).where(
+                    Contacto.agrupacion_id == campania.agrupacion_id,
+                    Contacto.email.isnot(None), Contacto.eliminado == False,
                 )
             )).scalars().all())
 
@@ -208,7 +208,7 @@ class CampaniaService:
     async def enviar_notificacion(self, campania_id, asunto: str, cuerpo_html: str) -> dict:
         """Envía el correo a los miembros activos. Marca notificacion_enviada=True al finalizar."""
         from app.core.email_service import EmailService, _load_smtp_config
-        from app.modules.membresia.models.miembro import Miembro
+        from app.modules.membresia.models.contacto import Contacto
 
         campania = await self._get(campania_id)
         if campania.notificacion_enviada:
@@ -220,7 +220,7 @@ class CampaniaService:
                     "mensaje": "La campaña no tiene agrupación asignada — sin destinatarios."}
 
         miembros = (await self.session.execute(
-            select(Miembro).where(Miembro.agrupacion_id == campania.agrupacion_id, Miembro.eliminado == False)
+            select(Contacto).where(Contacto.agrupacion_id == campania.agrupacion_id, Contacto.eliminado == False)
         )).scalars().all()
         smtp_cfg = await _load_smtp_config(self.session)
         if not smtp_cfg.configured:

@@ -487,7 +487,7 @@ class JustificanteGastoService:
         """
         from app.modules.actividades.models.actividad import Actividad
         from app.modules.actividades.models.grupo import MiembroGrupo
-        from app.modules.membresia.models.miembro import Miembro
+        from app.modules.membresia.models.contacto import Contacto
 
         r = await self.session.execute(select(Actividad).where(Actividad.id == actividad_id))
         act = r.scalars().first()
@@ -495,27 +495,27 @@ class JustificanteGastoService:
             return []
 
         if act.campania_id and act.grupo_id:
-            # Miembros del grupo de la actividad (activos)
+            # Personas del grupo de la actividad (contactos activos)
             q = (
-                select(Miembro)
-                .join(MiembroGrupo, MiembroGrupo.miembro_id == Miembro.id)
+                select(Contacto)
+                .join(MiembroGrupo, MiembroGrupo.miembro_id == Contacto.id)
                 .where(
                     and_(
                         MiembroGrupo.grupo_id == act.grupo_id,
-                        Miembro.activo.is_(True),
-                        Miembro.eliminado.is_(False),
+                        Contacto.activo.is_(True),
+                        Contacto.eliminado.is_(False),
                     )
                 )
-                .order_by(Miembro.apellido1, Miembro.nombre)
+                .order_by(Contacto.apellido1, Contacto.nombre)
             )
             r = await self.session.execute(q)
             return list(r.scalars().all())
 
-        # Fallback (sin campaña, o de campaña sin grupo): todos los miembros activos
+        # Fallback (sin campaña, o de campaña sin grupo): todos los contactos activos
         r = await self.session.execute(
-            select(Miembro)
-            .where(and_(Miembro.activo.is_(True), Miembro.eliminado.is_(False)))
-            .order_by(Miembro.apellido1, Miembro.nombre)
+            select(Contacto)
+            .where(and_(Contacto.activo.is_(True), Contacto.eliminado.is_(False)))
+            .order_by(Contacto.apellido1, Contacto.nombre)
         )
         return list(r.scalars().all())
 
