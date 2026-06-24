@@ -102,7 +102,9 @@ def upgrade() -> None:
             fecha_creacion TIMESTAMP NOT NULL DEFAULT NOW(),
             fecha_modificacion TIMESTAMP,
             fecha_eliminacion TIMESTAMP,
-            eliminado BOOLEAN DEFAULT FALSE
+            eliminado BOOLEAN DEFAULT FALSE,
+            creado_por_id UUID,
+            modificado_por_id UUID
         )
     """)
     op.execute("CREATE INDEX IF NOT EXISTS ix_socios_vinculacion_id ON socios(vinculacion_id)")
@@ -127,7 +129,9 @@ def upgrade() -> None:
             fecha_creacion TIMESTAMP NOT NULL DEFAULT NOW(),
             fecha_modificacion TIMESTAMP,
             fecha_eliminacion TIMESTAMP,
-            eliminado BOOLEAN DEFAULT FALSE
+            eliminado BOOLEAN DEFAULT FALSE,
+            creado_por_id UUID,
+            modificado_por_id UUID
         )
     """)
     op.execute("CREATE INDEX IF NOT EXISTS ix_voluntarios_vinculacion_id ON voluntarios(vinculacion_id)")

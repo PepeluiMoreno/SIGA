@@ -33,7 +33,7 @@ from ..models.cuotas import (
     ImporteCuotaAnio,
     MotivoReduccionCuota,
 )
-from app.modules.membresia.models.miembro import Miembro, TipoMiembro
+from app.modules.membresia.models.miembro import TipoMiembro
 from app.modules.configuracion.models.estados import EstadoCuota
 
 
@@ -144,6 +144,33 @@ class CuotaService:
 
         await self.session.commit()
 
+    # ── Socios y tipos (modelo Contacto/Vinculacion/Membresia) ────────────────
+
+    async def _vinculaciones_socio_activas(self) -> list:
+        """Vinculaciones de tipo SOCIO en estado 'activa' (con satélite Socio y
+        contacto, cargados por selectin)."""
+        from app.modules.membresia.models.vinculacion import Vinculacion
+        from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
+        r = await self.session.execute(
+            select(Vinculacion)
+            .join(TipoVinculacion, Vinculacion.tipo_vinculacion_id == TipoVinculacion.id)
+            .where(TipoVinculacion.codigo == "SOCIO", Vinculacion.estado == "activa")
+        )
+        return list(r.scalars().all())
+
+    async def _tipos_miembro_por_contacto(self, contacto_ids: list) -> dict:
+        """Mapa contacto_id -> TipoMiembro a partir de la Membresía del contacto."""
+        ids = [c for c in contacto_ids if c]
+        if not ids:
+            return {}
+        from app.modules.membresia.models.participacion import Participacion, Membresia
+        r = await self.session.execute(
+            select(Participacion.contacto_id, Membresia)
+            .join(Membresia, Membresia.participacion_id == Participacion.id)
+            .where(Participacion.contacto_id.in_(ids), Participacion.tipo == "MEMBRESIA")
+        )
+        return {cid: mb.tipo_miembro for (cid, mb) in r.all()}
+
     # ── Previsualización y generación ─────────────────────────────────────────
 
     async def previsualizar_generacion(self, ejercicio: int) -> dict:
@@ -163,13 +190,16 @@ class CuotaService:
         )
         existentes = existentes_r.scalar() or 0
 
-        # Agrupar miembros activos por TipoMiembro
-        miembros_q = await self.session.execute(
-            select(Miembro.tipo_miembro_id, func.count(Miembro.id))
-            .where(Miembro.activo == True)
-            .group_by(Miembro.tipo_miembro_id)
+        # Agrupar socios activos por TipoMiembro (vía su Membresía)
+        vinculaciones = await self._vinculaciones_socio_activas()
+        tipo_por_contacto = await self._tipos_miembro_por_contacto(
+            [v.contacto_id for v in vinculaciones]
         )
-        cuenta_por_tipo: dict[UUID, int] = dict(miembros_q.all())
+        cuenta_por_tipo: dict[UUID, int] = {}
+        for v in vinculaciones:
+            tm = tipo_por_contacto.get(v.contacto_id)
+            if tm:
+                cuenta_por_tipo[tm.id] = cuenta_por_tipo.get(tm.id, 0) + 1
 
         # Cargar tipos con su motivo
         tipos_r = await self.session.execute(select(TipoMiembro).where(TipoMiembro.activo == True))
@@ -244,40 +274,47 @@ class CuotaService:
         if not est_pend:
             raise ValueError("Estado de cuota 'Pendiente' no encontrado en BD")
 
-        # Cuotas ya existentes (set de miembro_id)
+        # Cuotas ya existentes (set de vinculacion_socio_id)
         ya_r = await self.session.execute(
-            select(CuotaAnual.miembro_id).where(CuotaAnual.ejercicio == ejercicio)
+            select(CuotaAnual.vinculacion_socio_id).where(CuotaAnual.ejercicio == ejercicio)
         )
         ya = {row[0] for row in ya_r.all()}
 
-        # Miembros activos con tipo + motivo (lazy='selectin' carga relaciones)
-        miembros_r = await self.session.execute(
-            select(Miembro).where(Miembro.activo == True)
+        # Socios activos: vinculación SOCIO 'activa' (+ satélite Socio). El tipo de
+        # miembro sale de la Membresía del contacto.
+        vinculaciones = await self._vinculaciones_socio_activas()
+        tipo_por_contacto = await self._tipos_miembro_por_contacto(
+            [v.contacto_id for v in vinculaciones]
         )
-        miembros = list(miembros_r.scalars().all())
 
         n_creadas = 0
         n_omitidas_existentes = 0
         n_omitidas_excluidas = 0
         total_importe = Decimal("0.00")
 
-        for m in miembros:
-            if m.id in ya:
+        for v in vinculaciones:
+            if v.id in ya:
                 n_omitidas_existentes += 1
                 continue
-            # D1.7: override individual prevalece sobre el motivo del TipoMiembro
-            motivo = m.motivo_reduccion or (m.tipo_miembro.motivo_reduccion if m.tipo_miembro else None)
+            socio = v.socio
+            tipo_miembro = tipo_por_contacto.get(v.contacto_id)
+            # D1.7: override individual (socio) prevalece sobre el motivo del tipo
+            motivo = (socio.motivo_reduccion if socio else None) or (
+                tipo_miembro.motivo_reduccion if tipo_miembro else None
+            )
             if motivo and motivo.excluye_cuota:
                 n_omitidas_excluidas += 1
                 continue
             importe_efectivo = motivo.aplicar_a(importe_base) if motivo else importe_base
             # Incremento voluntario del socio: se suma al importe (no requiere aprobación)
-            importe_efectivo = importe_efectivo + (m.incremento_cuota or Decimal("0.00"))
+            importe_efectivo = importe_efectivo + (
+                (socio.incremento_cuota if socio else None) or Decimal("0.00")
+            )
 
             cuota = CuotaAnual(
-                miembro_id=m.id,
+                vinculacion_socio_id=v.id,
                 ejercicio=ejercicio,
-                agrupacion_id=m.agrupacion_id,
+                agrupacion_id=v.agrupacion_id or (v.contacto.agrupacion_id if v.contacto else None),
                 importe_cuota_anio_id=config.id,
                 codigo_cuota=motivo.codigo if motivo else CODIGO_CUOTA_BASE,
                 importe=importe_efectivo,
@@ -317,20 +354,22 @@ class CuotaService:
         if not config:
             raise ValueError(f"No hay configuración de cuota base para {cuota.ejercicio}")
 
-        # D1.7: override individual prevalece sobre el motivo del TipoMiembro
-        miembro = cuota.miembro
-        motivo = None
-        if miembro:
-            motivo = miembro.motivo_reduccion or (
-                miembro.tipo_miembro.motivo_reduccion if miembro.tipo_miembro else None
-            )
+        # D1.7: override individual (socio) prevalece sobre el motivo del TipoMiembro
+        vinc = cuota.vinculacion_socio
+        socio = vinc.socio if vinc else None
+        contacto_id = vinc.contacto_id if vinc else None
+        tipo_miembro = (await self._tipos_miembro_por_contacto([contacto_id])).get(contacto_id)
+        motivo = (socio.motivo_reduccion if socio else None) or (
+            tipo_miembro.motivo_reduccion if tipo_miembro else None
+        )
         if motivo and motivo.excluye_cuota:
-            raise ValueError("El miembro tiene ahora un motivo excluyente — anula esta cuota en su lugar")
+            raise ValueError("El socio tiene ahora un motivo excluyente — anula esta cuota en su lugar")
 
         importe_efectivo = motivo.aplicar_a(config.importe) if motivo else config.importe
         # Incremento voluntario del socio: se suma al importe (no requiere aprobación)
-        if miembro:
-            importe_efectivo = importe_efectivo + (miembro.incremento_cuota or Decimal("0.00"))
+        importe_efectivo = importe_efectivo + (
+            (socio.incremento_cuota if socio else None) or Decimal("0.00")
+        )
         cuota.importe = importe_efectivo
         cuota.motivo_reduccion_id = motivo.id if motivo else None
         cuota.codigo_cuota = motivo.codigo if motivo else CODIGO_CUOTA_BASE

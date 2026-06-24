@@ -143,6 +143,9 @@ class Socio(BaseModel):
         back_populates="socio",
         lazy="selectin"
     )
+    motivo_reduccion = relationship(
+        "MotivoReduccionCuota", foreign_keys=[motivo_reduccion_id], lazy="selectin"
+    )
 
     def __repr__(self) -> str:
         num = self.numero_socio or "?"

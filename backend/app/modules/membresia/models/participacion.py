@@ -114,6 +114,9 @@ class Membresia(BaseModel):
     participacion: Mapped["Participacion"] = relationship(
         back_populates="membresia", lazy="selectin"
     )
+    tipo_miembro = relationship(
+        "TipoMiembro", foreign_keys=[tipo_miembro_id], lazy="selectin"
+    )
 
     def __repr__(self) -> str:
         return f"<Membresia(participacion={self.participacion_id}, numero_socio={self.numero_socio})>"
