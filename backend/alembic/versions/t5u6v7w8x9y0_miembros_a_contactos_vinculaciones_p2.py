@@ -97,34 +97,37 @@ def upgrade() -> None:
 
     # ========== 3. Crear vinculaciones (TODAS ANTES de renombrar miembros) ==========
     
-    # 3a. Simpatizantes
+    # CLASIFICACIÓN POR DATOS REALES (sin nombres de catálogo, sin códigos de
+    # negocio inventados):
+    #   - socio vs simpatizante  → tipos_miembro.requiere_cuota (el simpatizante
+    #     no paga cuota). Tipo desconocido (NULL) → se trata como socio.
+    #   - vigencia (activa/inactiva/cerrada) → miembros.activo y miembros.fecha_baja
+    #     (columnas reales), NO el nombre del estado.
+    #   - voluntario → miembros.es_voluntario (booleano real).
+
+    # 3a. Simpatizantes: su tipo_miembro NO requiere cuota.
     op.execute("""
-        INSERT INTO vinculaciones (miembro_id, tipo_vinculacion_id, fecha_inicio, estado, agrupacion_id, fecha_creacion, creado_por_id)
-        SELECT m.id, tv.id, COALESCE(m.fecha_alta, CURRENT_DATE),
+        INSERT INTO vinculaciones (miembro_id, tipo_vinculacion_id, fecha_inicio, fecha_fin, estado, agrupacion_id, fecha_creacion, creado_por_id)
+        SELECT m.id, tv.id, COALESCE(m.fecha_alta, m.fecha_creacion::DATE, CURRENT_DATE), m.fecha_baja,
                CASE WHEN m.fecha_baja IS NOT NULL THEN 'cerrada'
                     WHEN m.activo = FALSE THEN 'inactiva' ELSE 'activa' END,
                m.agrupacion_id, COALESCE(m.fecha_creacion, NOW()), m.creado_por_id
         FROM miembros m
-        JOIN tipos_miembro tm ON m.tipo_miembro_id = tm.id AND tm.nombre = 'Simpatizante'
+        JOIN tipos_miembro tm ON m.tipo_miembro_id = tm.id AND tm.requiere_cuota = FALSE
         JOIN tipos_vinculacion tv ON tv.codigo = 'SIMPATIZANTE'
     """)
-    # NOTA: tipos_miembro y estados_miembro NO tienen columna `codigo`; se
-    # identifican por `nombre`. Verificar que los nombres canónicos del despliegue
-    # real coinciden ('Simpatizante', 'Alta', 'Suspendido') antes de aplicar.
 
-    # 3b. Socios (NO simpatizantes)
+    # 3b. Socios: tipo que requiere cuota (o tipo desconocido).
     op.execute("""
         INSERT INTO vinculaciones (miembro_id, tipo_vinculacion_id, fecha_inicio, fecha_fin, estado, agrupacion_id, fecha_creacion, creado_por_id)
-        SELECT m.id, tv.id, m.fecha_alta, m.fecha_baja,
+        SELECT m.id, tv.id, COALESCE(m.fecha_alta, m.fecha_creacion::DATE, CURRENT_DATE), m.fecha_baja,
                CASE WHEN m.fecha_baja IS NOT NULL THEN 'cerrada'
-                    WHEN em.nombre = 'Alta' THEN 'activa'
-                    WHEN em.nombre = 'Suspendido' THEN 'inactiva' ELSE 'cerrada' END,
+                    WHEN m.activo = FALSE THEN 'inactiva' ELSE 'activa' END,
                m.agrupacion_id, COALESCE(m.fecha_creacion, NOW()), m.creado_por_id
         FROM miembros m
         LEFT JOIN tipos_miembro tm ON m.tipo_miembro_id = tm.id
-        LEFT JOIN estados_miembro em ON m.estado_id = em.id
         JOIN tipos_vinculacion tv ON tv.codigo = 'SOCIO'
-        WHERE tm.nombre IS NULL OR tm.nombre != 'Simpatizante'
+        WHERE COALESCE(tm.requiere_cuota, TRUE) = TRUE
     """)
 
     # 3c. Voluntarios
@@ -147,14 +150,12 @@ def upgrade() -> None:
                            motivo_reduccion_id, motivo_baja_id, motivo_baja_texto, fecha_creacion, fecha_modificacion)
         SELECT v.id, NULL, NULL, m.incremento_cuota, m.incremento_cuota_obs, m.iban, m.swift_bic, m.referencia_pago,
                m.forma_pago_id, CASE WHEN m.fecha_baja IS NOT NULL THEN 'baja'
-                                     WHEN em.nombre = 'Alta' THEN 'activo'
-                                     WHEN em.nombre = 'Suspendido' THEN 'suspendido' ELSE 'baja' END,
+                                     WHEN m.activo = FALSE THEN 'suspendido' ELSE 'activo' END,
                m.es_socio_honor, m.motivo_reduccion_id, m.motivo_baja_id, m.motivo_baja_texto,
                COALESCE(m.fecha_creacion, NOW()), m.fecha_modificacion
         FROM miembros m
         JOIN vinculaciones v ON v.miembro_id = m.id
         JOIN tipos_vinculacion tv ON v.tipo_vinculacion_id = tv.id AND tv.codigo = 'SOCIO'
-        LEFT JOIN estados_miembro em ON m.estado_id = em.id
     """)
 
     # Voluntarios
