@@ -45,10 +45,12 @@ case "${1:-up}" in
     ;;
   resetdb)
     echo "Reiniciando la BD: se borra SOLO el volumen de Postgres (conserva node_modules y uploads)…"
-    "${COMPOSE[@]}" stop db backend
-    "${COMPOSE[@]}" rm -f db backend
+    "${COMPOSE[@]}" stop db backend 2>/dev/null || true
+    "${COMPOSE[@]}" rm -f db backend 2>/dev/null || true
     # pgdata_dev es un volumen con nombre: 'compose rm -v' no lo borra; hay que quitarlo aparte.
-    docker volume ls -q | grep -E '_pgdata_dev$' | xargs -r docker volume rm
+    # El '|| true' evita que un grep sin coincidencias (volumen ya inexistente) aborte por 'set -e'.
+    vols="$(docker volume ls -q | grep -E '_pgdata_dev$' || true)"
+    [ -n "$vols" ] && docker volume rm $vols || true
     arrancar
     ;;
   down)
