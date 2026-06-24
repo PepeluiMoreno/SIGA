@@ -52,6 +52,46 @@ persona (no semántica de membresía). Repuntar a `Contacto` y `ForeignKey('miem
 `app/scripts/seeding/*` y `app/scripts/importacion/*` crean `Miembro`. Con el
 modelo retirado deben crear `Contacto` (+ vinculaciones/satélites). 24 ficheros.
 
+## 2.5 Progreso (estado a 2026-06-24)
+
+**Migraciones (capa de datos): COMPLETAS y verificadas en PostgreSQL 16 real.**
+p1→p2→p3→p4 crean todo el esquema nuevo, clasifican por datos reales, redirigen
+FKs, enganchan satélites a Participacion, pueblan Membresía por socio y hacen el
+split de actividades. (Ver `REFACTOR_CRM_ESTADO.md`.)
+
+**Modelos: reconducidos.** Relaciones de identidad → Contacto; cuotas/recibos/
+pagos/suscripciones → `vinculacion_socio_id` (Party-Role). Mappers en verde.
+
+**Servicios reconducidos (✅):**
+- `economico/cuota_service` — genera/previsualiza/recalcula por Vinculacion SOCIO
+  activa; tipo vía Membresía; motivo vía Socio/TipoMiembro.
+- `economico/donacion_service` — donante = Contacto (find-or-create por NIF).
+- `economico/modelo_182_service`, `economico/tesoreria_service` — donante/socio
+  vía Contacto / vinculacion_socio.contacto.
+- `secretaria/libro_socios_service`, `economico/presupuesto_service` — cuentan por
+  Vinculacion SOCIO (no por todos los contactos).
+
+**PENDIENTE de reconducir (importan aún la clase `Miembro`):**
+- Servicios: `economico/remesa_service` (SEPA: recibo→vinculacion_socio→socio.iban/
+  contacto), `economico/justificante_gasto_service`, `acceso/ambito_territorial`
+  (usa `Participacion.miembro_id` eliminado → vía asistencias/participacion),
+  `acceso/repositories`, `core/comunicacion/destinatario_resolver`,
+  `actividades/campania_service_p1` (audiencia → Contacto/Vinculacion).
+- Resolvers GraphQL: `membresia_resolvers` (alta/edición debe crear Contacto+
+  Vinculacion+satélites en vez de `Miembro(**kwargs)` — rewrite grande),
+  `economico_mutations`, `papelera_resolvers`, `types_auto`/`inputs_auto`
+  (MiembroType → ContactoType).
+- **Retirar la clase `Miembro`**: quitar reversos de catálogos
+  (`TipoMiembro.miembros`, `EstadoMiembro.miembros`, `MotivoBaja.miembros`,
+  `NivelEstudios.miembros`), eliminar la clase y sus relaciones, y limpiar
+  `membresia/models/__init__`, `app/models/__init__`, `modules/__init__`.
+  ⚠️ Acoplado: estos reversos `lazy='selectin'` apuntan a la tabla renombrada y
+  rompen cualquier query sobre los catálogos hasta retirarlos.
+- Scripts (≈15): `app/scripts/seeding/*`, `app/scripts/importacion/*`,
+  `app/scripts/dump/*`, `bootstrap.py` — crean `Miembro`; deben crear `Contacto`
+  (+vinculaciones/satélites). Fase final; no bloquean el arranque (no se importan
+  en boot).
+
 ## 3. Decisión fiscal pendiente (bloquea cuota_service)
 
 La generación de cuotas anuales: ¿se calcula a partir del **`TipoMiembro`** (lo que
