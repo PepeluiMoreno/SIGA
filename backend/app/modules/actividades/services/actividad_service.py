@@ -13,9 +13,10 @@ from typing import Optional
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models.actividad import Actividad, Participacion
+from ..models.actividad import Actividad, AsistenciaActividad
 from ..models.tarea import Tarea
 from ..models.grupo import GrupoTrabajo, TipoGrupo
+from app.modules.membresia.models.participacion import Participacion
 from app.modules.configuracion.models.estados import EstadoAccion
 
 
@@ -231,34 +232,53 @@ class ActividadService:
         miembro_id=None, nombre_externo=None, email_externo=None,
         confirmado: bool = False, asistio=None,
         horas_aportadas: Decimal = Decimal("0.00"),
-    ) -> Participacion:
-        """Crea una participación validando que no exista duplicado."""
-        if miembro_id is not None:
-            existe = await self.session.execute(
-                select(Participacion).where(
-                    Participacion.actividad_id == actividad_id,
-                    Participacion.miembro_id == miembro_id,
-                )
+    ) -> AsistenciaActividad:
+        """Registra la asistencia de un contacto a una actividad.
+
+        Modelo nuevo (Party-Role): se crea una `Participacion` base (tipo
+        ASISTENCIA, ligada al Contacto) y su satélite `AsistenciaActividad`.
+        El identificador de miembro coincide con el de su Contacto (la migración
+        miembros→contactos preserva el UUID), por lo que `miembro_id` se usa
+        como `contacto_id`.
+        """
+        if miembro_id is None:
+            # El alta de un externo "al vuelo" como Contacto PF todavía no está
+            # reconducida en este bundle (ver PENDIENTE_flujos del refactor CRM).
+            raise ValueError(
+                "Registrar un asistente externo requiere crear primero su Contacto; "
+                "flujo pendiente de reconducción tras el refactor CRM."
             )
-            if existe.scalar_one_or_none() is not None:
-                raise ValueError("Este miembro ya está registrado como participante de la actividad")
-        elif email_externo:
-            existe = await self.session.execute(
-                select(Participacion).where(
-                    Participacion.actividad_id == actividad_id,
-                    Participacion.email_externo == email_externo,
-                )
+
+        contacto_id = miembro_id
+        # Dedup: ¿ya hay asistencia de este contacto en esta actividad?
+        existe = await self.session.execute(
+            select(AsistenciaActividad)
+            .join(Participacion, AsistenciaActividad.participacion_id == Participacion.id)
+            .where(
+                AsistenciaActividad.actividad_id == actividad_id,
+                Participacion.contacto_id == contacto_id,
             )
-            if existe.scalar_one_or_none() is not None:
-                raise ValueError("Ya existe un participante externo con ese email en la actividad")
-        p = Participacion(
-            actividad_id=actividad_id, rol=rol, miembro_id=miembro_id,
-            nombre_externo=nombre_externo, email_externo=email_externo,
-            confirmado=confirmado, asistio=asistio, horas_aportadas=horas_aportadas,
         )
-        self.session.add(p)
+        if existe.scalar_one_or_none() is not None:
+            raise ValueError("Este contacto ya está registrado como asistente de la actividad")
+
+        participacion = Participacion(
+            contacto_id=contacto_id, tipo="ASISTENCIA",
+            estado="confirmada" if confirmado else "registrada",
+        )
+        self.session.add(participacion)
+        await self.session.flush()
+
+        asistencia = AsistenciaActividad(
+            participacion_id=participacion.id, actividad_id=actividad_id,
+            rol=rol, confirmado=confirmado, asistio=asistio,
+            horas_aportadas=horas_aportadas,
+        )
+        self.session.add(asistencia)
         await self.session.commit()
-        r = await self.session.execute(select(Participacion).where(Participacion.id == p.id))
+        r = await self.session.execute(
+            select(AsistenciaActividad).where(AsistenciaActividad.id == asistencia.id)
+        )
         return r.scalar_one()
 
     # ── Grupos de trabajo ────────────────────────────────────────────────────────

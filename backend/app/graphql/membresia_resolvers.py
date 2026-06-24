@@ -484,9 +484,13 @@ class MembresiaResolverMutation:
         return base64.b64encode(buf.getvalue()).decode()
 
 
-@strawberry.type
-class VoluntarioType:
-    """Voluntario (subconjunto de Miembro) para el listado con scoping de ámbito."""
+@strawberry.type(name="VoluntarioAmbito")
+class VoluntarioAmbitoType:
+    """Voluntario (subconjunto de Miembro) para el listado con scoping de ámbito.
+
+    Vista de listado; no confundir con la entidad `Voluntario` (satélite de
+    Vinculacion del modelo CRM), que posee el nombre GraphQL `Voluntario`.
+    """
     id: uuid.UUID
     nombre: str
     apellido1: str
@@ -508,7 +512,7 @@ class VoluntarioType:
 @strawberry.type
 class MembresiaQuery:
     @strawberry.field(permission_classes=[RequireTransaction("VOL_LIST")])
-    async def voluntarios_en_ambito(self, info: strawberry.Info) -> List[VoluntarioType]:
+    async def voluntarios_en_ambito(self, info: strawberry.Info) -> List[VoluntarioAmbitoType]:
         """Voluntarios visibles según el ámbito territorial del usuario (Fase 2).
 
         - Rol general (presidencia / rol en unidad raíz) → todos los voluntarios.
@@ -540,7 +544,7 @@ class MembresiaQuery:
 
         r = await session.execute(q.order_by(Miembro.apellido1, Miembro.nombre))
         return [
-            VoluntarioType(
+            VoluntarioAmbitoType(
                 id=m.id, nombre=m.nombre, apellido1=m.apellido1, apellido2=m.apellido2,
                 email=m.email, telefono=m.telefono, disponibilidad=m.disponibilidad,
                 horas_disponibles_semana=m.horas_disponibles_semana, profesion=m.profesion,

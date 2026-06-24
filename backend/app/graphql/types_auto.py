@@ -59,7 +59,9 @@ class FlujoAprobacionType:
 
 
 # === VINCULACIÓN Y USUARIOS ===
-from ..modules.acceso.models import TipoVinculacion, Usuario, UsuarioRol
+# TipoVinculacion es ahora el catálogo CRM canónico (módulo membresía).
+from ..modules.membresia.models import TipoVinculacion
+from ..modules.acceso.models import Usuario, UsuarioRol
 
 @strawchemy.type(TipoVinculacion, include="all", override=True)
 class TipoVinculacionType:
@@ -67,7 +69,7 @@ class TipoVinculacionType:
 
 @strawchemy.type(Usuario, exclude=["password_hash"], override=True)
 class UsuarioType:
-    tipo_vinculacion: Optional['TipoVinculacionType'] = None
+    pass
 
 @strawchemy.type(UsuarioRol, include="all", override=True)
 class UsuarioRolType:
@@ -413,23 +415,9 @@ class ReglaContableType:
 
 
 # === COLABORACIONES ===
-from ..modules.organizaciones.models import Organizacion, TipoOrganizacion, Convenio, EstadoConvenio
-
-@strawchemy.type(TipoOrganizacion, include="all", override=True)
-class TipoOrganizacionType:
-    pass
-
-@strawchemy.type(Organizacion, include="all", override=True)
-class OrganizacionType:
-    pass
-
-@strawchemy.type(EstadoConvenio, include="all", override=True)
-class EstadoConvenioType:
-    pass
-
-@strawchemy.type(Convenio, include="all", override=True)
-class ConvenioType:
-    pass
+# El módulo `organizaciones` quedó obsoleto: TipoOrganizacion/Organizacion/
+# EstadoConvenio/Convenio fueron sustituidos por Contacto PJ + TipoEntidadJuridica
+# y el satélite Convenio de secretaría (resolvers propios en secretaria_resolvers).
 
 
 # === MIEMBROS ===
@@ -533,7 +521,7 @@ from ..modules.actividades.models import (
     TipoCampania, TipoMeta, TipoCanalDifusion,
     Campania, MetaCampania, CanalDifusionCampania, PartidaPresupuestoCampania,
     PlantillaCampania, PlantillaMeta, PlantillaPartida, PlantillaActividad, PlantillaTarea,
-    RolParticipante, ParticipanteCampania, Firmante, FirmaCampania,
+    FirmaCampania,
 )
 
 @strawchemy.type(TipoMeta, include="all", override=True)
@@ -586,17 +574,8 @@ class CampaniaType:
     agrupacion: Optional['UnidadOrganizativaType'] = None
     responsable: Optional['MiembroType'] = None
 
-@strawchemy.type(RolParticipante, include="all", override=True)
-class RolParticipanteType:
-    pass
-
-@strawchemy.type(ParticipanteCampania, include="all", override=True)
-class ParticipanteCampaniaType:
-    pass
-
-@strawchemy.type(Firmante, include="all", override=True)
-class FirmanteType:
-    pass
+# RolParticipante/ParticipanteCampania/Firmante se disolvieron en el modelo
+# Contacto + Participacion + Vinculacion; sus tipos GraphQL quedan retirados.
 
 @strawchemy.type(FirmaCampania, include="all", override=True)
 class FirmaCampaniaType:
@@ -605,7 +584,7 @@ class FirmaCampaniaType:
 
 # === ACTIVIDADES ===
 from ..modules.actividades.models import (
-    TipoActividad, TipoAccion, Actividad, Accion, Tarea, Participacion,
+    TipoActividad, TipoAccion, Actividad, Accion, Tarea, AsistenciaActividad,
     PartidaPresupuestoActividad, RegistroTrabajoActividad, DocumentoActividad, DocumentoPartida,
 )
 
@@ -634,7 +613,9 @@ class TareaType:
     habilidad: Optional['HabilidadType'] = None
     nivel_habilidad: Optional['NivelHabilidadType'] = None
 
-@strawchemy.type(Participacion, include="all", override=True)
+# `Participacion` (actividades) se renombró a `AsistenciaActividad`. Se conserva
+# el nombre GraphQL `ParticipacionType` por compatibilidad con el frontend.
+@strawchemy.type(AsistenciaActividad, include="all", override=True)
 class ParticipacionType:
     miembro: Optional['MiembroType'] = None
 

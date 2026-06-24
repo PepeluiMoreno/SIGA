@@ -2,8 +2,9 @@
 
 Flujo:
   1. registrar_firma(): valida que la campaña admite firmas, hace upsert del
-     Firmante por email (constraint UNIQUE), crea la FirmaCampania como NO
-     verificada y envía un correo de doble opt-in con un token firmado.
+     Contacto (persona física) por email, crea la Participacion (tipo FIRMA) y su
+     satélite FirmaCampania como NO verificada y envía un correo de doble opt-in
+     con un token firmado.
   2. verificar_firma(): valida el token y marca la firma como verificada.
 
 El registro de personas y el consentimiento viven SIEMPRE aquí (SIGA es la
@@ -24,7 +25,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.email_service import EmailService
-from app.modules.actividades.models.campana import Campania, Firmante, FirmaCampania
+from app.modules.actividades.models.campana import Campania, FirmaCampania
+from app.modules.membresia.models.contacto import Contacto
+from app.modules.membresia.models.participacion import Participacion
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +115,7 @@ class FirmaPublicaService:
                 "La campaña no existe o ya no admite firmas.",
             )
 
-        firmante = await self._upsert_firmante(
+        contacto = await self._upsert_contacto(
             nombre=nombre,
             apellidos=apellidos,
             email=email,
@@ -123,7 +126,7 @@ class FirmaPublicaService:
             acepta_comunicaciones=acepta_comunicaciones,
         )
 
-        firma = await self._firma_existente(campania.id, firmante.id)
+        firma = await self._firma_existente(campania.id, contacto.id)
         if firma is not None:
             if firma.verificado:
                 return ResultadoRegistro(
@@ -131,15 +134,24 @@ class FirmaPublicaService:
                     "Esta dirección ya ha firmado y verificado esta campaña.",
                 )
             # Reenviamos el correo de verificación de la firma pendiente.
-            await self._enviar_email_verificacion(firmante, campania, firma)
+            await self._enviar_email_verificacion(contacto, campania, firma)
             return ResultadoRegistro(
                 EstadoRegistro.YA_FIRMADA_PENDIENTE,
                 "Ya había una firma pendiente. Te hemos reenviado el correo de confirmación.",
             )
 
+        # Modelo CRM: la firma es el satélite de una Participacion (tipo FIRMA)
+        # del Contacto que firma.
+        participacion = Participacion(
+            contacto_id=contacto.id, tipo="FIRMA", estado="registrada",
+        )
+        self.session.add(participacion)
+        await self.session.flush()
+
         firma = FirmaCampania(
+            participacion_id=participacion.id,
             campania_id=campania.id,
-            firmante_id=firmante.id,
+            contacto_id=contacto.id,
             acepta_terminos=True,
             verificado=False,
             ip_origen=(ip_origen or "")[:50] or None,
@@ -147,7 +159,7 @@ class FirmaPublicaService:
         self.session.add(firma)
         await self.session.flush()  # obtener firma.id antes de firmar el token
 
-        await self._enviar_email_verificacion(firmante, campania, firma)
+        await self._enviar_email_verificacion(contacto, campania, firma)
         await self.session.commit()
 
         return ResultadoRegistro(
@@ -216,7 +228,7 @@ class FirmaPublicaService:
             return None
         return campania
 
-    async def _upsert_firmante(
+    async def _upsert_contacto(
         self,
         *,
         nombre: str,
@@ -227,55 +239,65 @@ class FirmaPublicaService:
         documento: Optional[str],
         tipo_documento: Optional[str],
         acepta_comunicaciones: bool,
-    ) -> Firmante:
+    ) -> Contacto:
+        """Crea o actualiza el Contacto (persona física) que firma.
+
+        En el modelo CRM, un firmante es un Contacto PF identificado por email.
+        Si ya existe (sea por firmas previas o por ser miembro), se reutiliza.
+
+        NOTA (pendiente RGPD): `acepta_comunicaciones` no tiene aún campo en
+        Contacto; el consentimiento de comunicaciones debe registrarse en el
+        módulo proteccion_datos cuando se reconduzca a Contacto. De momento no
+        se persiste aquí para no inventar esquema.
+        """
         existente = await self.session.scalar(
-            select(Firmante).where(Firmante.email == email, Firmante.eliminado.is_(False))
+            select(Contacto).where(
+                Contacto.email == email,
+                Contacto.tipo == "PERSONA_FISICA",
+                Contacto.eliminado.is_(False),
+            )
         )
         if existente is not None:
-            # Actualizamos datos básicos (corrección de erratas) sin revocar consentimiento.
+            # Actualizamos datos básicos (corrección de erratas).
             existente.nombre = nombre.strip()
-            existente.apellidos = apellidos.strip()
+            existente.apellido1 = apellidos.strip()
             if codigo_postal:
                 existente.codigo_postal = codigo_postal.strip()
             if pais_id:
-                existente.pais_id = pais_id
+                existente.pais_domicilio_id = pais_id
             if documento:
-                existente.documento = documento.strip()
+                existente.numero_documento = documento.strip()
                 existente.tipo_documento = tipo_documento
-            # El consentimiento solo se eleva, nunca se retira por aquí
-            # (la baja es un acto explícito vía unsubscribe).
-            if acepta_comunicaciones:
-                existente.acepta_comunicaciones = True
             await self.session.flush()
             return existente
 
-        firmante = Firmante(
+        contacto = Contacto(
+            tipo="PERSONA_FISICA",
             nombre=nombre.strip(),
-            apellidos=apellidos.strip(),
+            apellido1=apellidos.strip(),
             email=email,
             codigo_postal=codigo_postal.strip() if codigo_postal else None,
-            pais_id=pais_id,
-            documento=documento.strip() if documento else None,
+            pais_domicilio_id=pais_id,
+            numero_documento=documento.strip() if documento else None,
             tipo_documento=tipo_documento,
-            acepta_comunicaciones=bool(acepta_comunicaciones),
         )
-        self.session.add(firmante)
+        self.session.add(contacto)
         await self.session.flush()
-        return firmante
+        return contacto
 
     async def _firma_existente(
-        self, campania_id: uuid.UUID, firmante_id: uuid.UUID
+        self, campania_id: uuid.UUID, contacto_id: uuid.UUID
     ) -> Optional[FirmaCampania]:
         return await self.session.scalar(
             select(FirmaCampania).where(
                 FirmaCampania.campania_id == campania_id,
-                FirmaCampania.firmante_id == firmante_id,
+                FirmaCampania.contacto_id == contacto_id,
                 FirmaCampania.eliminado.is_(False),
             )
         )
 
     async def _enviar_email_verificacion(
-        self, firmante: Firmante, campania: Campania, firma: FirmaCampania
+        self, contacto: Contacto, campania: Campania, firma: FirmaCampania
     ) -> None:
         settings = get_settings()
         base_api = (settings.siga_api_url or settings.app_url or "").rstrip("/")
@@ -284,7 +306,7 @@ class FirmaPublicaService:
 
         asunto = f"Confirma tu firma — {campania.nombre}"
         cuerpo_html = (
-            f"<p>Hola {firmante.nombre},</p>"
+            f"<p>Hola {contacto.nombre},</p>"
             f"<p>Has firmado la campaña <strong>{campania.nombre}</strong>. "
             f"Para que tu firma cuente, confírmala pulsando aquí:</p>"
             f'<p><a href="{enlace}">Confirmar mi firma</a></p>'
@@ -292,7 +314,7 @@ class FirmaPublicaService:
             f"<p>El enlace caduca en {_TOKEN_HORAS_VALIDEZ} horas.</p>"
         )
         cuerpo_texto = (
-            f"Hola {firmante.nombre},\n\n"
+            f"Hola {contacto.nombre},\n\n"
             f"Has firmado la campaña \"{campania.nombre}\". Confirma tu firma abriendo este enlace:\n"
             f"{enlace}\n\n"
             f"Si no has sido tú, ignora este mensaje. El enlace caduca en {_TOKEN_HORAS_VALIDEZ} horas."
@@ -300,10 +322,10 @@ class FirmaPublicaService:
 
         try:
             await EmailService(self.session).enviar(
-                destinatario=firmante.email,
+                destinatario=contacto.email,
                 asunto=asunto,
                 cuerpo_html=cuerpo_html,
                 cuerpo_texto=cuerpo_texto,
             )
         except Exception as exc:  # noqa: BLE001 — el alta no debe caerse por un fallo SMTP
-            logger.error("No se pudo enviar el email de verificación a %s: %s", firmante.email, exc)
+            logger.error("No se pudo enviar el email de verificación a %s: %s", contacto.email, exc)

@@ -220,13 +220,8 @@ class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionM
     crear_plantilla_tarea: PlantillaTareaType = strawchemy.create(PlantillaTareaCreateInput)
     actualizar_plantilla_tarea: PlantillaTareaType = strawchemy.update_by_ids(PlantillaTareaUpdateInput)
 
-    crear_rol_participante: RolParticipanteType = strawchemy.create(RolParticipanteCreateInput)
-    actualizar_rol_participante: RolParticipanteType = strawchemy.update_by_ids(RolParticipanteUpdateInput)
-    eliminar_roles_participante: list[RolParticipanteType] = strawchemy.delete(RolParticipanteFilter)
-
-    crear_participante_campania: ParticipanteCampaniaType = strawchemy.create(ParticipanteCampaniaCreateInput)
-    actualizar_participante_campania: ParticipanteCampaniaType = strawchemy.update_by_ids(ParticipanteCampaniaUpdateInput)
-    eliminar_participantes_campania: list[ParticipanteCampaniaType] = strawchemy.delete(ParticipanteCampaniaFilter)
+    # RolParticipante / ParticipanteCampania se disolvieron en Contacto +
+    # Participacion + Vinculacion; sus mutations quedan retiradas.
 
     # === ACTIVIDADES ===
     crear_estado_accion: EstadoAccionType = strawchemy.create(EstadoAccionCreateInput)
@@ -385,21 +380,8 @@ class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionM
     eliminar_preferencias_notificacion: list[PreferenciaNotificacionType] = strawchemy.delete(PreferenciaNotificacionFilter)
 
     # === COLABORACIONES ===
-    crear_tipo_asociacion: TipoOrganizacionType = strawchemy.create(TipoOrganizacionCreateInput)
-    actualizar_tipo_asociacion: TipoOrganizacionType = strawchemy.update_by_ids(TipoOrganizacionUpdateInput)
-    eliminar_tipos_asociacion: list[TipoOrganizacionType] = strawchemy.delete(TipoOrganizacionFilter)
-
-    crear_organizacion: OrganizacionType = strawchemy.create(OrganizacionCreateInput)
-    actualizar_organizacion: OrganizacionType = strawchemy.update_by_ids(OrganizacionUpdateInput)
-    eliminar_organizaciones: list[OrganizacionType] = strawchemy.delete(OrganizacionFilter)
-
-    crear_estado_convenio: EstadoConvenioType = strawchemy.create(EstadoConvenioCreateInput)
-    actualizar_estado_convenio: EstadoConvenioType = strawchemy.update_by_ids(EstadoConvenioUpdateInput)
-    eliminar_estados_convenio: list[EstadoConvenioType] = strawchemy.delete(EstadoConvenioFilter)
-
-    crear_convenio: ConvenioType = strawchemy.create(ConvenioCreateInput)
-    actualizar_convenio: ConvenioType = strawchemy.update_by_ids(ConvenioUpdateInput)
-    eliminar_convenios: list[ConvenioType] = strawchemy.delete(ConvenioFilter)
+    # El módulo `organizaciones` quedó obsoleto (Contacto PJ + TipoEntidadJuridica
+    # y convenios de secretaría con resolvers propios); sus mutations se retiran.
 
     # === FINANCIERO — TESORERÍA ===
     crear_cuenta_bancaria: CuentaBancariaType = strawchemy.create(CuentaBancariaCreateInput)

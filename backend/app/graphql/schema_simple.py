@@ -121,10 +121,8 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
     planificacionesAnuales: list[PlanificacionAnualType] = strawchemy.field()
 
     # === COLABORACIONES ===
-    tiposOrganizacion: list[TipoOrganizacionType] = strawchemy.field(filter_input=TipoOrganizacionFilter)
-    organizaciones: list[OrganizacionType] = strawchemy.field(filter_input=OrganizacionFilter)
-    estadosConvenio: list[EstadoConvenioType] = strawchemy.field(filter_input=EstadoConvenioFilter)
-    convenios: list[ConvenioType] = strawchemy.field(filter_input=ConvenioFilter)
+    # Módulo `organizaciones` obsoleto; los convenios de secretaría se consultan
+    # vía SecretariaQuery (resolvers propios).
 
     # === MIEMBROS ===
     tiposMiembro: list[TipoMiembroType] = strawchemy.field(filter_input=TipoMiembroFilter)
@@ -154,8 +152,7 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
     # === CAMPAÑAS ===
     tiposCampania: list[TipoCampaniaType] = strawchemy.field(filter_input=TipoCampaniaFilter)
     campanias: list[CampaniaType] = strawchemy.field(filter_input=CampaniaFilter)
-    rolesParticipante: list[RolParticipanteType] = strawchemy.field(filter_input=RolParticipanteFilter)
-    participantesCampania: list[ParticipanteCampaniaType] = strawchemy.field(filter_input=ParticipanteCampaniaFilter)
+    # rolesParticipante / participantesCampania disueltos en Contacto + Participacion + Vinculacion.
     tiposMetaCampania: list[TipoMetaType] = strawchemy.field(filter_input=TipoMetaFilter)
     tiposCanalDifusion: list[TipoCanalDifusionType] = strawchemy.field(filter_input=TipoCanalDifusionFilter)
     plantillasCampania: list[PlantillaCampaniaType] = strawchemy.field(filter_input=PlantillaCampaniaFilter)

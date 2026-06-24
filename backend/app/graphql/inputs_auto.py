@@ -74,8 +74,9 @@ from ..modules.acceso.models import (
     RolFuncionalidad,
     FuncionalidadTransaccion,
     UsuarioRol,
-    TipoVinculacion,
 )
+# TipoVinculacion es ahora el catálogo CRM canónico (módulo membresía).
+from ..modules.membresia.models import TipoVinculacion
 from ..modules.acceso.models.cargo import Cargo, CargoRol
 
 
@@ -702,7 +703,6 @@ from ..modules.actividades.models import (
     TipoCampania, TipoMeta, TipoCanalDifusion,
     Campania, MetaCampania, CanalDifusionCampania, PartidaPresupuestoCampania,
     PlantillaCampania, PlantillaMeta, PlantillaPartida, PlantillaActividad, PlantillaTarea,
-    RolParticipante, ParticipanteCampania,
 )
 
 
@@ -856,34 +856,8 @@ class PlantillaTareaUpdateInput:
     pass
 
 
-@strawchemy.input(RolParticipante, mode="create_input", include="all", exclude=get_exclude_fields(RolParticipante))
-class RolParticipanteCreateInput:
-    pass
-
-
-@strawchemy.input(RolParticipante, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(RolParticipante))
-class RolParticipanteUpdateInput:
-    pass
-
-
-@strawchemy.filter(RolParticipante)
-class RolParticipanteFilter:
-    pass
-
-
-@strawchemy.input(ParticipanteCampania, mode="create_input", include="all", exclude=get_exclude_fields(ParticipanteCampania))
-class ParticipanteCampaniaCreateInput:
-    pass
-
-
-@strawchemy.input(ParticipanteCampania, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(ParticipanteCampania))
-class ParticipanteCampaniaUpdateInput:
-    pass
-
-
-@strawchemy.filter(ParticipanteCampania)
-class ParticipanteCampaniaFilter:
-    pass
+# RolParticipante/ParticipanteCampania se disolvieron en Contacto + Participacion
+# + Vinculacion; sus inputs/filtros GraphQL quedan retirados.
 
 
 # ============================================================================
@@ -891,7 +865,7 @@ class ParticipanteCampaniaFilter:
 # ============================================================================
 
 from ..modules.actividades.models import (
-    TipoActividad, TipoAccion, Actividad, Accion, Tarea, Participacion,
+    TipoActividad, TipoAccion, Actividad, Accion, Tarea, AsistenciaActividad,
     PartidaPresupuestoActividad, RegistroTrabajoActividad, DocumentoActividad, DocumentoPartida,
 )
 
@@ -951,17 +925,19 @@ class TareaFilter:
     pass
 
 
-@strawchemy.input(Participacion, mode="create_input", include="all", exclude=get_exclude_fields(Participacion))
+# `Participacion` (actividades) -> `AsistenciaActividad`. Se conservan los nombres
+# GraphQL `Participacion*Input/Filter` por compatibilidad con el frontend.
+@strawchemy.input(AsistenciaActividad, mode="create_input", include="all", exclude=get_exclude_fields(AsistenciaActividad))
 class ParticipacionCreateInput:
     pass
 
 
-@strawchemy.input(Participacion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Participacion))
+@strawchemy.input(AsistenciaActividad, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(AsistenciaActividad))
 class ParticipacionUpdateInput:
     pass
 
 
-@strawchemy.filter(Participacion, include="all")
+@strawchemy.filter(AsistenciaActividad, include="all")
 class ParticipacionFilter:
     pass
 
@@ -1544,68 +1520,9 @@ class PlantillaEmailFilter:
 # ============================================================================
 # COLABORACIONES
 # ============================================================================
-
-from ..modules.organizaciones.models import TipoOrganizacion, Organizacion, EstadoConvenio, Convenio
-
-
-@strawchemy.input(TipoOrganizacion, mode="create_input", include="all", exclude=get_exclude_fields(TipoOrganizacion))
-class TipoOrganizacionCreateInput:
-    pass
-
-
-@strawchemy.input(TipoOrganizacion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TipoOrganizacion))
-class TipoOrganizacionUpdateInput:
-    pass
-
-
-@strawchemy.filter(TipoOrganizacion)
-class TipoOrganizacionFilter:
-    pass
-
-
-@strawchemy.input(Organizacion, mode="create_input", include="all", exclude=get_exclude_fields(Organizacion))
-class OrganizacionCreateInput:
-    pass
-
-
-@strawchemy.input(Organizacion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Organizacion))
-class OrganizacionUpdateInput:
-    pass
-
-
-@strawchemy.filter(Organizacion)
-class OrganizacionFilter:
-    pass
-
-
-@strawchemy.input(EstadoConvenio, mode="create_input", include="all", exclude=get_exclude_fields(EstadoConvenio))
-class EstadoConvenioCreateInput:
-    pass
-
-
-@strawchemy.input(EstadoConvenio, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(EstadoConvenio))
-class EstadoConvenioUpdateInput:
-    pass
-
-
-@strawchemy.filter(EstadoConvenio)
-class EstadoConvenioFilter:
-    pass
-
-
-@strawchemy.input(Convenio, mode="create_input", include="all", exclude=get_exclude_fields(Convenio))
-class ConvenioCreateInput:
-    pass
-
-
-@strawchemy.input(Convenio, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Convenio))
-class ConvenioUpdateInput:
-    pass
-
-
-@strawchemy.filter(Convenio)
-class ConvenioFilter:
-    pass
+# El módulo `organizaciones` quedó obsoleto. Sus inputs/filtros GraphQL
+# (TipoOrganizacion/Organizacion/EstadoConvenio/Convenio) quedan retirados;
+# los convenios de secretaría tienen sus propios resolvers.
 
 
 # === FINANCIERO — TESORERÍA ===
