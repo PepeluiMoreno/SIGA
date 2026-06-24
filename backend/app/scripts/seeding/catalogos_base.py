@@ -26,7 +26,7 @@ from app.modules.economico.models.presupuesto import EstadoPlanificacion
 from app.modules.membresia.models.motivo_baja import MotivoBaja
 from app.modules.membresia.models.nivel_estudios import NivelEstudios
 from app.modules.membresia.models.nivel_habilidad import NivelHabilidad
-from app.modules.organizaciones.models.organizacion import TipoOrganizacion
+from app.modules.membresia.models.tipo_entidad_juridica import TipoEntidadJuridica
 from app.modules.proteccion_datos.models import ClausulaInformativa
 from app.modules.secretaria.models.reunion import TipoReunion
 from app.modules.secretaria.models.convenio import TipoConvenio
@@ -216,15 +216,15 @@ _TIPOS_CONVENIO = [
 ]
 
 _TIPOS_ORGANIZACION = [
-    {"nombre": "Asociación",                "descripcion": "Asociación sin ánimo de lucro (Ley Orgánica 1/2002)", "categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": False, "orden": 1,  "activo": True},
-    {"nombre": "Fundación",                 "descripcion": "Fundación (Ley 50/2002)",                             "categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": False, "orden": 2,  "activo": True},
-    {"nombre": "Cooperativa",               "descripcion": "Sociedad cooperativa",                                "categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": False, "orden": 3,  "activo": True},
-    {"nombre": "Federación / Confederación","descripcion": "Agrupación de asociaciones u otras entidades",         "categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": True,  "orden": 4,  "activo": True},
-    {"nombre": "Administración Pública",    "descripcion": "Ayuntamiento, Comunidad Autónoma, Diputación, Estado","categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": False, "orden": 5,  "activo": True},
-    {"nombre": "Empresa",                   "descripcion": "Persona jurídica privada con ánimo de lucro",         "categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": False, "orden": 6,  "activo": True},
-    {"nombre": "Partido político",          "descripcion": "Formación política (Ley Orgánica 6/2002)",            "categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": False, "orden": 7,  "activo": True},
-    {"nombre": "Sindicato",                 "descripcion": "Organización sindical",                                "categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": False, "orden": 8,  "activo": True},
-    {"nombre": "Otra",                      "descripcion": "Otra forma jurídica",                                 "categoria": "EXTERNA", "permite_convenios": True,  "permite_jerarquia": False, "orden": 99, "activo": True},
+    {"nombre": "Asociación",                "descripcion": "Asociación sin ánimo de lucro (Ley Orgánica 1/2002)", "permite_convenios": True,  "permite_jerarquia": False, "orden": 1,  "activo": True},
+    {"nombre": "Fundación",                 "descripcion": "Fundación (Ley 50/2002)",                             "permite_convenios": True,  "permite_jerarquia": False, "orden": 2,  "activo": True},
+    {"nombre": "Cooperativa",               "descripcion": "Sociedad cooperativa",                                "permite_convenios": True,  "permite_jerarquia": False, "orden": 3,  "activo": True},
+    {"nombre": "Federación / Confederación","descripcion": "Agrupación de asociaciones u otras entidades",         "permite_convenios": True,  "permite_jerarquia": True,  "orden": 4,  "activo": True},
+    {"nombre": "Administración Pública",    "descripcion": "Ayuntamiento, Comunidad Autónoma, Diputación, Estado","permite_convenios": True,  "permite_jerarquia": False, "orden": 5,  "activo": True},
+    {"nombre": "Empresa",                   "descripcion": "Persona jurídica privada con ánimo de lucro",         "permite_convenios": True,  "permite_jerarquia": False, "orden": 6,  "activo": True},
+    {"nombre": "Partido político",          "descripcion": "Formación política (Ley Orgánica 6/2002)",            "permite_convenios": True,  "permite_jerarquia": False, "orden": 7,  "activo": True},
+    {"nombre": "Sindicato",                 "descripcion": "Organización sindical",                                "permite_convenios": True,  "permite_jerarquia": False, "orden": 8,  "activo": True},
+    {"nombre": "Otra",                      "descripcion": "Otra forma jurídica",                                 "permite_convenios": True,  "permite_jerarquia": False, "orden": 99, "activo": True},
 ]
 
 
@@ -419,7 +419,7 @@ async def ensure_catalogos_base(session: AsyncSession) -> None:
         (NivelHabilidad, _NIVELES_HABILIDAD),
         (TipoReunion, _TIPOS_REUNION),
         (TipoConvenio, _TIPOS_CONVENIO),
-        (TipoOrganizacion, _TIPOS_ORGANIZACION),
+        (TipoEntidadJuridica, _TIPOS_ORGANIZACION),
     ):
         n = await _ensure_by_field(session, model, "nombre", items)
         if n:

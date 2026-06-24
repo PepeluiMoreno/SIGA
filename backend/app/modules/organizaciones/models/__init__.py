@@ -1,15 +1,9 @@
-"""Modelos del dominio de organizaciones."""
+"""Módulo organizaciones OBSOLETO. Ver organizacion.py para la explicación.
 
-from .organizacion import (
-    TipoOrganizacion,
-    Organizacion,
-    EstadoConvenio,
-    Convenio,
-)
+Sustitutos:
+  - UnidadOrganizativa (estructura territorial interna)
+  - Contacto PJ + TipoEntidadJuridica (entidades externas)
+  - Convenio satélite de participación (secretaría)
+"""
 
-__all__ = [
-    "TipoOrganizacion",
-    "Organizacion",
-    "EstadoConvenio",
-    "Convenio",
-]
+__all__ = []

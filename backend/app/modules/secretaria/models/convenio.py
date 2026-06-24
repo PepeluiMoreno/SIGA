@@ -29,15 +29,25 @@ class TipoConvenio(InmutableMixin, BaseModel):
         return f"<TipoConvenio(nombre='{self.nombre}')>"
 
 
-class ConvenioInstitucional(BaseModel):
-    """ConvenioInstitucional o acuerdo firmado con una entidad externa.
+class Convenio(BaseModel):
+    """Satélite de Participacion: convenio/acuerdo con una entidad externa.
 
-    Incluye adhesiones a redes y plataformas, acuerdos de colaboración,
-    contratos de servicios con obligaciones derivadas, etc.
+    Reconducido al modelo Contacto/Participacion:
+    - La contraparte (antes texto libre entidad_contraparte/nif) es ahora un
+      Contacto de tipo PERSONA_JURIDICA (contraparte_id).
+    - El firmante interno pasa de Miembro a Contacto.
+    - Engancha a Participacion (tipo CONVENIO) vía participacion_id.
+
+    Sustituye también al antiguo Convenio del módulo organizaciones (eliminado).
     """
     __tablename__ = 'sec_convenios'
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+
+    participacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('participaciones.id', ondelete='CASCADE'),
+        nullable=True, unique=True, index=True
+    )
 
     tipo_convenio_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey('sec_tipos_convenio.id'), nullable=False, index=True
@@ -50,9 +60,10 @@ class ConvenioInstitucional(BaseModel):
     )
     titulo: Mapped[str] = mapped_column(String(300), nullable=False)
 
-    # Contraparte
-    entidad_contraparte: Mapped[str] = mapped_column(String(300), nullable=False)
-    nif_contraparte: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    # Contraparte: Contacto de tipo PERSONA_JURIDICA
+    contraparte_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('contactos.id'), nullable=True, index=True
+    )
 
     # Vigencia
     fecha_firma: Mapped[date] = mapped_column(Date, nullable=False)
@@ -71,9 +82,9 @@ class ConvenioInstitucional(BaseModel):
     obligaciones_asociacion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     obligaciones_contraparte: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    # Firmante por parte de la asociación
+    # Firmante por parte de la asociación (Contacto)
     firmante_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey('miembros.id'), nullable=True
+        Uuid, ForeignKey('contactos.id'), nullable=True
     )
 
     # Acuerdo de Junta que autoriza el convenio
@@ -86,11 +97,19 @@ class ConvenioInstitucional(BaseModel):
 
     # Relaciones
     tipo_convenio = relationship('TipoConvenio', back_populates='convenios', lazy='selectin')
-    firmante = relationship('Miembro', foreign_keys=[firmante_id], lazy='selectin')
+    contraparte = relationship('Contacto', foreign_keys=[contraparte_id], lazy='selectin')
+    firmante = relationship('Contacto', foreign_keys=[firmante_id], lazy='selectin')
     acuerdo_autorizacion = relationship('Acuerdo', foreign_keys=[acuerdo_autorizacion_id])
+    participacion = relationship('Participacion', back_populates='convenio', foreign_keys=[participacion_id], lazy='selectin')
 
     def __repr__(self) -> str:
-        return f"<ConvenioInstitucional(referencia='{self.referencia}', estado='{self.estado}')>"
+        return f"<Convenio(referencia='{self.referencia}', estado='{self.estado}')>"
+
+
+# Alias de compatibilidad: el modelo se llamaba ConvenioInstitucional.
+# Tras la reconducción a satélite de Participacion pasó a llamarse Convenio
+# (asumiendo el nombre que dejó libre el Convenio de organizaciones, eliminado).
+ConvenioInstitucional = Convenio
 
 
 class DelegacionFirma(BaseModel):

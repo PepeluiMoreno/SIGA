@@ -29,19 +29,24 @@ class DonacionConcepto(BaseModel):
 
 
 class Donacion(BaseModel):
-    """Donaciones de miembros o externos."""
+    """Satélite de Participacion: donación de un contacto.
+
+    Reconducida al modelo Contacto/Participacion: el antiguo miembro_id pasa a
+    contacto_id (FK real), y los campos de donante-externo desaparecen (un
+    externo es ahora un Contacto creado al vuelo). Engancha a Participacion 1:1.
+    """
     __tablename__ = "donaciones"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    miembro_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, nullable=True, index=True)  # TODO: ForeignKey("miembros.id")
+    participacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("participaciones.id", ondelete="CASCADE"),
+        nullable=True, unique=True, index=True
+    )
+    contacto_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("contactos.id"), nullable=True, index=True
+    )
     concepto_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey("donaciones_conceptos.id"), nullable=True, index=True)
     campania_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, nullable=True, index=True)  # TODO: ForeignKey("campanias.id")
-
-    # Datos del donante externo (si no es miembro)
-    donante_nombre: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    donante_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    donante_telefono: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    donante_dni: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
 
     # Tipo y carácter (D6.5)
     tipo: Mapped[str] = mapped_column(String(15), nullable=False, default="DINERARIA")
@@ -90,12 +95,10 @@ class Donacion(BaseModel):
     anonima: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Relaciones
-    # TODO: Descomentar cuando existan los modelos
-    # miembro = relationship('Miembro', foreign_keys=[miembro_id], lazy='selectin')
+    contacto = relationship('Contacto', foreign_keys=[contacto_id], lazy='selectin')
+    participacion = relationship('Participacion', back_populates='donacion', foreign_keys=[participacion_id], lazy='selectin')
     concepto = relationship('DonacionConcepto', back_populates='donaciones', lazy='selectin')
     # campania: pendiente de aplicar FK de SQL_PENDIENTE.md Lote 9
-    # campania = relationship('Campania', foreign_keys=[campania_id], lazy='selectin',
-    #                         primaryjoin='Donacion.campania_id == foreign(Campania.id)')
     estado = relationship('EstadoDonacion', foreign_keys=[estado_id], lazy='selectin')
     cuenta_bancaria = relationship('CuentaBancaria', foreign_keys=[cuenta_bancaria_id], lazy='selectin')
     apunte_caja = relationship('ApunteCaja', foreign_keys=[apunte_caja_id], lazy='selectin')
@@ -113,8 +116,8 @@ class Donacion(BaseModel):
     @property
     def es_deducible(self) -> bool:
         """Verifica si la donación es deducible fiscalmente."""
-        # Una donación es deducible si tiene DNI del donante y no es anónima
-        return bool(self.donante_dni or (self.miembro_id and not self.anonima))
+        # Deducible si está asociada a un contacto identificado y no es anónima
+        return bool(self.contacto_id and not self.anonima)
 
     def emitir_certificado(self) -> None:
         """Marca la donación como certificada."""

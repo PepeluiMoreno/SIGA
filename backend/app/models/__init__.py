@@ -34,10 +34,8 @@ from ..modules.configuracion.models import (
     EstadoRemesa, EstadoDonacion, EstadoNotificacion, HistorialEstado,
 )
 
-# Organizaciones
-from ..modules.organizaciones.models import (
-    TipoOrganizacion, Organizacion, EstadoConvenio, Convenio,
-)
+# Organizaciones: OBSOLETO (sustituido por UnidadOrganizativa + Contacto PJ)
+# Las clases TipoOrganizacion, Organizacion, EstadoConvenio, Convenio fueron eliminadas.
 
 # Membresía
 from ..modules.membresia.models import (

@@ -1,6 +1,11 @@
 """Modelos del módulo de membresía."""
 
 from .miembro import TipoMiembro, Miembro
+from .contacto import Contacto
+from .tipo_entidad_juridica import TipoEntidadJuridica
+from .tipo_vinculacion import TipoVinculacion
+from .vinculacion import Vinculacion, Socio, Voluntario
+from .participacion import Participacion, Membresia
 from .nivel_estudios import NivelEstudios
 from .nivel_habilidad import NivelHabilidad
 from .estado_miembro import EstadoMiembro
@@ -29,7 +34,7 @@ from .voluntariado import (
 __all__ = [
     'MiembroSegmentacion',
     'TipoMiembro',
-    'Miembro',
+    'Miembro', 'Contacto', 'TipoEntidadJuridica', 'TipoVinculacion', 'Vinculacion', 'Socio', 'Voluntario', 'Participacion', 'Membresia',
     'NivelEstudios',
     'NivelHabilidad',
     'EstadoMiembro',

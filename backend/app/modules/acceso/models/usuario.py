@@ -2,12 +2,15 @@
 
 import uuid
 from datetime import datetime
-from typing import Optional, List
+from typing import TYPE_CHECKING, Optional, List
 
 from sqlalchemy import String, Boolean, ForeignKey, DateTime, Uuid, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ....infrastructure.base_model import BaseModel, InmutableMixin
+
+if TYPE_CHECKING:
+    from app.modules.membresia.models.contacto import Contacto
 
 
 class TipoVinculacion(InmutableMixin, BaseModel):
@@ -37,13 +40,14 @@ class Usuario(BaseModel):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
-    # Miembro de la organización asociado (1:1, nullable: usuarios técnicos pueden no ser miembros)
-    miembro_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey("miembros.id", ondelete="SET NULL"),
+    # Contacto (persona) asociado (1:1, nullable: usuarios técnicos pueden no ser contactos)
+    contacto_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("contactos.id", ondelete="SET NULL"),
         nullable=True, unique=True, index=True,
     )
 
-    # Vinculación con la organización
+    # DEPRECADO: tipo_vinculacion ahora vive en Contacto.vinculaciones
+    # Se mantienen por compatibilidad temporal; dejar vacíos en nuevas cuentas.
     tipo_vinculacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid, ForeignKey("tipos_vinculacion.id", ondelete="SET NULL"), nullable=True, index=True,
     )
@@ -65,8 +69,8 @@ class Usuario(BaseModel):
         foreign_keys="[UsuarioRol.usuario_id]",
         lazy="selectin"
     )
-    miembro: Mapped[Optional["Miembro"]] = relationship(
-        "Miembro", foreign_keys=[miembro_id], back_populates="usuario", lazy="selectin"
+    contacto: Mapped[Optional["Contacto"]] = relationship(
+        "Contacto", foreign_keys=[contacto_id], lazy="selectin"
     )
     tipo_vinculacion: Mapped[Optional["TipoVinculacion"]] = relationship(
         back_populates="usuarios",
