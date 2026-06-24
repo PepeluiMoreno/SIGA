@@ -176,7 +176,7 @@ _CONTACTO_FIELDS = (
     'numero_documento', 'pais_documento_id', 'pais_nacimiento_id', 'direccion',
     'codigo_postal', 'localidad', 'provincia_id', 'pais_domicilio_id', 'telefono',
     'telefono2', 'email', 'agrupacion_id', 'profesion', 'nivel_estudios_id',
-    'observaciones', 'activo', 'solicita_supresion_datos', 'fecha_solicitud_supresion',
+    'activo', 'solicita_supresion_datos', 'fecha_solicitud_supresion',
     'fecha_limite_retencion', 'datos_anonimizados', 'fecha_anonimizacion',
 )
 _SOCIO_FIELDS = (

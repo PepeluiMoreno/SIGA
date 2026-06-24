@@ -4,6 +4,39 @@
 > `Contacto`; `miembros_legacy` queda solo como histórico. Catálogos ORM por UUID,
 > sin códigos de negocio inventados.
 
+## 0. ESTADO: refactor completado. La app arranca y migra; seeding adaptado.
+
+- Modelo `Miembro` retirado; identidad viva = `Contacto`. App boota (mappers +
+  esquema GraphQL + `main.py`), migra a `head`, `alembic check` sin error fatal.
+- **Seeding/importación (pipeline canónico `app/scripts/importacion/`)** adaptado al
+  modelo nuevo y validado contra el esquema migrado:
+  - `1_crear_catalogos_base`: crea además los `TipoVinculacion` (SOCIO, VOLUNTARIO,
+    …) con su `codigo`, que la importación necesita.
+  - `4_importar_miembros`: por cada miembro legacy crea Contacto +
+    Participacion(MEMBRESIA)+Membresia + Vinculacion(SOCIO)+Socio (IBAN) y, si es
+    voluntario, Vinculacion(VOLUNTARIO)+Voluntario. Encripta DNI en Contacto e IBAN
+    en Socio. Guarda en `temp_id_mapping` los mapeos `MIEMBRO` (→contacto) y
+    `VINCULACION_SOCIO` (→vinculación de socio).
+  - `6_importar_cuotas_anuales`: cuotas cuelgan de `vinculacion_socio_id`; el tipo
+    sale de `membresias`, la provincia de `contactos`.
+  - `7_importar_financiero_complementario`: donante = Contacto (find-or-create por
+    documento); recibos/órdenes enlazan cuota vía `vinculacion_socio_id`.
+  - `seeding/seed_tipos_vinculacion`: alineado al modelo nuevo (codigo + ambito +
+    requiere_satelite; ya no usa `requiere_entidad`).
+  - Pendiente menor: scripts de seeding demo (`seed_demo_*`, `seed_miembros`,
+    `seed_mock_socios`, `bootstrap.py`, pipeline `dump/`) — secundarios, no usados
+    por la importación real; reescribir si se necesitan para demos.
+  - Aviso de datos: `Contacto` no tiene campo de observaciones libres; los
+    comentarios/estudios legacy (COMENTARIOmiembro/OBSERVACIONES/ESTUDIOS) no tienen
+    destino directo en el import.
+
+## TODO (post-refactor, pedido por el usuario)
+
+> Averiguar si está implementado el flujo de **envío del correo de validación de
+> email** tras la **aprobación de la membresía** de un contacto por parte del
+> **coordinador de su ámbito territorial** (o, en su defecto, la coordinación o
+> secretaría del ámbito superior). Si no existe, diseñarlo/implementarlo.
+
 ## 1. Dónde vive ahora cada cosa (mapa de campos)
 
 | Concepto en `Miembro` (viejo) | Nuevo hogar |

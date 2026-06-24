@@ -24,8 +24,9 @@ from sqlalchemy import select, text
 
 from app.core.database import get_database_url
 from app.infrastructure.services.encriptacion_service import get_encriptacion_service
-from app.modules.membresia.models.miembro import Miembro, TipoMiembro
-from app.modules.membresia.models.estado_miembro import EstadoMiembro
+from app.modules.membresia.models.contacto import Contacto
+from app.modules.membresia.models.miembro import TipoMiembro
+from app.modules.membresia.models.vinculacion import Socio
 from app.scripts.importacion.mysql_helper import get_mysql_connection
 
 
@@ -33,13 +34,14 @@ class ImportadorMiembrosCSV:
     """Importa miembros usando CSV y COPY de PostgreSQL."""
 
     def __init__(self):
-        self.mapeo_miembros: dict[int, str] = {}  # CODUSER → UUID (como string)
+        self.mapeo_miembros: dict[int, str] = {}  # CODUSER → contacto UUID (string)
+        self.mapeo_vinc_socio: dict[str, str] = {}  # contacto UUID → vinculación SOCIO UUID
         self.servicio_encriptacion = get_encriptacion_service()
         self.tipo_miembro_miembro_id: Optional[str] = None
         self.tipo_miembro_simpatizante_id: Optional[str] = None
         self.tipo_miembro_voluntario_id: Optional[str] = None
-        self.estado_activo_id: Optional[str] = None
-        self.estado_baja_id: Optional[str] = None
+        self.tipo_vinc_socio_id: Optional[str] = None
+        self.tipo_vinc_voluntario_id: Optional[str] = None
         self.cache_agrupaciones: dict[str, str] = {}  # CODAGRUPACION → UUID (como string)
         self.cache_paises: dict[str, str] = {}  # Código → UUID
         self.cache_provincias: dict[int, str] = {}  # CODPROV → UUID
@@ -74,16 +76,24 @@ class ImportadorMiembrosCSV:
         if tipo:
             self.tipo_miembro_voluntario_id = str(tipo.id)
 
-        # Cargar estados
-        result = await session.execute(select(EstadoMiembro).where(EstadoMiembro.codigo == 'ACTIVO'))
-        estado = result.scalar_one_or_none()
-        if estado:
-            self.estado_activo_id = str(estado.id)
+        # Cargar tipos de vinculación (SOCIO / VOLUNTARIO) del catálogo CRM
+        result = await session.execute(
+            text("SELECT id FROM tipos_vinculacion WHERE codigo = 'SOCIO' LIMIT 1")
+        )
+        row = result.first()
+        if row:
+            self.tipo_vinc_socio_id = str(row[0])
 
-        result = await session.execute(select(EstadoMiembro).where(EstadoMiembro.codigo == 'BAJA'))
-        estado = result.scalar_one_or_none()
-        if estado:
-            self.estado_baja_id = str(estado.id)
+        result = await session.execute(
+            text("SELECT id FROM tipos_vinculacion WHERE codigo = 'VOLUNTARIO' LIMIT 1")
+        )
+        row = result.first()
+        if row:
+            self.tipo_vinc_voluntario_id = str(row[0])
+        if not self.tipo_vinc_socio_id:
+            raise RuntimeError(
+                "No existe TipoVinculacion 'SOCIO'. Ejecuta antes seed_tipos_vinculacion."
+            )
 
         # Cargar agrupaciones
         result = await session.execute(
@@ -224,7 +234,9 @@ class ImportadorMiembrosCSV:
                                 if not fecha_baja and row[15] and str(row[15]).upper().strip() == 'BAJA':
                                     fecha_baja = date.today().isoformat()
 
-                                estado_id = self.estado_baja_id if fecha_baja else self.estado_activo_id
+                                # estado_id ya no existe en el modelo nuevo (el estado
+                                # del socio se deriva de fecha_baja → estado_socio).
+                                estado_id = None
                                 activo = 't' if not fecha_baja else 'f'
 
                                 # Voluntario
@@ -335,41 +347,61 @@ class ImportadorMiembrosCSV:
 
         print(f"  [OK] {registros_importados} registros importados", flush=True)
 
-    async def _insertar_lote(self, session: AsyncSession, lote: list):
-        """Inserta un lote de registros."""
-        insert_sql = text("""
-            INSERT INTO miembros (
-                id, nombre, apellido1, apellido2, fecha_nacimiento,
-                tipo_miembro_id, estado_id, tipo_documento, numero_documento,
-                pais_documento_id, direccion, codigo_postal, localidad,
-                provincia_id, pais_domicilio_id, telefono, telefono2, email,
-                agrupacion_id, iban, fecha_baja, motivo_baja_texto, observaciones,
-                activo, es_voluntario, disponibilidad, horas_disponibles_semana,
-                profesion, nivel_estudios, experiencia_voluntariado, intereses,
-                observaciones_voluntariado, puede_conducir, vehiculo_propio,
-                disponibilidad_viajar
-            ) VALUES (
-                :id, :nombre, :apellido1, :apellido2, :fecha_nacimiento,
-                :tipo_miembro_id, :estado_id, :tipo_documento, :numero_documento,
-                :pais_documento_id, :direccion, :codigo_postal, :localidad,
-                :provincia_id, :pais_domicilio_id, :telefono, :telefono2, :email,
-                :agrupacion_id, :iban, :fecha_baja, :motivo_baja_texto, :observaciones,
-                :activo, :es_voluntario, :disponibilidad, :horas_disponibles_semana,
-                :profesion, :nivel_estudios, :experiencia_voluntariado, :intereses,
-                :observaciones_voluntariado, :puede_conducir, :vehiculo_propio,
-                :disponibilidad_viajar
-            )
-        """)
+    # --- SQL de las tablas del modelo CRM ---
+    _SQL_CONTACTO = text("""
+        INSERT INTO contactos (
+            id, tipo, nombre, apellido1, apellido2, fecha_nacimiento,
+            tipo_documento, numero_documento, pais_documento_id,
+            direccion, codigo_postal, localidad, provincia_id, pais_domicilio_id,
+            telefono, telefono2, email, agrupacion_id, profesion, activo
+        ) VALUES (
+            :id, 'PERSONA_FISICA', :nombre, :apellido1, :apellido2, :fecha_nacimiento,
+            :tipo_documento, :numero_documento, :pais_documento_id,
+            :direccion, :codigo_postal, :localidad, :provincia_id, :pais_domicilio_id,
+            :telefono, :telefono2, :email, :agrupacion_id, :profesion, :activo
+        )
+    """)
+    _SQL_PARTICIPACION = text("""
+        INSERT INTO participaciones (id, contacto_id, tipo, estado)
+        VALUES (:id, :contacto_id, 'MEMBRESIA', 'registrada')
+    """)
+    _SQL_MEMBRESIA = text("""
+        INSERT INTO membresias (id, participacion_id, tipo_miembro_id)
+        VALUES (:id, :participacion_id, :tipo_miembro_id)
+    """)
+    _SQL_VINCULACION = text("""
+        INSERT INTO vinculaciones (id, contacto_id, tipo_vinculacion_id, fecha_fin, estado, agrupacion_id)
+        VALUES (:id, :contacto_id, :tipo_vinculacion_id, :fecha_fin, :estado, :agrupacion_id)
+    """)
+    _SQL_SOCIO = text("""
+        INSERT INTO socios (id, vinculacion_id, iban, estado_socio, motivo_baja_texto)
+        VALUES (:id, :vinculacion_id, :iban, :estado_socio, :motivo_baja_texto)
+    """)
+    _SQL_VOLUNTARIO = text("""
+        INSERT INTO voluntarios (
+            id, vinculacion_id, disponibilidad, horas_disponibles_semana, profesion,
+            experiencia_voluntariado, intereses, observaciones_voluntariado,
+            puede_conducir, vehiculo_propio, disponibilidad_viajar
+        ) VALUES (
+            :id, :vinculacion_id, :disponibilidad, :horas_disponibles_semana, :profesion,
+            :experiencia_voluntariado, :intereses, :observaciones_voluntariado,
+            :puede_conducir, :vehiculo_propio, :disponibilidad_viajar
+        )
+    """)
 
+    async def _insertar_lote(self, session: AsyncSession, lote: list):
+        """Inserta un lote de registros en el modelo CRM: por cada miembro legacy se
+        crean Contacto + Participacion(MEMBRESIA)+Membresia + Vinculacion(SOCIO)+Socio
+        y, si es voluntario, Vinculacion(VOLUNTARIO)+Voluntario."""
         for row in lote:
-            # Convertir fechas de string a date objects
+            contacto_id = row[0]
+
             fecha_nacimiento = None
             if row[4]:
                 try:
                     fecha_nacimiento = datetime.strptime(row[4], '%Y-%m-%d').date()
                 except ValueError:
                     pass
-
             fecha_baja = None
             if row[20]:
                 try:
@@ -377,14 +409,21 @@ class ImportadorMiembrosCSV:
                 except ValueError:
                     pass
 
-            params = {
-                'id': row[0],
+            # Nota: el modelo Contacto no tiene campo de observaciones libres; los
+            # comentarios/estudios legacy (row[22]/row[28]) no tienen destino directo.
+            # El nivel de estudios, si la persona es voluntaria, se mapearía a su
+            # catálogo aparte (nivel_estudios_id) — aquí no se infiere.
+            es_voluntario = row[24] == 't'
+            estado_socio = 'baja' if fecha_baja else 'activo'
+            estado_vinc = 'baja' if fecha_baja else 'activa'
+
+            # 1) Contacto (identidad)
+            await session.execute(self._SQL_CONTACTO, {
+                'id': contacto_id,
                 'nombre': row[1],
                 'apellido1': row[2],
                 'apellido2': row[3] if row[3] else None,
                 'fecha_nacimiento': fecha_nacimiento,
-                'tipo_miembro_id': row[5],
-                'estado_id': row[6],
                 'tipo_documento': row[7] if row[7] else None,
                 'numero_documento': row[8] if row[8] else None,
                 'pais_documento_id': row[9] if row[9] else None,
@@ -397,24 +436,57 @@ class ImportadorMiembrosCSV:
                 'telefono2': row[16] if row[16] else None,
                 'email': row[17] if row[17] else None,
                 'agrupacion_id': row[18] if row[18] else None,
-                'iban': row[19] if row[19] else None,
-                'fecha_baja': fecha_baja,
-                'motivo_baja_texto': row[21] if row[21] else None,
-                'observaciones': row[22] if row[22] else None,
-                'activo': row[23] == 't',
-                'es_voluntario': row[24] == 't',
-                'disponibilidad': row[25] if row[25] else None,
-                'horas_disponibles_semana': int(row[26]) if row[26] else None,
                 'profesion': row[27] if row[27] else None,
-                'nivel_estudios': row[28] if row[28] else None,
-                'experiencia_voluntariado': row[29] if row[29] else None,
-                'intereses': row[30] if row[30] else None,
-                'observaciones_voluntariado': row[31] if row[31] else None,
-                'puede_conducir': row[32] == 't',
-                'vehiculo_propio': row[33] == 't',
-                'disponibilidad_viajar': row[34] == 't',
-            }
-            await session.execute(insert_sql, params)
+                'activo': row[23] == 't',
+            })
+
+            # 2) Acto de alta: Participacion(MEMBRESIA) + Membresia(tipo)
+            participacion_id = str(uuid.uuid4())
+            await session.execute(self._SQL_PARTICIPACION, {
+                'id': participacion_id, 'contacto_id': contacto_id,
+            })
+            await session.execute(self._SQL_MEMBRESIA, {
+                'id': str(uuid.uuid4()), 'participacion_id': participacion_id,
+                'tipo_miembro_id': row[5] if row[5] else None,
+            })
+
+            # 3) Vinculación de socio + satélite económico (IBAN)
+            vinc_socio_id = str(uuid.uuid4())
+            await session.execute(self._SQL_VINCULACION, {
+                'id': vinc_socio_id, 'contacto_id': contacto_id,
+                'tipo_vinculacion_id': self.tipo_vinc_socio_id,
+                'fecha_fin': fecha_baja, 'estado': estado_vinc,
+                'agrupacion_id': row[18] if row[18] else None,
+            })
+            await session.execute(self._SQL_SOCIO, {
+                'id': str(uuid.uuid4()), 'vinculacion_id': vinc_socio_id,
+                'iban': row[19] if row[19] else None,
+                'estado_socio': estado_socio,
+                'motivo_baja_texto': row[21] if row[21] else None,
+            })
+            self.mapeo_vinc_socio[contacto_id] = vinc_socio_id
+
+            # 4) Voluntario (otra vinculación + satélite), si procede
+            if es_voluntario and self.tipo_vinc_voluntario_id:
+                vinc_vol_id = str(uuid.uuid4())
+                await session.execute(self._SQL_VINCULACION, {
+                    'id': vinc_vol_id, 'contacto_id': contacto_id,
+                    'tipo_vinculacion_id': self.tipo_vinc_voluntario_id,
+                    'fecha_fin': None, 'estado': 'activa',
+                    'agrupacion_id': row[18] if row[18] else None,
+                })
+                await session.execute(self._SQL_VOLUNTARIO, {
+                    'id': str(uuid.uuid4()), 'vinculacion_id': vinc_vol_id,
+                    'disponibilidad': row[25] if row[25] else None,
+                    'horas_disponibles_semana': int(row[26]) if row[26] else None,
+                    'profesion': row[27] if row[27] else None,
+                    'experiencia_voluntariado': row[29] if row[29] else None,
+                    'intereses': row[30] if row[30] else None,
+                    'observaciones_voluntariado': row[31] if row[31] else None,
+                    'puede_conducir': row[32] == 't',
+                    'vehiculo_propio': row[33] == 't',
+                    'disponibilidad_viajar': row[34] == 't',
+                })
 
         await session.flush()
 
@@ -422,27 +494,40 @@ class ImportadorMiembrosCSV:
         """Guarda mapeo CODUSER → UUID."""
         print("\nGuardando mapeo temporal...", flush=True)
 
-        for coduser, uuid_str in self.mapeo_miembros.items():
+        for coduser, contacto_uuid in self.mapeo_miembros.items():
+            # CODUSER -> Contacto (identidad)
             await session.execute(
                 text("""
                     INSERT INTO temp_id_mapping (tabla, old_id, new_uuid)
                     VALUES ('MIEMBRO', :old_id, :new_uuid)
                     ON CONFLICT (tabla, old_id) DO UPDATE SET new_uuid = EXCLUDED.new_uuid
                 """),
-                {"old_id": coduser, "new_uuid": uuid_str}
+                {"old_id": coduser, "new_uuid": contacto_uuid}
             )
+            # CODUSER -> Vinculación SOCIO (lo usan cuotas/financiero, que ahora
+            # cuelgan de vinculacion_socio_id, no del contacto directamente)
+            vinc_socio_uuid = self.mapeo_vinc_socio.get(contacto_uuid)
+            if vinc_socio_uuid:
+                await session.execute(
+                    text("""
+                        INSERT INTO temp_id_mapping (tabla, old_id, new_uuid)
+                        VALUES ('VINCULACION_SOCIO', :old_id, :new_uuid)
+                        ON CONFLICT (tabla, old_id) DO UPDATE SET new_uuid = EXCLUDED.new_uuid
+                    """),
+                    {"old_id": coduser, "new_uuid": vinc_socio_uuid}
+                )
 
         await session.flush()
-        print(f"  [OK] {len(self.mapeo_miembros)} mapeos guardados", flush=True)
+        print(f"  [OK] {len(self.mapeo_miembros)} mapeos MIEMBRO + {len(self.mapeo_vinc_socio)} VINCULACION_SOCIO guardados", flush=True)
 
     async def encriptar_dnis_en_lote(self, session: AsyncSession):
         """Encripta DNIs en lote."""
         print("\nEncriptando DNIs...", flush=True)
 
         result = await session.execute(
-            select(Miembro).where(
-                Miembro.numero_documento.isnot(None),
-                Miembro.numero_documento != ''
+            select(Contacto).where(
+                Contacto.numero_documento.isnot(None),
+                Contacto.numero_documento != ''
             )
         )
         miembros = result.scalars().all()
@@ -468,17 +553,17 @@ class ImportadorMiembrosCSV:
         print("\nEncriptando IBANs...", flush=True)
 
         result = await session.execute(
-            select(Miembro).where(
-                Miembro.iban.isnot(None),
-                Miembro.iban != ''
+            select(Socio).where(
+                Socio.iban.isnot(None),
+                Socio.iban != ''
             )
         )
-        miembros = result.scalars().all()
+        socios = result.scalars().all()
 
         encriptados = 0
         errores = 0
 
-        for miembro in miembros:
+        for miembro in socios:
             try:
                 miembro.iban = self.servicio_encriptacion.encriptar_iban(miembro.iban)
                 encriptados += 1

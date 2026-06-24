@@ -8,31 +8,35 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
 
 from app.core.database import get_database_url
-from app.modules.acceso.models.usuario import TipoVinculacion
+from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
 
 
-# (nombre, requiere_entidad)
+# (nombre, codigo, ambito, area_responsable, requiere_satelite) — alineado con el
+# catálogo canónico (ver migración p2 y 1_crear_catalogos_base.crear_tipos_vinculacion).
 TIPOS = [
-    ("Socio",                                      False),
-    ("Simpatizante",                               False),
-    ("Trabajador autónomo",                        False),
-    ("Socio de asociación amiga",                  True),   # pide nombre de la asociación
-    ("Empleado de servicio externo contratado",    True),   # pide nombre de la empresa
-    ("Sistema",                                    False),
+    ("Firmante",     "FIRMANTE",     "central",     "COMUNICACION_FIRMAS",            False),
+    ("Simpatizante", "SIMPATIZANTE", "central",     "COMUNICACION_SIMPATIZANTES",     False),
+    ("Socio",        "SOCIO",        "territorial", "MEMBRESIA_SOCIO_GESTIONAR",      True),
+    ("Voluntario",   "VOLUNTARIO",   "territorial", "MEMBRESIA_VOLUNTARIO_GESTIONAR", True),
+    ("Donante",      "DONANTE",      "central",     "TESORERIA_DONANTES",             False),
+    ("Empleado",     "EMPLEADO",     "central",     "RECURSOS_HUMANOS",               True),
 ]
 
 
 async def seed(session: AsyncSession):
     print("\n— Tipos de vinculación —")
-    for nombre, requiere_entidad in TIPOS:
+    for nombre, codigo, ambito, area, requiere_satelite in TIPOS:
         res = await session.execute(
-            select(TipoVinculacion).where(TipoVinculacion.nombre == nombre)
+            select(TipoVinculacion).where(TipoVinculacion.codigo == codigo)
         )
         if res.scalars().first():
-            print(f"  · ya existe: {nombre}")
+            print(f"  · ya existe: {codigo}")
             continue
-        session.add(TipoVinculacion(nombre=nombre, requiere_entidad=requiere_entidad))
-        print(f"  + creado:    {nombre}")
+        session.add(TipoVinculacion(
+            nombre=nombre, codigo=codigo, ambito=ambito,
+            area_responsable=area, requiere_satelite=requiere_satelite,
+        ))
+        print(f"  + creado:    {codigo}")
     await session.flush()
 
 

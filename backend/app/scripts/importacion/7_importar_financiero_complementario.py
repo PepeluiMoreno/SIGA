@@ -28,11 +28,41 @@ class ImportadorFinancieroComplementario:
     """Importa datos financieros complementarios desde MySQL."""
 
     def __init__(self):
-        self.cache_miembros: dict[int, str] = {}  # CODUSER → UUID
+        self.cache_miembros: dict[int, str] = {}  # CODUSER → Contacto UUID
+        self.cache_vinc_socio: dict[int, str] = {}  # CODUSER → Vinculación SOCIO UUID
         self.cache_conceptos: dict[str, str] = {}  # codigo → UUID
         self.cache_remesas: dict[str, str] = {}  # referencia → UUID
-        self.cache_cuotas: dict[tuple, str] = {}  # (miembro_id, ejercicio) → cuota_id
+        self.cache_cuotas: dict[tuple, str] = {}  # (vinc_socio_id, ejercicio) → cuota_id
         self.cache_agrupaciones: dict[str, str] = {}  # codigo → UUID
+        self._cache_donantes: dict[str, str] = {}  # documento → Contacto UUID
+
+    async def _get_or_create_donante(self, session, documento, nombre, email):
+        """Devuelve el contacto_id del donante (Contacto), creándolo si no existe.
+        Cachea por documento. Sin documento ni nombre → None (donación anónima)."""
+        doc = (documento or "").strip().replace(" ", "").replace("-", "").upper() or None
+        if doc and doc in self._cache_donantes:
+            return self._cache_donantes[doc]
+        nombre = (nombre or "").strip()
+        if not (doc or nombre):
+            return None
+        contacto_id = str(uuid.uuid4())
+        partes = nombre.split(" ") if nombre else []
+        await session.execute(
+            text("""
+                INSERT INTO contactos (id, tipo, nombre, apellido1, numero_documento, email, activo)
+                VALUES (:id, 'PERSONA_FISICA', :nombre, :apellido1, :numero_documento, :email, true)
+            """),
+            {
+                "id": contacto_id,
+                "nombre": (partes[0] if partes else "Donante")[:100] or "Donante",
+                "apellido1": (" ".join(partes[1:])[:100] or None) if len(partes) > 1 else None,
+                "numero_documento": doc,
+                "email": email,
+            },
+        )
+        if doc:
+            self._cache_donantes[doc] = contacto_id
+        return contacto_id
         self.estado_donacion_recibida: str = ""  # UUID del estado RECIBIDA
         self.estado_remesa_procesada: str = ""  # UUID del estado PROCESADA para remesas
         self.estado_remesa_generada: str = ""  # UUID del estado GENERADA para remesas
@@ -72,12 +102,18 @@ class ImportadorFinancieroComplementario:
         """Carga caches necesarios."""
         print("\nCargando caches...", flush=True)
 
-        # Cargar miembros
+        # Cargar miembros: CODUSER -> Contacto y CODUSER -> Vinculación SOCIO
         result = await session.execute(
             text("SELECT old_id, new_uuid FROM temp_id_mapping WHERE tabla = 'MIEMBRO'")
         )
         for row in result:
             self.cache_miembros[int(row[0])] = str(row[1])
+
+        result = await session.execute(
+            text("SELECT old_id, new_uuid FROM temp_id_mapping WHERE tabla = 'VINCULACION_SOCIO'")
+        )
+        for row in result:
+            self.cache_vinc_socio[int(row[0])] = str(row[1])
 
         # Cargar agrupaciones
         result = await session.execute(
@@ -86,9 +122,9 @@ class ImportadorFinancieroComplementario:
         for row in result:
             self.cache_agrupaciones[str(row[0])] = str(row[1])
 
-        # Cargar cuotas para relacionar órdenes de cobro
+        # Cargar cuotas para relacionar órdenes de cobro (cuelgan de vinculacion_socio_id)
         result = await session.execute(
-            text("SELECT miembro_id, ejercicio, id FROM cuotas_anuales")
+            text("SELECT vinculacion_socio_id, ejercicio, id FROM cuotas_anuales")
         )
         for row in result:
             key = (str(row[0]), int(row[1]))
@@ -221,23 +257,27 @@ class ImportadorFinancieroComplementario:
                         concepto_cod = str(row[13]).strip() if row[13] else None
                         concepto_id = self.cache_conceptos.get(concepto_cod)
 
-                        # Datos del donante (para referencia, no relacionamos con miembro)
+                        # El donante es un Contacto (modelo nuevo): se busca-o-crea por
+                        # documento; sin documento se crea uno por donación.
                         nombre_donante = f"{row[5] or ''} {row[3] or ''} {row[4] or ''}".strip()
                         documento = str(row[1]).strip() if row[1] else None
+                        email_donante = str(row[6]).strip() if row[6] else None
+                        contacto_id = await self._get_or_create_donante(
+                            session, documento, nombre_donante, email_donante
+                        )
 
                         donacion_id = str(uuid.uuid4())
                         batch.append({
                             "id": donacion_id,
+                            "contacto_id": contacto_id,
                             "concepto_id": concepto_id,
                             "estado_id": self.estado_donacion_recibida,
                             "fecha": fecha_donacion,
                             "importe": importe,
                             "gastos": gastos,
-                            "donante_nombre": nombre_donante or None,
-                            "donante_dni": documento,
                             "observaciones": str(row[14]).strip() if row[14] else None,
                             "certificado_emitido": False,
-                            "anonima": False,
+                            "anonima": contacto_id is None,
                             "fecha_creacion": datetime.now(),
                             "eliminado": False
                         })
@@ -248,14 +288,12 @@ class ImportadorFinancieroComplementario:
                             await session.execute(
                                 text("""
                                     INSERT INTO donaciones (
-                                        id, concepto_id, estado_id, fecha, importe, gastos,
-                                        donante_nombre, donante_dni, observaciones,
-                                        certificado_emitido, anonima,
+                                        id, contacto_id, concepto_id, estado_id, fecha, importe, gastos,
+                                        observaciones, certificado_emitido, anonima,
                                         fecha_creacion, eliminado
                                     ) VALUES (
-                                        :id, :concepto_id, :estado_id, :fecha, :importe, :gastos,
-                                        :donante_nombre, :donante_dni, :observaciones,
-                                        :certificado_emitido, :anonima,
+                                        :id, :contacto_id, :concepto_id, :estado_id, :fecha, :importe, :gastos,
+                                        :observaciones, :certificado_emitido, :anonima,
                                         :fecha_creacion, :eliminado
                                     )
                                 """),
@@ -392,14 +430,14 @@ class ImportadorFinancieroComplementario:
                             self.stats['ordenes_omitidas'] += 1
                             continue
 
-                        # Obtener miembro_id
-                        miembro_id = self.cache_miembros.get(codmiembro)
-                        if not miembro_id:
+                        # Vinculación SOCIO (la cuota cuelga de ella)
+                        vinc_socio_id = self.cache_vinc_socio.get(codmiembro)
+                        if not vinc_socio_id:
                             self.stats['ordenes_omitidas'] += 1
                             continue
 
                         # Obtener cuota_id (requerido - NOT NULL)
-                        cuota_id = self.cache_cuotas.get((miembro_id, ejercicio))
+                        cuota_id = self.cache_cuotas.get((vinc_socio_id, ejercicio))
                         if not cuota_id:
                             self.stats['ordenes_omitidas'] += 1
                             continue

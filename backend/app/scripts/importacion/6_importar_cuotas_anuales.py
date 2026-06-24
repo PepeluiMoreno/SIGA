@@ -27,7 +27,6 @@ from sqlalchemy import select, text
 from app.core.database import get_database_url
 from app.modules.economico.models.cuotas import CuotaAnual, ImporteCuotaAnio, ModoIngreso
 from app.modules.core.models.estados import EstadoCuota
-from app.modules.membresia.models.miembro import Miembro
 from app.scripts.importacion.mysql_helper import get_mysql_connection
 
 
@@ -53,16 +52,29 @@ class ImportadorCuotasAnualesCSV:
         for estado in estados:
             self.estados[estado.codigo] = str(estado.id)
 
-        # Cargar mapeo de miembros
+        # Cargar mapeo de miembros: CODUSER -> Contacto (identidad) y
+        # CODUSER -> Vinculación SOCIO (la cuota cuelga de la vinculación).
         result = await session.execute(
             text("SELECT old_id, new_uuid FROM temp_id_mapping WHERE tabla = 'MIEMBRO'")
         )
         for row in result:
             self.cache_miembros[int(row[0])] = str(row[1])
 
-        # Cargar tipo de miembro para cada miembro
+        self.cache_vinc_socio: dict[int, str] = {}
         result = await session.execute(
-            text("SELECT id, tipo_miembro_id FROM miembros")
+            text("SELECT old_id, new_uuid FROM temp_id_mapping WHERE tabla = 'VINCULACION_SOCIO'")
+        )
+        for row in result:
+            self.cache_vinc_socio[int(row[0])] = str(row[1])
+
+        # Cargar tipo de miembro por contacto (vive en membresias vía participaciones)
+        result = await session.execute(
+            text("""
+                SELECT p.contacto_id, m.tipo_miembro_id
+                FROM membresias m
+                JOIN participaciones p ON p.id = m.participacion_id
+                WHERE p.tipo = 'MEMBRESIA' AND m.tipo_miembro_id IS NOT NULL
+            """)
         )
         for row in result:
             self.miembro_tipo[str(row[0])] = str(row[1])
@@ -82,9 +94,9 @@ class ImportadorCuotasAnualesCSV:
             key = (int(row[1]), str(row[2]))
             self.cache_importes_cuota[key] = str(row[0])
 
-        # Cargar provincia de cada miembro
+        # Cargar provincia de cada contacto
         result = await session.execute(
-            text("SELECT id, provincia_id FROM miembros WHERE provincia_id IS NOT NULL")
+            text("SELECT id, provincia_id FROM contactos WHERE provincia_id IS NOT NULL")
         )
         for row in result:
             self.miembro_provincia[str(row[0])] = str(row[1])
@@ -231,9 +243,11 @@ class ImportadorCuotasAnualesCSV:
                                     errores += 1
                                     continue
 
-                                # Obtener UUID del miembro
+                                # Contacto (para tipo/provincia) y Vinculación SOCIO
+                                # (la cuota cuelga de la vinculación, no del contacto).
                                 miembro_id = self.cache_miembros.get(coduser)
-                                if not miembro_id:
+                                vinc_socio_id = self.cache_vinc_socio.get(coduser)
+                                if not miembro_id or not vinc_socio_id:
                                     omitidos_sin_miembro += 1
                                     continue
 
@@ -293,7 +307,7 @@ class ImportadorCuotasAnualesCSV:
                                 # Escribir fila CSV
                                 writer.writerow([
                                     cuota_uuid,  # id
-                                    miembro_id,  # miembro_id
+                                    vinc_socio_id,  # vinculacion_socio_id (FK de la cuota)
                                     ejercicio,  # ejercicio
                                     agrupacion_id,  # agrupacion_id
                                     importe_cuota_anio_id,  # importe_cuota_anio_id
@@ -355,12 +369,12 @@ class ImportadorCuotasAnualesCSV:
         """Inserta un lote de registros."""
         insert_sql = text("""
             INSERT INTO cuotas_anuales (
-                id, miembro_id, ejercicio, agrupacion_id, importe_cuota_anio_id,
+                id, vinculacion_socio_id, ejercicio, agrupacion_id, importe_cuota_anio_id,
                 importe, importe_pagado, gastos_gestion, estado_id, modo_ingreso,
                 fecha_pago, fecha_vencimiento, observaciones, referencia_pago,
                 fecha_creacion, eliminado
             ) VALUES (
-                :id, :miembro_id, :ejercicio, :agrupacion_id, :importe_cuota_anio_id,
+                :id, :vinculacion_socio_id, :ejercicio, :agrupacion_id, :importe_cuota_anio_id,
                 :importe, :importe_pagado, :gastos_gestion, :estado_id, :modo_ingreso,
                 :fecha_pago, :fecha_vencimiento, :observaciones, :referencia_pago,
                 :fecha_creacion, :eliminado
@@ -385,7 +399,7 @@ class ImportadorCuotasAnualesCSV:
 
             params = {
                 'id': row[0],
-                'miembro_id': row[1],
+                'vinculacion_socio_id': row[1],
                 'ejercicio': int(row[2]),
                 'agrupacion_id': row[3],
                 'importe_cuota_anio_id': row[4] if row[4] else None,

@@ -83,6 +83,41 @@ async def crear_tipos_miembro(session: AsyncSession) -> dict[str, uuid.UUID]:
     return mapeo
 
 
+async def crear_tipos_vinculacion(session: AsyncSession) -> dict[str, uuid.UUID]:
+    """Crea los tipos de vinculación del CRM (SOCIO, VOLUNTARIO, …) con su `codigo`
+    estable. La importación de miembros los necesita para crear las vinculaciones."""
+    from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
+    tipos = [
+        {"nombre": "Firmante", "codigo": "FIRMANTE", "ambito": "central",
+         "area_responsable": "COMUNICACION_FIRMAS", "requiere_satelite": False},
+        {"nombre": "Simpatizante", "codigo": "SIMPATIZANTE", "ambito": "central",
+         "area_responsable": "COMUNICACION_SIMPATIZANTES", "requiere_satelite": False},
+        {"nombre": "Socio", "codigo": "SOCIO", "ambito": "territorial",
+         "area_responsable": "MEMBRESIA_SOCIO_GESTIONAR", "requiere_satelite": True},
+        {"nombre": "Voluntario", "codigo": "VOLUNTARIO", "ambito": "territorial",
+         "area_responsable": "MEMBRESIA_VOLUNTARIO_GESTIONAR", "requiere_satelite": True},
+        {"nombre": "Donante", "codigo": "DONANTE", "ambito": "central",
+         "area_responsable": "TESORERIA_DONANTES", "requiere_satelite": False},
+        {"nombre": "Empleado", "codigo": "EMPLEADO", "ambito": "central",
+         "area_responsable": "RECURSOS_HUMANOS", "requiere_satelite": True},
+    ]
+    resultado: dict[str, uuid.UUID] = {}
+    for data in tipos:
+        existente = (await session.execute(
+            select(TipoVinculacion).where(TipoVinculacion.codigo == data["codigo"])
+        )).scalar_one_or_none()
+        if existente:
+            resultado[data["codigo"]] = existente.id
+            print(f"  [OK] TipoVinculacion '{data['codigo']}' ya existe")
+        else:
+            tv = TipoVinculacion(**data)
+            session.add(tv)
+            await session.flush()
+            resultado[data["codigo"]] = tv.id
+            print(f"  + TipoVinculacion '{data['codigo']}' creado")
+    return resultado
+
+
 async def crear_estados_miembro(session: AsyncSession) -> dict[str, uuid.UUID]:
     """Crea los estados de miembro y retorna mapeo código → UUID."""
 
@@ -757,6 +792,9 @@ async def main():
         try:
             print("1. Creando Tipos de Miembro...")
             tipos_miembro = await crear_tipos_miembro(session)
+
+            print("\n1b. Creando Tipos de Vinculación (SOCIO/VOLUNTARIO/…)...")
+            tipos_vinculacion = await crear_tipos_vinculacion(session)
 
             print("\n2. Creando Estados de Miembro...")
             estados_miembro = await crear_estados_miembro(session)
