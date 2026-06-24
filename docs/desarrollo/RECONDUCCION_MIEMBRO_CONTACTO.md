@@ -52,6 +52,52 @@ persona (no semántica de membresía). Repuntar a `Contacto` y `ForeignKey('miem
 `app/scripts/seeding/*` y `app/scripts/importacion/*` crean `Miembro`. Con el
 modelo retirado deben crear `Contacto` (+ vinculaciones/satélites). 24 ficheros.
 
+## 2.4 Paso final (ÚNICO bloque pendiente — big-bang acoplado)
+
+Todo el código de servicios está reconducido y la rama ARRANCA (imports +
+mappers en verde) con `Miembro` aún presente. Lo único que queda es un bloque
+acoplado que hay que hacer de una vez y validar con `build` del esquema GraphQL,
+porque a medias rompe el arranque:
+
+**Decisión tomada (alta de socio):** `crear_miembro` crea SIEMPRE
+`Contacto` + `Vinculacion(SOCIO)` + `Socio` + `Participacion(MEMBRESIA)` +
+`Membresia(tipo_miembro)`. Si `es_voluntario=True`, además
+`Vinculacion(VOLUNTARIO)` + `Voluntario`. Input plano `MiembroCreateInput` se
+reparte internamente:
+- Contacto: nombre/apellidos/sexo/doc/dirección/tel/email/agrupacion_id/RGPD/activo/(tipo='PERSONA_FISICA').
+- Socio: iban, swift_bic, referencia_pago, forma_pago_id, es_honor(=es_socio_honor), motivo_reduccion_id, motivo_baja_id/texto, estado_socio.
+- Vinculacion(SOCIO): fecha_inicio=fecha_alta, fecha_fin=fecha_baja, estado, agrupacion_id, tipo_vinculacion_id(SOCIO).
+- Membresia: tipo_miembro_id, numero_socio.
+- Voluntario: disponibilidad, horas_disponibles_semana, profesion, nivel_estudios_id, experiencia/intereses/observaciones_voluntariado, puede_conducir, vehiculo_propio, disponibilidad_viajar.
+
+**Tareas del bloque (en este orden, un commit):**
+1. `graphql/types_auto.py`: crear `ContactoType` (`strawchemy.type(Contacto)`) con
+   overrides nullable de sus relaciones (agrupacion, provincia, paises,
+   representante_legal, nivel_estudios…); sustituir TODAS las refs
+   `Optional['MiembroType']` → `Optional['ContactoType']`; borrar `MiembroType`,
+   `MiembroSegmentacionType` y el import de `Miembro`/`MiembroSegmentacion`.
+2. `graphql/inputs_auto.py`: revisar inputs de Miembro (si los hay).
+3. `graphql/membresia_resolvers.py`: reescribir CRUD con un helper de fan-out
+   (`_alta_socio`), devolver `ContactoType`, `_fetch` sobre `Contacto`; reescribir
+   `_campos_perfil_faltantes`/`_publicar_perfil_incompleto`,
+   `gestionar_perfil_voluntario` (→ satélite Voluntario), `actualizar_miembro`,
+   `anonimizar_miembro`, `exportar_miembros_xlsx`, `voluntarios_en_ambito`
+   (→ Vinculacion VOLUNTARIO), habilidades (MiembroHabilidad.miembro_id = contacto id).
+4. `graphql/papelera_resolvers.py`: `restaurar_miembro` sobre `Contacto`/`ContactoType`
+   (ya preparado; revertido para no romper boot).
+5. `acceso/services/acceso_service.py`: `crear_usuario(miembro_id=…)` →
+   `contacto_id` (Usuario ya migrado a `contacto_id`); revisar líneas 67/178/250.
+6. Retirar `Miembro`: quitar reversos de catálogos
+   (`TipoMiembro.miembros`, `EstadoMiembro.miembros`, `MotivoBaja.miembros`,
+   `NivelEstudios.miembros`), eliminar la clase y sus relaciones en `miembro.py`,
+   y limpiar `membresia/models/__init__.py` (quitar `Miembro`, `MiembroSegmentacion`),
+   `app/models/__init__.py`, `modules/__init__.py`. Conservar `TipoMiembro`.
+7. `python -c "import app.graphql.schema"` (o build strawberry) en verde +
+   `configure_mappers()`.
+8. Scripts (≈15): `seeding/*`, `importacion/*`, `dump/*`, `bootstrap.py` crean
+   `Miembro`; reescribir a `Contacto`+vinculaciones. NO bloquean el arranque (no se
+   importan en boot) → última subfase.
+
 ## 2.5 Progreso (estado a 2026-06-24)
 
 **Migraciones (capa de datos): COMPLETAS y verificadas en PostgreSQL 16 real.**
