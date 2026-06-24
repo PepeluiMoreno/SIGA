@@ -8,8 +8,8 @@
 #                                  Es lo normal del día a día (hay hot-reload).
 #   ./scripts/dev-up.sh rebuild    reconstruye la imagen del BACKEND y arranca.
 #                                  Úsalo solo si cambian requirements.txt o el Dockerfile.
-#   ./scripts/dev-up.sh resetdb    reinicia la BD (borra el volumen pgdata_dev) y arranca;
-#                                  conserva node_modules y uploads.
+#   ./scripts/dev-up.sh resetdb    reinicia la BD (borra el volumen pgdata_dev), aplica el
+#                                  esquema (squash + stamp head) y arranca; conserva node_modules y uploads.
 #   ./scripts/dev-up.sh down       detiene (conserva volúmenes de datos).
 #   ./scripts/dev-up.sh logs       sigue los logs.
 #
@@ -35,6 +35,28 @@ arrancar() {              # $@ = flags extra para 'up' (p. ej. --build)
   echo "SIGA dev en marcha → https://${APP_DEV_DOMAIN:-siga.optiplex-790}"
 }
 
+# Cadena de migraciones rota: el squash inicial crea TODO el esquema con
+# create_all; los incrementales posteriores son redundantes y fallan en BD
+# nueva. Hasta consolidarlas, en cada BD fresca: levantar Postgres, aplicar el
+# squash y marcar head. Tras esto, el 'alembic upgrade head' del arranque del
+# backend queda en no-op.
+SQUASH_REV="ce07b20ae5d3"
+
+preparar_esquema() {
+  echo "Levantando Postgres…"
+  "${COMPOSE[@]}" up -d db
+  echo "Esperando a que Postgres acepte conexiones…"
+  for _ in $(seq 1 30); do
+    if "${COMPOSE[@]}" exec -T db pg_isready -U "${POSTGRES_USER:-siga}" -d "${POSTGRES_DB:-siga}" >/dev/null 2>&1; then
+      break
+    fi
+    sleep 1
+  done
+  echo "Aplicando esquema (squash ${SQUASH_REV}) y marcando head…"
+  "${COMPOSE[@]}" run --rm --no-deps backend \
+    sh -c "alembic upgrade ${SQUASH_REV} && alembic stamp head"
+}
+
 case "${1:-up}" in
   up)
     arrancar
@@ -51,6 +73,7 @@ case "${1:-up}" in
     # El '|| true' evita que un grep sin coincidencias (volumen ya inexistente) aborte por 'set -e'.
     vols="$(docker volume ls -q | grep -E '_pgdata_dev$' || true)"
     [ -n "$vols" ] && docker volume rm $vols || true
+    preparar_esquema
     arrancar
     ;;
   down)
