@@ -44,22 +44,28 @@ El workflow (`.github/workflows/deploy.yml`) selecciona el runner por **labels**
 
 ## Requisitos previos en el VPS
 
-El runner corre bajo el usuario **`elaicatec`** (el usuario admin/SSH de VPS2
-según el doc de seguridad §2.4). Si prefieres un usuario **dedicado** solo para
-despliegue, créalo y sustituye `elaicatec` por su nombre en todos los pasos.
+El runner corre bajo un usuario **dedicado `deployer`**, separado del usuario
+admin/SSH `elaicatec`. Es deliberado: el runner ejecuta el contenido de los
+workflows, así que conviene aislarlo en un usuario de **mínimo privilegio**.
 
 1. **Docker** y **docker compose** funcionando.
-2. `elaicatec` en el grupo `docker` (para ejecutar `docker compose`):
+2. Crear `deployer` si no existe y meterlo en el grupo `docker`:
    ```bash
-   sudo usermod -aG docker elaicatec
+   id deployer >/dev/null 2>&1 || sudo useradd -m -s /bin/bash deployer
+   sudo usermod -aG docker deployer
    ```
-3. `elaicatec` con escritura sobre el directorio de deploy
-   (`/opt/docker/apps/SIGA`).
+3. Dar a `deployer` escritura sobre el directorio de deploy
+   (`/opt/docker/apps/SIGA`). Si ya existe con datos (secrets/, backups/,
+   .env.production), basta con darle propiedad/escritura sobre ese árbol:
+   ```bash
+   sudo mkdir -p /opt/docker/apps/SIGA
+   sudo chown -R deployer:deployer /opt/docker/apps/SIGA
+   ```
 
    Comprobar ambos:
    ```bash
-   groups elaicatec              # debe aparecer "docker"
-   ls -ld /opt/docker/apps/SIGA  # debe poder escribir ahí
+   groups deployer               # debe aparecer "docker"
+   ls -ld /opt/docker/apps/SIGA  # deployer debe poder escribir ahí
    ```
 
 ## Instalar y registrar el runner (STAGING / VPS2)
@@ -68,9 +74,9 @@ despliegue, créalo y sustituye `elaicatec` por su nombre en todos los pasos.
    Linux**. Te dará un bloque con la URL de descarga y un **token de registro**
    (caduca en ~1 h). Cópialo.
 
-2. En el VPS, como el usuario `elaicatec`:
+2. En el VPS, como el usuario `deployer`:
    ```bash
-   sudo -iu elaicatec
+   sudo -iu deployer
    mkdir -p ~/actions-runner && cd ~/actions-runner
    # (usa la URL/versión que muestre GitHub en ese momento)
    curl -o actions-runner-linux-x64.tar.gz -L \
@@ -90,7 +96,7 @@ despliegue, créalo y sustituye `elaicatec` por su nombre en todos los pasos.
 
 3. Instalar como servicio (arranca solo y sobrevive a reinicios):
    ```bash
-   sudo ./svc.sh install elaicatec
+   sudo ./svc.sh install deployer
    sudo ./svc.sh start
    sudo ./svc.sh status
    ```
