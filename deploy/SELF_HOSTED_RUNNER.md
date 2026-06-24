@@ -27,6 +27,11 @@ Conclusión: con SSH entrante cerrado por diseño, el runner self-hosted es la v
 correcta. Corre **dentro del VPS**, despliega **en local** y solo abre conexiones
 **salientes** a GitHub; respeta el hardening sin abrir ni un puerto.
 
+> El diseño "SSH solo por la VPN" está definido en el documento de referencia
+> **Seguridad de la infraestructura — Europa Laica** (§3 SSH, §4 cortafuegos
+> `fw-vpn`, §9 puertos). Este runner es la forma de tener CI/CD **sin** contradecir
+> ese diseño: no reabre ningún puerto de administración.
+
 El workflow (`.github/workflows/deploy.yml`) selecciona el runner por **labels**:
 
 | Entorno      | VPS  | Labels                          |
@@ -39,21 +44,22 @@ El workflow (`.github/workflows/deploy.yml`) selecciona el runner por **labels**
 
 ## Requisitos previos en el VPS
 
-El runner corre bajo el usuario **`deployer`** (el mismo que ya despliega la app).
-No hace falta crear un usuario nuevo.
+El runner corre bajo el usuario **`elaicatec`** (el usuario admin/SSH de VPS2
+según el doc de seguridad §2.4). Si prefieres un usuario **dedicado** solo para
+despliegue, créalo y sustituye `elaicatec` por su nombre en todos los pasos.
 
 1. **Docker** y **docker compose** funcionando.
-2. `deployer` en el grupo `docker` (para ejecutar `docker compose`):
+2. `elaicatec` en el grupo `docker` (para ejecutar `docker compose`):
    ```bash
-   sudo usermod -aG docker deployer
+   sudo usermod -aG docker elaicatec
    ```
-3. `deployer` con escritura sobre el directorio de deploy
-   (`/opt/docker/apps/SIGA`). Como ya despliega hoy, normalmente ya la tiene.
+3. `elaicatec` con escritura sobre el directorio de deploy
+   (`/opt/docker/apps/SIGA`).
 
    Comprobar ambos:
    ```bash
-   groups deployer              # debe aparecer "docker"
-   ls -ld /opt/docker/apps/SIGA # deployer debe poder escribir ahí
+   groups elaicatec              # debe aparecer "docker"
+   ls -ld /opt/docker/apps/SIGA  # debe poder escribir ahí
    ```
 
 ## Instalar y registrar el runner (STAGING / VPS2)
@@ -62,9 +68,9 @@ No hace falta crear un usuario nuevo.
    Linux**. Te dará un bloque con la URL de descarga y un **token de registro**
    (caduca en ~1 h). Cópialo.
 
-2. En el VPS, como el usuario `deployer`:
+2. En el VPS, como el usuario `elaicatec`:
    ```bash
-   sudo -iu deployer
+   sudo -iu elaicatec
    mkdir -p ~/actions-runner && cd ~/actions-runner
    # (usa la URL/versión que muestre GitHub en ese momento)
    curl -o actions-runner-linux-x64.tar.gz -L \
@@ -84,7 +90,7 @@ No hace falta crear un usuario nuevo.
 
 3. Instalar como servicio (arranca solo y sobrevive a reinicios):
    ```bash
-   sudo ./svc.sh install deployer
+   sudo ./svc.sh install elaicatec
    sudo ./svc.sh start
    sudo ./svc.sh status
    ```
@@ -105,10 +111,12 @@ Igual que arriba, pero en VPS1 y con:
 
 ## Secretos que usa el deploy
 
-- `ENV_STAGING` / `ENV_PRODUCTION`: contenido completo de `.env.production`
-  (se materializa en el VPS antes de desplegar).
+- `SIGA_ENV_STAGING` (staging) / `ENV_PRODUCTION` (producción): contenido completo
+  del `.env.production` (se materializa en el VPS antes de desplegar). El workflow
+  lee staging desde `secrets.SIGA_ENV_STAGING`.
 - `GHCR_PAT`: PAT con `read:packages` para `docker login ghcr.io` (pull de
-  imágenes privadas).
+  imágenes privadas). **Pendiente de crear** en el repo (no aparece en los secrets
+  actuales).
 
 > Los antiguos secretos de SSH (`DEPLOY_HOST*`, `DEPLOY_USER`, `DEPLOY_KEY`,
 > `DEPLOY_PORT`) **ya no se usan** y pueden borrarse.
