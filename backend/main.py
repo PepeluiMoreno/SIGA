@@ -94,10 +94,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configurar CORS
+# Configurar CORS — orígenes explícitos (NO "*", que es inválido con
+# allow_credentials=True): el SPA de SIGA (app_url) y los orígenes del
+# formulario público de firmas (p.ej. laicismo.org), tomados de settings.
+from app.core.config import get_settings as _get_settings
+_settings = _get_settings()
+_cors_origins = [
+    o.strip()
+    for o in ([_settings.app_url] + _settings.firmas_cors_origins.split(","))
+    if o and o.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: Ajustar en producción
+    allow_origins=_cors_origins or [_settings.app_url],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -123,6 +132,11 @@ app.include_router(recibos_router)
 app.include_router(remesas_router)
 if _paypal_available:
     app.include_router(paypal_router)
+
+# Router PÚBLICO (sin autenticación) — recogida de firmas de campaña.
+# Única superficie de escritura abierta a Internet; el resto va tras Authelia/VPN.
+from app.api.publico.firmas import router as publico_firmas_router
+app.include_router(publico_firmas_router)
 
 
 MEDIA_DIR = Path("media/fotos")
