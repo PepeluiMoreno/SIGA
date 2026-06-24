@@ -184,7 +184,7 @@ class AuthMutation:
             email=email,
             password=pwd,
             activo=activo,
-            miembro_id=miembro_id,
+            contacto_id=miembro_id,
             tipo_vinculacion_id=tipo_vinculacion_id,
             entidad_vinculacion=entidad_vinculacion,
         )

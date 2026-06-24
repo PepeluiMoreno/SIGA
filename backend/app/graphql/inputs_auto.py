@@ -520,7 +520,7 @@ class TemaUIFilter:
 # ============================================================================
 
 from ..modules.membresia.models import (
-    TipoMiembro, EstadoMiembro, MotivoBaja, Miembro,
+    TipoMiembro, EstadoMiembro, MotivoBaja, Contacto,
     NivelEstudios, NivelHabilidad,
     CategoriaHabilidad, Habilidad, MiembroHabilidad, FranjaDisponibilidad,
     HistorialAgrupacion, SolicitudTraslado,
@@ -572,8 +572,8 @@ class MotivoBajaFilter:
     pass
 
 
-@strawchemy.filter(Miembro, include="all")
-class MiembroFilter:
+@strawchemy.filter(Contacto, include="all")
+class ContactoFilter:
     pass
 
 

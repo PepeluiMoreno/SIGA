@@ -29,7 +29,6 @@ class MotivoBaja(InmutableMixin, BaseModel):
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
     # Relaciones
-    miembros = relationship('Miembro', back_populates='motivo_baja_rel', lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<MotivoBaja(codigo='{self.codigo}', nombre='{self.nombre}')>"

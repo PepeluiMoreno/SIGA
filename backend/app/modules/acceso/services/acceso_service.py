@@ -45,7 +45,7 @@ class AccesoService:
         email: str,
         password: str,
         activo: bool = True,
-        miembro_id: Optional[UUID] = None,
+        contacto_id: Optional[UUID] = None,
         tipo_vinculacion_id: Optional[UUID] = None,
         entidad_vinculacion: Optional[str] = None,
     ) -> Usuario:
@@ -64,7 +64,7 @@ class AccesoService:
             email=email,
             password_hash=hash_password(password),
             activo=activo,
-            miembro_id=miembro_id,
+            contacto_id=contacto_id,
             tipo_vinculacion_id=tipo_vinculacion_id,
             entidad_vinculacion=entidad_vinculacion,
         )

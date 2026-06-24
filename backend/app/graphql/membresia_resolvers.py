@@ -13,40 +13,43 @@ from typing import Optional, List
 import strawberry
 from sqlalchemy import select, or_
 
-from app.modules.membresia.models.miembro import Miembro
+from app.modules.membresia.models.contacto import Contacto
+from app.modules.membresia.models.participacion import Participacion, Membresia
+from app.modules.membresia.models.vinculacion import Vinculacion, Socio, Voluntario
+from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
 from app.modules.acceso.services.acceso_service import AccesoService
-from app.graphql.types_auto import MiembroType
+from app.graphql.types_auto import ContactoType
 from app.graphql.permissions import RequireTransaction
 from app.core.events import event_bus, MiembroPerfilIncompleto
 
 
+# Campos clave de perfil que ahora viven en Contacto (email/teléfono). El tipo de
+# socio y el estado viven en Membresia/Socio y no se chequean aquí.
 _CAMPOS_PERFIL_CLAVE: tuple[tuple[str, str], ...] = (
-    ("tipo_miembro_id", "tipo de socio"),
-    ("estado_id",       "estado"),
-    ("email",           "email"),
-    ("telefono",        "teléfono"),
+    ("email",    "email"),
+    ("telefono", "teléfono"),
 )
 
 
-def _campos_perfil_faltantes(miembro: Miembro) -> tuple[str, ...]:
+def _campos_perfil_faltantes(contacto) -> tuple[str, ...]:
     """Devuelve los nombres legibles de los campos clave sin rellenar."""
     return tuple(
         etiqueta for attr, etiqueta in _CAMPOS_PERFIL_CLAVE
-        if not getattr(miembro, attr, None)
+        if not getattr(contacto, attr, None)
     )
 
 
-async def _publicar_perfil_incompleto(miembro: Miembro) -> None:
+async def _publicar_perfil_incompleto(contacto) -> None:
     """Publica MiembroPerfilIncompleto si faltan campos clave. Nunca lanza."""
-    faltantes = _campos_perfil_faltantes(miembro)
+    faltantes = _campos_perfil_faltantes(contacto)
     if not faltantes:
         return
     try:
-        nombre = " ".join(filter(None, [miembro.nombre, miembro.apellido1])).strip()
+        nombre = " ".join(filter(None, [contacto.nombre, contacto.apellido1])).strip()
         await event_bus.publish(MiembroPerfilIncompleto(
-            miembro_id=str(miembro.id),
+            miembro_id=str(contacto.id),
             miembro_nombre=nombre or "(sin nombre)",
-            agrupacion_id=str(miembro.agrupacion_id) if miembro.agrupacion_id else None,
+            agrupacion_id=str(contacto.agrupacion_id) if contacto.agrupacion_id else None,
             campos_faltantes=faltantes,
         ))
     except Exception:
@@ -166,26 +169,114 @@ class MiembroUpdateInput:
 # Mixin de mutaciones
 # ---------------------------------------------------------------------------
 
-_MIEMBRO_FIELDS = [
-    'nombre', 'apellido1', 'apellido2', 'sexo', 'fecha_nacimiento',
-    'tipo_miembro_id', 'estado_id', 'tipo_documento', 'numero_documento',
-    'pais_documento_id', 'pais_nacimiento_id', 'direccion', 'codigo_postal',
-    'localidad', 'provincia_id', 'pais_domicilio_id', 'telefono', 'telefono2',
-    'email', 'agrupacion_id', 'iban', 'swift_bic', 'referencia_pago', 'forma_pago_id', 'es_socio_honor',
-    'fecha_alta', 'fecha_baja', 'motivo_baja_id', 'motivo_baja_texto',
-    'observaciones', 'solicita_supresion_datos', 'fecha_solicitud_supresion',
+# Reparto del input plano a cada modelo del CRM (decisión: alta = Contacto +
+# Vinculacion SOCIO + Socio + Participacion(MEMBRESIA)+Membresia [+ Voluntario]).
+_CONTACTO_FIELDS = (
+    'nombre', 'apellido1', 'apellido2', 'sexo', 'fecha_nacimiento', 'tipo_documento',
+    'numero_documento', 'pais_documento_id', 'pais_nacimiento_id', 'direccion',
+    'codigo_postal', 'localidad', 'provincia_id', 'pais_domicilio_id', 'telefono',
+    'telefono2', 'email', 'agrupacion_id', 'profesion', 'nivel_estudios_id',
+    'observaciones', 'activo', 'solicita_supresion_datos', 'fecha_solicitud_supresion',
     'fecha_limite_retencion', 'datos_anonimizados', 'fecha_anonimizacion',
-    'activo', 'es_voluntario', 'disponibilidad', 'horas_disponibles_semana',
-    'profesion', 'nivel_estudios_id', 'motivo_reduccion_id',
-    'experiencia_voluntariado', 'intereses',
-    'observaciones_voluntariado', 'puede_conducir', 'vehiculo_propio',
-    'disponibilidad_viajar',
-]
+)
+_SOCIO_FIELDS = (
+    'iban', 'swift_bic', 'referencia_pago', 'forma_pago_id', 'motivo_reduccion_id',
+    'motivo_baja_id', 'motivo_baja_texto',
+)
+_VOLUNTARIO_FIELDS = (
+    'disponibilidad', 'horas_disponibles_semana', 'profesion', 'nivel_estudios_id',
+    'experiencia_voluntariado', 'intereses', 'observaciones_voluntariado',
+    'puede_conducir', 'vehiculo_propio', 'disponibilidad_viajar',
+)
 
 
-async def _fetch_miembro(session, miembro_id: uuid.UUID):
-    """Recarga el miembro con todas las relaciones selectin."""
-    stmt = select(Miembro).where(Miembro.id == miembro_id)
+async def _tipo_vinc_id(session, codigo: str):
+    return await session.scalar(
+        select(TipoVinculacion.id).where(TipoVinculacion.codigo == codigo)
+    )
+
+
+async def _vinc_socio(session, contacto_id: uuid.UUID):
+    """Vinculación SOCIO (cualquier estado) más reciente del contacto, o None."""
+    return (await session.execute(
+        select(Vinculacion)
+        .join(TipoVinculacion, Vinculacion.tipo_vinculacion_id == TipoVinculacion.id)
+        .where(TipoVinculacion.codigo == "SOCIO", Vinculacion.contacto_id == contacto_id)
+        .order_by(Vinculacion.fecha_inicio.desc())
+    )).scalars().first()
+
+
+async def _vinc_voluntario(session, contacto_id: uuid.UUID):
+    return (await session.execute(
+        select(Vinculacion)
+        .join(TipoVinculacion, Vinculacion.tipo_vinculacion_id == TipoVinculacion.id)
+        .where(TipoVinculacion.codigo == "VOLUNTARIO", Vinculacion.contacto_id == contacto_id)
+        .order_by(Vinculacion.fecha_inicio.desc())
+    )).scalars().first()
+
+
+async def _membresia_de(session, contacto_id: uuid.UUID):
+    return (await session.execute(
+        select(Membresia)
+        .join(Participacion, Membresia.participacion_id == Participacion.id)
+        .where(Participacion.contacto_id == contacto_id, Participacion.tipo == "MEMBRESIA")
+        .order_by(Participacion.fecha.desc())
+    )).scalars().first()
+
+
+async def _alta_socio(session, data) -> Contacto:
+    """Crea Contacto + Participacion(MEMBRESIA)+Membresia + Vinculacion(SOCIO)+Socio
+    y, si `es_voluntario`, Vinculacion(VOLUNTARIO)+Voluntario. Devuelve el Contacto."""
+    contacto = Contacto(tipo="PERSONA_FISICA",
+                        **{f: getattr(data, f, None) for f in _CONTACTO_FIELDS})
+    session.add(contacto)
+    await session.flush()
+
+    # Acto de alta: Participacion(MEMBRESIA) + Membresia (lleva el tipo_miembro)
+    part = Participacion(contacto_id=contacto.id, tipo="MEMBRESIA")
+    session.add(part)
+    await session.flush()
+    session.add(Membresia(participacion_id=part.id,
+                          tipo_miembro_id=getattr(data, "tipo_miembro_id", None)))
+
+    # Vinculación de socio + satélite económico
+    baja = getattr(data, "fecha_baja", None)
+    socio_vinc = Vinculacion(
+        contacto_id=contacto.id,
+        tipo_vinculacion_id=await _tipo_vinc_id(session, "SOCIO"),
+        fecha_inicio=getattr(data, "fecha_alta", None) or date.today(),
+        fecha_fin=baja,
+        estado="baja" if baja else "activa",
+        agrupacion_id=getattr(data, "agrupacion_id", None),
+    )
+    session.add(socio_vinc)
+    await session.flush()
+    session.add(Socio(
+        vinculacion_id=socio_vinc.id,
+        es_honor=bool(getattr(data, "es_socio_honor", False)),
+        estado_socio="baja" if baja else "activo",
+        **{f: getattr(data, f, None) for f in _SOCIO_FIELDS},
+    ))
+
+    # Voluntario opcional (otra vinculación + satélite)
+    if getattr(data, "es_voluntario", False):
+        vol_vinc = Vinculacion(
+            contacto_id=contacto.id,
+            tipo_vinculacion_id=await _tipo_vinc_id(session, "VOLUNTARIO"),
+            fecha_inicio=date.today(), estado="activa",
+            agrupacion_id=getattr(data, "agrupacion_id", None),
+        )
+        session.add(vol_vinc)
+        await session.flush()
+        session.add(Voluntario(vinculacion_id=vol_vinc.id,
+                               **{f: getattr(data, f, None) for f in _VOLUNTARIO_FIELDS}))
+
+    return contacto
+
+
+async def _fetch_miembro(session, contacto_id: uuid.UUID):
+    """Recarga el Contacto (identidad viva) con sus relaciones selectin."""
+    stmt = select(Contacto).where(Contacto.id == contacto_id)
     result = await session.execute(stmt)
     return result.scalar_one()
 
@@ -207,14 +298,6 @@ class PerfilVoluntarioInput:
     disponibilidad_viajar: Optional[bool] = None
 
 
-_CAMPOS_VOLUNTARIO = (
-    'es_voluntario', 'disponibilidad', 'horas_disponibles_semana', 'profesion',
-    'nivel_estudios_id', 'intereses', 'experiencia_voluntariado',
-    'observaciones_voluntariado', 'puede_conducir', 'vehiculo_propio',
-    'disponibilidad_viajar',
-)
-
-
 @strawberry.type
 class MembresiaResolverMutation:
 
@@ -223,24 +306,50 @@ class MembresiaResolverMutation:
         self,
         info: strawberry.Info,
         data: PerfilVoluntarioInput,
-    ) -> 'MiembroType':
+    ) -> 'ContactoType':
         """Edita el perfil de voluntario (disponibilidad, profesión, intereses…) por delegación.
 
-        Solo toca campos de voluntariado, no el resto de datos del socio. Aplica el guard de
-        ámbito territorial: un cargo territorial solo puede gestionar socios de su ámbito.
+        El voluntariado es una Vinculacion(VOLUNTARIO) con satélite Voluntario: se crea
+        si `es_voluntario=True` y no existía, o se da de baja si `es_voluntario=False`.
+        profesion/nivel_estudios se guardan también en el Contacto. Aplica el guard de
+        ámbito territorial.
         """
         from app.modules.acceso.services.ambito_territorial import assert_miembro_en_ambito
         session = info.context.session
         user = info.context.user
         await assert_miembro_en_ambito(session, user.id, data.miembro_id)
 
-        miembro = await _fetch_miembro(session, data.miembro_id)
-        for field in _CAMPOS_VOLUNTARIO:
+        contacto = await _fetch_miembro(session, data.miembro_id)
+        for field in ("profesion", "nivel_estudios_id"):
             val = getattr(data, field, None)
             if val is not None:
-                setattr(miembro, field, val)
+                setattr(contacto, field, val)
+
+        vinc = await _vinc_voluntario(session, contacto.id)
+        if data.es_voluntario is False:
+            if vinc:
+                vinc.estado = "baja"
+                vinc.fecha_fin = date.today()
+        else:
+            if not vinc:
+                vinc = Vinculacion(
+                    contacto_id=contacto.id,
+                    tipo_vinculacion_id=await _tipo_vinc_id(session, "VOLUNTARIO"),
+                    fecha_inicio=date.today(), estado="activa",
+                    agrupacion_id=contacto.agrupacion_id,
+                )
+                session.add(vinc)
+                await session.flush()
+            vol = vinc.voluntario
+            if not vol:
+                vol = Voluntario(vinculacion_id=vinc.id)
+                session.add(vol)
+            for field in _VOLUNTARIO_FIELDS:
+                val = getattr(data, field, None)
+                if val is not None:
+                    setattr(vol, field, val)
         await session.commit()
-        return await _fetch_miembro(session, miembro.id)
+        return await _fetch_miembro(session, contacto.id)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("HAB_ASSIGN")])
     async def asignar_habilidad_voluntario(
@@ -299,17 +408,15 @@ class MembresiaResolverMutation:
         self,
         info: strawberry.Info,
         data: MiembroCreateInput,
-    ) -> 'MiembroType':
+    ) -> 'ContactoType':
         session = info.context.session
 
-        kwargs = {field: getattr(data, field) for field in _MIEMBRO_FIELDS}
-        miembro = Miembro(**kwargs)
-        session.add(miembro)
+        contacto = await _alta_socio(session, data)
         await session.commit()
 
-        await _publicar_perfil_incompleto(miembro)
+        await _publicar_perfil_incompleto(contacto)
 
-        return await _fetch_miembro(session, miembro.id)
+        return await _fetch_miembro(session, contacto.id)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_CREAR")])
     async def crear_miembro_con_acceso(
@@ -320,47 +427,61 @@ class MembresiaResolverMutation:
         password: str,
         tipo_vinculacion_id: Optional[uuid.UUID] = None,
         activo_usuario: bool = True,
-    ) -> 'MiembroType':
-        """Crea un miembro y su usuario de acceso en una única transacción atómica."""
+    ) -> 'ContactoType':
+        """Crea un socio (Contacto + satélites) y su usuario de acceso en una única
+        transacción atómica."""
         session = info.context.session
 
-        kwargs = {field: getattr(data, field) for field in _MIEMBRO_FIELDS}
-        miembro = Miembro(**kwargs)
-        session.add(miembro)
-        await session.flush()
+        contacto = await _alta_socio(session, data)
 
         svc = AccesoService(session)
         await svc.crear_usuario(
             email=email,
             password=password,
             activo=activo_usuario,
-            miembro_id=miembro.id,
+            contacto_id=contacto.id,
             tipo_vinculacion_id=tipo_vinculacion_id,
         )
 
         await session.commit()
 
-        await _publicar_perfil_incompleto(miembro)
+        await _publicar_perfil_incompleto(contacto)
 
-        return await _fetch_miembro(session, miembro.id)
+        return await _fetch_miembro(session, contacto.id)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_EDITAR")])
     async def actualizar_miembro(
         self,
         info: strawberry.Info,
         data: MiembroUpdateInput,
-    ) -> 'MiembroType':
+    ) -> 'ContactoType':
         session = info.context.session
 
         miembro = await _fetch_miembro(session, data.id)
         faltantes_antes = _campos_perfil_faltantes(miembro)
 
-        for field in _MIEMBRO_FIELDS:
+        # Datos de identidad -> Contacto (None = no tocar)
+        for field in _CONTACTO_FIELDS:
             val = getattr(data, field, None)
-            if val is not None or field not in (
-                'nombre', 'apellido1', 'tipo_miembro_id', 'estado_id'
-            ):
+            if val is not None:
                 setattr(miembro, field, val)
+
+        # tipo de socio -> Membresía
+        if getattr(data, "tipo_miembro_id", None) is not None:
+            memb = await _membresia_de(session, miembro.id)
+            if memb:
+                memb.tipo_miembro_id = data.tipo_miembro_id
+
+        # datos económicos / baja -> satélite Socio
+        vinc = await _vinc_socio(session, miembro.id)
+        socio = vinc.socio if vinc else None
+        if socio:
+            for field in _SOCIO_FIELDS:
+                val = getattr(data, field, None)
+                if val is not None:
+                    setattr(socio, field, val)
+            if getattr(data, "es_socio_honor", None) is not None:
+                socio.es_honor = data.es_socio_honor
 
         await session.commit()
 
@@ -378,7 +499,7 @@ class MembresiaResolverMutation:
         self,
         info: strawberry.Info,
         miembro_id: uuid.UUID,
-    ) -> 'MiembroType':
+    ) -> 'ContactoType':
         """RGPD — anonimiza de forma irreversible los datos personales del
         miembro. El registro se conserva (para estadística e histórico) pero
         despojado de toda información identificativa. Solo se permite sobre
@@ -388,13 +509,15 @@ class MembresiaResolverMutation:
         miembro = await _fetch_miembro(session, miembro_id)
 
         if miembro.datos_anonimizados:
-            raise ValueError("Los datos de este miembro ya están anonimizados.")
-        if miembro.fecha_baja is None:
+            raise ValueError("Los datos de este contacto ya están anonimizados.")
+        # La baja vive en la vinculación de socio (fecha_fin) / satélite Socio.
+        vinc = await _vinc_socio(session, miembro.id)
+        if not (vinc and vinc.fecha_fin is not None):
             raise ValueError(
-                "Solo pueden anonimizarse los datos de un miembro dado de baja."
+                "Solo pueden anonimizarse los datos de un socio dado de baja."
             )
 
-        # Despojar de toda información personal identificativa.
+        # Despojar al Contacto de toda información personal identificativa.
         miembro.nombre = "Anonimizado"
         miembro.apellido1 = "Anonimizado"
         miembro.apellido2 = None
@@ -408,12 +531,15 @@ class MembresiaResolverMutation:
         miembro.telefono = None
         miembro.telefono2 = None
         miembro.email = None
-        miembro.iban = None
-        miembro.swift_bic = None
-        miembro.referencia_pago = None
         miembro.foto_url = None
         miembro.observaciones = None
-        miembro.observaciones_voluntariado = None
+
+        # Datos bancarios del socio (en el satélite)
+        socio = vinc.socio
+        if socio:
+            socio.iban = None
+            socio.swift_bic = None
+            socio.referencia_pago = None
 
         miembro.datos_anonimizados = True
         miembro.fecha_anonimizacion = date.today()
@@ -440,17 +566,28 @@ class MembresiaResolverMutation:
         if not ids:
             raise ValueError("No hay miembros que exportar.")
 
-        result = await session.execute(select(Miembro).where(Miembro.id.in_(ids)))
-        miembros = list(result.scalars().all())
-        miembros.sort(key=lambda m: (
-            (m.apellido1 or '').lower(),
-            (m.apellido2 or '').lower(),
-            (m.nombre or '').lower(),
+        result = await session.execute(select(Contacto).where(Contacto.id.in_(ids)))
+        contactos = list(result.scalars().all())
+        contactos.sort(key=lambda c: (
+            (c.apellido1 or '').lower(),
+            (c.apellido2 or '').lower(),
+            (c.nombre or '').lower(),
         ))
+
+        # Nombres de agrupación (Contacto solo guarda el id)
+        from app.modules.core.geografico.models import UnidadOrganizativa
+        agr_ids = {c.agrupacion_id for c in contactos if c.agrupacion_id}
+        agr_nombres: dict = {}
+        if agr_ids:
+            ra = await session.execute(
+                select(UnidadOrganizativa.id, UnidadOrganizativa.nombre)
+                .where(UnidadOrganizativa.id.in_(agr_ids))
+            )
+            agr_nombres = {i: n for (i, n) in ra.all()}
 
         wb = Workbook()
         ws = wb.active
-        ws.title = "Miembros"
+        ws.title = "Socios"
         cabecera = [
             "Nombre", "Primer apellido", "Segundo apellido", "Tipo", "Situación",
             "Email", "Teléfono", "Agrupación", "Localidad", "Fecha de alta", "Fecha de baja",
@@ -459,19 +596,22 @@ class MembresiaResolverMutation:
         for celda in ws[1]:
             celda.font = Font(bold=True)
 
-        for m in miembros:
+        for c in contactos:
+            memb = await _membresia_de(session, c.id)
+            vinc = await _vinc_socio(session, c.id)
+            socio = vinc.socio if vinc else None
             ws.append([
-                m.nombre or '',
-                m.apellido1 or '',
-                m.apellido2 or '',
-                m.tipo_miembro.nombre if m.tipo_miembro else '',
-                m.estado.nombre if m.estado else '',
-                m.email or '',
-                m.telefono or '',
-                m.agrupacion.nombre if m.agrupacion else '',
-                m.localidad or '',
-                m.fecha_alta.isoformat() if m.fecha_alta else '',
-                m.fecha_baja.isoformat() if m.fecha_baja else '',
+                c.nombre or '',
+                c.apellido1 or '',
+                c.apellido2 or '',
+                memb.tipo_miembro.nombre if (memb and memb.tipo_miembro) else '',
+                (socio.estado_socio if socio else '') or '',
+                c.email or '',
+                c.telefono or '',
+                agr_nombres.get(c.agrupacion_id, ''),
+                c.localidad or '',
+                vinc.fecha_inicio.isoformat() if (vinc and vinc.fecha_inicio) else '',
+                vinc.fecha_fin.isoformat() if (vinc and vinc.fecha_fin) else '',
             ])
 
         anchos = [16, 16, 16, 14, 14, 30, 14, 26, 20, 13, 13]
@@ -527,31 +667,39 @@ class MembresiaQuery:
         user = info.context.user
         ambito = await agrupaciones_en_ambito(session, user.id) if user else set()
 
-        q = select(Miembro).where(
-            Miembro.es_voluntario == True,  # noqa: E712
-            Miembro.eliminado == False,     # noqa: E712
+        # Voluntario = Vinculacion(VOLUNTARIO) activa + satélite Voluntario sobre Contacto.
+        q = (
+            select(Contacto, Voluntario, Vinculacion)
+            .join(Vinculacion, Vinculacion.contacto_id == Contacto.id)
+            .join(TipoVinculacion, Vinculacion.tipo_vinculacion_id == TipoVinculacion.id)
+            .join(Voluntario, Voluntario.vinculacion_id == Vinculacion.id)
+            .where(
+                TipoVinculacion.codigo == "VOLUNTARIO",
+                Vinculacion.estado == "activa",
+                Contacto.eliminado == False,    # noqa: E712
+            )
         )
         if ambito is not None:              # None = global (sin filtro)
             conds = []
             if ambito:
-                conds.append(Miembro.agrupacion_id.in_(ambito))
+                conds.append(Contacto.agrupacion_id.in_(ambito))
             camp_ids = await miembros_de_campanias_coordinadas(session, user.id) if user else set()
             if camp_ids:
-                conds.append(Miembro.id.in_(camp_ids))
+                conds.append(Contacto.id.in_(camp_ids))
             if not conds:
                 return []
             q = q.where(or_(*conds))
 
-        r = await session.execute(q.order_by(Miembro.apellido1, Miembro.nombre))
+        r = await session.execute(q.order_by(Contacto.apellido1, Contacto.nombre))
         return [
             VoluntarioAmbitoType(
-                id=m.id, nombre=m.nombre, apellido1=m.apellido1, apellido2=m.apellido2,
-                email=m.email, telefono=m.telefono, disponibilidad=m.disponibilidad,
-                horas_disponibles_semana=m.horas_disponibles_semana, profesion=m.profesion,
-                nivel_estudios_id=m.nivel_estudios_id, intereses=m.intereses,
-                puede_conducir=m.puede_conducir, vehiculo_propio=m.vehiculo_propio,
-                disponibilidad_viajar=m.disponibilidad_viajar,
-                activo=m.activo, fecha_alta=m.fecha_alta,
+                id=c.id, nombre=c.nombre, apellido1=c.apellido1 or "", apellido2=c.apellido2,
+                email=c.email, telefono=c.telefono, disponibilidad=v.disponibilidad,
+                horas_disponibles_semana=v.horas_disponibles_semana, profesion=v.profesion,
+                nivel_estudios_id=v.nivel_estudios_id, intereses=v.intereses,
+                puede_conducir=v.puede_conducir, vehiculo_propio=v.vehiculo_propio,
+                disponibilidad_viajar=v.disponibilidad_viajar,
+                activo=c.activo, fecha_alta=vinc.fecha_inicio,
             )
-            for m in r.scalars().all()
+            for (c, v, vinc) in r.all()
         ]

@@ -1,6 +1,6 @@
 """Modelos del módulo de membresía."""
 
-from .miembro import TipoMiembro, Miembro
+from .miembro import TipoMiembro
 from .contacto import Contacto
 from .tipo_entidad_juridica import TipoEntidadJuridica
 from .tipo_vinculacion import TipoVinculacion
@@ -19,7 +19,6 @@ from .habilidad import Habilidad, MiembroHabilidad
 from .disponibilidad import FranjaDisponibilidad
 from .historial_agrupacion import HistorialAgrupacion
 from .traslados.modelos import SolicitudTraslado, EstadoTraslado
-from .miembro_segmentacion_view import MiembroSegmentacion
 from .voluntariado import (
     CategoriaCompetencia,
     Competencia,
@@ -32,9 +31,8 @@ from .voluntariado import (
 )
 
 __all__ = [
-    'MiembroSegmentacion',
     'TipoMiembro',
-    'Miembro', 'Contacto', 'TipoEntidadJuridica', 'TipoVinculacion', 'Vinculacion', 'Socio', 'Voluntario', 'Participacion', 'Membresia',
+    'Contacto', 'TipoEntidadJuridica', 'TipoVinculacion', 'Vinculacion', 'Socio', 'Voluntario', 'Participacion', 'Membresia',
     'NivelEstudios',
     'NivelHabilidad',
     'EstadoMiembro',

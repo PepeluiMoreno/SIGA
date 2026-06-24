@@ -128,7 +128,7 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
     tiposMiembro: list[TipoMiembroType] = strawchemy.field(filter_input=TipoMiembroFilter)
     estadosMiembro: list[EstadoMiembroType] = strawchemy.field(filter_input=EstadoMiembroFilter)
     motivosBaja: list[MotivoBajaType] = strawchemy.field(filter_input=MotivoBajaFilter)
-    miembros: list[MiembroType] = strawchemy.field(filter_input=MiembroFilter)
+    contactos: list[ContactoType] = strawchemy.field(filter_input=ContactoFilter)
 
     # === JUNTA DIRECTIVA ===
     juntasDirectivas: list[JuntaDirectivaType] = strawchemy.field(filter_input=JuntaDirectivaFilter)

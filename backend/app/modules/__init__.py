@@ -71,7 +71,6 @@ from .membresia.models import (
     TipoMiembro,
     EstadoMiembro,
     MotivoBaja,
-    Miembro,
     NivelEstudios,
     NivelHabilidad,
     JuntaDirectiva,

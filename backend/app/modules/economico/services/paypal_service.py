@@ -213,12 +213,28 @@ class PayPalService:
             order_data.get("payer", {}).get("email_address")
         )
 
+        # El pago se vincula a la VINCULACIÓN de socio del pagador, si la tiene.
+        vinculacion_socio_id = None
+        if miembro_id:
+            from sqlalchemy import select
+            from app.modules.membresia.models.vinculacion import Vinculacion
+            from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
+            vinculacion_socio_id = await self.session.scalar(
+                select(Vinculacion.id)
+                .join(TipoVinculacion, Vinculacion.tipo_vinculacion_id == TipoVinculacion.id)
+                .where(
+                    TipoVinculacion.codigo == "SOCIO",
+                    Vinculacion.contacto_id == miembro_id,
+                    Vinculacion.estado == "activa",
+                )
+            )
+
         pago = Pago(
             proveedor_id=proveedor.id,
             importe=Decimal(importe_str),
             moneda=moneda,
             email_pagador=email_pagador,
-            miembro_id=miembro_id,
+            vinculacion_socio_id=vinculacion_socio_id,
             id_externo_principal=order_id,
             id_externo_secundario=capture_id,
             datos_externos=order_data,

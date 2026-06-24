@@ -145,7 +145,7 @@ class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionM
     eliminar_motivos_baja: list[MotivoBajaType] = strawchemy.delete(MotivoBajaFilter)
 
     # crear_miembro / actualizar_miembro → MembresiaResolverMutation (custom, incluye FK UUIDs)
-    eliminar_miembros: list[MiembroType] = strawchemy.delete(MiembroFilter)
+    eliminar_contactos: list[ContactoType] = strawchemy.delete(ContactoFilter)
 
     # === MILITANCIA ===
     crear_nivel_estudios: NivelEstudiosType = strawchemy.create(NivelEstudiosCreateInput)
