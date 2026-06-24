@@ -2,7 +2,7 @@ name: Deploy SIGA
 
 on:
   push:
-    branches: [master]
+    branches: [master, claude/peaceful-newton-7gzxoq]
     tags: ['v*']
   workflow_dispatch:
     inputs:
