@@ -51,7 +51,7 @@ class MiPerfilPayload:
 
 
 def _to_payload(u: Usuario) -> UserPayload:
-    return UserPayload(id=u.id, email=u.email, activo=u.activo, miembro_id=u.miembro_id)
+    return UserPayload(id=u.id, email=u.email, activo=u.activo, miembro_id=u.contacto_id)
 
 
 def _to_mi_perfil(u: Usuario) -> MiPerfilPayload:
@@ -61,9 +61,11 @@ def _to_mi_perfil(u: Usuario) -> MiPerfilPayload:
         activo=u.activo,
         ultimo_acceso=u.ultimo_acceso,
         entidad_vinculacion=u.entidad_vinculacion,
-        miembro_id=u.miembro_id,
+        miembro_id=u.contacto_id,
         tipo_vinculacion_id=u.tipo_vinculacion_id,
-        tipo_vinculacion_nombre=u.tipo_vinculacion.nombre if u.tipo_vinculacion else None,
+        # tipo_vinculacion_id está deprecado en Usuario y no tiene relación ORM
+        # (la vinculación vive en Contacto.vinculaciones). No se resuelve el nombre aquí.
+        tipo_vinculacion_nombre=None,
     )
 
 

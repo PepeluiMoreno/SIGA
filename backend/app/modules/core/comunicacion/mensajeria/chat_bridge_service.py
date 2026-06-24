@@ -108,7 +108,7 @@ class ChatBridgeService:
         """Usuarios activos cuyos miembros pertenecen (activos) al grupo."""
         r = await self.session.execute(
             select(Usuario)
-            .join(MiembroGrupo, MiembroGrupo.miembro_id == Usuario.miembro_id)
+            .join(MiembroGrupo, MiembroGrupo.miembro_id == Usuario.contacto_id)
             .where(
                 MiembroGrupo.grupo_id == grupo_id,
                 MiembroGrupo.activo == True,        # noqa: E712
@@ -133,7 +133,7 @@ class ChatBridgeService:
         )
         r = await self.session.execute(
             select(Usuario).where(
-                Usuario.miembro_id.in_(sub),
+                Usuario.contacto_id.in_(sub),
                 Usuario.activo == True,        # noqa: E712
                 Usuario.eliminado == False,    # noqa: E712
             )
@@ -295,7 +295,7 @@ class ChatBridgeService:
         """Canales del usuario: los de sus grupos de trabajo y los de las unidades
         donde ocupa un cargo vigente. Derivado de SIGA, no de ejabberd.
         """
-        if usuario.miembro_id is None:
+        if usuario.contacto_id is None:
             return []
         from app.modules.membresia.models.nombramiento_vigente import NombramientoVigente
 
@@ -303,7 +303,7 @@ class ChatBridgeService:
         sub_grupos = (
             select(MiembroGrupo.grupo_id)
             .where(
-                MiembroGrupo.miembro_id == usuario.miembro_id,
+                MiembroGrupo.miembro_id == usuario.contacto_id,
                 MiembroGrupo.activo == True,      # noqa: E712
                 MiembroGrupo.eliminado == False,  # noqa: E712
             )
@@ -311,7 +311,7 @@ class ChatBridgeService:
         # Unidades donde el miembro tiene cargo vigente.
         sub_unidades = (
             select(NombramientoVigente.agrupacion_id)
-            .where(NombramientoVigente.miembro_id == usuario.miembro_id)
+            .where(NombramientoVigente.miembro_id == usuario.contacto_id)
         )
         from sqlalchemy import or_, and_
         r = await self.session.execute(

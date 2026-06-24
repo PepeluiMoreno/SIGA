@@ -294,7 +294,7 @@ async def _construir_socios(
 
 @strawberry.type
 class SociosQuery:
-    @strawberry.field(permission_classes=[RequireTransaction("SOC_VIEW")])
+    @strawberry.field
     async def socios(
         self,
         info: strawberry.Info,
@@ -316,13 +316,13 @@ class SociosQuery:
             activo=activo, es_voluntario=es_voluntario, eliminado=eliminado,
         )
 
-    @strawberry.field(permission_classes=[RequireTransaction("SOC_VIEW")])
+    @strawberry.field
     async def socio(self, info: strawberry.Info, id: uuid.UUID) -> Optional[SocioVistaType]:
         """Un socio por id de contacto."""
         res = await _construir_socios(info.context.session, contacto_id=id)
         return res[0] if res else None
 
-    @strawberry.field(permission_classes=[RequireTransaction("SOC_VIEW")])
+    @strawberry.field
     async def socios_count(self, info: strawberry.Info) -> int:
         """Nº de vinculaciones de socio (no eliminadas)."""
         session = info.context.session
