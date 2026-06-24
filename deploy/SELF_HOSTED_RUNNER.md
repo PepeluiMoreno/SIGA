@@ -9,16 +9,23 @@ la VPN, y no expone ningún puerto entrante nuevo.
 
 **Motivo (verificado):** el deploy anterior usaba `appleboy/scp-action`/`ssh-action`
 desde un runner GitHub-hosted. Funcionó hasta el 30-may (run #147); desde el
-hardening de los servidores (24-jun, runs #148+) falla con `ssh: handshake failed:
-EOF`. Se comprobó relanzando el deploy forzando dos puertos distintos (22 y 35004):
-**ambos dan el mismo EOF**, es decir, el TCP conecta pero el servidor corta el
-handshake SSH **independientemente del puerto**. Conclusión: tras securizar los
-VPS, el SSH entrante desde IPs externas (las de GitHub) está bloqueado **a
-propósito**; no es un fallo del workflow ni se arregla cambiando puerto/clave.
+hardening de los VPS (24-jun, runs #148+) falla con `ssh: handshake failed: EOF`.
 
-Por eso el runner self-hosted es la vía correcta: corre **dentro del VPS**,
-despliega **en local** y solo abre conexiones **salientes** a GitHub, sin depender
-de SSH entrante.
+Causa real, comprobada en VPS2:
+- El SSH entrante desde Internet está **cerrado a propósito**. El acceso solo es
+  posible **dentro de la VPN WireGuard**, que a su vez viaja **envuelta en
+  WebSocket** (`wstunnel server --restrict-to localhost:51820 ws://0.0.0.0:8443`)
+  para sortear el bloqueo del proveedor.
+- nftables **desvía el puerto SSH público** (`tcp dport 35004 redirect to :8443`)
+  hacia wstunnel y **descarta** 22/6543. Por eso un cliente SSH externo (GitHub, o
+  tú sin VPN) conecta el TCP pero el handshake muere: habla SSH contra wstunnel,
+  que espera WebSocket. Se reprodujo idéntico forzando puertos 22 y 35004.
+- `wstunnel` está `--restrict-to localhost:51820` (solo WireGuard), así que **no**
+  se puede tunelizar SSH por ahí: la única entrada externa es **unirse a la VPN**.
+
+Conclusión: con SSH entrante cerrado por diseño, el runner self-hosted es la vía
+correcta. Corre **dentro del VPS**, despliega **en local** y solo abre conexiones
+**salientes** a GitHub; respeta el hardening sin abrir ni un puerto.
 
 El workflow (`.github/workflows/deploy.yml`) selecciona el runner por **labels**:
 
