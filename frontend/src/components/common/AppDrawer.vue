@@ -16,7 +16,9 @@
 
         <!-- Panel — bottom sheet en móvil, drawer lateral en sm+ -->
         <div
-          class="relative flex flex-col bg-white shadow-2xl overflow-hidden
+          ref="panel"
+          tabindex="-1"
+          class="relative flex flex-col bg-white shadow-2xl overflow-hidden focus:outline-none
                  w-full max-h-[90vh] rounded-t-2xl
                  sm:ml-auto sm:h-full sm:max-h-none sm:rounded-none sm:rounded-l-2xl"
           :class="widthClass"
@@ -52,8 +54,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 
 const props = defineProps({
   modelValue:      { type: Boolean, default: false },
@@ -67,6 +70,9 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'close'])
 
 const titleId = `drawer-title-${Math.random().toString(36).slice(2)}`
+
+const panel = ref(null)
+useFocusTrap(panel, () => props.modelValue)
 
 const WIDTH = {
   sm: 'sm:max-w-sm',
