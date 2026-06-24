@@ -11,7 +11,7 @@ from .funcionalidad import (
     AmbitoTransaccion,
 )
 from .auditoria import LogAuditoria, TipoAccion
-from .usuario import TipoVinculacion, Usuario, UsuarioRol
+from .usuario import Usuario, UsuarioRol
 from .seguridad import Sesion, HistorialSeguridad, IPBloqueada, IntentoAcceso
 from .cargo import Cargo, CargoRol
 
@@ -27,7 +27,6 @@ __all__ = [
     'AmbitoTransaccion',
     'LogAuditoria',
     'TipoAccion',
-    'TipoVinculacion',
     'Usuario',
     'UsuarioRol',
     'Sesion',

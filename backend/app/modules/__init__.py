@@ -57,16 +57,17 @@ from .configuracion.models import (
     HistorialEstado,
 )
 
-# Organizaciones: convenios, tipos
-from .organizaciones.models import (
-    TipoOrganizacion,
-    Organizacion,
-    EstadoConvenio,
-    Convenio,
-)
-
-# Membresía: miembros, voluntariado, traslados
+# Membresía: contactos (CRM), miembros, voluntariado, traslados
 from .membresia.models import (
+    # Núcleo CRM (Party-Role): contactos, vinculaciones, participaciones
+    Contacto,
+    TipoEntidadJuridica,
+    TipoVinculacion,
+    Vinculacion,
+    Socio,
+    Voluntario,
+    Participacion,
+    Membresia,
     TipoMiembro,
     EstadoMiembro,
     MotivoBaja,
@@ -99,13 +100,10 @@ from .actividades.models import (
     TipoAccion as TipoAccionActividades,
     Actividad,
     Accion,
-    Participacion,
+    AsistenciaActividad,
     Tarea,
     TipoCampania,
     Campania,
-    RolParticipante,
-    ParticipanteCampania,
-    Firmante,
     FirmaCampania,
     TipoGrupo,
     RolGrupo,
@@ -163,7 +161,7 @@ from .secretaria.models import (
     CertificadoAcuerdo,
     LibroSociosSnapshot,
     TipoConvenio,
-    ConvenioInstitucional,
+    Convenio,
     DelegacionFirma,
     PlataformaTelematica,
 )
@@ -199,8 +197,9 @@ __all__ = [
     'EstadoRemesa', 'EstadoDonacion', 'EstadoNotificacion',
     'EstadoReunion', 'EstadoActa', 'EstadoEjecucionAcuerdo',
     'HistorialEstado',
-    # Organizaciones
-    'TipoOrganizacion', 'Organizacion', 'EstadoConvenio', 'Convenio',
+    # Membresía — núcleo CRM (Party-Role)
+    'Contacto', 'TipoEntidadJuridica', 'TipoVinculacion', 'Vinculacion',
+    'Socio', 'Voluntario', 'Participacion', 'Membresia',
     # Membresía
     'TipoMiembro', 'EstadoMiembro', 'MotivoBaja', 'Miembro',
     'NivelEstudios', 'NivelHabilidad',
@@ -210,9 +209,8 @@ __all__ = [
     'CategoriaCompetencia', 'Competencia', 'NivelCompetencia', 'MiembroCompetencia',
     'TipoDocumentoVoluntario', 'DocumentoMiembro', 'TipoFormacion', 'FormacionMiembro',
     # Actividades
-    'TipoActividad', 'TipoAccionActividades', 'Actividad', 'Accion', 'Participacion', 'Tarea',
-    'TipoCampania', 'Campania', 'RolParticipante', 'ParticipanteCampania',
-    'Firmante', 'FirmaCampania',
+    'TipoActividad', 'TipoAccionActividades', 'Actividad', 'Accion', 'AsistenciaActividad', 'Tarea',
+    'TipoCampania', 'Campania', 'FirmaCampania',
     'TipoGrupo', 'RolGrupo', 'GrupoTrabajo', 'MiembroGrupo',
     'GrupoIniciativa', 'ReunionGrupo', 'AsistenteReunion',
     'RequisitoRecurso', 'AportacionHoras',
@@ -221,7 +219,7 @@ __all__ = [
     'PuntoOrdenDia', 'Acuerdo', 'VotacionAcuerdo',
     'Acta', 'CertificadoAcuerdo',
     'LibroSociosSnapshot',
-    'TipoConvenio', 'ConvenioInstitucional', 'DelegacionFirma',
+    'TipoConvenio', 'Convenio', 'DelegacionFirma',
     'PlataformaTelematica',
     # Protección de datos (RGPD)
     'EncargadoTratamiento', 'ActividadTratamiento', 'ActividadTratamientoEncargado',

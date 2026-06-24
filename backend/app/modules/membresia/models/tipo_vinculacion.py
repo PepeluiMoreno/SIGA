@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.models import BaseModel
+from app.infrastructure.base_model import BaseModel
 
 if TYPE_CHECKING:
     from .vinculacion import Vinculacion

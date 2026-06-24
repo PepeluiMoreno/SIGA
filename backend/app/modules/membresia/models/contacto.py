@@ -14,11 +14,10 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import Boolean, Date, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.models import BaseModel
+from app.infrastructure.base_model import BaseModel
 
 if TYPE_CHECKING:
     from app.modules.actividades.models.campana import FirmaCampania
-    from app.modules.proteccion_datos.models import RGPDConsentimiento, RGPDSolicitudDerechos
     from .vinculacion import Vinculacion
     from .participacion import Participacion
 
@@ -139,16 +138,15 @@ class Contacto(BaseModel):
         cascade="all, delete-orphan",
         lazy="select"
     )
-    consentimientos_rgpd: Mapped[list[RGPDConsentimiento]] = relationship(
+    firmas_campania: Mapped[list[FirmaCampania]] = relationship(
         back_populates="contacto",
-        cascade="all, delete-orphan",
+        foreign_keys="FirmaCampania.contacto_id",
         lazy="select"
     )
-    solicitudes_derechos: Mapped[list[RGPDSolicitudDerechos]] = relationship(
-        back_populates="contacto",
-        cascade="all, delete-orphan",
-        lazy="select"
-    )
+    # PENDIENTE (fuera de este bundle): reconducir RGPD a Contacto. Los modelos
+    # de proteccion_datos (Consentimiento, SolicitudDerechoRGPD) aún cuelgan de
+    # miembros.id; cuando se reconduzcan a contacto_id se añadirán aquí las
+    # relaciones inversas consentimientos_rgpd / solicitudes_derechos.
 
     def __repr__(self) -> str:
         if self.tipo == "PERSONA_FISICA":

@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import Boolean, Date, ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.models import BaseModel
+from app.infrastructure.base_model import BaseModel
 
 if TYPE_CHECKING:
     from .contacto import Contacto

@@ -152,7 +152,8 @@ class Miembro(BaseModel):
         'MotivoReduccionCuota', foreign_keys=[motivo_reduccion_id], lazy='selectin'
     )
     estado = relationship('EstadoMiembro', lazy='selectin')
-    usuario = relationship('Usuario', back_populates='miembro', foreign_keys='Usuario.miembro_id', uselist=False, lazy='selectin')
+    # NOTA: el vínculo persona↔Usuario se reconduce a Usuario.contacto_id → Contacto.
+    # La antigua relación Miembro.usuario (Usuario.miembro_id) queda eliminada.
     motivo_baja_rel = relationship('MotivoBaja', back_populates='miembros', lazy='selectin')
     agrupacion = relationship('UnidadOrganizativa', lazy='selectin')
     pais_documento = relationship('Pais', foreign_keys=[pais_documento_id], lazy='selectin')

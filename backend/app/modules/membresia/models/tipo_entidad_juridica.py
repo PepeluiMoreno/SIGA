@@ -12,7 +12,7 @@ from typing import Optional
 from sqlalchemy import Boolean, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.models import BaseModel
+from app.infrastructure.base_model import BaseModel
 
 
 class TipoEntidadJuridica(BaseModel):

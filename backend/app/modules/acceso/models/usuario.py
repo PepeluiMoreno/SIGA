@@ -13,24 +13,6 @@ if TYPE_CHECKING:
     from app.modules.membresia.models.contacto import Contacto
 
 
-class TipoVinculacion(InmutableMixin, BaseModel):
-    """Catálogo de tipos de vinculación de un usuario con la organización."""
-    __tablename__ = "tipos_vinculacion"
-
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    nombre: Mapped[str] = mapped_column(String(150), nullable=False, unique=True)
-    requiere_entidad: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
-
-    usuarios: Mapped[List["Usuario"]] = relationship(
-        back_populates="tipo_vinculacion",
-        foreign_keys="[Usuario.tipo_vinculacion_id]",
-    )
-
-    def __repr__(self) -> str:
-        return f"<TipoVinculacion('{self.nombre}')>"
-
-
 class Usuario(BaseModel):
     """Usuario del sistema con autenticación."""
     __tablename__ = "usuarios"
@@ -46,8 +28,10 @@ class Usuario(BaseModel):
         nullable=True, unique=True, index=True,
     )
 
-    # DEPRECADO: tipo_vinculacion ahora vive en Contacto.vinculaciones
-    # Se mantienen por compatibilidad temporal; dejar vacíos en nuevas cuentas.
+    # DEPRECADO: la vinculación persona↔organización vive ahora en
+    # Contacto.vinculaciones (módulo membresía). Estas columnas se conservan por
+    # compatibilidad temporal con el esquema; sin relación ORM. Dejar vacías en
+    # cuentas nuevas. Se eliminarán en una migración posterior.
     tipo_vinculacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid, ForeignKey("tipos_vinculacion.id", ondelete="SET NULL"), nullable=True, index=True,
     )
@@ -71,11 +55,6 @@ class Usuario(BaseModel):
     )
     contacto: Mapped[Optional["Contacto"]] = relationship(
         "Contacto", foreign_keys=[contacto_id], lazy="selectin"
-    )
-    tipo_vinculacion: Mapped[Optional["TipoVinculacion"]] = relationship(
-        back_populates="usuarios",
-        foreign_keys=[tipo_vinculacion_id],
-        lazy="selectin",
     )
     sesiones: Mapped[List["Sesion"]] = relationship(
         back_populates="usuario",

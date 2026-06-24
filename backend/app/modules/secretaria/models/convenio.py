@@ -23,7 +23,7 @@ class TipoConvenio(InmutableMixin, BaseModel):
     descripcion: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    convenios = relationship('ConvenioInstitucional', back_populates='tipo_convenio', lazy='selectin')
+    convenios = relationship('Convenio', back_populates='tipo_convenio', lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<TipoConvenio(nombre='{self.nombre}')>"
