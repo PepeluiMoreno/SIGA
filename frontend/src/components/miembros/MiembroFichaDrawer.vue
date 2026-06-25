@@ -5,6 +5,7 @@
     :title="titulo || 'Ficha de socio'"
     :subtitle="subtitulo"
     size="xl"
+    storage-key="ficha-socio"
   >
     <!-- Se remonta en cada apertura (v-if) y al cambiar de socio (:key) para que
          la ficha cargue los datos del id actual. -->
