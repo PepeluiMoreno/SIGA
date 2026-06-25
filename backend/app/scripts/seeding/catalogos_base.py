@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
 from app.modules.configuracion.models.estados import (
     EstadoCuota, EstadoTarea, EstadoParticipante, EstadoOrdenCobro,
-    EstadoRemesa, EstadoDonacion, EstadoNotificacion,
+    EstadoRemesa, EstadoDonacion,
 )
 from app.modules.economico.models.cobro.forma_pago import FormaPago
 from app.modules.economico.models.cuotas import MotivoReduccionCuota
@@ -140,13 +140,6 @@ _ESTADOS_PARTICIPANTE = [
     {"nombre": "Respondido", "descripcion": "Participante respondió",            "orden": 5, "es_inicial": False, "es_final": True,  "color": "success"},
     {"nombre": "Rebotado",   "descripcion": "Comunicación rebotada",             "orden": 6, "es_inicial": False, "es_final": True,  "color": "danger"},
     {"nombre": "Excluido",   "descripcion": "Participante excluido de la campaña", "orden": 7, "es_inicial": False, "es_final": True,  "color": "secondary"},
-]
-
-_ESTADOS_NOTIFICACION = [
-    {"codigo": "PENDIENTE", "nombre": "Pendiente", "descripcion": "Notificación creada pero no enviada",         "orden": 1, "es_inicial": True,  "es_final": False, "color": "#F59E0B"},
-    {"codigo": "ENVIADA",   "nombre": "Enviada",   "descripcion": "Notificación enviada al canal correspondiente","orden": 2, "es_inicial": False, "es_final": False, "color": "#0EA5E9"},
-    {"codigo": "LEIDA",     "nombre": "Leída",     "descripcion": "Notificación leída por el usuario",           "orden": 3, "es_inicial": False, "es_final": True,  "color": "#22C55E"},
-    {"codigo": "ERROR",     "nombre": "Error",     "descripcion": "Error al enviar la notificación",             "orden": 4, "es_inicial": False, "es_final": True,  "color": "#EF4444"},
 ]
 
 # EstadoPlanificacion no hereda de EstadoBase (esquema propio: codigo, nombre,
@@ -373,7 +366,7 @@ async def ensure_catalogos_base(session: AsyncSession) -> None:
         (EstadoOrdenCobro, _ESTADOS_ORDEN_COBRO),
         (EstadoTarea, _ESTADOS_TAREA),
         (EstadoParticipante, _ESTADOS_PARTICIPANTE),
-        (EstadoNotificacion, _ESTADOS_NOTIFICACION),
+        # EstadoNotificacion: owner único = seed_comunicacion.ensure_estados_notificacion
     ):
         n = await _ensure_by_field(session, model, "nombre", items)
         if n:

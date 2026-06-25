@@ -25,15 +25,12 @@ from app.modules.core.comunicacion import TipoNotificacion
 
 # ── Estados de notificación ──────────────────────────────────────────────────
 
+# Owner ÚNICO de los estados de notificación (antes duplicado en catalogos_base).
 _ESTADOS = [
-    {"codigo": "PENDIENTE", "nombre": "Pendiente", "orden": 1, "es_inicial": True,
-     "color": "#F59E0B", "descripcion": "Notificación creada pero no enviada"},
-    {"codigo": "ENVIADA",   "nombre": "Enviada",   "orden": 2,
-     "color": "#0EA5E9", "descripcion": "Notificación enviada al canal correspondiente"},
-    {"codigo": "LEIDA",     "nombre": "Leída",     "orden": 3,
-     "color": "#22C55E", "descripcion": "Notificación leída por el usuario"},
-    {"codigo": "ERROR",     "nombre": "Error",     "orden": 4, "es_final": True,
-     "color": "#EF4444", "descripcion": "Error al enviar la notificación"},
+    {"codigo": "PENDIENTE", "nombre": "Pendiente", "orden": 1, "es_inicial": True,  "es_final": False, "color": "#F59E0B", "descripcion": "Notificación creada pero no enviada"},
+    {"codigo": "ENVIADA",   "nombre": "Enviada",   "orden": 2, "es_inicial": False, "es_final": False, "color": "#0EA5E9", "descripcion": "Notificación enviada al canal correspondiente"},
+    {"codigo": "LEIDA",     "nombre": "Leída",     "orden": 3, "es_inicial": False, "es_final": True,  "color": "#22C55E", "descripcion": "Notificación leída por el usuario"},
+    {"codigo": "ERROR",     "nombre": "Error",     "orden": 4, "es_inicial": False, "es_final": True,  "color": "#EF4444", "descripcion": "Error al enviar la notificación"},
 ]
 
 
@@ -139,7 +136,7 @@ async def ensure_estados_notificacion(session: AsyncSession) -> None:
             session.add(EstadoNotificacion(id=uuid.uuid4(), activo=True, **data))
             added += 1
         else:
-            for campo in ("nombre", "descripcion", "orden", "color"):
+            for campo in ("nombre", "descripcion", "orden", "color", "es_inicial", "es_final"):
                 if campo in data and getattr(existing, campo) != data[campo]:
                     setattr(existing, campo, data[campo])
                     updated += 1
