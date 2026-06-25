@@ -35,7 +35,11 @@ install -d -m 700 secrets
 materialize_secret() {  # $1 = ENV_VAR  $2 = nombre_secret
   local var="$1" name="$2" val="${!1:-}"
   printf '%s' "$val" > "secrets/${name}.txt"
-  chmod 600 "secrets/${name}.txt"
+  # 644 (no 600): el contenedor corre como usuario no-root con un uid distinto
+  # al de quien escribe el fichero (deployer); con 600 no podría leer el secret
+  # montado en /run/secrets. El directorio secrets/ es 700 (solo deployer/root
+  # en el host), así que el fichero a 644 sigue protegido fuera del contenedor.
+  chmod 644 "secrets/${name}.txt"
   unset "$var"
 }
 materialize_secret POSTGRES_PASSWORD       db_password
