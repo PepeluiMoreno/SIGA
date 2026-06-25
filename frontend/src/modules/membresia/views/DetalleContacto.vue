@@ -1,7 +1,7 @@
 <template>
-  <AppLayout :title="titulo" subtitle="Ficha 360° del contacto">
-    <div class="p-4 sm:p-6 max-w-5xl mx-auto">
-      <div class="mb-4">
+  <AppLayout :title="titulo" subtitle="Ficha del contacto">
+    <div class="p-4 sm:p-6 max-w-6xl mx-auto">
+      <div class="mb-3">
         <router-link to="/contactos" class="text-sm text-purple-600 hover:text-purple-800">← Volver al directorio</router-link>
       </div>
 
@@ -10,83 +10,126 @@
       <div v-else-if="!contacto" class="text-center py-12 text-slate-400 text-sm">Contacto no encontrado.</div>
 
       <template v-else>
-        <!-- Cabecera con foto tamaño carnet -->
-        <div class="flex items-start gap-4 mb-6">
-          <AvatarImg
-            :src="contacto.fotoUrl"
-            :nombre="contacto.nombre"
-            :apellido="contacto.apellido1"
-            size="2xl"
-            shape="carnet"
-          />
-          <div class="flex items-center gap-3 pt-1">
+        <!-- Cabecera: título + tarjeta de contacto (arriba a la derecha, estilo flowww) -->
+        <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+          <div>
+            <h1 class="text-xl font-semibold text-slate-800">{{ titulo }}</h1>
             <span
-              class="inline-block px-2 py-0.5 rounded text-xs font-medium"
+              class="inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium"
               :class="esPJ ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800'"
             >{{ esPJ ? 'Persona jurídica' : 'Persona física' }}</span>
-            <h1 class="text-lg font-semibold text-slate-800">{{ titulo }}</h1>
-            <span v-if="!contacto.activo" class="text-xs text-red-600">(inactivo)</span>
+            <span v-if="!contacto.activo" class="ml-2 text-xs text-red-600">(inactivo)</span>
+          </div>
+          <div class="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm">
+            <AvatarImg :src="contacto.fotoUrl" :nombre="contacto.nombre" :apellido="contacto.apellido1" size="lg" shape="round" />
+            <div class="text-sm leading-tight">
+              <div class="font-medium text-slate-800">{{ titulo }}</div>
+              <div class="text-slate-500">{{ contacto.telefono || contacto.email || '—' }}</div>
+              <div v-if="numeroSocio" class="text-slate-400 text-xs">Nº {{ numeroSocio }}</div>
+            </div>
           </div>
         </div>
 
-        <!-- Identidad -->
-        <section class="border border-slate-200 rounded-lg mb-5">
-          <h2 class="px-4 py-2 border-b border-slate-100 text-sm font-semibold text-slate-700 bg-slate-50">Identidad</h2>
-          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 p-4 text-sm">
-            <template v-if="esPJ">
-              <Campo label="Razón social" :valor="contacto.razonSocial" />
-              <Campo label="CIF" :valor="contacto.cif" />
-              <Campo label="Actividad principal" :valor="contacto.actividadPrincipal" />
-            </template>
-            <template v-else>
-              <Campo label="Nombre" :valor="[contacto.nombre, contacto.apellido1, contacto.apellido2].filter(Boolean).join(' ')" />
-              <Campo label="Documento" :valor="docFmt" />
-              <Campo label="Sexo" :valor="contacto.sexo" />
-              <Campo label="Fecha de nacimiento" :valor="contacto.fechaNacimiento" />
-              <Campo label="Profesión" :valor="contacto.profesion" />
-            </template>
-            <Campo label="Email" :valor="contacto.email" />
-            <Campo label="Teléfono" :valor="contacto.telefono" />
-            <Campo label="Dirección" :valor="[contacto.direccion, contacto.codigoPostal, contacto.localidad].filter(Boolean).join(', ')" />
-          </dl>
-        </section>
+        <!-- Pestañas -->
+        <TabsNavigation :tabs="tabs" :active-tab="tab" @tab-change="tab = $event" />
 
-        <!-- Facetas vigentes -->
-        <section class="mb-5">
-          <h2 class="text-sm font-semibold text-slate-700 mb-2">Facetas vigentes</h2>
-          <div v-if="!facetasVigentes.length" class="text-sm text-slate-400">Este contacto no tiene facetas vigentes.</div>
-          <div v-else class="space-y-3">
-            <div v-for="v in facetasVigentes" :key="v.id" class="border border-slate-200 rounded-lg p-4">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="inline-block px-2 py-0.5 rounded text-xs font-medium" :class="colorFaceta(v.tipoVinculacion && v.tipoVinculacion.codigo)">
-                  {{ v.tipoVinculacion ? v.tipoVinculacion.nombre : '—' }}
-                </span>
-                <span class="text-xs text-slate-400">desde {{ v.fechaInicio || '—' }}</span>
-              </div>
-              <!-- Satélite socio -->
-              <dl v-if="v.socio" class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-1 text-sm">
-                <Campo label="Nº socio" :valor="v.socio.numeroSocio" />
-                <Campo label="Situación" :valor="v.socio.estadoSocio" />
-                <Campo label="Cuota" :valor="v.socio.cuotaMensual != null ? v.socio.cuotaMensual + ' €' : null" />
-                <Campo label="IBAN" :valor="v.socio.iban || (mostrarIbanOculto ? '— (sin permiso)' : null)" />
-                <Campo label="Honor" :valor="v.socio.esHonor ? 'Sí' : null" />
-              </dl>
-              <!-- Satélite voluntario -->
-              <dl v-else-if="v.voluntario" class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-1 text-sm">
-                <Campo label="Disponibilidad" :valor="v.voluntario.disponibilidad" />
-                <Campo label="Horas/semana" :valor="v.voluntario.horasDisponiblesSemana" />
-                <Campo label="Intereses" :valor="v.voluntario.intereses" />
-                <Campo label="Conduce" :valor="v.voluntario.puedeConducir ? 'Sí' : null" />
-                <Campo label="Vehículo propio" :valor="v.voluntario.vehiculoPropio ? 'Sí' : null" />
-              </dl>
-              <p v-else class="text-xs text-slate-400">Sin datos adicionales.</p>
-            </div>
+        <div class="bg-white border border-slate-200 border-t-0 rounded-b-lg p-5">
+          <!-- TAB: Datos -->
+          <div v-show="tab === 'datos'" class="flex flex-col sm:flex-row gap-6">
+            <AvatarImg :src="contacto.fotoUrl" :nombre="contacto.nombre" :apellido="contacto.apellido1" size="2xl" shape="carnet" />
+            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm flex-1">
+              <template v-if="esPJ">
+                <Campo label="Razón social" :valor="contacto.razonSocial" />
+                <Campo label="CIF" :valor="contacto.cif" />
+                <Campo label="Actividad principal" :valor="contacto.actividadPrincipal" />
+              </template>
+              <template v-else>
+                <Campo label="Nombre" :valor="[contacto.nombre, contacto.apellido1, contacto.apellido2].filter(Boolean).join(' ')" />
+                <Campo label="Documento" :valor="docFmt" />
+                <Campo label="Sexo" :valor="contacto.sexo" />
+                <Campo label="Fecha de nacimiento" :valor="contacto.fechaNacimiento" />
+                <Campo label="Profesión" :valor="contacto.profesion" />
+              </template>
+              <Campo label="Email" :valor="contacto.email" />
+              <Campo label="Teléfono" :valor="contacto.telefono" />
+              <Campo label="Dirección" :valor="[contacto.direccion, contacto.codigoPostal, contacto.localidad].filter(Boolean).join(', ')" />
+            </dl>
           </div>
-        </section>
 
-        <!-- Historial: mismo componente reutilizable que en Mis datos y Junta -->
-        <HistorialVinculaciones v-if="facetasCerradas.length" :vinculaciones="facetasCerradas" titulo="Historial" />
+          <!-- TAB: Vinculaciones (datagrid) -->
+          <div v-show="tab === 'vinculaciones'">
+            <h2 class="text-sm font-semibold text-slate-700 mb-3">Vinculación con {{ nombreOrg }}</h2>
+            <div v-if="!vinculaciones.length" class="text-sm text-slate-400">Sin vinculaciones registradas.</div>
+            <table v-else class="min-w-full divide-y divide-slate-200 text-sm">
+              <thead class="bg-slate-50">
+                <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  <th class="px-4 py-2.5">Vinculación</th>
+                  <th class="px-4 py-2.5">Desde</th>
+                  <th class="px-4 py-2.5">Hasta</th>
+                  <th class="px-4 py-2.5 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr
+                  v-for="v in vinculaciones"
+                  :key="v.id"
+                  class="hover:bg-purple-50 cursor-pointer"
+                  :class="vinculacionSel && vinculacionSel.id === v.id ? 'bg-purple-50' : ''"
+                  @click="vinculacionSel = v"
+                >
+                  <td class="px-4 py-2.5">
+                    <span class="inline-block px-2 py-0.5 rounded text-xs font-medium" :class="colorFaceta(v.tipoVinculacion && v.tipoVinculacion.codigo)">
+                      {{ v.tipoVinculacion ? v.tipoVinculacion.nombre : '—' }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-2.5 text-slate-600">{{ v.fechaInicio || '—' }}</td>
+                  <td class="px-4 py-2.5 text-slate-600">{{ v.fechaFin || 'vigente' }}</td>
+                  <td class="px-4 py-2.5 text-right">
+                    <button class="text-purple-600 hover:text-purple-800 text-xs font-medium" @click.stop="vinculacionSel = v">Ver</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- TAB: Historial -->
+          <div v-show="tab === 'historial'">
+            <HistorialVinculaciones :vinculaciones="vinculaciones" titulo="Trayectoria completa" />
+          </div>
+        </div>
       </template>
+    </div>
+
+    <!-- Drawer: detalle de una vinculación -->
+    <div v-if="vinculacionSel" class="fixed inset-0 z-40">
+      <div class="absolute inset-0 bg-black/30" @click="vinculacionSel = null"></div>
+      <aside class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl p-5 overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-base font-semibold text-slate-800">Detalle de vinculación</h3>
+          <button class="text-slate-400 hover:text-slate-600 text-xl leading-none" @click="vinculacionSel = null">×</button>
+        </div>
+        <div class="flex items-center gap-2 mb-4">
+          <span class="inline-block px-2 py-0.5 rounded text-xs font-medium" :class="colorFaceta(vinculacionSel.tipoVinculacion && vinculacionSel.tipoVinculacion.codigo)">
+            {{ vinculacionSel.tipoVinculacion ? vinculacionSel.tipoVinculacion.nombre : '—' }}
+          </span>
+          <span class="text-xs text-slate-500">{{ vinculacionSel.fechaInicio || '?' }} → {{ vinculacionSel.fechaFin || 'vigente' }} ({{ vinculacionSel.estado }})</span>
+        </div>
+        <dl v-if="vinculacionSel.socio" class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+          <Campo label="Nº socio" :valor="vinculacionSel.socio.numeroSocio" />
+          <Campo label="Situación" :valor="vinculacionSel.socio.estadoSocio" />
+          <Campo label="Cuota" :valor="vinculacionSel.socio.cuotaMensual != null ? vinculacionSel.socio.cuotaMensual + ' €' : null" />
+          <Campo label="IBAN" :valor="vinculacionSel.socio.iban" />
+          <Campo label="Honor" :valor="vinculacionSel.socio.esHonor ? 'Sí' : null" />
+        </dl>
+        <dl v-else-if="vinculacionSel.voluntario" class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+          <Campo label="Disponibilidad" :valor="vinculacionSel.voluntario.disponibilidad" />
+          <Campo label="Horas/semana" :valor="vinculacionSel.voluntario.horasDisponiblesSemana" />
+          <Campo label="Intereses" :valor="vinculacionSel.voluntario.intereses" />
+          <Campo label="Conduce" :valor="vinculacionSel.voluntario.puedeConducir ? 'Sí' : null" />
+          <Campo label="Vehículo propio" :valor="vinculacionSel.voluntario.vehiculoPropio ? 'Sí' : null" />
+        </dl>
+        <p v-else class="text-sm text-slate-400">Esta vinculación no tiene datos adicionales.</p>
+      </aside>
     </div>
   </AppLayout>
 </template>
@@ -96,11 +139,12 @@ import { ref, computed, onMounted, h } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
+import TabsNavigation from '@/components/common/TabsNavigation.vue'
 import HistorialVinculaciones from '@/components/miembros/HistorialVinculaciones.vue'
+import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_CONTACTO, VINCULACIONES_DE_CONTACTO } from '@/graphql/queries/contactos.js'
 
-// Componente de presentación inline para "etiqueta: valor".
 const Campo = (props) => h('div', {}, [
   h('dt', { class: 'text-xs text-slate-400' }, props.label),
   h('dd', { class: 'text-slate-800' }, props.valor != null && props.valor !== '' ? String(props.valor) : '—'),
@@ -108,10 +152,19 @@ const Campo = (props) => h('div', {}, [
 Campo.props = ['label', 'valor']
 
 const route = useRoute()
+const orgConfig = useOrgConfigStore()
 const contacto = ref(null)
 const vinculaciones = ref([])
 const cargando = ref(true)
 const error = ref('')
+const tab = ref('datos')
+const vinculacionSel = ref(null)
+
+const tabs = [
+  { id: 'datos', name: 'Datos', icon: '👤' },
+  { id: 'vinculaciones', name: 'Vinculaciones', icon: '🔗' },
+  { id: 'historial', name: 'Historial', icon: '🕘' },
+]
 
 const _COLORES = {
   SOCIO: 'bg-emerald-100 text-emerald-800',
@@ -124,6 +177,7 @@ const _COLORES = {
 }
 function colorFaceta(codigo) { return _COLORES[codigo] || 'bg-slate-100 text-slate-700' }
 
+const nombreOrg = computed(() => orgConfig.nombre || 'la asociación')
 const esPJ = computed(() => contacto.value?.tipo === 'PERSONA_JURIDICA')
 const titulo = computed(() => {
   const c = contacto.value
@@ -132,13 +186,12 @@ const titulo = computed(() => {
 })
 const docFmt = computed(() => {
   const c = contacto.value
-  if (!c) return null
-  return [c.tipoDocumento, c.numeroDocumento].filter(Boolean).join(' ') || null
+  return c ? ([c.tipoDocumento, c.numeroDocumento].filter(Boolean).join(' ') || null) : null
 })
-const facetasVigentes = computed(() => vinculaciones.value.filter((v) => !v.fechaFin))
-const facetasCerradas = computed(() => vinculaciones.value.filter((v) => v.fechaFin))
-// Si hay faceta de socio sin IBAN, mostramos el aviso de "sin permiso" en vez de un hueco mudo.
-const mostrarIbanOculto = computed(() => facetasVigentes.value.some((v) => v.socio && !v.socio.iban))
+const numeroSocio = computed(() => {
+  const v = vinculaciones.value.find((x) => x.socio && x.socio.numeroSocio)
+  return v ? v.socio.numeroSocio : null
+})
 
 async function cargar() {
   cargando.value = true
