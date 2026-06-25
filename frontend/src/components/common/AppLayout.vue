@@ -113,12 +113,6 @@
                       <MapPinIcon class="nav-icon" /><span>Organización Territorial</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('NOM_CREATE')">
-                    <router-link to="/juntas" class="nav-item"
-                      :class="$route.path.startsWith('/juntas') ? 'active' : 'inactive'">
-                      <BuildingOffice2Icon class="nav-icon" /><span>{{ orgConfigStore.OrganoGobiernoPl }}</span>
-                    </router-link>
-                  </li>
                   <li v-if="tienePermiso('VOL_LIST')">
                     <router-link to="/voluntarios" class="nav-item"
                       :class="$route.path.startsWith('/voluntarios') ? 'active' : 'inactive'">
@@ -580,7 +574,7 @@ function sectionForPath(path) {
     return 'configuracion'
   if (path.startsWith('/contactos') || path.startsWith('/miembros') ||
       path.startsWith('/agrupaciones') ||
-      path.startsWith('/juntas') || path.startsWith('/voluntarios'))
+      path.startsWith('/voluntarios'))
     return 'membresia'
   if (path.startsWith('/campanias') || path.startsWith('/acciones') ||
       path.startsWith('/grupos'))

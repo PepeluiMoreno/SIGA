@@ -246,6 +246,7 @@ const tiposMiembro = ref([])
 const estadosMiembro = ref([])
 const motivosBaja = ref([])
 const nombramientosActivos = ref([])
+const cargosCatalogo = ref([])   // todos los cargos orgánicos (roles ORGANIZACION), aunque estén vacantes
 
 // Mapa miembroId → nombramientos activos (para badges)
 const nombramientosMap = computed(() => {
@@ -271,7 +272,7 @@ const filters = ref({
   motivoBaja: '',  // '' = cualquier causa, UUID = motivo específico (solo aplica a Baja)
   tipos: [],
   agrupacion: '',
-  cargo: '',       // '' = todos, 'SIN_CARGO' = sin cargo, o codigo de rol
+  cargo: [],       // [] = todos; 'SIN_CARGO' = sin cargo; o códigos de rol (multiselección)
   soloVoluntarios: false,
   soloConAcceso: false,
   incluirBajas: false,  // por defecto los dados de baja no se listan
@@ -329,14 +330,10 @@ const motivosBajaOrdenados = computed(() =>
   [...motivosBaja.value].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
 )
 
-// Cargos únicos presentes en los nombramientos activos (para el filtro)
-const cargosDisponibles = computed(() => {
-  const seen = new Set()
-  return nombramientosActivos.value
-    .map(n => n.rol)
-    .filter(r => r && !seen.has(r.codigo) && seen.add(r.codigo))
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-})
+// Todos los cargos orgánicos del catálogo (para el filtro), aunque estén vacantes
+const cargosDisponibles = computed(() =>
+  [...cargosCatalogo.value].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+)
 
 // Computed: campos del FilterBar (el filtro geográfico va en AgrupacionCascada aparte)
 const filterFields = computed(() => [
@@ -362,12 +359,13 @@ const filterFields = computed(() => [
   {
     key: 'cargo',
     label: 'Cargo',
-    type: 'select',
+    type: 'multiselect',
+    defaultValue: [],
     options: [
       { value: 'SIN_CARGO', label: 'Sin cargo' },
       ...cargosDisponibles.value.map(r => ({ value: r.codigo, label: r.nombre })),
     ],
-    allLabel: 'Todos los cargos',
+    allLabel: 'Cualquier cargo',
     width: 'w-56',
   },
   {
@@ -611,6 +609,9 @@ const loadCatalogos = async () => {
 
     const nombramientosData = await query(GET_NOMBRAMIENTOS_ACTIVOS)
     nombramientosActivos.value = nombramientosData?.historialNombramientos || []
+
+    const rolesData = await query(`query { roles(filter: { tipo: { eq: "ORGANIZACION" }, eliminado: { eq: false } }) { id codigo nombre } }`)
+    cargosCatalogo.value = rolesData?.roles || []
   } catch (err) {
     console.error('Error al cargar catálogos:', err)
   }
@@ -725,15 +726,14 @@ const applyClientFilters = () => {
     filtered = filtered.filter(m => m.tieneAcceso === true)
   }
 
-  // Filtro por cargo
-  if (filters.value.cargo) {
-    if (filters.value.cargo === 'SIN_CARGO') {
-      filtered = filtered.filter(m => !nombramientosMap.value[m.id]?.length)
-    } else {
-      filtered = filtered.filter(m =>
-        nombramientosMap.value[m.id]?.some(n => n.rol?.codigo === filters.value.cargo)
+  // Filtro por cargo (multiselección; SIN_CARGO = sin nombramientos activos)
+  if (filters.value.cargo?.length) {
+    filtered = filtered.filter(m => {
+      const cargos = nombramientosMap.value[m.id] || []
+      return filters.value.cargo.some(c =>
+        c === 'SIN_CARGO' ? cargos.length === 0 : cargos.some(n => n.rol?.codigo === c)
       )
-    }
+    })
   }
 
   filtered.sort((a, b) => {
@@ -755,7 +755,7 @@ const limpiarFiltros = () => {
     motivoBaja: '',
     tipos: [],
     agrupacion: '',
-    cargo: '',
+    cargo: [],
     soloVoluntarios: false,
     soloConAcceso: false,
     incluirBajas: false,

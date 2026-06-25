@@ -183,12 +183,6 @@ const routes = [
     meta: { requiresAuth: true, requiredPermission: 'NOM_CREATE' }
   },
   {
-    path: '/juntas',
-    component: () => import('@/modules/membresia/views/JuntasDirectivas.vue'),
-    name: 'JuntasDirectivas',
-    meta: { requiresAuth: true, requiredPermission: 'NOM_CREATE' }
-  },
-  {
     path: '/voluntarios',
     component: ListaVoluntarios,
     name: 'Voluntarios',
