@@ -3,28 +3,31 @@
     <!-- Header -->
     <header class="shadow-sm border-b sticky top-0 z-20"
       style="background-color: var(--t-topbar); border-color: var(--t-border)">
-      <div class="px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center gap-3 h-16">
-          <!-- Hamburger + logo + título de la vista -->
-          <div class="flex items-center gap-3 min-w-0">
-            <button @click="sidebarOpen = !sidebarOpen"
-              class="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
-              <XMarkIcon v-if="sidebarOpen" class="w-6 h-6" />
-              <Bars3Icon v-else class="w-6 h-6" />
-            </button>
-            <img v-if="orgConfigStore.logo" :src="orgConfigStore.logo" alt="Logo organización"
-              class="h-9 w-auto max-w-[160px] object-contain shrink-0" />
-            <!-- Título de la vista: subido aquí desde PageHeader para ganar espacio vertical -->
-            <div v-if="title" class="flex items-center gap-2 min-w-0 border-l border-slate-200 pl-3 ml-1">
-              <span v-if="icon" class="text-lg leading-none shrink-0 select-none">{{ icon }}</span>
+      <div class="flex items-stretch h-16">
+        <!-- Zona del logo: ancho del sidebar; su borde derecho prolonga hacia arriba el del sidebar -->
+        <div class="flex items-center gap-3 shrink-0 px-4 lg:px-6 lg:w-64 lg:border-r" style="border-color: var(--t-border)">
+          <button @click="sidebarOpen = !sidebarOpen"
+            class="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+            <XMarkIcon v-if="sidebarOpen" class="w-6 h-6" />
+            <Bars3Icon v-else class="w-6 h-6" />
+          </button>
+          <img v-if="orgConfigStore.logo" :src="orgConfigStore.logo" alt="Logo organización"
+            class="h-9 w-auto max-w-[160px] object-contain" />
+        </div>
+
+        <!-- Zona de contenido: título de la vista (izq) + acciones (der), alineado con el contenido -->
+        <div class="flex-1 min-w-0 flex items-center gap-3 px-4 sm:px-6 lg:px-8">
+          <div class="flex-1 min-w-0">
+            <div v-if="title" class="flex items-center gap-3 min-w-0">
+              <span v-if="icon" class="text-2xl leading-none shrink-0 select-none">{{ icon }}</span>
               <div class="min-w-0">
-                <h1 class="text-sm font-semibold text-slate-800 leading-tight truncate">{{ title }}</h1>
-                <p v-if="subtitle" class="text-[11px] text-slate-400 leading-tight truncate">{{ subtitle }}</p>
+                <h1 class="text-xl font-bold text-slate-800 leading-tight truncate">{{ title }}</h1>
+                <p v-if="subtitle" class="text-sm text-slate-400 leading-tight truncate">{{ subtitle }}</p>
               </div>
             </div>
           </div>
 
-          <!-- Header right: acciones de la vista (Nuevo…) + Volver + chrome global -->
+          <!-- Acciones de la vista (Nuevo…) + Volver + chrome global -->
           <div class="flex items-center gap-2 shrink-0">
             <slot name="actions" />
             <button v-if="canGoBack" type="button" @click="goBack"
