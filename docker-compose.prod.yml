@@ -63,6 +63,11 @@ services:
   db:
     environment:
       # El secreto db_password sustituye a POSTGRES_PASSWORD plana.
+      # Neutralizamos la var plana heredada del base: si llegan POSTGRES_PASSWORD
+      # y POSTGRES_PASSWORD_FILE a la vez, el entrypoint de postgres aborta
+      # ("both POSTGRES_PASSWORD and POSTGRES_PASSWORD_FILE are set"). Con cadena
+      # vacía, file_env la trata como no definida y usa solo el _FILE.
+      POSTGRES_PASSWORD: ""
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     secrets:
       - db_password
