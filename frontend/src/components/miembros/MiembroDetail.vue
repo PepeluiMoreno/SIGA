@@ -111,7 +111,8 @@
                     :src="miembro.fotoUrl"
                     :nombre="miembro.nombre"
                     :apellido="miembro.apellido1"
-                    size="xl"
+                    size="2xl"
+                    shape="carnet"
                   />
                   <div v-if="puedeEditarFoto" class="flex flex-col gap-1">
                     <label class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg cursor-pointer hover:bg-indigo-100 transition-colors">

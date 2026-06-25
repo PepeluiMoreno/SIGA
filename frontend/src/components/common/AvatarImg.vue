@@ -1,7 +1,8 @@
 <template>
   <div
-    class="rounded-full overflow-hidden bg-indigo-100 flex items-center justify-center shrink-0 select-none"
-    :style="{ width: sizeMap[size] + 'px', height: sizeMap[size] + 'px' }"
+    class="overflow-hidden bg-indigo-100 flex items-center justify-center shrink-0 select-none"
+    :class="shape === 'carnet' ? 'rounded-md border border-slate-300 shadow-sm' : 'rounded-full'"
+    :style="{ width: ancho + 'px', height: alto + 'px' }"
   >
     <img
       v-if="src"
@@ -28,10 +29,17 @@ const props = defineProps({
   nombre: { type: String, default: '' },
   apellido: { type: String, default: '' },
   alt: { type: String, default: 'Avatar' },
-  size: { type: String, default: 'md', validator: (v) => ['xs', 'sm', 'md', 'lg', 'xl'].includes(v) },
+  size: { type: String, default: 'md', validator: (v) => ['xs', 'sm', 'md', 'lg', 'xl', '2xl'].includes(v) },
+  // 'round' = avatar circular (listas, sidebar). 'carnet' = foto rectangular tipo
+  // carnet (fichas). Misma fuente de URL/iniciales, distinta forma y proporción.
+  shape: { type: String, default: 'round', validator: (v) => ['round', 'carnet'].includes(v) },
 })
 
-const sizeMap = { xs: 24, sm: 32, md: 40, lg: 56, xl: 80 }
+const sizeMap = { xs: 24, sm: 32, md: 40, lg: 56, xl: 80, '2xl': 112 }
+
+// Carnet ~ proporción 35:45 (alto ≈ ancho · 1.3); redondo = cuadrado.
+const ancho = computed(() => sizeMap[props.size])
+const alto = computed(() => props.shape === 'carnet' ? Math.round(sizeMap[props.size] * 1.3) : sizeMap[props.size])
 
 const imgError = ref(false)
 

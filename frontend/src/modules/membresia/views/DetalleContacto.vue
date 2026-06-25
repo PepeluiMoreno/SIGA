@@ -12,16 +12,13 @@
       <template v-else>
         <!-- Cabecera con foto tamaño carnet -->
         <div class="flex items-start gap-4 mb-6">
-          <img
-            v-if="contacto.fotoUrl"
+          <AvatarImg
             :src="contacto.fotoUrl"
-            alt="Foto del contacto"
-            class="w-24 h-32 object-cover rounded-md border border-slate-300 shadow-sm flex-shrink-0"
+            :nombre="contacto.nombre"
+            :apellido="contacto.apellido1"
+            size="2xl"
+            shape="carnet"
           />
-          <div
-            v-else
-            class="w-24 h-32 rounded-md border border-dashed border-slate-300 flex items-center justify-center text-xs text-slate-400 flex-shrink-0"
-          >sin foto</div>
           <div class="flex items-center gap-3 pt-1">
             <span
               class="inline-block px-2 py-0.5 rounded text-xs font-medium"
@@ -98,6 +95,7 @@
 import { ref, computed, onMounted, h } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
+import AvatarImg from '@/components/common/AvatarImg.vue'
 import HistorialVinculaciones from '@/components/miembros/HistorialVinculaciones.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_CONTACTO, VINCULACIONES_DE_CONTACTO } from '@/graphql/queries/contactos.js'
