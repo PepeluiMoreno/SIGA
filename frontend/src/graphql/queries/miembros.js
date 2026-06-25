@@ -259,10 +259,13 @@ export const GET_MIEMBROS_COUNT = `
   }
 `
 
-// Query para obtener formas de pago
+// Query para obtener formas de pago.
+// Nota: FormaPagoFilter no expone campos (strawchemy lo genera vacío), así que
+// no se puede filtrar por `activo` en el servidor; se traen todas y, si hace
+// falta, se filtra por `activo` en el cliente.
 export const GET_FORMAS_PAGO = `
   query FormasPago {
-    formasPago(filter: {activo: {eq: true}}) {
+    formasPago {
       id
       codigo
       nombre
