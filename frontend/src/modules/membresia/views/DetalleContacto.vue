@@ -52,7 +52,7 @@
           <!-- TAB: Vinculaciones (datagrid) -->
           <div v-show="tab === 'vinculaciones'">
             <h2 class="text-sm font-semibold text-slate-700 mb-3">Vinculación con {{ nombreOrg }}</h2>
-            <div v-if="!vinculaciones.length" class="text-sm text-slate-400">Sin vinculaciones registradas.</div>
+            <div v-if="!vinculaciones.length" class="text-sm text-slate-400">Sin vinculación registrada.</div>
             <table v-else class="min-w-full divide-y divide-slate-200 text-sm">
               <thead class="bg-slate-50">
                 <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
@@ -156,7 +156,7 @@ const vinculacionSel = ref(null)
 
 const tabs = [
   { id: 'datos', name: 'Datos', icon: '👤' },
-  { id: 'vinculaciones', name: 'Vinculaciones', icon: '🔗' },
+  { id: 'vinculaciones', name: 'Vinculación', icon: '🔗' },
   { id: 'historial', name: 'Historial', icon: '🕘' },
 ]
 

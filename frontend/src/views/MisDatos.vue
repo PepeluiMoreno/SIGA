@@ -18,7 +18,7 @@
         <!-- Trayectoria del socio (componente reutilizable, también en ficha admin y Junta) -->
         <HistorialVinculaciones
           :contacto-id="perfil.miembroId"
-          titulo="Mi historial de vinculaciones"
+          titulo="Mi historial de vinculación"
           class="card px-5 py-4 mt-4"
         />
       </template>

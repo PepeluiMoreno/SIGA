@@ -19,7 +19,7 @@
         <option value="PERSONA_JURIDICA">Personas jurídicas</option>
       </select>
       <select v-model="filtroFaceta" class="px-3 py-2 border border-slate-300 rounded-md text-sm bg-white">
-        <option value="TODOS">Todas las vinculaciones</option>
+        <option value="TODOS">Cualquier vinculación</option>
         <option v-for="f in facetasDisponibles" :key="f.codigo" :value="f.codigo">{{ f.nombre }}</option>
       </select>
     </div>
@@ -40,7 +40,7 @@
             <th class="px-4 py-3">Nombre / Razón social</th>
             <th class="px-4 py-3">Documento</th>
             <th class="px-4 py-3">Contacto</th>
-            <th class="px-4 py-3">Vinculaciones vigentes</th>
+            <th class="px-4 py-3">Vinculación vigente</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
@@ -69,7 +69,7 @@
                   class="inline-block px-2 py-0.5 rounded text-xs font-medium"
                   :class="colorFaceta(v.tipoVinculacion && v.tipoVinculacion.codigo)"
                 >{{ v.tipoVinculacion ? v.tipoVinculacion.nombre : '—' }}</span>
-                <span v-if="!facetasVigentes(c).length" class="text-xs text-slate-400">sin vinculaciones</span>
+                <span v-if="!facetasVigentes(c).length" class="text-xs text-slate-400">sin vinculación</span>
               </div>
             </td>
           </tr>

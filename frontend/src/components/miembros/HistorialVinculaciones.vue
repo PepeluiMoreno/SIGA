@@ -2,7 +2,7 @@
   <section>
     <h2 v-if="titulo" class="text-sm font-semibold text-slate-700 mb-2">{{ titulo }}</h2>
     <div v-if="cargando" class="text-sm text-slate-400">Cargando historial…</div>
-    <div v-else-if="!items.length" class="text-sm text-slate-400">Sin vinculaciones registradas.</div>
+    <div v-else-if="!items.length" class="text-sm text-slate-400">Sin vinculación registrada.</div>
     <ul v-else class="border border-slate-200 rounded-lg divide-y divide-slate-100 text-sm">
       <li v-for="v in items" :key="v.id" class="px-4 py-2 flex items-center justify-between">
         <span class="font-medium text-slate-800">{{ v.tipoVinculacion ? v.tipoVinculacion.nombre : '—' }}</span>
