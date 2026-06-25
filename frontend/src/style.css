@@ -161,7 +161,7 @@ body { font-family: var(--font-main); color: var(--t-text-main); }
     select,
     textarea
   ) {
-    border: 1px solid var(--t-border, #e5e7eb);
+    border: 1px solid #cbd5e1; /* slate-300: recuadro claramente visible en todos los formularios */
     border-radius: 0.5rem;
     background-color: var(--t-card-bg, #fff);
     padding: 0.5rem 0.75rem;
