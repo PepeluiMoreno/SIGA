@@ -51,7 +51,11 @@
                 :class="c.tipo === 'PERSONA_JURIDICA' ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800'"
               >{{ c.tipo === 'PERSONA_JURIDICA' ? 'PJ' : 'PF' }}</span>
             </td>
-            <td class="px-4 py-3 font-medium text-slate-800">{{ nombreMostrado(c) }}</td>
+            <td class="px-4 py-3 font-medium">
+              <router-link :to="`/contactos/${c.id}`" class="text-purple-700 hover:text-purple-900 hover:underline">
+                {{ nombreMostrado(c) }}
+              </router-link>
+            </td>
             <td class="px-4 py-3 text-slate-600">{{ c.numeroDocumento || c.cif || '—' }}</td>
             <td class="px-4 py-3 text-slate-600">
               <div>{{ c.email || '—' }}</div>

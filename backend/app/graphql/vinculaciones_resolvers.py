@@ -198,15 +198,40 @@ class VinculacionesQuery:
     ) -> List[VinculacionType]:
         """Todas las facetas (vinculaciones) de un contacto, vigentes o cerradas."""
         session = info.context.session
-        rows = (await session.execute(
+        rows = list((await session.execute(
             select(Vinculacion)
             .where(
                 Vinculacion.contacto_id == contacto_id,
                 Vinculacion.eliminado == False,  # noqa: E712
             )
             .order_by(Vinculacion.fecha_inicio)
-        )).scalars().all()
-        return list(rows)
+        )).scalars().all())
+        await _ocultar_iban_facetas(info, session, rows)
+        return rows
+
+
+async def _ocultar_iban_facetas(info, session, vincs):
+    """Oculta los datos bancarios del satélite Socio salvo al tesorero del ámbito
+    del contacto (o superior). Mismo criterio que el read-model `socios`.
+
+    Para no marcar el ORM como sucio (es una query, no debe persistir), se
+    desacopla el satélite de la sesión antes de anular los campos.
+    """
+    from app.modules.acceso.services.ambito_territorial import agrupaciones_en_ambito
+    user = getattr(info.context, "user", None)
+    puede = bool(user) and await info.context.check_permission("SOC_VIEW_IBAN")
+    ambito = await agrupaciones_en_ambito(session, user.id) if puede else set()
+    for v in vincs:
+        socio = getattr(v, "socio", None)
+        if socio is None:
+            continue
+        agr = v.contacto.agrupacion_id if v.contacto else None
+        visible = puede and (ambito is None or agr in ambito)
+        if not visible:
+            session.expunge(socio)
+            socio.iban = None
+            socio.swift_bic = None
+            socio.referencia_pago = None
 
 
 # ---------------------------------------------------------------------------

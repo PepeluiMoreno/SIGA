@@ -159,6 +159,12 @@ const routes = [
     meta: { requiresAuth: true, requiredPermission: 'SOC_LIST' }
   },
   {
+    path: '/contactos/:id',
+    component: () => import('@/modules/membresia/views/DetalleContacto.vue'),
+    name: 'DetalleContacto',
+    meta: { requiresAuth: true, requiredPermission: 'SOC_LIST' }
+  },
+  {
     path: '/agrupaciones',
     component: DetalleAgrupacionesTerritoriales,
     name: 'Agrupaciones',
