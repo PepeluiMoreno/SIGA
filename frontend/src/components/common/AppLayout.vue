@@ -4,21 +4,35 @@
     <header class="shadow-sm border-b sticky top-0 z-20"
       style="background-color: var(--t-topbar); border-color: var(--t-border)">
       <div class="px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <!-- Hamburger + logo -->
-          <div class="flex items-center gap-3">
+        <div class="flex justify-between items-center gap-3 h-16">
+          <!-- Hamburger + logo + título de la vista -->
+          <div class="flex items-center gap-3 min-w-0">
             <button @click="sidebarOpen = !sidebarOpen"
               class="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
               <XMarkIcon v-if="sidebarOpen" class="w-6 h-6" />
               <Bars3Icon v-else class="w-6 h-6" />
             </button>
             <img v-if="orgConfigStore.logo" :src="orgConfigStore.logo" alt="Logo organización"
-              class="h-9 w-auto max-w-[160px] object-contain" />
+              class="h-9 w-auto max-w-[160px] object-contain shrink-0" />
+            <!-- Título de la vista: subido aquí desde PageHeader para ganar espacio vertical -->
+            <div v-if="title" class="flex items-center gap-2 min-w-0 border-l border-slate-200 pl-3 ml-1">
+              <span v-if="icon" class="text-lg leading-none shrink-0 select-none">{{ icon }}</span>
+              <div class="min-w-0">
+                <h1 class="text-sm font-semibold text-slate-800 leading-tight truncate">{{ title }}</h1>
+                <p v-if="subtitle" class="text-[11px] text-slate-400 leading-tight truncate">{{ subtitle }}</p>
+              </div>
+            </div>
           </div>
 
-          <!-- Header right -->
-          <div class="flex items-center space-x-4">
-            <span class="text-sm text-gray-500 hidden md:block">v1.0</span>
+          <!-- Header right: acciones de la vista (Nuevo…) + Volver + chrome global -->
+          <div class="flex items-center gap-2 shrink-0">
+            <slot name="actions" />
+            <button v-if="canGoBack" type="button" @click="goBack"
+              class="inline-flex items-center gap-1.5 h-8 px-3 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+              <ChevronLeftIcon class="w-3.5 h-3.5" />
+              Volver
+            </button>
+            <span class="h-5 w-px bg-slate-200 mx-1 hidden sm:block" />
             <NotificacionesBell />
           </div>
         </div>
@@ -471,19 +485,7 @@
       <!-- Main content -->
       <main class="flex-1 min-w-0 overflow-hidden lg:h-[calc(100vh-64px)]" style="background-color: var(--t-page-bg)">
         <div class="h-full flex flex-col w-full mx-auto px-4 sm:px-6 lg:px-6 xl:px-8 max-w-screen-xl">
-          <div class="pt-7 flex-shrink-0">
-            <PageHeader v-if="title" :title="title" :subtitle="subtitle" :icon="icon">
-              <template #actions>
-                <slot name="actions" />
-                <button v-if="canGoBack" type="button" @click="goBack"
-                  class="inline-flex items-center gap-1.5 h-8 px-3 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-                  <ChevronLeftIcon class="w-3.5 h-3.5" />
-                  Volver
-                </button>
-              </template>
-            </PageHeader>
-          </div>
-          <div ref="mainRef" class="flex-1 min-h-0 overflow-y-auto" :class="$slots.footer ? 'pb-2' : 'pb-4'" @scroll="onMainScroll">
+          <div ref="mainRef" class="flex-1 min-h-0 overflow-y-auto pt-5" :class="$slots.footer ? 'pb-2' : 'pb-4'" @scroll="onMainScroll">
             <slot />
           </div>
           <div v-if="$slots.footer" class="flex-shrink-0 border-t border-slate-200 bg-white py-3 flex items-center gap-3">
@@ -503,7 +505,6 @@ import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { useSessionGuard, stopSessionGuard } from '@/composables/useSessionGuard.js'
 import BackendStatus from '@/components/common/BackendStatus.vue'
-import PageHeader from '@/components/common/PageHeader.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
 import NotificacionesBell from '@/components/common/NotificacionesBell.vue'
 import {
@@ -512,7 +513,7 @@ import {
   GlobeAltIcon, BookOpenIcon, CalendarDaysIcon, SwatchIcon,
   BuildingOffice2Icon, BuildingLibraryIcon, CalculatorIcon, CreditCardIcon,
   ArrowsRightLeftIcon, ChartBarIcon, GiftIcon, UserCircleIcon,
-  Bars3Icon, XMarkIcon, ChevronDownIcon, TrashIcon,
+  Bars3Icon, XMarkIcon, ChevronDownIcon, ChevronLeftIcon, TrashIcon,
   ClipboardDocumentCheckIcon, DocumentTextIcon, DocumentCheckIcon,
   ChatBubbleLeftRightIcon,
   ShieldCheckIcon, ShieldExclamationIcon, CheckCircleIcon, EyeIcon,
