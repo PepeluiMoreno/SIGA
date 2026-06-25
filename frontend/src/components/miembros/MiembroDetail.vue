@@ -88,22 +88,19 @@
         </button>
       </div>
 
-      <AccordionGroup class="space-y-3">
+      <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <TabsNavigation :tabs="tabsDisponibles" :active-tab="tabActiva" @tab-change="tabActiva = $event" />
+        <div class="p-5">
 
         <!-- ── 1. DATOS PERSONALES ── -->
-        <AccordionPanel :defaultOpen="true">
-          <template #title>
-            <span class="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>
-            <h2 class="text-sm font-semibold text-slate-800">Datos personales</h2>
-          </template>
-          <div class="p-5">
-            <AccordionGroup class="space-y-3">
+        <div v-show="tabActiva === 'datos'">
+          <div class="space-y-3">
 
-            <AccordionPanel :defaultOpen="true">
-              <template #title>
+            <section class="rounded-xl border border-violet-100 bg-violet-50/50">
+              <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
                 <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Identificación</h3>
-              </template>
+              </header>
               <div class="p-5 space-y-4">
 
                 <div class="flex items-center gap-4 mb-2">
@@ -148,13 +145,13 @@
                   </div>
                 </div>
               </div>
-            </AccordionPanel>
+            </section>
 
-            <AccordionPanel :defaultOpen="true">
-              <template #title>
+            <section class="rounded-xl border border-violet-100 bg-violet-50/50">
+              <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
                 <span class="w-2 h-2 rounded-full bg-sky-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Contacto</h3>
-              </template>
+              </header>
               <div class="p-5 space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <FieldText v-model="miembro.email" label="Email" type="email" :edit-mode="editMode || isCreateMode" />
@@ -179,23 +176,23 @@
                   </div>
                 </div>
               </div>
-            </AccordionPanel>
+            </section>
 
-            <AccordionPanel :defaultOpen="false">
-              <template #title>
+            <section class="rounded-xl border border-violet-100 bg-violet-50/50">
+              <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
                 <span class="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Observaciones</h3>
-              </template>
+              </header>
               <div class="p-5">
                 <FieldTextarea v-model="miembro.observaciones" label="Observaciones" :edit-mode="editMode || isCreateMode" rows="4" />
               </div>
-            </AccordionPanel>
+            </section>
 
-            <AccordionPanel :defaultOpen="false">
-              <template #title>
+            <section class="rounded-xl border border-violet-100 bg-violet-50/50">
+              <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
                 <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">RGPD y privacidad</h3>
-              </template>
+              </header>
               <div class="p-5 space-y-4">
 
                 <!-- Solicitud de supresión: la ejerce el propio socio (derecho RGPD).
@@ -236,32 +233,26 @@
                   </template>
                 </div>
               </div>
-            </AccordionPanel>
+            </section>
 
-            </AccordionGroup>
           </div>
-        </AccordionPanel>
+        </div>
 
         <!-- ── 2. DATOS ECONÓMICOS ── (cuotas si el tipo paga; justificantes siempre) -->
-        <AccordionPanel v-if="modoPropio || tienePermiso('CUOT_LIST') || tienePermiso('JUST_LIST')" :defaultOpen="false">
-          <template #title>
-            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-            <h2 class="text-sm font-semibold text-slate-800">Datos económicos</h2>
-          </template>
-          <div class="p-5">
-            <AccordionGroup class="space-y-3">
+        <div v-show="tabActiva === 'economicos'">
+          <div class="space-y-3">
 
-            <!-- Sub-acordeón: Procedimiento de pago -->
-            <AccordionPanel v-if="requiereCuota" :defaultOpen="true">
-              <template #title>
+            <!-- Procedimiento de pago -->
+            <section v-if="requiereCuota" class="rounded-xl border border-violet-100 bg-violet-50/50">
+              <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
                 <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Procedimiento de pago de cuotas</h3>
-              </template>
+              </header>
               <div class="p-5">
 
             <div class="flex gap-5 items-start">
               <!-- Selector de forma de pago -->
-              <section class="space-y-3 rounded-xl border border-gray-200 p-5 flex-shrink-0 w-80">
+              <section class="space-y-3 rounded-xl border border-violet-100 bg-violet-50/50 p-5 flex-shrink-0 w-80">
                 <div v-if="editMode || isCreateMode" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
                   <button
                     v-for="fp in catalogos.formasPago"
@@ -412,24 +403,26 @@
             </div>
 
               </div>
-            </AccordionPanel>
+            </section>
 
-            <!-- Sub-acordeón: Cuota aplicada -->
-            <AccordionPanel v-if="requiereCuota" :defaultOpen="false">
-              <template #title>
-                <span class="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>
-                <h3 class="text-sm font-semibold text-slate-800">Cuota aplicada</h3>
-              </template>
-              <template #actions>
-                <button v-if="puedeModificarCuota" type="button" @click="abrirModalIncremento"
-                  class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors">
-                  Incremento voluntario
-                </button>
-                <button v-if="puedeSolicitarReduccion" type="button" @click="abrirModalReduccion"
-                  class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors">
-                  Solicitar reducción
-                </button>
-              </template>
+            <!-- Cuota aplicada -->
+            <section v-if="requiereCuota" class="rounded-xl border border-violet-100 bg-violet-50/50">
+              <header class="flex items-center justify-between gap-2 px-5 py-3 border-b border-violet-100">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>
+                  <h3 class="text-sm font-semibold text-slate-800">Cuota aplicada</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button v-if="puedeModificarCuota" type="button" @click="abrirModalIncremento"
+                    class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors">
+                    Incremento voluntario
+                  </button>
+                  <button v-if="puedeSolicitarReduccion" type="button" @click="abrirModalReduccion"
+                    class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors">
+                    Solicitar reducción
+                  </button>
+                </div>
+              </header>
               <div class="p-5 space-y-3">
 
               <div class="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-4">
@@ -488,14 +481,14 @@
               </div>
 
               </div>
-            </AccordionPanel>
+            </section>
 
-            <!-- Sub-acordeón: Historial de cuotas -->
-            <AccordionPanel v-if="!isCreateMode && requiereCuota" :defaultOpen="false">
-              <template #title>
+            <!-- Historial de cuotas -->
+            <section v-if="!isCreateMode && requiereCuota" class="rounded-xl border border-violet-100 bg-white">
+              <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
                 <span class="w-2 h-2 rounded-full bg-sky-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Historial de cuotas</h3>
-              </template>
+              </header>
               <div v-if="loadingCuotas" class="px-5 py-6 text-center text-gray-400 text-sm">Cargando…</div>
               <div v-else-if="!cuotas.length" class="px-5 py-6 text-center text-gray-400 text-sm italic">Sin cuotas registradas</div>
               <div v-else class="overflow-x-auto -mx-1"><table class="min-w-full divide-y divide-gray-100 text-sm">
@@ -527,33 +520,28 @@
                   </tr>
                 </tbody>
               </table></div>
-            </AccordionPanel>
+            </section>
 
-            <!-- Sub-acordeón: Justificantes de gasto -->
-            <AccordionPanel v-if="!isCreateMode" :defaultOpen="false">
-              <template #title>
+            <!-- Justificantes de gasto -->
+            <section v-if="!isCreateMode" class="rounded-xl border border-violet-100 bg-violet-50/50">
+              <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
                 <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Justificantes de gasto</h3>
-              </template>
+              </header>
               <div class="p-5">
                 <JustificantesGastoPanel modo="PROPIO" :miembro-id="miembro.id" />
               </div>
-            </AccordionPanel>
+            </section>
 
-            </AccordionGroup>
           </div>
-        </AccordionPanel>
+        </div>
 
         <!-- ── 3. MEMBRESÍA Y PARTICIPACIÓN ── -->
-        <AccordionPanel :defaultOpen="false">
-          <template #title>
-            <span class="w-2 h-2 rounded-full bg-violet-500 shrink-0"></span>
-            <h2 class="text-sm font-semibold text-slate-800">Membresía y participación</h2>
-          </template>
-          <div class="p-5 space-y-5">
+        <div v-show="tabActiva === 'membresia'">
+          <div class="p-1 space-y-5">
 
             <!-- Situación de membresía -->
-            <section class="space-y-4 rounded-xl border border-gray-200 p-5">
+            <section class="space-y-4 rounded-xl border border-violet-100 bg-violet-50/50 p-5">
               <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Situación</h3>
               <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 lg:grid-cols-4 gap-4">
                 <FieldSelect v-model="miembro.tipoMiembroId" :label="`Tipo de ${orgConfig.miembro} *`" :edit-mode="editAdmin"
@@ -598,7 +586,7 @@
             </section>
 
             <!-- Disposición a participar -->
-            <section class="rounded-xl border border-gray-200 p-5">
+            <section class="rounded-xl border border-violet-100 bg-violet-50/50 p-5">
               <FieldCheckbox v-model="miembro.esVoluntario"
                 label="Dispuesto/a a participar en actividades de la asociación"
                 :edit-mode="editForm" />
@@ -611,7 +599,7 @@
               <div class="grid grid-cols-1 lg:grid-cols-1 sm:grid-cols-2 gap-5">
 
                 <!-- Perfil voluntario -->
-                <section class="space-y-4 rounded-xl border border-gray-200 p-5">
+                <section class="space-y-4 rounded-xl border border-violet-100 bg-violet-50/50 p-5">
                   <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Perfil voluntario</h3>
                   <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-4">
                     <FieldText v-model="miembro.profesion" label="Profesión" :edit-mode="editForm" />
@@ -630,7 +618,7 @@
                 </section>
 
                 <!-- Habilidades -->
-                <section class="space-y-3 rounded-xl border border-gray-200 p-5">
+                <section class="space-y-3 rounded-xl border border-violet-100 bg-violet-50/50 p-5">
                   <div class="flex items-center justify-between">
                     <h3 class="text-xs font-semibold uppercase tracking-widest text-indigo-600">Habilidades</h3>
                     <button @click="mostrarFormHabilidad = !mostrarFormHabilidad"
@@ -696,7 +684,7 @@
               </div>
 
               <!-- Disponibilidad -->
-              <section class="space-y-4 rounded-xl border border-gray-200 p-5">
+              <section class="space-y-4 rounded-xl border border-violet-100 bg-violet-50/50 p-5">
                 <h3 class="text-xs font-semibold uppercase tracking-widest text-sky-600">Disponibilidad</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-4">
                   <FieldText v-model="miembro.disponibilidad" label="Disponibilidad" :edit-mode="editForm" />
@@ -797,15 +785,11 @@
               </section>
             </template>
           </div>
-        </AccordionPanel>
+        </div>
 
         <!-- ── 6. CARGOS ── -->
-        <AccordionPanel v-if="!isCreateMode" :defaultOpen="false">
-          <template #title>
-            <span class="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
-            <h2 class="text-sm font-semibold text-slate-800">Cargos y nombramientos</h2>
-          </template>
-          <div class="p-5">
+        <div v-show="tabActiva === 'cargos'" v-if="!isCreateMode">
+          <div class="p-1">
             <div v-if="loadingNombramientos" class="text-center py-6 text-gray-400 text-sm">Cargando…</div>
             <div v-else-if="!nombramientos.length"
               class="rounded-xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400">
@@ -839,15 +823,11 @@
               </table></div>
             </div>
           </div>
-        </AccordionPanel>
+        </div>
 
         <!-- ── 7. ACCESO Y ROLES ── -->
-        <AccordionPanel v-if="!isCreateMode" :defaultOpen="false">
-          <template #title>
-            <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
-            <h2 class="text-sm font-semibold text-slate-800">Acceso y roles</h2>
-          </template>
-          <div class="p-5 space-y-5">
+        <div v-show="tabActiva === 'acceso'" v-if="!isCreateMode">
+          <div class="p-1 space-y-5">
 
             <!-- Sin cuenta de usuario -->
             <div v-if="!miembro.usuario">
@@ -898,7 +878,7 @@
 
             <template v-else>
               <!-- Datos de la cuenta -->
-              <section class="rounded-xl border border-gray-200 p-5 space-y-3">
+              <section class="rounded-xl border border-violet-100 bg-violet-50/50 p-5 space-y-3">
                 <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Cuenta de acceso</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                   <div>
@@ -965,7 +945,7 @@
               </section>
 
               <!-- Roles -->
-              <section class="rounded-xl border border-gray-200 p-5 space-y-3">
+              <section class="rounded-xl border border-violet-100 bg-violet-50/50 p-5 space-y-3">
                 <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Roles asignados</h3>
 
                 <div v-if="!rolesAsignados.length" class="text-sm text-gray-400 italic py-2">
@@ -1025,9 +1005,10 @@
             </template>
 
           </div>
-        </AccordionPanel>
+        </div>
 
-      </AccordionGroup>
+        </div>
+      </div>
     </div>
 
     <!-- Modal: solicitar reducción de cuota -->
@@ -1177,8 +1158,7 @@ import { useToast } from '@/composables/useToast'
 import { computed, defineComponent, h, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
-import AccordionGroup from '@/components/common/AccordionGroup.vue'
-import AccordionPanel from '@/components/common/AccordionPanel.vue'
+import TabsNavigation from '@/components/common/TabsNavigation.vue'
 import AppDrawer from '@/components/common/AppDrawer.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
 import JustificantesGastoPanel from '@/components/common/JustificantesGastoPanel.vue'
@@ -1258,6 +1238,26 @@ const layoutBindings = computed(() => props.modoPropio ? {} : {
 //             RGPD, baja). NUNCA editables por el propio socio en /mis-datos.
 const editForm  = computed(() => editMode.value || isCreateMode.value)
 const editAdmin = computed(() => (editMode.value && !props.modoPropio) || isCreateMode.value)
+
+// ── Pestañas de la ficha (sustituyen a los acordeones) ─────────────────────────
+const tabActiva = ref('datos')
+const tabsDisponibles = computed(() => {
+  const t = [{ id: 'datos', name: 'Datos personales', icon: '👤' }]
+  if (props.modoPropio || tienePermiso('CUOT_LIST') || tienePermiso('JUST_LIST')) {
+    t.push({ id: 'economicos', name: 'Datos económicos', icon: '💶' })
+  }
+  t.push({ id: 'membresia', name: 'Membresía y participación', icon: '🤝' })
+  if (!isCreateMode.value) {
+    t.push({ id: 'cargos', name: 'Cargos', icon: '📋' })
+    t.push({ id: 'acceso', name: 'Acceso y roles', icon: '🔐' })
+  }
+  return t
+})
+// Si la pestaña activa deja de estar disponible (p.ej. al entrar en modo alta),
+// volver a la primera.
+watch(tabsDisponibles, (tabs) => {
+  if (!tabs.some(t => t.id === tabActiva.value)) tabActiva.value = tabs[0].id
+})
 
 // ── Forma de pago ─────────────────────────────────────────────────────────────
 
