@@ -98,9 +98,14 @@
       <template v-else>
         <!-- Barra de resultados -->
         <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-          <span class="text-sm text-gray-600">
-            <strong>{{ total }}</strong> {{ tituloDescriptivo }}
-          </span>
+          <div class="flex items-center gap-3">
+            <input type="checkbox" :checked="selTodo" @change="selToggleTodos"
+              class="w-4 h-4 text-indigo-600 border-slate-300 rounded cursor-pointer"
+              title="Seleccionar todos los del filtro" />
+            <span class="text-sm text-gray-600">
+              <strong>{{ total }}</strong> {{ tituloDescriptivo }}
+            </span>
+          </div>
           <div class="flex items-center gap-4">
             <button v-if="tienePermiso('SOC_EXPORT') && miembros.length"
               @click="exportarExcel" :disabled="exportando"
@@ -112,6 +117,10 @@
           </div>
         </div>
 
+        <BulkActionsBar :count="selCount" :total="miembros.length" :todo-seleccionado="selTodo"
+          :acciones="accionesMasivas" class="mx-4 mt-3"
+          @seleccionar-todos="selAll" @limpiar="selLimpiar" @ejecutar="ejecutarAccionMasiva" />
+
         <div class="overflow-x-auto -mx-1"><table class="min-w-full divide-y divide-gray-200">
           <tbody class="bg-white divide-y divide-gray-100">
             <template v-for="fila in filasJerarquicas" :key="fila.type === 'agrupacion' ? 'ag-' + fila.agrupacion.id : 'mb-' + fila.miembro.id">
@@ -122,7 +131,7 @@
                 class="cursor-pointer select-none bg-purple-50 hover:bg-purple-100 border-t border-purple-100"
                 @click="toggleAgrupacion(fila.agrupacion.id)"
               >
-                <td colspan="4" class="py-2 pr-4" :style="{ paddingLeft: (fila.depth * 20 + 16) + 'px' }">
+                <td colspan="5" class="py-2 pr-4" :style="{ paddingLeft: (fila.depth * 20 + 16) + 'px' }">
                   <div class="flex items-center gap-2">
                     <ChevronRightIcon class="w-3.5 h-3.5 text-purple-400 shrink-0 transition-transform" />
                     <span class="text-sm font-semibold text-purple-800">{{ fila.agrupacion.nombre }}</span>
@@ -133,7 +142,13 @@
 
               <!-- Fila de miembro -->
               <tr v-else class="hover:bg-purple-50 cursor-pointer"
+                :class="estaSeleccionado(fila.miembro.id) ? 'bg-indigo-50/60' : ''"
                 @click="abrirFicha(fila.miembro, false)">
+                <td class="pl-4 pr-1 w-9 align-middle" @click.stop>
+                  <input type="checkbox" :checked="estaSeleccionado(fila.miembro.id)"
+                    @change="selToggle(fila.miembro.id)"
+                    class="w-4 h-4 text-indigo-600 border-slate-300 rounded cursor-pointer" />
+                </td>
                 <td class="py-3 pr-4" :style="{ paddingLeft: (fila.depth * 20 + 16) + 'px' }">
                   <div class="flex items-center gap-3">
                     <AvatarImg
@@ -225,6 +240,8 @@ import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_MIEMBROS, GET_AGRUPACIONES, GET_TIPOS_MIEMBRO, GET_ESTADOS_MIEMBRO, GET_MOTIVOS_BAJA, GET_NOMBRAMIENTOS_ACTIVOS } from '@/graphql/queries/miembros.js'
 import AmbitoTerritorialSelect from '@/components/common/AmbitoTerritorialSelect.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
+import BulkActionsBar from '@/components/common/BulkActionsBar.vue'
+import { useSeleccionMultiple } from '@/composables/useSeleccionMultiple.js'
 const toast = useToast()
 const router = useRouter()
 
@@ -242,6 +259,40 @@ const { tienePermiso } = usePermisos()
 const miembros = ref([])
 const allMiembros = ref([])
 const agrupaciones = ref([])
+
+// ── Selección múltiple + acciones masivas (estilo WordPress) ────────────────
+const {
+  count: selCount, todoSeleccionado: selTodo,
+  estaSeleccionado, toggle: selToggle, seleccionarTodos: selAll,
+  limpiar: selLimpiar, toggleTodos: selToggleTodos, itemsSeleccionados,
+} = useSeleccionMultiple(() => miembros.value)
+
+const accionesMasivas = [
+  { key: 'exportar', label: 'Exportar selección a Excel', permiso: 'SOC_EXPORT' },
+  { key: 'comunicacion', label: 'Enviar comunicación interna' },
+]
+function ejecutarAccionMasiva(key) {
+  const items = itemsSeleccionados()
+  if (!items.length) return
+  if (key === 'exportar') return exportarSeleccionCsv(items)
+  if (key === 'comunicacion') {
+    toast.success(`Selección de ${items.length} socios lista. El envío de comunicación interna llegará con el módulo de comunicación.`)
+  }
+}
+function exportarSeleccionCsv(items) {
+  const cab = ['Apellidos', 'Nombre', 'Email', 'Teléfono', 'Tipo', 'Situación']
+  const filas = items.map(m => [
+    [m.apellido1, m.apellido2].filter(Boolean).join(' '), m.nombre || '',
+    m.email || '', m.telefono || '', m.tipoMiembro?.nombre || '', m.estado?.nombre || '',
+  ])
+  const csv = [cab, ...filas]
+    .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\n')
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = `socios_seleccion_${items.length}.csv`; a.click()
+  URL.revokeObjectURL(url)
+}
 const tiposMiembro = ref([])
 const estadosMiembro = ref([])
 const motivosBaja = ref([])
