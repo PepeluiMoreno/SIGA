@@ -43,6 +43,15 @@ _ESTADO_COLOR = {
     "baja": "#DC3545",
 }
 
+# Namespace fijo para derivar un id ESTABLE de la situación (estado_socio). El
+# badge ya no cuelga de un catálogo EstadoMiembro, pero el frontend necesita un id
+# consistente para poder filtrar por situación.
+_ESTADO_NS = uuid.UUID("5161ac0f-e5da-5e5a-9e5a-510ca10c0001")
+
+
+def _estado_badge_id(estado_socio: str) -> uuid.UUID:
+    return uuid.uuid5(_ESTADO_NS, estado_socio)
+
 
 @strawberry.type
 class EstadoSocioBadge:
@@ -281,6 +290,7 @@ async def _construir_socios(
             nivel_estudios_rel=niveles.get(c.nivel_estudios_id),
             usuario=usr,
             estado=EstadoSocioBadge(
+                id=_estado_badge_id(estado_socio),
                 nombre=estado_socio.capitalize(),
                 color=_ESTADO_COLOR.get(estado_socio, "#6B7280"),
             ),

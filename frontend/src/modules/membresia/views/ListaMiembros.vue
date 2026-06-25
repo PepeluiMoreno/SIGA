@@ -593,6 +593,19 @@ const loadMiembros = async () => {
   try {
     const data = await query(GET_MIEMBROS)
     allMiembros.value = data?.miembros || []
+    // La situación ya no cuelga del catálogo EstadoMiembro: es `estado_socio`
+    // (Activo/Suspendido/Baja). Las opciones del filtro salen de los estados
+    // realmente presentes en los datos (cada uno con su id estable del backend).
+    const situaciones = new Map()
+    for (const m of allMiembros.value) {
+      const e = m.estado
+      if (e && e.id && !situaciones.has(e.id)) {
+        situaciones.set(e.id, { id: e.id, nombre: e.nombre, color: e.color })
+      }
+    }
+    if (situaciones.size) {
+      estadosMiembro.value = [...situaciones.values()]
+    }
     colapsadas.value = new Set([...agrupaciones.value.map(a => a.id), '__sin__'])
     applyClientFilters()
   } catch (err) {
