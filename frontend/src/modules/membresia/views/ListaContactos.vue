@@ -85,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import ContactoFichaDrawer from '@/components/miembros/ContactoFichaDrawer.vue'
 import { graphqlClient } from '@/graphql/client.js'
@@ -127,16 +127,28 @@ function facetasVigentes(c) {
   return (c.vinculaciones || []).filter((v) => !v.fechaFin)
 }
 
-// Catálogo de facetas presentes (para el desplegable de filtro).
+// Catálogo de facetas presentes, RELACIONADO con el tipo de persona elegido:
+// solo se ofrecen las facetas que de hecho tienen contactos de ese tipo, de modo
+// que no aparezcan combinaciones sin sentido (p.ej. una faceta solo de PF cuando
+// se filtra por personas jurídicas).
 const facetasDisponibles = computed(() => {
   const mapa = new Map()
   for (const c of contactos.value) {
+    if (filtroTipo.value !== 'TODOS' && c.tipo !== filtroTipo.value) continue
     for (const v of facetasVigentes(c)) {
       const tv = v.tipoVinculacion
       if (tv && !mapa.has(tv.codigo)) mapa.set(tv.codigo, { codigo: tv.codigo, nombre: tv.nombre })
     }
   }
   return [...mapa.values()].sort((a, b) => a.nombre.localeCompare(b.nombre))
+})
+
+// Si al cambiar el tipo de persona la faceta elegida deja de tener sentido,
+// se reinicia a "Todas".
+watch(filtroTipo, () => {
+  if (filtroFaceta.value !== 'TODOS' && !facetasDisponibles.value.some((f) => f.codigo === filtroFaceta.value)) {
+    filtroFaceta.value = 'TODOS'
+  }
 })
 
 const contactosFiltrados = computed(() => {
