@@ -56,15 +56,15 @@
             <span class="w-1.5 h-5 rounded-full bg-amber-500"></span>
             Representante legal
           </h2>
-          <div v-if="contacto.representanteLegal" class="flex items-center gap-4 group">
-            <AvatarImg :src="contacto.representanteLegal.fotoUrl" :nombre="contacto.representanteLegal.nombre" :apellido="contacto.representanteLegal.apellido1" size="lg" shape="round" />
+          <div v-if="representante" class="flex items-center gap-4 group">
+            <AvatarImg :src="representante.fotoUrl" :nombre="representante.nombre" :apellido="representante.apellido1" size="lg" shape="round" />
             <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm flex-1">
-              <Campo label="Nombre" :valor="[contacto.representanteLegal.nombre, contacto.representanteLegal.apellido1, contacto.representanteLegal.apellido2].filter(Boolean).join(' ')" />
-              <Campo label="Documento" :valor="[contacto.representanteLegal.tipoDocumento, contacto.representanteLegal.numeroDocumento].filter(Boolean).join(' ')" />
-              <Campo label="Email" :valor="contacto.representanteLegal.email" />
-              <Campo label="Teléfono" :valor="contacto.representanteLegal.telefono" />
+              <Campo label="Nombre" :valor="[representante.nombre, representante.apellido1, representante.apellido2].filter(Boolean).join(' ')" />
+              <Campo label="Documento" :valor="[representante.tipoDocumento, representante.numeroDocumento].filter(Boolean).join(' ')" />
+              <Campo label="Email" :valor="representante.email" />
+              <Campo label="Teléfono" :valor="representante.telefono" />
             </dl>
-            <button type="button" @click="verContacto(contacto.representanteLegal.id)"
+            <button type="button" @click="verContacto(representante.id)"
               class="shrink-0 p-1.5 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors opacity-0 group-hover:opacity-100"
               title="Ver ficha del representante">
               <EyeIcon class="w-5 h-5" />
@@ -96,6 +96,7 @@ const route = useRoute()
 const router = useRouter()
 function verContacto(id) { router.push(`/contactos/${id}`) }
 const contacto = ref(null)
+const representante = ref(null)
 const vinculaciones = ref([])
 const cargando = ref(true)
 const error = ref('')
@@ -122,9 +123,16 @@ async function cargar() {
     const id = route.params.id
     const data = await graphqlClient.request(GET_CONTACTO, { id })
     contacto.value = (data.contactos || [])[0] || null
+    representante.value = null
     if (contacto.value) {
       const vd = await graphqlClient.request(VINCULACIONES_DE_CONTACTO, { contactoId: id })
       vinculaciones.value = vd.vinculacionesDeContacto || []
+      // El representante legal (de una PJ) es otro contacto: se carga aparte por su id
+      // (ContactoType no expone la relación, solo representanteLegalId).
+      if (contacto.value.representanteLegalId) {
+        const rd = await graphqlClient.request(GET_CONTACTO, { id: contacto.value.representanteLegalId })
+        representante.value = (rd.contactos || [])[0] || null
+      }
     }
   } catch (e) {
     error.value = e?.response?.errors?.[0]?.message || 'No se pudo cargar la ficha.'
