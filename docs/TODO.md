@@ -41,3 +41,25 @@ arquitectura + procedimiento) las decisiones tomadas:
   `cerrarVinculacion`.
 - **Rotulación UI / propiedad por faceta**: ver `TipoVinculacion.area_responsable`
   (cada faceta declara su área RBAC responsable).
+
+## Documentos: anonimización y actas (gobernanza)
+- **Proceso de anonimización de documentos**; las **actas** son uno de los casos.
+- Cada documento tiene **dos representaciones**: `anonimizada` (vista general) e
+  `integra` (acceso restringido). Se apoya en el servicio `rgpd-anonimizer` y el
+  patrón de anonimización existente.
+- **RBAC en dos niveles**: `ACTA_VER` (anonimizada, socios) vs `ACTA_VER_INTEGRA`
+  (íntegra, **solo cargos electos** = `HistorialNombramiento` vigente). El estado
+  manda: **borradores ocultos** siempre.
+- Actas de **Asamblea** (aprobadas) visibles a socios; actas de **Junta** más
+  restringidas (deliberación + datos personales). Fundamento: derecho de
+  información del socio (art. 21 LO 1/2002) acotado por minimización (art. 5.1.c RGPD).
+
+## Rotulación de menús (CRM / gobernanza)
+- Rotular por **entidad/función**, no por rol (la propiedad la fija el RBAC).
+- **Relaciones Institucionales** = solo lo externo: directorio de instituciones
+  (Contactos PJ) + convenios (`Participacion(Convenio)`) + su seguimiento y
+  documentación. Puede ir bajo Presidencia (representación). NO mezclar con
+  órganos de gobierno (asamblea/junta/acuerdos = interno, entrada propia).
+- **Libro de socios** = vista/exportación **bajo Membresía** (y enlazada también
+  desde Secretaría); **ver** amplio, **generar/certificar** solo Secretaría. Un
+  único route, dos puertas.
