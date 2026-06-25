@@ -68,7 +68,12 @@ def upgrade() -> None:
             (gen_random_uuid(), 'Voluntario', 'VOLUNTARIO', 'territorial', 'MEMBRESIA_VOLUNTARIO_GESTIONAR', TRUE, TRUE),
             (gen_random_uuid(), 'Donante', 'DONANTE', 'central', 'TESORERIA_DONANTES', FALSE, TRUE),
             (gen_random_uuid(), 'Empleado', 'EMPLEADO', 'central', 'RECURSOS_HUMANOS', TRUE, TRUE)
-        ON CONFLICT (codigo) DO NOTHING
+        -- Sin columna: tipos_vinculacion tiene UNIQUE en `codigo` Y en `nombre`.
+        -- Con ON CONFLICT (codigo) solo se cubría uno; si en la BD ya existe una
+        -- fila con el mismo `nombre` pero otro `codigo` (drift de datos en
+        -- staging), saltaba "tipos_vinculacion_nombre_key". Sin target, se omite
+        -- cualquier fila que viole cualquier constraint único -> idempotente.
+        ON CONFLICT DO NOTHING
     """)
 
     # ========== 2. Copiar miembros → contactos_temp ==========
