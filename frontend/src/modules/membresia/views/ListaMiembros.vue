@@ -18,7 +18,6 @@
       v-model:search="searchQuery"
       :search-placeholder="`Buscar por nombre, apellido o email…`"
       :fields="filterFields"
-      :description="descripcionBusqueda"
       @clear="limpiarFiltros">
 
       <!-- Situación: dropdown personalizado con sub-selección de motivo de baja -->
@@ -26,9 +25,8 @@
         <div class="space-y-1">
           <label class="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-gray-50">
             <input type="checkbox"
-              :checked="f.estados.length === estadosMiembro.length"
-              :indeterminate.prop="f.estados.length > 0 && f.estados.length < estadosMiembro.length"
-              @change="setFilters({ estados: $event.target.checked ? estadosMiembro.map(e => e.id) : [] })"
+              :checked="f.estados.length === 0"
+              @change="setFilters({ estados: [] })"
               class="w-4 h-4 text-purple-600 border-gray-300 rounded" />
             <span class="text-sm font-medium text-gray-900">Cualquiera</span>
           </label>
@@ -69,6 +67,8 @@
 
     <!-- Columna de resultados -->
     <div class="flex-1 min-w-0 w-full">
+    <!-- Subtítulo dinámico de la consulta, compuesto según los filtros activos -->
+    <p v-if="descripcionBusqueda" class="text-base font-medium text-slate-600 mb-3 first-letter:uppercase">{{ descripcionBusqueda }}</p>
     <!-- Estado de carga -->
     <EstadoCarga v-if="loading" mensaje="Cargando registros de militancia..." />
 

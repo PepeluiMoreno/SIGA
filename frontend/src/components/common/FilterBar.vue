@@ -57,12 +57,11 @@
           </button>
         </div>
 
-        <!-- Auto: multiselect -->
+        <!-- Auto: multiselect ('Todos' = sin selección concreta) -->
         <div v-else-if="field.type === 'multiselect'" class="space-y-1">
           <label class="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-slate-50">
-            <input type="checkbox" :checked="isAllSelected(field)"
-              :indeterminate.prop="isSomeSelected(field) && !isAllSelected(field)"
-              @change="toggleAll(field, $event.target.checked)"
+            <input type="checkbox" :checked="!(modelValue[field.key] || []).length"
+              @change="update(field.key, [])"
               class="w-4 h-4 text-indigo-600 border-slate-300 rounded" />
             <span class="text-sm font-medium text-slate-900">{{ field.allLabel || 'Todos' }}</span>
           </label>
@@ -225,9 +224,8 @@
               <div v-else-if="field.type === 'multiselect'" class="space-y-1">
                 <label class="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-gray-50">
                   <input type="checkbox"
-                    :checked="isAllSelected(field)"
-                    :indeterminate.prop="isSomeSelected(field) && !isAllSelected(field)"
-                    @change="toggleAll(field, $event.target.checked)"
+                    :checked="!(modelValue[field.key] || []).length"
+                    @change="update(field.key, [])"
                     class="w-4 h-4 text-purple-600 border-gray-300 rounded" />
                   <span class="text-sm font-medium text-gray-900">{{ field.allLabel || 'Todos' }}</span>
                 </label>
