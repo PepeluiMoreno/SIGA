@@ -79,6 +79,12 @@
               <div class="accordion-wrap" :class="{ closed: !openSections.membresia }">
                 <ul class="space-y-1 pb-1">
                   <li v-if="tienePermiso('SOC_LIST')">
+                    <router-link to="/contactos" class="nav-item"
+                      :class="$route.path.startsWith('/contactos') ? 'active' : 'inactive'">
+                      <UserGroupIcon class="nav-icon" /><span>Contactos</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('SOC_LIST')">
                     <router-link to="/miembros" class="nav-item"
                       :class="$route.path.startsWith('/miembros') ? 'active' : 'inactive'">
                       <UserIcon class="nav-icon" /><span>{{ orgConfigStore.Miembros }}</span>
@@ -561,7 +567,8 @@ function sectionForPath(path) {
       path.startsWith('/usuarios') || path.startsWith('/roles') ||
       path.startsWith('/transacciones') || path.startsWith('/auditoria'))
     return 'configuracion'
-  if (path.startsWith('/miembros') || path.startsWith('/agrupaciones') ||
+  if (path.startsWith('/contactos') || path.startsWith('/miembros') ||
+      path.startsWith('/agrupaciones') ||
       path.startsWith('/juntas') || path.startsWith('/voluntarios'))
     return 'membresia'
   if (path.startsWith('/campanias') || path.startsWith('/acciones') ||
