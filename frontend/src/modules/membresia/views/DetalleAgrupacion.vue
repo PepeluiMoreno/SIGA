@@ -156,22 +156,16 @@
             <p class="text-sm text-slate-700 font-medium">{{ modal.rolNombre }}</p>
           </div>
 
-          <!-- Buscador de miembro -->
+          <!-- Titular: solo socios activos de esta unidad territorial -->
           <div>
             <label :class="lbl">Titular <span class="text-red-400">*</span></label>
-            <div class="relative">
-              <input v-model="modal.miembroSearch" type="text" :class="inp"
-                placeholder="Buscar por nombre…" autocomplete="off"
-                @focus="modal.showList = true" @blur="ocultarLista" />
-              <div v-if="modal.showList && miembrosFiltrados.length"
-                class="absolute z-30 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-44 overflow-y-auto">
-                <button type="button" v-for="m in miembrosFiltrados" :key="m.id"
-                  @mousedown="seleccionarMiembro(m)"
-                  class="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 hover:text-indigo-700 transition-colors">
-                  {{ m.nombre }} {{ m.apellido1 }}
-                </button>
-              </div>
-            </div>
+            <select v-model="modal.miembroId" :class="inp">
+              <option :value="null">— Seleccionar socio activo —</option>
+              <option v-for="m in miembros" :key="m.id" :value="m.id">
+                {{ [m.apellido1, m.apellido2].filter(Boolean).join(' ') }}, {{ m.nombre }}{{ m.email ? ` · ${m.email}` : '' }}
+              </option>
+            </select>
+            <p v-if="!miembros.length" class="mt-1 text-xs text-slate-400">No hay socios activos en esta unidad.</p>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -333,7 +327,7 @@ const Q_HIJOS = `
 `
 const Q_MIEMBROS = `
   query MiembrosAgrupacion($agrupacionId: UUID!) {
-    miembros: socios(agrupacionId: $agrupacionId) {
+    miembros: socios(agrupacionId: $agrupacionId, activo: true) {
       id nombre apellido1 apellido2 email
     }
   }
