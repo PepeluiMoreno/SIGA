@@ -44,17 +44,18 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
-          <tr v-for="c in contactosFiltrados" :key="c.id" class="hover:bg-slate-50">
+          <tr v-for="c in contactosFiltrados" :key="c.id"
+            class="hover:bg-purple-50 cursor-pointer"
+            :class="contactoSel === c.id ? 'bg-purple-50' : ''"
+            @click="abrirFicha(c.id)">
             <td class="px-4 py-3">
               <span
                 class="inline-block px-2 py-0.5 rounded text-xs font-medium"
                 :class="c.tipo === 'PERSONA_JURIDICA' ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800'"
               >{{ c.tipo === 'PERSONA_JURIDICA' ? 'PJ' : 'PF' }}</span>
             </td>
-            <td class="px-4 py-3 font-medium">
-              <router-link :to="`/contactos/${c.id}`" class="text-purple-700 hover:text-purple-900 hover:underline">
-                {{ nombreMostrado(c) }}
-              </router-link>
+            <td class="px-4 py-3 font-medium text-purple-700">
+              {{ nombreMostrado(c) }}
             </td>
             <td class="px-4 py-3 text-slate-600">{{ c.numeroDocumento || c.cif || '—' }}</td>
             <td class="px-4 py-3 text-slate-600">
@@ -77,14 +78,25 @@
       </table>
     </div>
     </div>
+
+    <!-- Ficha de contacto en drawer lateral -->
+    <ContactoFichaDrawer v-model="drawerAbierto" :contacto-id="contactoSel" />
   </AppLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
+import ContactoFichaDrawer from '@/components/miembros/ContactoFichaDrawer.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_CONTACTOS } from '@/graphql/queries/contactos.js'
+
+const drawerAbierto = ref(false)
+const contactoSel = ref(null)
+function abrirFicha(id) {
+  contactoSel.value = id
+  drawerAbierto.value = true
+}
 
 const contactos = ref([])
 const cargando = ref(true)
