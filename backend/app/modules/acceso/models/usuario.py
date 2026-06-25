@@ -18,7 +18,10 @@ class Usuario(BaseModel):
     __tablename__ = "usuarios"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    # Identidad: se entra por email O por username (p. ej. la cuenta de sistema
+    # `superadmin`, que no tiene email). Ambos únicos; email opcional.
+    username: Mapped[Optional[str]] = mapped_column(String(150), unique=True, index=True, nullable=True)
+    email: Mapped[Optional[str]] = mapped_column(String(255), unique=True, index=True, nullable=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 

@@ -12,13 +12,13 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select, text
+from sqlalchemy import or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
 from app.modules.configuracion.models.estados import (
     EstadoCuota, EstadoTarea, EstadoParticipante, EstadoOrdenCobro,
-    EstadoRemesa, EstadoDonacion, EstadoNotificacion,
+    EstadoRemesa, EstadoDonacion,
 )
 from app.modules.economico.models.cobro.forma_pago import FormaPago
 from app.modules.economico.models.cuotas import MotivoReduccionCuota
@@ -140,13 +140,6 @@ _ESTADOS_PARTICIPANTE = [
     {"nombre": "Respondido", "descripcion": "Participante respondió",            "orden": 5, "es_inicial": False, "es_final": True,  "color": "success"},
     {"nombre": "Rebotado",   "descripcion": "Comunicación rebotada",             "orden": 6, "es_inicial": False, "es_final": True,  "color": "danger"},
     {"nombre": "Excluido",   "descripcion": "Participante excluido de la campaña", "orden": 7, "es_inicial": False, "es_final": True,  "color": "secondary"},
-]
-
-_ESTADOS_NOTIFICACION = [
-    {"codigo": "PENDIENTE", "nombre": "Pendiente", "descripcion": "Notificación creada pero no enviada",         "orden": 1, "es_inicial": True,  "es_final": False, "color": "#F59E0B"},
-    {"codigo": "ENVIADA",   "nombre": "Enviada",   "descripcion": "Notificación enviada al canal correspondiente","orden": 2, "es_inicial": False, "es_final": False, "color": "#0EA5E9"},
-    {"codigo": "LEIDA",     "nombre": "Leída",     "descripcion": "Notificación leída por el usuario",           "orden": 3, "es_inicial": False, "es_final": True,  "color": "#22C55E"},
-    {"codigo": "ERROR",     "nombre": "Error",     "descripcion": "Error al enviar la notificación",             "orden": 4, "es_inicial": False, "es_final": True,  "color": "#EF4444"},
 ]
 
 # EstadoPlanificacion no hereda de EstadoBase (esquema propio: codigo, nombre,
@@ -336,6 +329,28 @@ async def _ensure_by_field(session: AsyncSession, model, field: str, items: list
     return creados
 
 
+async def _ensure_by_codigo_o_nombre(session: AsyncSession, model, items: list[dict]) -> int:
+    """Para catálogos con UNIQUE en `codigo` Y en `nombre` (p. ej. TipoVinculacion):
+    omite la fila si ya existe por CUALQUIERA de los dos. Comprobar por un solo
+    campo rompía con `..._nombre_key`/`..._codigo_key` ante drift de datos.
+    """
+    creados = 0
+    for data in items:
+        existente = (
+            await session.execute(
+                select(model).where(
+                    or_(model.codigo == data["codigo"], model.nombre == data["nombre"])
+                )
+            )
+        ).scalars().first()
+        if existente is None:
+            session.add(model(id=uuid.uuid4(), **data))
+            creados += 1
+    if creados:
+        await session.flush()
+    return creados
+
+
 async def ensure_catalogos_base(session: AsyncSession) -> None:
     """Siembra todos los catálogos esenciales para un entorno greenfield.
 
@@ -351,7 +366,7 @@ async def ensure_catalogos_base(session: AsyncSession) -> None:
         (EstadoOrdenCobro, _ESTADOS_ORDEN_COBRO),
         (EstadoTarea, _ESTADOS_TAREA),
         (EstadoParticipante, _ESTADOS_PARTICIPANTE),
-        (EstadoNotificacion, _ESTADOS_NOTIFICACION),
+        # EstadoNotificacion: owner único = seed_comunicacion.ensure_estados_notificacion
     ):
         n = await _ensure_by_field(session, model, "nombre", items)
         if n:
@@ -412,10 +427,14 @@ async def ensure_catalogos_base(session: AsyncSession) -> None:
     if n:
         resultados["EstadoPlanificacion"] = n
 
+    # TipoVinculacion: UNIQUE en codigo Y nombre -> comprobar por ambos
+    n = await _ensure_by_codigo_o_nombre(session, TipoVinculacion, _TIPOS_VINCULACION)
+    if n:
+        resultados["TipoVinculacion"] = n
+
     # Catálogos por nombre
     for model, items in (
         (MotivoBaja, _MOTIVOS_BAJA),
-        (TipoVinculacion, _TIPOS_VINCULACION),
         (NivelEstudios, _NIVELES_ESTUDIOS),
         (NivelHabilidad, _NIVELES_HABILIDAD),
         (TipoReunion, _TIPOS_REUNION),

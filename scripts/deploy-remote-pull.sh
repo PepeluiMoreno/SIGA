@@ -47,7 +47,7 @@ materialize_secret JWT_SECRET              jwt_secret
 materialize_secret SMTP_PASSWORD           smtp_password
 materialize_secret ENCRYPTION_KEY          encryption_key
 materialize_secret PAYPAL_CLIENT_SECRET    paypal_client_secret
-materialize_secret INITIAL_ADMIN_PASSWORD  initial_admin_password
+materialize_secret SUPERADMIN_PASSWORD     superadmin_password
 
 # ── Login a GHCR (si el registro es privado) ───────────────────────────────────
 if [ -n "${GHCR_PAT:-}" ]; then

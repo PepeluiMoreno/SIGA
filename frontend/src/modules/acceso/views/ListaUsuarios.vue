@@ -89,14 +89,30 @@
 
         <!-- Acciones -->
         <td class="px-4 py-3 text-right">
-          <button @click="abrirPanel(item)"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors"
-            :class="panelMiembro?.id === item.id
-              ? 'bg-purple-600 text-white border-purple-600'
-              : 'text-purple-700 border-purple-200 bg-purple-50 hover:bg-purple-100'">
-            <ShieldCheckIcon class="w-3.5 h-3.5" />
-            Roles
-          </button>
+          <div class="inline-flex items-center gap-1.5">
+            <button @click="abrirPanel(item)"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors"
+              :class="panelMiembro?.id === item.id
+                ? 'bg-purple-600 text-white border-purple-600'
+                : 'text-purple-700 border-purple-200 bg-purple-50 hover:bg-purple-100'">
+              <ShieldCheckIcon class="w-3.5 h-3.5" />
+              Roles
+            </button>
+            <template v-if="puedeEliminar(item.usuario)">
+              <button v-if="item.usuario.activo"
+                @click="desactivarUsuario(item.usuario)"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors">
+                <NoSymbolIcon class="w-3.5 h-3.5" />
+                Desactivar
+              </button>
+              <RowActions
+                :show-edit="false"
+                confirm-title="¿Eliminar usuario permanentemente?"
+                confirm-title-soft="¿Mover usuario a la papelera?"
+                :confirm-text="`Usuario: ${item.usuario.email || item.usuario.username || ''}`"
+                @delete="(opts) => eliminarUsuario(item.usuario, opts)" />
+            </template>
+          </div>
         </td>
       </template>
     </TablaJerarquica>
@@ -219,21 +235,24 @@
 </template>
 
 <script setup>
-import { XMarkIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
+import { XMarkIcon, MagnifyingGlassIcon, NoSymbolIcon } from '@heroicons/vue/24/outline'
 import { ref, computed, onMounted, watch } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import TablaJerarquica from '@/components/common/TablaJerarquica.vue'
+import RowActions from '@/components/common/RowActions.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { useGraphQL } from '@/composables/useGraphQL.js'
+import { useToast } from '@/composables/useToast'
 import { GET_MIEMBROS, GET_AGRUPACIONES } from '@/graphql/queries/miembros.js'
 import { GET_ROLES, ASIGNAR_ROL_USUARIO, REVOCAR_ROL_USUARIO } from '@/graphql/queries/administracion.js'
-import { GET_TIPOS_VINCULACION } from '@/graphql/queries/usuarios.js'
+import { GET_TIPOS_VINCULACION, ELIMINAR_USUARIO, DESACTIVAR_USUARIO } from '@/graphql/queries/usuarios.js'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 
 const { tienePermiso } = usePermisos()
 const { loading, error, query } = useGraphQL()
+const toast = useToast()
 
 // ── Estilos de roles ─────────────────────────────────────────────────────────
 const TIPO_ROL_BADGE = {
@@ -473,6 +492,31 @@ function limpiarFiltros() {
 }
 
 function applyClientFilters() {}
+
+// ── Desactivar / eliminar usuario ─────────────────────────────────────────────
+function puedeEliminar(usuario) {
+  return !!usuario && usuario.username !== 'superadmin' && tienePermiso('ACCESO_USUARIO_ELIMINAR')
+}
+
+async function desactivarUsuario(usuario) {
+  try {
+    await graphqlClient.request(DESACTIVAR_USUARIO, { id: usuario.id })
+    toast.success('Usuario desactivado')
+    await cargar()
+  } catch (e) {
+    toast.error(e?.response?.errors?.[0]?.message || 'No se pudo desactivar')
+  }
+}
+
+async function eliminarUsuario(usuario, opts) {
+  try {
+    await graphqlClient.request(ELIMINAR_USUARIO, { id: usuario.id, hard: !!opts?.hardDelete })
+    toast.success(opts?.hardDelete ? 'Usuario eliminado permanentemente' : 'Usuario movido a la papelera')
+    await cargar()
+  } catch (e) {
+    toast.error(e?.response?.errors?.[0]?.message || 'No se pudo eliminar')
+  }
+}
 
 // ── Carga inicial ─────────────────────────────────────────────────────────────
 async function cargar() {

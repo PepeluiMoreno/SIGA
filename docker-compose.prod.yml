@@ -17,14 +17,14 @@ services:
       SMTP_PASSWORD_FILE: /run/secrets/smtp_password
       ENCRYPTION_KEY_FILE: /run/secrets/encryption_key
       PAYPAL_CLIENT_SECRET_FILE: /run/secrets/paypal_client_secret
-      INITIAL_ADMIN_PASSWORD_FILE: /run/secrets/initial_admin_password
+      SUPERADMIN_PASSWORD_FILE: /run/secrets/superadmin_password
     secrets:
       - db_password
       - jwt_secret
       - smtp_password
       - encryption_key
       - paypal_client_secret
-      - initial_admin_password
+      - superadmin_password
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import socket; socket.create_connection(('localhost',8000),timeout=3)\""]
       interval: 10s
@@ -92,4 +92,4 @@ secrets:
   smtp_password:          { file: ./secrets/smtp_password.txt }
   encryption_key:         { file: ./secrets/encryption_key.txt }
   paypal_client_secret:   { file: ./secrets/paypal_client_secret.txt }
-  initial_admin_password: { file: ./secrets/initial_admin_password.txt }
+  superadmin_password:    { file: ./secrets/superadmin_password.txt }
