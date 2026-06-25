@@ -16,7 +16,9 @@ from __future__ import annotations
 
 import asyncio
 from datetime import date
+from pathlib import Path
 
+import httpx
 from sqlalchemy import select, func, delete, or_
 
 from app.core.database import async_session
@@ -239,24 +241,41 @@ async def _num_vinculaciones(session, contacto_id) -> int:
     )).scalar() or 0
 
 
-async def _sembrar_fotos(session) -> int:
-    """Asigna a cada PF fake una foto de carnet (retratos fake de randomuser.me).
+# Carpeta de fotos del servidor (volumen media_fotos -> /app/media/fotos), servida
+# por StaticFiles en /media; el upload real usa la URL /api/media/fotos/<file>.
+_MEDIA_FOTOS = Path("media/fotos")
 
-    Determinista por su documento. URLs EXTERNAS de stopgap; cuando esté MinIO, se
-    sustituyen por la URL pública de cada objeto. Idempotente (sobrescribe).
+
+async def _sembrar_fotos(session) -> int:
+    """Descarga un retrato de carnet por socio PF y lo GUARDA EN DISCO del servidor
+    (media/fotos), fijando foto_url a la ruta servida (/api/media/fotos/...).
+
+    Determinista por documento. Idempotente: no re-descarga si el fichero ya existe,
+    pero siempre fija foto_url.
     """
     rows = (await session.execute(
         select(Contacto).where(Contacto.numero_documento.like("FAKE-PF-%"))
     )).scalars().all()
+    _MEDIA_FOTOS.mkdir(parents=True, exist_ok=True)
     n = 0
-    for c in rows:
-        try:
-            idx = int(c.numero_documento.split("-")[-1]) % 100
-        except ValueError:
-            idx = 0
-        genero = "men" if c.sexo == "H" else "women"
-        c.foto_url = f"https://randomuser.me/api/portraits/{genero}/{idx}.jpg"
-        n += 1
+    async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as http:
+        for c in rows:
+            try:
+                idx = int(c.numero_documento.split("-")[-1]) % 100
+            except ValueError:
+                idx = 0
+            genero = "men" if c.sexo == "H" else "women"
+            fname = f"{c.numero_documento}.jpg"
+            destino = _MEDIA_FOTOS / fname
+            try:
+                if not destino.exists():
+                    r = await http.get(f"https://randomuser.me/api/portraits/{genero}/{idx}.jpg")
+                    r.raise_for_status()
+                    destino.write_bytes(r.content)
+                c.foto_url = f"/api/media/fotos/{fname}"
+                n += 1
+            except Exception as e:  # noqa: BLE001 - dev script, seguimos con el resto
+                print(f"  ⚠ foto {c.numero_documento}: {e}")
     if n:
         await session.flush()
     return n
