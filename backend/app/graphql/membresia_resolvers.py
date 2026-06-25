@@ -183,6 +183,12 @@ _SOCIO_FIELDS = (
     'iban', 'swift_bic', 'referencia_pago', 'forma_pago_id', 'motivo_reduccion_id',
     'motivo_baja_id', 'motivo_baja_texto',
 )
+# Dimensión ECONÓMICA del socio (competencia de Tesorería): editarla exige el
+# permiso SOC_EDIT_ECONOMICO, aparte del permiso de edición registral. Los
+# motivo_baja_* quedan fuera: son acto registral (situación), no económico.
+_ECONOMIC_FIELDS = frozenset({
+    'iban', 'swift_bic', 'referencia_pago', 'forma_pago_id', 'motivo_reduccion_id',
+})
 _VOLUNTARIO_FIELDS = (
     'disponibilidad', 'horas_disponibles_semana', 'profesion', 'nivel_estudios_id',
     'experiencia_voluntariado', 'intereses', 'observaciones_voluntariado',
@@ -459,6 +465,16 @@ class MembresiaResolverMutation:
 
         miembro = await _fetch_miembro(session, data.id)
         faltantes_antes = _campos_perfil_faltantes(miembro)
+
+        # Enforcement por dimensión: los datos económicos del socio son competencia
+        # de Tesorería. Si la edición los toca, exige SOC_EDIT_ECONOMICO (además del
+        # permiso registral de la mutación). Se comprueba antes de aplicar nada.
+        if any(getattr(data, f, None) is not None for f in _ECONOMIC_FIELDS):
+            if not await info.context.check_permission("SOC_EDIT_ECONOMICO"):
+                raise ValueError(
+                    "No tienes permiso para editar los datos económicos del socio "
+                    "(IBAN, forma de pago, reducción de cuota): es competencia de Tesorería."
+                )
 
         # Datos de identidad -> Contacto (None = no tocar)
         for field in _CONTACTO_FIELDS:
