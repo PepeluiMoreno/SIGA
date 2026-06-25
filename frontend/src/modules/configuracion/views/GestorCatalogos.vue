@@ -53,11 +53,14 @@
               <h2 class="font-semibold text-gray-900 text-base">{{ catalogoActivo.label }}</h2>
               <p class="text-xs text-gray-400 mt-0.5">{{ catalogoActivo.descripcion }}</p>
             </div>
-            <button @click="abrirCrear"
+            <button v-if="!catalogoActivo?.sistema" @click="abrirCrear"
               class="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-sm">
               <PlusIcon class="w-4 h-4" />
               Nuevo
             </button>
+            <span v-else class="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400" title="Catálogo del sistema: se siembra, no se crea ni borra">
+              <LockClosedIcon class="w-4 h-4" /> Catálogo del sistema
+            </span>
           </div>
 
           <!-- Barra búsqueda + filtros opcionales -->
@@ -174,7 +177,7 @@
                         <PencilIcon class="w-3.5 h-3.5" />
                       </button>
                       <ConfirmPopover
-                        v-if="!item.esInmutable"
+                        v-if="!item.esInmutable && !catalogoActivo?.sistema"
                         titulo="Eliminar registro"
                         :mensaje="`¿Eliminar '${item.nombre}'? Esta acción no se puede deshacer.`"
                         variante="peligro"
@@ -396,6 +399,11 @@ const toast = useToast()
 const gruposColapsados = ref({})
 function grupoAbierto(nombre) { return !gruposColapsados.value[nombre] }
 function toggleGrupo(nombre) { gruposColapsados.value[nombre] = !gruposColapsados.value[nombre] }
+
+// Catálogos de SISTEMA: el código se ramifica sobre su `codigo` (estados de
+// flujo de trabajo, tipos de vinculación). Se siembran y son "read-mostly":
+// se ven y se pueden re-etiquetar/recolorar, pero NO crear ni borrar.
+const esCatalogoSistema = (key) => /^estados/.test(key) || key === 'tiposVinculacion'
 
 // ── Definición de catálogos ───────────────────────────────────────────────────
 const CATALOGOS = computed(() => [
@@ -942,7 +950,10 @@ const CATALOGOS = computed(() => [
       },
     ],
   },
-].map(g => ({ ...g, items: sortItems(g.items) }))
+].map(g => ({
+  ...g,
+  items: sortItems(g.items).map(it => ({ ...it, sistema: it.sistema ?? esCatalogoSistema(it.key) })),
+}))
   .sort((a, b) => a.grupo.localeCompare(b.grupo, 'es'))
 )
 
