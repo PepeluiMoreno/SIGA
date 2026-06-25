@@ -88,8 +88,26 @@
         </button>
       </div>
 
-      <!-- Tarjeta de contacto (arriba a la derecha, mismo formato que la ficha de contacto) -->
-      <div v-if="!isCreateMode && miembro.id" class="flex justify-end mb-4">
+      <!-- Barra de edición en modo embebido (drawer): AppLayout no aporta slots aquí -->
+      <div v-if="embebido && !isCreateMode" class="mb-4 flex justify-end gap-2">
+        <button v-if="!editMode" @click="toggleEditMode"
+          class="px-4 py-2 text-sm font-medium text-indigo-600 border border-slate-300 rounded-lg hover:bg-slate-50">
+          Editar
+        </button>
+        <template v-else>
+          <button @click="handleCancel"
+            class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
+            Cancelar
+          </button>
+          <button @click="handleSave" :disabled="loading || !formValido"
+            class="px-5 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50">
+            Guardar cambios
+          </button>
+        </template>
+      </div>
+
+      <!-- Tarjeta de contacto (oculta en drawer: la cabecera del drawer ya muestra identidad) -->
+      <div v-if="!embebido && !isCreateMode && miembro.id" class="flex justify-end mb-4">
         <div class="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-4 py-2.5 shadow-sm">
           <AvatarImg :src="miembro.fotoUrl" :nombre="miembro.nombre" :apellido="miembro.apellido1" size="lg" shape="round" />
           <div class="text-sm leading-tight">
@@ -1186,6 +1204,10 @@ const toast = useToast()
 const props = defineProps({
   miembroIdProp: { type: String, default: null },
   modoPropio: { type: Boolean, default: false },
+  // embebido = la ficha vive dentro de un drawer (sin AppLayout); aporta su
+  // propia barra de Editar/Guardar. editarInicial la abre directamente en edición.
+  embebido: { type: Boolean, default: false },
+  editarInicial: { type: Boolean, default: false },
 })
 
 const route = useRoute()
@@ -1237,8 +1259,9 @@ const subtituloPage = computed(() => {
   return [tipoNombre, estadoNombre].filter(Boolean).join(' · ')
 })
 
-const layoutComponent = computed(() => props.modoPropio ? 'div' : AppLayout)
-const layoutBindings = computed(() => props.modoPropio ? {} : {
+const sinLayout = computed(() => props.modoPropio || props.embebido)
+const layoutComponent = computed(() => sinLayout.value ? 'div' : AppLayout)
+const layoutBindings = computed(() => sinLayout.value ? {} : {
   title: tituloPage.value,
   subtitle: subtituloPage.value,
 })
@@ -2150,7 +2173,7 @@ onMounted(async () => {
   if (resolvedId) {
     await Promise.all([fetchMiembro(resolvedId), cargarHabilidades(resolvedId), cargarFranjas(resolvedId), cargarNombramientos(resolvedId), cargarCuotas(resolvedId), cargarSolicitudReduccion(resolvedId)])
     if (!props.modoPropio) await cargarRolesDisponibles()
-    if (route.query.modo === 'editar') editMode.value = true
+    if (props.editarInicial || route.query.modo === 'editar') editMode.value = true
     // modoPropio entra ya en edición: guardamos el snapshot para poder descartar.
     if (props.modoPropio) originalSnapshot.value = JSON.parse(JSON.stringify(miembro.value))
   }

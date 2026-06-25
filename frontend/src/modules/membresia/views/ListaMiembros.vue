@@ -118,7 +118,9 @@
               </tr>
 
               <!-- Fila de miembro -->
-              <tr v-else class="hover:bg-gray-50">
+              <tr v-else class="hover:bg-purple-50 cursor-pointer"
+                :class="miembroSel === fila.miembro.id ? 'bg-purple-50' : ''"
+                @click="abrirFicha(fila.miembro, false)">
                 <td class="py-3 pr-4" :style="{ paddingLeft: (fila.depth * 20 + 16) + 'px' }">
                   <div class="flex items-center gap-3">
                     <AvatarImg
@@ -170,16 +172,16 @@
                 </td>
                 <td class="px-4 py-3 text-right">
                   <div class="flex items-center justify-end gap-0.5">
-                    <router-link :to="`/miembros/${fila.miembro.id}`"
+                    <button type="button" @click.stop="abrirFicha(fila.miembro, false)"
                       class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
                       title="Ver ficha">
                       <EyeIcon class="w-4 h-4" />
-                    </router-link>
-                    <router-link :to="`/miembros/${fila.miembro.id}?modo=editar`"
+                    </button>
+                    <button type="button" @click.stop="abrirFicha(fila.miembro, true)"
                       class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
                       title="Editar">
                       <PencilIcon class="w-4 h-4" />
-                    </router-link>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -189,6 +191,14 @@
         </table></div>
       </template>
     </div>
+
+    <!-- Ficha de socio en drawer lateral (tónica general: detalle en drawer) -->
+    <MiembroFichaDrawer
+      v-model="drawerAbierto"
+      :miembro-id="miembroSel"
+      :editar-inicial="editarInicial"
+      :titulo="tituloFicha"
+    />
   </AppLayout>
 </template>
 
@@ -205,7 +215,29 @@ import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_MIEMBROS, GET_AGRUPACIONES, GET_TIPOS_MIEMBRO, GET_ESTADOS_MIEMBRO, GET_MOTIVOS_BAJA, GET_NOMBRAMIENTOS_ACTIVOS } from '@/graphql/queries/miembros.js'
 import AgrupacionCascada from '@/components/common/AgrupacionCascada.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
+import MiembroFichaDrawer from '@/components/miembros/MiembroFichaDrawer.vue'
 const toast = useToast()
+
+// ── Ficha de socio en drawer ────────────────────────────────────────────────
+const drawerAbierto = ref(false)
+const miembroSel = ref(null)
+const miembroSelObj = ref(null)
+const editarInicial = ref(false)
+function abrirFicha(m, editar) {
+  miembroSel.value = m.id
+  miembroSelObj.value = m
+  editarInicial.value = !!editar
+  drawerAbierto.value = true
+}
+const tituloFicha = computed(() => {
+  const m = miembroSelObj.value
+  if (!m) return 'Ficha de socio'
+  return `${m.apellido1 || ''}${m.apellido2 ? ' ' + m.apellido2 : ''}, ${m.nombre || ''}`.trim()
+})
+// Al cerrar el drawer tras una posible edición, refrescar el listado.
+watch(drawerAbierto, (abierto, antes) => {
+  if (antes && !abierto) loadMiembros()
+})
 const { loading, error, query, mutation } = useGraphQL()
 const orgConfig = useOrgConfigStore()
 const { tienePermiso } = usePermisos()
