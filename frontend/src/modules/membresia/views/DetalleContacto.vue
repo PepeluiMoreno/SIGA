@@ -75,16 +75,8 @@
           </div>
         </section>
 
-        <!-- Trayectoria (facetas cerradas) -->
-        <section v-if="facetasCerradas.length">
-          <h2 class="text-sm font-semibold text-slate-700 mb-2">Historial</h2>
-          <ul class="border border-slate-200 rounded-lg divide-y divide-slate-100 text-sm">
-            <li v-for="v in facetasCerradas" :key="v.id" class="px-4 py-2 flex items-center justify-between">
-              <span>{{ v.tipoVinculacion ? v.tipoVinculacion.nombre : '—' }}</span>
-              <span class="text-xs text-slate-400">{{ v.fechaInicio || '?' }} → {{ v.fechaFin || '?' }} ({{ v.estado }})</span>
-            </li>
-          </ul>
-        </section>
+        <!-- Historial: mismo componente reutilizable que en Mis datos y Junta -->
+        <HistorialVinculaciones v-if="facetasCerradas.length" :vinculaciones="facetasCerradas" titulo="Historial" />
       </template>
     </div>
   </AppLayout>
@@ -94,6 +86,7 @@
 import { ref, computed, onMounted, h } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
+import HistorialVinculaciones from '@/components/miembros/HistorialVinculaciones.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_CONTACTO, VINCULACIONES_DE_CONTACTO } from '@/graphql/queries/contactos.js'
 
