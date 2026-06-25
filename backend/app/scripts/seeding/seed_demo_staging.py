@@ -42,6 +42,7 @@ PASOS = [
     "seed_campanias_europalaica",
     "seed_actividades_permanentes",
     # ── Permisos por rol (idempotentes) ──
+    "seed_permisos_membresia_perfilado",
     "seed_permisos_voluntariado",
     "seed_permisos_cuotas",
     "seed_permisos_tesorero",

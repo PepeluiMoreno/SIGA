@@ -1,11 +1,15 @@
 """Asigna a los perfiles las transacciones de Membresía según el modelo de
 propiedad POR DIMENSIÓN perfilado. Idempotente.
 
-Reparto acordado:
+Reparto acordado. La dimensión territorial NO son roles distintos: SECRETARIO y
+TESORERO son el mismo rol tanto a nivel general como territorial, y su ámbito lo
+fija el `agrupacion_id` del nombramiento sobre el que se asigna, no un código de
+rol "_TERRITORIAL".
 - Identidad, registro, situación (alta/baja/suspensión), solicitudes y libro de
-  socios -> Secretaría (general y territorial).
-- Económico del socio (cuota/IBAN/forma de pago) -> Tesorería (general y territorial).
-- Voluntariado (disponibilidad/habilidades) -> Coordinación / Responsable de voluntariado.
+  socios -> Secretaría (SECRETARIO).
+- Económico del socio (cuota/IBAN/forma de pago) -> Tesorería (TESORERO).
+- Voluntariado (disponibilidad/habilidades) -> Coordinación (COORDINADOR,
+  COORD_PROV, COORD_LOCAL, COORDINADOR_CAMPANA).
 
 SUPERADMIN recibe todas vía bootstrap (no se reparte aquí).
 
@@ -24,9 +28,9 @@ from app.modules.acceso.models.transaccion import Transaccion
 from app.modules.acceso.models.rol_transaccion import RolTransaccion
 
 
-_SECRETARIA = ["SECRETARIO", "SECRETARIO_TERRITORIAL"]
-_TESORERIA = ["TESORERO", "TESORERO_TERRITORIAL"]
-_COORDINACION = ["RESPONSABLE_VOLUNTARIADO", "COORD_AUTONOMICO", "COORD_PROVINCIAL", "COORD_LOCAL", "COORD_CAMPANA"]
+_SECRETARIA = ["SECRETARIO"]
+_TESORERIA = ["TESORERO"]
+_COORDINACION = ["COORDINADOR", "COORD_PROV", "COORD_LOCAL", "COORDINADOR_CAMPANA"]
 
 # transaccion_codigo -> roles que la reciben
 _REPARTO = {
