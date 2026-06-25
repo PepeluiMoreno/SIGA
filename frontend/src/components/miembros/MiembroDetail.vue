@@ -120,14 +120,14 @@
 
       <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
         <TabsNavigation :tabs="tabsDisponibles" :active-tab="tabActiva" @tab-change="tabActiva = $event" />
-        <div class="p-5" style="background-color: var(--t-tabsheet-bg, #f1edfb)">
+        <div class="p-5 bg-white">
 
         <!-- ── 1. DATOS PERSONALES ── -->
         <div v-show="tabActiva === 'datos'">
           <div class="space-y-3">
 
-            <section class="rounded-xl border border-violet-100 bg-white">
-              <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
+            <section class="rounded-xl border border-slate-200 bg-white">
+              <header class="flex items-center gap-2 px-5 py-3 border-b border-slate-200">
                 <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Identificación</h3>
               </header>
@@ -177,8 +177,8 @@
               </div>
             </section>
 
-            <section class="rounded-xl border border-violet-100 bg-white">
-              <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
+            <section class="rounded-xl border border-slate-200 bg-white">
+              <header class="flex items-center gap-2 px-5 py-3 border-b border-slate-200">
                 <span class="w-2 h-2 rounded-full bg-sky-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Contacto</h3>
               </header>
@@ -208,8 +208,8 @@
               </div>
             </section>
 
-            <section class="rounded-xl border border-violet-100 bg-white">
-              <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
+            <section class="rounded-xl border border-slate-200 bg-white">
+              <header class="flex items-center gap-2 px-5 py-3 border-b border-slate-200">
                 <span class="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Observaciones</h3>
               </header>
@@ -218,8 +218,8 @@
               </div>
             </section>
 
-            <section class="rounded-xl border border-violet-100 bg-white">
-              <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
+            <section class="rounded-xl border border-slate-200 bg-white">
+              <header class="flex items-center gap-2 px-5 py-3 border-b border-slate-200">
                 <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">RGPD y privacidad</h3>
               </header>
@@ -235,7 +235,7 @@
 
                 <!-- Límite de conservación: calculado a partir de la baja, solo lectura -->
                 <div>
-                  <label class="block text-xs font-medium text-gray-600 mb-1">Límite de conservación de datos</label>
+                  <label class="block text-xs font-medium text-slate-600 mb-1">Límite de conservación de datos</label>
                   <p class="text-sm text-gray-800">
                     <template v-if="fechaLimiteRetencion">
                       {{ formatDate(fechaLimiteRetencion) }}
@@ -247,7 +247,7 @@
 
                 <!-- Anonimización: acción real e irreversible, no un campo editable -->
                 <div class="border-t border-gray-100 pt-3">
-                  <label class="block text-xs font-medium text-gray-600 mb-1">Anonimización</label>
+                  <label class="block text-xs font-medium text-slate-600 mb-1">Anonimización</label>
                   <div v-if="miembro.datosAnonimizados" class="flex items-center gap-2">
                     <span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-medium">Datos anonimizados</span>
                     <span class="text-gray-400 text-xs">{{ fechaCorta(miembro.fechaAnonimizacion) }}</span>
@@ -273,8 +273,8 @@
           <div class="space-y-3">
 
             <!-- Procedimiento de pago -->
-            <section v-if="requiereCuota" class="rounded-xl border border-violet-100 bg-white">
-              <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
+            <section v-if="requiereCuota" class="rounded-xl border border-slate-200 bg-white">
+              <header class="flex items-center gap-2 px-5 py-3 border-b border-slate-200">
                 <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Procedimiento de pago de cuotas</h3>
               </header>
@@ -282,7 +282,7 @@
 
             <div class="flex gap-5 items-start">
               <!-- Selector de forma de pago -->
-              <section class="space-y-3 rounded-xl border border-violet-100 bg-white p-5 flex-shrink-0 w-80">
+              <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-5 flex-shrink-0 w-80">
                 <div v-if="editMode || isCreateMode" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
                   <button
                     v-for="fp in catalogos.formasPago"
@@ -436,8 +436,8 @@
             </section>
 
             <!-- Cuota aplicada -->
-            <section v-if="requiereCuota" class="rounded-xl border border-violet-100 bg-white">
-              <header class="flex items-center justify-between gap-2 px-5 py-3 border-b border-violet-100">
+            <section v-if="requiereCuota" class="rounded-xl border border-slate-200 bg-white">
+              <header class="flex items-center justify-between gap-2 px-5 py-3 border-b border-slate-200">
                 <div class="flex items-center gap-2">
                   <span class="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>
                   <h3 class="text-sm font-semibold text-slate-800">Cuota aplicada</h3>
@@ -458,7 +458,7 @@
               <div class="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-4">
                 <!-- Tipo de cuota -->
                 <div>
-                  <label class="block text-xs font-medium text-gray-600 mb-1">Tipo de cuota</label>
+                  <label class="block text-xs font-medium text-slate-600 mb-1">Tipo de cuota</label>
                   <p class="text-sm text-gray-800">{{ tipoCuotaNombre || '—' }}</p>
                   <p class="text-xs text-gray-500 mt-1">
                     Se hereda del tipo de {{ orgConfig.miembro }} seleccionado más arriba.
@@ -467,7 +467,7 @@
 
                 <!-- Importe de la cuota -->
                 <div>
-                  <label class="block text-xs font-medium text-gray-600 mb-1">Importe</label>
+                  <label class="block text-xs font-medium text-slate-600 mb-1">Importe</label>
                   <p class="text-sm text-gray-800">
                     <template v-if="cuotaVigente">
                       <span class="font-semibold">{{ formatEuros(cuotaVigente.importe) }}</span>
@@ -514,8 +514,8 @@
             </section>
 
             <!-- Historial de cuotas -->
-            <section v-if="!isCreateMode && requiereCuota" class="rounded-xl border border-violet-100 bg-white">
-              <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
+            <section v-if="!isCreateMode && requiereCuota" class="rounded-xl border border-slate-200 bg-white">
+              <header class="flex items-center gap-2 px-5 py-3 border-b border-slate-200">
                 <span class="w-2 h-2 rounded-full bg-sky-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Historial de cuotas</h3>
               </header>
@@ -553,8 +553,8 @@
             </section>
 
             <!-- Justificantes de gasto -->
-            <section v-if="!isCreateMode" class="rounded-xl border border-violet-100 bg-white">
-              <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
+            <section v-if="!isCreateMode" class="rounded-xl border border-slate-200 bg-white">
+              <header class="flex items-center gap-2 px-5 py-3 border-b border-slate-200">
                 <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Justificantes de gasto</h3>
               </header>
@@ -571,7 +571,7 @@
           <div class="p-1 space-y-5">
 
             <!-- Situación de membresía -->
-            <section class="space-y-4 rounded-xl border border-violet-100 bg-white p-5">
+            <section class="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
               <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Situación</h3>
               <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 lg:grid-cols-4 gap-4">
                 <FieldSelect v-model="miembro.tipoMiembroId" :label="`Tipo de ${orgConfig.miembro} *`" :edit-mode="editAdmin"
@@ -616,7 +616,7 @@
             </section>
 
             <!-- Disposición a participar -->
-            <section class="rounded-xl border border-violet-100 bg-white p-5">
+            <section class="rounded-xl border border-slate-200 bg-white p-5">
               <FieldCheckbox v-model="miembro.esVoluntario"
                 label="Dispuesto/a a participar en actividades de la asociación"
                 :edit-mode="editForm" />
@@ -629,7 +629,7 @@
               <div class="grid grid-cols-1 lg:grid-cols-1 sm:grid-cols-2 gap-5">
 
                 <!-- Perfil voluntario -->
-                <section class="space-y-4 rounded-xl border border-violet-100 bg-white p-5">
+                <section class="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
                   <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Perfil voluntario</h3>
                   <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-4">
                     <FieldText v-model="miembro.profesion" label="Profesión" :edit-mode="editForm" />
@@ -648,7 +648,7 @@
                 </section>
 
                 <!-- Habilidades -->
-                <section class="space-y-3 rounded-xl border border-violet-100 bg-white p-5">
+                <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-5">
                   <div class="flex items-center justify-between">
                     <h3 class="text-xs font-semibold uppercase tracking-widest text-indigo-600">Habilidades</h3>
                     <button @click="mostrarFormHabilidad = !mostrarFormHabilidad"
@@ -714,7 +714,7 @@
               </div>
 
               <!-- Disponibilidad -->
-              <section class="space-y-4 rounded-xl border border-violet-100 bg-white p-5">
+              <section class="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
                 <h3 class="text-xs font-semibold uppercase tracking-widest text-sky-600">Disponibilidad</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-4">
                   <FieldText v-model="miembro.disponibilidad" label="Disponibilidad" :edit-mode="editForm" />
@@ -908,7 +908,7 @@
 
             <template v-else>
               <!-- Datos de la cuenta -->
-              <section class="rounded-xl border border-violet-100 bg-white p-5 space-y-3">
+              <section class="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
                 <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Cuenta de acceso</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                   <div>
@@ -975,7 +975,7 @@
               </section>
 
               <!-- Roles -->
-              <section class="rounded-xl border border-violet-100 bg-white p-5 space-y-3">
+              <section class="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
                 <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Roles asignados</h3>
 
                 <div v-if="!rolesAsignados.length" class="text-sm text-gray-400 italic py-2">
@@ -2191,15 +2191,15 @@ const FieldText = defineComponent({
   emits: ['update:modelValue'],
   setup(props, { emit }) {
     return () => h('div', [
-      h('label', { class: 'block text-xs font-medium text-gray-600 mb-1' }, props.label),
+      h('label', { class: 'block text-xs font-medium text-slate-600 mb-1' }, props.label),
       props.editMode
         ? h('input', {
-            class: 'mt-0.5 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30',
+            class: 'mt-0.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30',
             type: props.type,
             value: props.modelValue ?? '',
             onInput: (e) => emit('update:modelValue', e.target.value),
           })
-        : h('div', { class: 'mt-0.5 px-0 py-1.5 text-sm text-gray-900 min-h-[34px]' }, formatDisplay(props.modelValue)),
+        : h('div', { class: 'mt-0.5 px-0 py-1.5 text-sm text-slate-900 min-h-[34px]' }, formatDisplay(props.modelValue)),
     ])
   },
 })
@@ -2214,15 +2214,15 @@ const FieldTextarea = defineComponent({
   emits: ['update:modelValue'],
   setup(props, { emit }) {
     return () => h('div', [
-      h('label', { class: 'block text-xs font-medium text-gray-600 mb-1' }, props.label),
+      h('label', { class: 'block text-xs font-medium text-slate-600 mb-1' }, props.label),
       props.editMode
         ? h('textarea', {
-            class: 'mt-0.5 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30',
+            class: 'mt-0.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30',
             rows: props.rows,
             value: props.modelValue ?? '',
             onInput: (e) => emit('update:modelValue', e.target.value),
           })
-        : h('div', { class: 'mt-0.5 py-1.5 text-sm text-gray-900 min-h-[60px] whitespace-pre-wrap' }, formatDisplay(props.modelValue)),
+        : h('div', { class: 'mt-0.5 py-1.5 text-sm text-slate-900 min-h-[60px] whitespace-pre-wrap' }, formatDisplay(props.modelValue)),
     ])
   },
 })
@@ -2244,10 +2244,10 @@ const FieldSelect = defineComponent({
       return current?.[props.optionLabel] || props.emptyLabel
     })
     return () => h('div', [
-      props.label ? h('label', { class: 'block text-xs font-medium text-gray-600 mb-1' }, props.label) : null,
+      props.label ? h('label', { class: 'block text-xs font-medium text-slate-600 mb-1' }, props.label) : null,
       props.editMode
         ? h('select', {
-            class: 'mt-0.5 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30',
+            class: 'mt-0.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30',
             value: props.modelValue ?? '',
             onChange: (e) => emit('update:modelValue', e.target.value || null),
           }, [
@@ -2256,7 +2256,7 @@ const FieldSelect = defineComponent({
               h('option', { value: item?.[props.optionValue] }, item?.[props.optionLabel] || ''),
             ),
           ])
-        : h('div', { class: 'mt-0.5 py-1.5 text-sm text-gray-900 min-h-[34px]' }, displayValue.value),
+        : h('div', { class: 'mt-0.5 py-1.5 text-sm text-slate-900 min-h-[34px]' }, displayValue.value),
     ])
   },
 })
