@@ -6,13 +6,15 @@ from datetime import datetime, date
 from typing import Optional
 
 import strawberry
-from sqlalchemy import or_, select
+from sqlalchemy import delete, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from ..core.audit import log_action
 from ..core.security import create_access_token, hash_password, verify_password
 from ..modules.acceso.models.auditoria import TipoAccion
 from ..modules.acceso.models.usuario import Usuario, UsuarioRol
+from ..modules.acceso.models.seguridad import Sesion
 from ..modules.acceso.models.rol import Rol
 from ..modules.acceso.models.rol_transaccion import RolTransaccion
 from ..modules.acceso.models.transaccion import Transaccion
@@ -207,6 +209,83 @@ class AuthMutation:
 
         await session.commit()
         return _to_payload(usuario)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACCESO_USUARIO_ELIMINAR")])
+    async def desactivar_usuario(
+        self,
+        info: strawberry.Info,
+        id: uuid.UUID,
+    ) -> bool:
+        """Desactiva un usuario (`activo=False`). Reversible; no va a la papelera.
+
+        Protege la cuenta de sistema `superadmin` y la cuenta propia del solicitante.
+        """
+        session = info.context.session
+        actual: Optional[Usuario] = info.context.user
+        usuario = (
+            await session.execute(select(Usuario).where(Usuario.id == id))
+        ).scalar_one_or_none()
+        if usuario is None:
+            raise ValueError("Usuario no encontrado")
+        if usuario.username == "superadmin":
+            raise ValueError("No se puede desactivar la cuenta de sistema 'superadmin'")
+        if actual is not None and actual.id == usuario.id:
+            raise ValueError("No puedes desactivar tu propia cuenta")
+        usuario.activo = False
+        await session.commit()
+        return True
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACCESO_USUARIO_ELIMINAR")])
+    async def eliminar_usuario(
+        self,
+        info: strawberry.Info,
+        id: uuid.UUID,
+        hard: bool = False,
+    ) -> bool:
+        """Elimina un usuario.
+
+        - `hard=False` (por defecto): **soft-delete** (a la papelera): marca
+          `eliminado` y desactiva; recuperable.
+        - `hard=True`: **borrado definitivo**. Limpia las dependencias propias
+          (roles, sesiones) y borra la fila. Si el usuario creó o modificó
+          registros (`creado_por_id`/`modificado_por_id`), se **deniega por
+          motivos de auditoría** y debe usarse soft-delete o la desactivación.
+
+        Protege la cuenta de sistema `superadmin` y la cuenta propia del solicitante.
+        """
+        session = info.context.session
+        actual: Optional[Usuario] = info.context.user
+
+        usuario = (
+            await session.execute(select(Usuario).where(Usuario.id == id))
+        ).scalar_one_or_none()
+        if usuario is None:
+            raise ValueError("Usuario no encontrado")
+        if usuario.username == "superadmin":
+            raise ValueError("No se puede eliminar la cuenta de sistema 'superadmin'")
+        if actual is not None and actual.id == usuario.id:
+            raise ValueError("No puedes eliminar tu propia cuenta")
+
+        if not hard:
+            usuario.eliminado = True
+            usuario.activo = False
+            await session.commit()
+            return True
+
+        # Hard-delete: borra dependencias propias y luego la fila.
+        try:
+            await session.execute(delete(UsuarioRol).where(UsuarioRol.usuario_id == id))
+            await session.execute(delete(Sesion).where(Sesion.usuario_id == id))
+            await session.execute(delete(Usuario).where(Usuario.id == id))
+            await session.commit()
+            return True
+        except IntegrityError:
+            await session.rollback()
+            raise ValueError(
+                "No se puede eliminar definitivamente el usuario por motivos de "
+                "auditoría: conserva el rastro de los registros que creó o modificó. "
+                "Usa la desactivación (soft-delete)."
+            )
 
     @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_JUNTA_CONFIGURAR")])
     async def constituir_junta(

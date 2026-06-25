@@ -41,6 +41,22 @@ export const CREAR_USUARIO = `
   }
 `
 
+// Desactivar usuario (activo=False; reversible, no va a la papelera).
+export const DESACTIVAR_USUARIO = `
+  mutation DesactivarUsuario($id: UUID!) {
+    desactivarUsuario(id: $id)
+  }
+`
+
+// Eliminar usuario: soft-delete (papelera) por defecto, o hard-delete si hard=true.
+// El hard-delete se deniega por motivos de auditoría si el usuario creó/modificó
+// registros; en ese caso el backend devuelve un error explicativo.
+export const ELIMINAR_USUARIO = `
+  mutation EliminarUsuario($id: UUID!, $hard: Boolean) {
+    eliminarUsuario(id: $id, hard: $hard)
+  }
+`
+
 export const GET_TIPOS_VINCULACION = `
   query TiposVinculacion {
     tiposVinculacion {

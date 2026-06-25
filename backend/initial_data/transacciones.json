@@ -1506,6 +1506,15 @@
       "sistema": true
     },
     {
+      "codigo": "ACCESO_USUARIO_ELIMINAR",
+      "nombre": "Eliminar usuario",
+      "descripcion": "Permite desactivar o borrar definitivamente (hard-delete) un usuario.",
+      "modulo": "administracion",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
       "codigo": "CAMPANA_CREAR",
       "nombre": "Crear campana",
       "descripcion": "Permite crear campana (módulo comunicaciones).",
