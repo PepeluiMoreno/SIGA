@@ -17,12 +17,14 @@ from __future__ import annotations
 import asyncio
 from datetime import date
 
-from sqlalchemy import select, func, delete
+from sqlalchemy import select, func, delete, or_
 
 from app.core.database import async_session
+from app.core.security import hash_password
 from app.modules.membresia.models.contacto import Contacto
 from app.modules.membresia.models.vinculacion import Vinculacion, Socio, Voluntario
 from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
+from app.modules.acceso.models.usuario import Usuario
 from app.modules.core.geografico.direccion import UnidadOrganizativa
 
 
@@ -46,7 +48,7 @@ _PF = [
     {
         "nombre": "Ana", "apellido1": "García", "apellido2": "López",
         "email": "ana.garcia@fake.siga.local", "telefono": "600100101", "doc": "FAKE-PF-0001",
-        "sexo": "M", "facetas": [
+        "sexo": "M", "usuario": True, "facetas": [
             ("SOCIO", {"numero_socio": "S-0001", "iban": "ES7620770024003102575766", "cuota_mensual": 10}, {}),
             ("VOLUNTARIO", {"disponibilidad": "tardes", "horas_disponibles_semana": 6,
                             "intereses": "comunicación", "puede_conducir": True, "vehiculo_propio": True}, {}),
@@ -109,7 +111,7 @@ _PF = [
     {
         "nombre": "Jorge", "apellido1": "Ortega", "apellido2": "Ríos",
         "email": "jorge.ortega@fake.siga.local", "telefono": "600100110", "doc": "FAKE-PF-0010",
-        "sexo": "H", "facetas": [
+        "sexo": "H", "usuario": True, "facetas": [
             ("SOCIO", {"numero_socio": "S-0010", "iban": "ES1000492352082414205416", "cuota_mensual": 10}, {}),
             ("VOLUNTARIO", {"disponibilidad": "mañanas", "horas_disponibles_semana": 8,
                             "intereses": "logística", "puede_conducir": True}, {}),
@@ -129,6 +131,25 @@ _PF = [
         "nombre": "Marcos", "apellido1": "Iglesias", "apellido2": "Cano",
         "email": "marcos.iglesias@fake.siga.local", "telefono": "600100112", "doc": "FAKE-PF-0012",
         "sexo": "H", "facetas": [],
+    },
+    {
+        # Socio dado de BAJA (vinculación cerrada + estado_socio='baja').
+        "nombre": "Pedro", "apellido1": "Gómez", "apellido2": "Ramos",
+        "email": "pedro.gomez@fake.siga.local", "telefono": "600100113", "doc": "FAKE-PF-0013",
+        "sexo": "H", "facetas": [
+            ("SOCIO", {"numero_socio": "S-0013", "estado_socio": "baja",
+                       "motivo_baja_texto": "Impago de cuotas"},
+             {"fecha_inicio": date(2019, 1, 1), "fecha_fin": date(2023, 12, 31), "estado": "cerrada"}),
+        ],
+    },
+    {
+        # Socio SUSPENDIDO (vigente pero suspendido) y con acceso a la app.
+        "nombre": "Sara", "apellido1": "López", "apellido2": "Crespo",
+        "email": "sara.lopez@fake.siga.local", "telefono": "600100114", "doc": "FAKE-PF-0014",
+        "sexo": "M", "usuario": True, "facetas": [
+            ("SOCIO", {"numero_socio": "S-0014", "estado_socio": "suspendido",
+                       "iban": "ES7100752713953265748479", "cuota_mensual": 10}, {}),
+        ],
     },
 ]
 
@@ -218,6 +239,29 @@ async def _num_vinculaciones(session, contacto_id) -> int:
     )).scalar() or 0
 
 
+async def _ensure_usuario(session, contacto_id, email) -> bool:
+    """Crea un Usuario (acceso a la app) ligado al contacto si no existe. Idempotente.
+
+    Contraseña de demo común: `Demo1234!`. Sin rol asignado (para el badge
+    'tiene acceso' basta con que exista el Usuario; los roles se dan en la app).
+    """
+    username = (email or "").split("@")[0] or f"user-{contacto_id}"
+    existe = (await session.execute(
+        select(Usuario.id).where(or_(
+            Usuario.contacto_id == contacto_id,
+            Usuario.username == username,
+        ))
+    )).scalar_one_or_none()
+    if existe:
+        return False
+    session.add(Usuario(
+        username=username, email=email,
+        password_hash=hash_password("Demo1234!"),
+        contacto_id=contacto_id, activo=True,
+    ))
+    return True
+
+
 async def main() -> None:
     async with async_session() as session:
         nuevos_tipos = await _ensure_tipos(session)
@@ -236,27 +280,35 @@ async def main() -> None:
             )).scalar_one_or_none()
             esperadas = len(p["facetas"])
 
-            if existe is not None:
-                actual = await _num_vinculaciones(session, existe)
-                if actual == esperadas:
-                    stats["intactos"] += 1
-                    return
-                # Sembrado a medias (faltaban tipos): borra sus facetas y rehazlas
-                # (los satélites Socio/Voluntario caen por ON DELETE CASCADE).
-                await session.execute(delete(Vinculacion).where(Vinculacion.contacto_id == existe))
-                cid, marca, accion = existe, "~", "rellenados"
-            else:
+            if existe is None:
                 c = Contacto(tipo=tipo, numero_documento=doc,
                              agrupacion_id=agrupacion_id, activo=True, **build_kwargs)
                 session.add(c)
                 await session.flush()
-                cid, marca, accion = c.id, "+", "creados"
+                cid, marca, accion, hacer_facetas = c.id, "+", "creados", True
+            else:
+                cid = existe
+                actual = await _num_vinculaciones(session, cid)
+                if actual == esperadas:
+                    marca, accion, hacer_facetas = "=", "intactos", False
+                else:
+                    # Sembrado a medias (faltaban tipos): borra sus facetas y rehazlas
+                    # (los satélites Socio/Voluntario caen por ON DELETE CASCADE).
+                    await session.execute(delete(Vinculacion).where(Vinculacion.contacto_id == cid))
+                    marca, accion, hacer_facetas = "~", "rellenados", True
 
-            for (codigo, sat, overrides) in p["facetas"]:
-                await _alta_faceta(session, cid, codigo, tipo_ids,
-                                   sat=sat, overrides=overrides, agrupacion_id=agrupacion_id)
+            if hacer_facetas:
+                for (codigo, sat, overrides) in p["facetas"]:
+                    await _alta_faceta(session, cid, codigo, tipo_ids,
+                                       sat=sat, overrides=overrides, agrupacion_id=agrupacion_id)
+
+            acceso = ""
+            if p.get("usuario"):
+                creado = await _ensure_usuario(session, cid, p.get("email"))
+                acceso = " +acceso" if creado else " (acceso ya existía)"
+
             stats[accion] += 1
-            print(f"{marca} {etiqueta} ({esperadas} facetas)")
+            print(f"{marca} {etiqueta} ({esperadas} facetas{acceso})")
 
         for p in _PF:
             await procesar(
