@@ -203,6 +203,33 @@ wait_for_db  →  alembic upgrade head  →  python -m app.scripts.bootstrap  �
 
 ---
 
+## 8.1 Cuenta de sistema `superadmin` (uniforme en toda la cadena)
+
+Una **única** cuenta break-glass, igual en dev/staging/producción:
+
+- **Username fijo `superadmin`, sin email.** La crea/sincroniza `bootstrap.py`
+  (`ensure_superadmin_user`), idempotente. **No** se siembran admins por email;
+  los administradores de trabajo se crean **dentro de la app**, ya autenticados.
+- **Login por email O username:** el modelo `Usuario` tiene `username` (único) y
+  `email` (único, **opcional**). La mutation `login` acepta cualquiera de los dos.
+- **Contraseña fuera de banda**, secreto **`SUPERADMIN_PASSWORD`** (patrón de dos
+  capas, igual que el resto):
+  - **dev:** variable en `.env` (`SUPERADMIN_PASSWORD=...`).
+  - **staging/prod:** línea dentro del GitHub Secret `SIGA_ENV_STAGING` /
+    `ENV_PRODUCTION`; el deploy la materializa como Docker secret
+    `/run/secrets/superadmin_password`, y el backend la lee por
+    `SUPERADMIN_PASSWORD_FILE`.
+- **Cambiar la contraseña:** editar `SUPERADMIN_PASSWORD` en el origen (GitHub
+  Secret del entorno / `.env` en dev) y **redesplegar**. Al arrancar, bootstrap
+  detecta el cambio y **resincroniza** el hash. Si el secreto no está definido,
+  la cuenta no se crea (se registra y continúa).
+
+> **Authelia (producción):** el **factor de autenticación lo aporta Authelia**
+> (forward-auth). En prod la `SUPERADMIN_PASSWORD` de SIGA es para dev/break-glass
+> local; la contraseña real de acceso del `superadmin` se gestiona en el backend
+> de **Authelia**. El `username` de SIGA debe **coincidir** con el usuario
+> `superadmin` de Authelia (empalme identidad → rol SUPERADMIN vía `Remote-User`).
+
 ## 9. Catálogo de GitHub Secrets
 
 | Secret                  | Uso                                                  | Sensible |

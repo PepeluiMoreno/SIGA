@@ -1,9 +1,10 @@
 """Bootstrap idempotente al arrancar el backend.
 
 Sincroniza el catálogo de transacciones desde initial_data/transacciones.json,
-asegura el rol SUPERADMIN con todas las transacciones asignadas y, si las
-variables de entorno INITIAL_ADMIN_EMAIL e INITIAL_ADMIN_PASSWORD están
-definidas, crea el usuario administrador inicial vinculado a SUPERADMIN.
+asegura el rol SUPERADMIN con todas las transacciones asignadas y, si el secreto
+SUPERADMIN_PASSWORD está definido, asegura la cuenta de sistema `superadmin`
+(break-glass, username fijo, sin email) vinculada a SUPERADMIN. Los
+administradores de trabajo se crean desde dentro de la aplicación.
 
 Se invoca desde el CMD del Dockerfile tras `alembic upgrade head` y antes
 de arrancar uvicorn. Es idempotente: si los registros ya existen no hace
@@ -51,6 +52,7 @@ from app.scripts.seeding.catalogos_base import ensure_catalogos_base
 
 INITIAL_DATA_DIR = Path(__file__).resolve().parents[2] / "initial_data"
 SUPERADMIN_CODE = "SUPERADMIN"
+SUPERADMIN_USERNAME = "superadmin"
 
 
 async def sync_transacciones(session) -> dict[str, Transaccion]:
@@ -149,102 +151,83 @@ async def ensure_superadmin(
     return rol
 
 
-async def _ensure_single_admin(
-    session, email: str, password: str, superadmin: Rol
-) -> Usuario:
-    """Crea o sincroniza un único usuario admin con rol SUPERADMIN.
+async def ensure_superadmin_user(session, superadmin: Rol) -> Optional[Usuario]:
+    """Asegura la cuenta de sistema `superadmin` (break-glass). Idempotente.
 
-    Idempotente: si el usuario existe se sincronizan password y rol.
+    Username fijo `superadmin`, **sin email**. La contraseña se fija FUERA DE
+    BANDA con el secreto `SUPERADMIN_PASSWORD` (dev: variable en `.env`;
+    staging/producción: Docker secret `/run/secrets/superadmin_password`), leído
+    con `read_secret_env`. Si el secreto no está definido, NO se crea la cuenta
+    (se registra y se continúa).
+
+    En producción el factor de autenticación lo aporta **Authelia**; en SIGA esta
+    cuenta existe para resolver la identidad → rol SUPERADMIN (su username debe
+    coincidir con el usuario `superadmin` de Authelia). Los administradores de
+    trabajo NO se siembran aquí: se crean desde dentro de la aplicación, ya
+    autenticados.
     """
-    existing = (
-        await session.execute(select(Usuario).where(Usuario.email == email))
-    ).scalar_one_or_none()
-
-    if existing:
-        updated = False
-
-        if not existing.activo:
-            existing.activo = True
-            updated = True
-
-        if not existing.password_hash or not existing.password_hash.startswith("$2"):
-            existing.password_hash = hash_password(password)
-            updated = True
-
-        has_superadmin = (
-            await session.execute(
-                select(UsuarioRol).where(
-                    UsuarioRol.usuario_id == existing.id,
-                    UsuarioRol.rol_id == superadmin.id,
-                )
-            )
-        ).scalar_one_or_none()
-        if has_superadmin is None:
-            session.add(
-                UsuarioRol(
-                    usuario_id=existing.id,
-                    rol_id=superadmin.id,
-                    fecha_creacion=datetime.utcnow(),
-                    eliminado=False,
-                )
-            )
-            updated = True
-
-        # Si la password en el secret cambia, el siguiente arranque resincroniza.
-        if password and not verify_password(password, existing.password_hash):
-            existing.password_hash = hash_password(password)
-            updated = True
-
-        if updated:
-            await session.flush()
-            print(f"[bootstrap] Usuario admin sincronizado: {email}")
-        return existing
-
-    usuario = Usuario(
-        email=email,
-        password_hash=hash_password(password),
-        activo=True,
-    )
-    session.add(usuario)
-    await session.flush()
-
-    session.add(
-        UsuarioRol(
-            usuario_id=usuario.id,
-            rol_id=superadmin.id,
-            fecha_creacion=datetime.utcnow(),
-            eliminado=False,
-        )
-    )
-    await session.flush()
-    print(f"[bootstrap] Usuario admin creado: {email}")
-    return usuario
-
-
-async def ensure_admin_user(session, superadmin: Rol) -> Optional[Usuario]:
-    """Crea/sincroniza los usuarios admin iniciales.
-
-    `INITIAL_ADMIN_EMAIL` puede ser un único email o una lista separada por
-    comas; todos comparten `INITIAL_ADMIN_PASSWORD` y reciben SUPERADMIN.
-    Devuelve el primer usuario procesado (para compatibilidad con llamadores
-    anteriores).
-    """
-    raw_emails = os.getenv("INITIAL_ADMIN_EMAIL", "")
-    password = read_secret_env("INITIAL_ADMIN_PASSWORD") or None
-    emails = [e.strip() for e in raw_emails.split(",") if e.strip()]
-    if not emails or not password:
-        print(
-            "[bootstrap] INITIAL_ADMIN_EMAIL/INITIAL_ADMIN_PASSWORD no definidas; "
-            "omito creación de admin inicial"
-        )
+    password = read_secret_env("SUPERADMIN_PASSWORD") or None
+    if not password:
+        print("[bootstrap] SUPERADMIN_PASSWORD no definido; omito la cuenta superadmin")
         return None
 
-    primero: Optional[Usuario] = None
-    for email in emails:
-        usuario = await _ensure_single_admin(session, email, password, superadmin)
-        if primero is None:
-            primero = usuario
-    return primero
+    usuario = (
+        await session.execute(
+            select(Usuario).where(Usuario.username == SUPERADMIN_USERNAME)
+        )
+    ).scalar_one_or_none()
+
+    if usuario is None:
+        usuario = Usuario(
+            username=SUPERADMIN_USERNAME,
+            email=None,
+            password_hash=hash_password(password),
+            activo=True,
+        )
+        session.add(usuario)
+        await session.flush()
+        session.add(
+            UsuarioRol(
+                usuario_id=usuario.id,
+                rol_id=superadmin.id,
+                fecha_creacion=datetime.utcnow(),
+                eliminado=False,
+            )
+        )
+        await session.flush()
+        print("[bootstrap] Cuenta superadmin creada")
+        return usuario
+
+    # Existe: resincroniza password (si el secreto cambió), estado y rol.
+    updated = False
+    if not usuario.activo:
+        usuario.activo = True
+        updated = True
+    if not usuario.password_hash or not verify_password(password, usuario.password_hash):
+        usuario.password_hash = hash_password(password)
+        updated = True
+    has_role = (
+        await session.execute(
+            select(UsuarioRol).where(
+                UsuarioRol.usuario_id == usuario.id,
+                UsuarioRol.rol_id == superadmin.id,
+            )
+        )
+    ).scalar_one_or_none()
+    if has_role is None:
+        session.add(
+            UsuarioRol(
+                usuario_id=usuario.id,
+                rol_id=superadmin.id,
+                fecha_creacion=datetime.utcnow(),
+                eliminado=False,
+            )
+        )
+        updated = True
+    if updated:
+        await session.flush()
+        print("[bootstrap] Cuenta superadmin sincronizada")
+    return usuario
 
 
 
@@ -861,7 +844,7 @@ async def main() -> None:
             print(f"[bootstrap] Transacciones sincronizadas: {len(transacciones)}")
             superadmin = await ensure_superadmin(session, transacciones)
             print(f"[bootstrap] Rol SUPERADMIN listo (id={superadmin.id})")
-            await ensure_admin_user(session, superadmin)
+            await ensure_superadmin_user(session, superadmin)
             await ensure_parametros_organizacion(session)
             await ensure_niveles_organizativos(session)
             await ensure_temas_ui(session)

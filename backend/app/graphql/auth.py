@@ -6,7 +6,7 @@ from datetime import datetime, date
 from typing import Optional
 
 import strawberry
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import selectinload
 
 from ..core.audit import log_action
@@ -25,8 +25,9 @@ from app.graphql.permissions import RequireTransaction, RequireAuthenticated
 class UserPayload:
     """Datos públicos del usuario autenticado."""
     id: uuid.UUID
-    email: str
-    activo: bool
+    email: Optional[str] = None
+    username: Optional[str] = None
+    activo: bool = True
     miembro_id: Optional[uuid.UUID] = None
 
 
@@ -41,7 +42,8 @@ class LoginPayload:
 class MiPerfilPayload:
     """Perfil completo del usuario autenticado incluyendo datos de membresía."""
     id: uuid.UUID
-    email: str
+    email: Optional[str]
+    username: Optional[str]
     activo: bool
     ultimo_acceso: Optional[datetime]
     entidad_vinculacion: Optional[str]
@@ -51,13 +53,17 @@ class MiPerfilPayload:
 
 
 def _to_payload(u: Usuario) -> UserPayload:
-    return UserPayload(id=u.id, email=u.email, activo=u.activo, miembro_id=u.contacto_id)
+    return UserPayload(
+        id=u.id, email=u.email, username=u.username,
+        activo=u.activo, miembro_id=u.contacto_id,
+    )
 
 
 def _to_mi_perfil(u: Usuario) -> MiPerfilPayload:
     return MiPerfilPayload(
         id=u.id,
         email=u.email,
+        username=u.username,
         activo=u.activo,
         ultimo_acceso=u.ultimo_acceso,
         entidad_vinculacion=u.entidad_vinculacion,
@@ -119,12 +125,16 @@ class AuthMutation:
         email: str,
         password: str,
     ) -> LoginPayload:
-        """Autentica al usuario y devuelve un JWT."""
+        """Autentica al usuario y devuelve un JWT.
+
+        El parámetro `email` se trata como identificador: se acepta el **email**
+        o el **username** (p. ej. la cuenta de sistema `superadmin`, sin email).
+        """
         session = info.context.session
         request = info.context.request
 
         stmt = select(Usuario).where(
-            Usuario.email == email,
+            or_(Usuario.email == email, Usuario.username == email),
             Usuario.activo == True,  # noqa: E712
         )
         result = await session.execute(stmt)
@@ -148,7 +158,7 @@ class AuthMutation:
             accion=TipoAccion.LOGIN,
             usuario=usuario,
             exitoso=True,
-            descripcion=f"Login exitoso de {usuario.email}",
+            descripcion=f"Login exitoso de {usuario.email or usuario.username}",
             request=request,
         )
 

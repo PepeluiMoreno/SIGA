@@ -2,9 +2,9 @@
 # Verificación POST-deploy: estado de migraciones, conteos y smoke GraphQL.
 # Correr en el servidor tras el deploy (cuando el backend ya está arriba):
 #
-#     ENV_FILE=.env.staging SMOKE_EMAIL=admin@... SMOKE_PASSWORD=... deploy/post_deploy_check.sh
+#     ENV_FILE=.env.staging SMOKE_EMAIL=superadmin SMOKE_PASSWORD=... deploy/post_deploy_check.sh
 #
-# (Si no pasas SMOKE_EMAIL/PASSWORD usa INITIAL_ADMIN_* del .env.) Sale !=0 si algo falla.
+# (Si no pasas SMOKE_EMAIL/PASSWORD usa la cuenta `superadmin` + SUPERADMIN_PASSWORD.) Sale !=0 si algo falla.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

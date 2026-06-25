@@ -7,9 +7,9 @@ el deploy, p. ej.:
     docker compose ... exec -T -e SMOKE_EMAIL -e SMOKE_PASSWORD backend \
         python -m app.scripts.smoke_test
 
-Variables: SMOKE_EMAIL/SMOKE_PASSWORD (o INITIAL_ADMIN_EMAIL/INITIAL_ADMIN_PASSWORD),
-GQL_URL (por defecto http://localhost:8000/graphql). Sale con código !=0 si algún
-check falla (apto para gates de CI/deploy).
+Identidad: SMOKE_EMAIL/SMOKE_PASSWORD; por defecto la cuenta de sistema
+`superadmin` + SUPERADMIN_PASSWORD. GQL_URL (por defecto
+http://localhost:8000/graphql). Sale con código !=0 si algún check falla.
 """
 import json
 import os
@@ -17,8 +17,9 @@ import sys
 import urllib.request
 
 URL = os.environ.get("GQL_URL", "http://localhost:8000/graphql")
-EMAIL = os.environ.get("SMOKE_EMAIL") or os.environ.get("INITIAL_ADMIN_EMAIL")
-PASSWORD = os.environ.get("SMOKE_PASSWORD") or os.environ.get("INITIAL_ADMIN_PASSWORD")
+# Identificador de login: email o username. Por defecto la cuenta `superadmin`.
+EMAIL = os.environ.get("SMOKE_EMAIL") or "superadmin"
+PASSWORD = os.environ.get("SMOKE_PASSWORD") or os.environ.get("SUPERADMIN_PASSWORD")
 
 _fails = 0
 
@@ -42,7 +43,7 @@ def check(name: str, ok: bool, detail="") -> None:
 
 def main() -> int:
     if not EMAIL or not PASSWORD:
-        print("[smoke] Falta SMOKE_EMAIL/SMOKE_PASSWORD (o INITIAL_ADMIN_*).")
+        print("[smoke] Falta SMOKE_PASSWORD o SUPERADMIN_PASSWORD.")
         return 2
 
     print(f"[smoke] GraphQL en {URL} como {EMAIL}")
