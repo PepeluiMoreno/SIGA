@@ -152,17 +152,22 @@ const routes = [
   },
   {
     // Directorio CRM contacto-céntrico (PF+PJ, facetas). MVP: gateado con
-    // SOC_LIST (permiso ya existente); migrar a CNT_LIST al sembrarlo.
     path: '/contactos',
     component: () => import('@/modules/membresia/views/ListaContactos.vue'),
     name: 'Contactos',
-    meta: { requiresAuth: true, requiredPermission: 'SOC_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'CONTACTO_LIST' }
+  },
+  {
+    path: '/contactos/nuevo',
+    component: () => import('@/modules/membresia/views/DetalleContacto.vue'),
+    name: 'NuevoContacto',
+    meta: { requiresAuth: true, requiredPermission: 'CONTACTO_CREATE' }
   },
   {
     path: '/contactos/:id',
     component: () => import('@/modules/membresia/views/DetalleContacto.vue'),
     name: 'DetalleContacto',
-    meta: { requiresAuth: true, requiredPermission: 'SOC_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'CONTACTO_VIEW' }
   },
   {
     path: '/agrupaciones',

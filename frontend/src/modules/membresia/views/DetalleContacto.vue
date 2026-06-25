@@ -1,52 +1,79 @@
 <template>
-  <AppLayout title="Ficha de contacto" :subtitle="esPJ ? 'Persona jurídica' : 'Persona física'">
-    <div class="p-4 sm:p-6 max-w-6xl mx-auto">
+  <AppLayout :title="tituloPagina" :subtitle="esPJ ? 'Persona jurídica' : 'Persona física'">
+    <!-- Acciones en el topbar -->
+    <template #actions>
+      <template v-if="editing">
+        <button type="button" @click="cancelar"
+          class="h-8 px-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
+          Cancelar
+        </button>
+        <button type="button" @click="guardar" :disabled="guardando || !formValido"
+          class="h-8 px-4 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50">
+          {{ isCreate ? 'Crear contacto' : 'Guardar cambios' }}
+        </button>
+      </template>
+      <template v-else-if="contacto">
+        <button v-if="tienePermiso('CONTACTO_EDIT')" type="button" @click="editMode = true"
+          class="h-8 px-3 text-sm font-medium text-indigo-600 border border-slate-300 rounded-lg hover:bg-slate-50">
+          Editar
+        </button>
+        <button v-if="tienePermiso('CONTACTO_DELETE')" type="button" @click="toggleBaja"
+          class="h-8 px-3 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50"
+          :class="contacto.activo ? 'text-red-600' : 'text-emerald-600'">
+          {{ contacto.activo ? 'Dar de baja' : 'Reactivar' }}
+        </button>
+      </template>
+    </template>
 
+    <div class="p-4 sm:p-6 max-w-4xl mx-auto">
       <div v-if="cargando" class="text-center py-12 text-slate-400 text-sm">Cargando ficha…</div>
       <div v-else-if="error" class="rounded-md bg-red-50 border border-red-200 p-4 text-sm text-red-800">{{ error }}</div>
-      <div v-else-if="!contacto" class="text-center py-12 text-slate-400 text-sm">Contacto no encontrado.</div>
+      <div v-else-if="!isCreate && !contacto" class="text-center py-12 text-slate-400 text-sm">Contacto no encontrado.</div>
 
       <template v-else>
-        <!-- Tarjeta de contacto (arriba a la derecha, estilo flowww) -->
-        <div class="flex justify-end mb-4">
-          <div class="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-4 py-2.5 shadow-sm">
-            <AvatarImg :src="contacto.fotoUrl" :nombre="contacto.nombre" :apellido="contacto.apellido1" size="lg" shape="round" />
-            <div class="text-sm leading-tight">
-              <div class="font-medium text-slate-800">{{ titulo }}</div>
-              <div class="text-slate-500">{{ contacto.telefono || contacto.email || '—' }}</div>
-              <div class="flex items-center gap-2">
-                <span v-if="numeroSocio" class="text-slate-400 text-xs">Nº {{ numeroSocio }}</span>
-                <span v-if="!contacto.activo" class="text-xs text-red-600">inactivo</span>
-              </div>
-            </div>
+        <!-- Tipo (solo en alta) -->
+        <div v-if="isCreate" class="bg-white border border-slate-200 rounded-xl p-5 mb-3">
+          <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Tipo de contacto</span>
+          <div class="flex gap-2">
+            <button type="button" v-for="t in tiposPersona" :key="t.value" @click="form.tipo = t.value"
+              :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors',
+                form.tipo === t.value ? 'bg-indigo-50 border-indigo-300 text-indigo-700 font-medium' : 'bg-white border-slate-300 text-slate-600 hover:border-slate-400']">
+              {{ t.label }}
+            </button>
           </div>
         </div>
 
-        <!-- Datos personales (sección única, como la ficha de socio) -->
+        <!-- Datos personales -->
         <div class="bg-white border border-slate-200 rounded-xl p-5">
           <h2 class="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <span class="w-1.5 h-5 rounded-full bg-indigo-500"></span>
             Datos personales
+            <span v-if="!isCreate && contacto && !contacto.activo" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">inactivo</span>
           </h2>
-          <div class="flex flex-col sm:flex-row gap-6">
-            <AvatarImg :src="contacto.fotoUrl" :nombre="contacto.nombre" :apellido="contacto.apellido1" size="2xl" shape="carnet" />
-            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm flex-1">
-              <template v-if="esPJ">
-                <Campo label="Razón social" :valor="contacto.razonSocial" />
-                <Campo label="CIF" :valor="contacto.cif" />
-                <Campo label="Actividad principal" :valor="contacto.actividadPrincipal" />
-              </template>
-              <template v-else>
-                <Campo label="Nombre" :valor="[contacto.nombre, contacto.apellido1, contacto.apellido2].filter(Boolean).join(' ')" />
-                <Campo label="Documento" :valor="docFmt" />
-                <Campo label="Sexo" :valor="contacto.sexo" />
-                <Campo label="Fecha de nacimiento" :valor="contacto.fechaNacimiento" />
-                <Campo label="Profesión" :valor="contacto.profesion" />
-              </template>
-              <Campo label="Email" :valor="contacto.email" />
-              <Campo label="Teléfono" :valor="contacto.telefono" />
-              <Campo label="Dirección" :valor="[contacto.direccion, contacto.codigoPostal, contacto.localidad].filter(Boolean).join(', ')" />
-            </dl>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+            <template v-if="esPJ">
+              <FieldText v-model="form.razonSocial" label="Razón social *" :editing="editing" />
+              <FieldText v-model="form.cif" label="CIF" :editing="editing" />
+              <FieldText v-model="form.actividadPrincipal" label="Actividad principal" :editing="editing" class="sm:col-span-2" />
+            </template>
+            <template v-else>
+              <FieldText v-model="form.nombre" label="Nombre *" :editing="editing" />
+              <FieldText v-model="form.apellido1" label="Primer apellido" :editing="editing" />
+              <FieldText v-model="form.apellido2" label="Segundo apellido" :editing="editing" />
+              <FieldSelect v-model="form.sexo" label="Sexo" :editing="editing" :options="sexoOptions" />
+              <FieldText v-model="form.fechaNacimiento" label="Fecha de nacimiento" type="date" :editing="editing" />
+              <FieldText v-model="form.profesion" label="Profesión" :editing="editing" />
+              <FieldSelect v-model="form.tipoDocumento" label="Tipo de documento" :editing="editing" :options="tipoDocumentoOptions" />
+              <FieldText v-model="form.numeroDocumento" label="Nº documento" :editing="editing" />
+            </template>
+
+            <FieldText v-model="form.email" label="Email" type="email" :editing="editing" />
+            <FieldText v-model="form.telefono" label="Teléfono" :editing="editing" />
+            <FieldText v-model="form.telefono2" label="Tel. alternativo" :editing="editing" />
+            <FieldText v-model="form.direccion" label="Dirección" :editing="editing" class="sm:col-span-2" />
+            <FieldText v-model="form.codigoPostal" label="Código postal" :editing="editing" />
+            <FieldText v-model="form.localidad" label="Localidad" :editing="editing" />
           </div>
         </div>
 
@@ -56,10 +83,22 @@
             <span class="w-1.5 h-5 rounded-full bg-amber-500"></span>
             Representante legal
           </h2>
-          <div v-if="representante" class="flex items-center gap-4 group">
+
+          <!-- Edición: desplegable de personas físicas -->
+          <div v-if="editing">
+            <label class="block text-xs font-medium text-slate-500 mb-1">Representante (persona física)</label>
+            <select v-model="form.representanteLegalId"
+              class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+              <option value="">— Sin representante —</option>
+              <option v-for="c in pfContactos" :key="c.id" :value="c.id">{{ nombrePF(c) }}</option>
+            </select>
+          </div>
+
+          <!-- Vista: datos del representante + ojo a su ficha -->
+          <div v-else-if="representante" class="flex items-center gap-4 group">
             <AvatarImg :src="representante.fotoUrl" :nombre="representante.nombre" :apellido="representante.apellido1" size="lg" shape="round" />
             <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm flex-1">
-              <Campo label="Nombre" :valor="[representante.nombre, representante.apellido1, representante.apellido2].filter(Boolean).join(' ')" />
+              <Campo label="Nombre" :valor="nombrePF(representante)" />
               <Campo label="Documento" :valor="[representante.tipoDocumento, representante.numeroDocumento].filter(Boolean).join(' ')" />
               <Campo label="Email" :valor="representante.email" />
               <Campo label="Teléfono" :valor="representante.telefono" />
@@ -78,57 +117,131 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, h } from 'vue'
+import { ref, reactive, computed, onMounted, h, defineComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { EyeIcon } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
+import { usePermisos } from '@/composables/usePermisos.js'
+import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
 import { graphqlClient } from '@/graphql/client.js'
-import { GET_CONTACTO, VINCULACIONES_DE_CONTACTO } from '@/graphql/queries/contactos.js'
+import { GET_CONTACTO, GET_CONTACTOS, CREAR_CONTACTO, ACTUALIZAR_CONTACTO } from '@/graphql/queries/contactos.js'
+
+// ── Componentes de campo: input en edición, texto en vista ──────────────────
+const INP = 'w-full h-10 rounded-lg border border-slate-300 px-3 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30'
+const fmtCampo = (v) => (v === null || v === undefined || v === '' ? '—' : String(v))
 
 const Campo = (props) => h('div', {}, [
   h('dt', { class: 'text-xs text-slate-400' }, props.label),
-  h('dd', { class: 'text-slate-800' }, props.valor != null && props.valor !== '' ? String(props.valor) : '—'),
+  h('dd', { class: 'text-slate-800' }, fmtCampo(props.valor)),
 ])
 Campo.props = ['label', 'valor']
 
+const FieldText = defineComponent({
+  props: { modelValue: { default: '' }, label: { type: String, default: '' }, type: { type: String, default: 'text' }, editing: { type: Boolean, default: false } },
+  emits: ['update:modelValue'],
+  setup(props, { emit }) {
+    return () => h('div', [
+      h('label', { class: 'block text-xs font-medium text-slate-500 mb-1' }, props.label),
+      props.editing
+        ? h('input', { class: INP, type: props.type, value: props.modelValue ?? '', onInput: (e) => emit('update:modelValue', e.target.value) })
+        : h('div', { class: 'py-1.5 text-sm text-slate-800 min-h-[34px]' }, fmtCampo(props.modelValue)),
+    ])
+  },
+})
+
+const FieldSelect = defineComponent({
+  props: { modelValue: { default: '' }, label: { type: String, default: '' }, options: { type: Array, default: () => [] }, editing: { type: Boolean, default: false } },
+  emits: ['update:modelValue'],
+  setup(props, { emit }) {
+    const labelOf = (v) => props.options.find((o) => o.value === v)?.label
+    return () => h('div', [
+      h('label', { class: 'block text-xs font-medium text-slate-500 mb-1' }, props.label),
+      props.editing
+        ? h('select', { class: INP, value: props.modelValue ?? '', onChange: (e) => emit('update:modelValue', e.target.value) }, [
+            h('option', { value: '' }, '—'),
+            ...props.options.map((o) => h('option', { value: o.value }, o.label)),
+          ])
+        : h('div', { class: 'py-1.5 text-sm text-slate-800 min-h-[34px]' }, fmtCampo(labelOf(props.modelValue))),
+    ])
+  },
+})
+
 const route = useRoute()
 const router = useRouter()
-function verContacto(id) { router.push(`/contactos/${id}`) }
+const { tienePermiso } = usePermisos()
+const toast = useToast()
+const confirmar = useConfirm()
+
+const isCreate = computed(() => route.name === 'NuevoContacto' || !route.params.id)
+const editMode = ref(false)
+const editing = computed(() => isCreate.value || editMode.value)
+
+const cargando = ref(false)
+const error = ref('')
+const guardando = ref(false)
 const contacto = ref(null)
 const representante = ref(null)
-const vinculaciones = ref([])
-const cargando = ref(true)
-const error = ref('')
+const todosContactos = ref([])
 
-const esPJ = computed(() => contacto.value?.tipo === 'PERSONA_JURIDICA')
-const titulo = computed(() => {
-  const c = contacto.value
-  if (!c) return 'Contacto'
-  return esPJ.value ? (c.razonSocial || c.nombre) : [c.nombre, c.apellido1, c.apellido2].filter(Boolean).join(' ')
+const form = reactive({
+  tipo: 'PERSONA_FISICA',
+  nombre: '', apellido1: '', apellido2: '', razonSocial: '',
+  tipoDocumento: '', numeroDocumento: '', sexo: '', fechaNacimiento: '', profesion: '',
+  cif: '', actividadPrincipal: '', representanteLegalId: '',
+  email: '', telefono: '', telefono2: '', direccion: '', codigoPostal: '', localidad: '',
 })
-const docFmt = computed(() => {
-  const c = contacto.value
-  return c ? ([c.tipoDocumento, c.numeroDocumento].filter(Boolean).join(' ') || null) : null
+
+const tiposPersona = [
+  { value: 'PERSONA_FISICA', label: 'Persona física' },
+  { value: 'PERSONA_JURIDICA', label: 'Persona jurídica' },
+]
+const sexoOptions = [
+  { value: 'H', label: 'Hombre' },
+  { value: 'M', label: 'Mujer' },
+  { value: 'X', label: 'Otro / no especificado' },
+]
+const tipoDocumentoOptions = [
+  { value: 'DNI', label: 'DNI' }, { value: 'NIE', label: 'NIE' }, { value: 'NIF', label: 'NIF' },
+  { value: 'TIE', label: 'TIE' }, { value: 'PASAPORTE', label: 'Pasaporte' }, { value: 'OTRO', label: 'Otro' },
+]
+
+const esPJ = computed(() => form.tipo === 'PERSONA_JURIDICA')
+const tituloPagina = computed(() => {
+  if (isCreate.value) return 'Nuevo contacto'
+  return esPJ.value ? (form.razonSocial || 'Contacto') : [form.nombre, form.apellido1, form.apellido2].filter(Boolean).join(' ') || 'Contacto'
 })
-const numeroSocio = computed(() => {
-  const v = vinculaciones.value.find((x) => x.socio && x.socio.numeroSocio)
-  return v ? v.socio.numeroSocio : null
-})
+const pfContactos = computed(() =>
+  todosContactos.value
+    .filter((c) => c.tipo !== 'PERSONA_JURIDICA' && c.id !== route.params.id)
+    .sort((a, b) => nombrePF(a).localeCompare(nombrePF(b), 'es'))
+)
+const formValido = computed(() =>
+  esPJ.value ? !!form.razonSocial.trim() : !!form.nombre.trim()
+)
+
+function nombrePF(c) {
+  return [c?.nombre, c?.apellido1, c?.apellido2].filter(Boolean).join(' ') || '—'
+}
+
+function poblarForm(c) {
+  form.tipo = c.tipo || 'PERSONA_FISICA'
+  for (const k of Object.keys(form)) {
+    if (k === 'tipo') continue
+    if (c[k] != null) form[k] = c[k]
+  }
+}
 
 async function cargar() {
+  if (isCreate.value) return
   cargando.value = true
   error.value = ''
   try {
-    const id = route.params.id
-    const data = await graphqlClient.request(GET_CONTACTO, { id })
+    const data = await graphqlClient.request(GET_CONTACTO, { id: route.params.id })
     contacto.value = (data.contactos || [])[0] || null
-    representante.value = null
     if (contacto.value) {
-      const vd = await graphqlClient.request(VINCULACIONES_DE_CONTACTO, { contactoId: id })
-      vinculaciones.value = vd.vinculacionesDeContacto || []
-      // El representante legal (de una PJ) es otro contacto: se carga aparte por su id
-      // (ContactoType no expone la relación, solo representanteLegalId).
+      poblarForm(contacto.value)
       if (contacto.value.representanteLegalId) {
         const rd = await graphqlClient.request(GET_CONTACTO, { id: contacto.value.representanteLegalId })
         representante.value = (rd.contactos || [])[0] || null
@@ -141,5 +254,75 @@ async function cargar() {
   }
 }
 
-onMounted(cargar)
+async function cargarPFParaRepresentante() {
+  if (todosContactos.value.length) return
+  try {
+    const data = await graphqlClient.request(GET_CONTACTOS, { filter: { eliminado: { eq: false } } })
+    todosContactos.value = data.contactos || []
+  } catch { /* el selector quedará vacío */ }
+}
+
+// El payload solo envía valores con contenido (los vacíos van como null → no se tocan).
+function payload() {
+  const out = {}
+  for (const k of Object.keys(form)) {
+    if (k === 'tipo') continue
+    const v = form[k]
+    out[k] = (v === '' || v === undefined) ? null : v
+  }
+  return out
+}
+
+async function guardar() {
+  if (!formValido.value || guardando.value) return
+  guardando.value = true
+  try {
+    if (isCreate.value) {
+      const r = await graphqlClient.request(CREAR_CONTACTO, { data: { tipo: form.tipo, ...payload() } })
+      toast.success('Contacto creado.')
+      router.push(`/contactos/${r.crearContacto.id}`)
+    } else {
+      await graphqlClient.request(ACTUALIZAR_CONTACTO, { data: { id: route.params.id, ...payload() } })
+      toast.success('Contacto actualizado.')
+      editMode.value = false
+      representante.value = null
+      await cargar()
+    }
+  } catch (e) {
+    toast.error(e?.response?.errors?.[0]?.message || 'No se pudo guardar el contacto.')
+  } finally {
+    guardando.value = false
+  }
+}
+
+function cancelar() {
+  if (isCreate.value) { router.push('/contactos'); return }
+  editMode.value = false
+  if (contacto.value) poblarForm(contacto.value)
+}
+
+async function toggleBaja() {
+  const dar = contacto.value.activo
+  const ok = await confirmar({
+    titulo: dar ? '¿Dar de baja el contacto?' : '¿Reactivar el contacto?',
+    mensaje: dar ? 'El contacto quedará inactivo (baja lógica).' : 'El contacto volverá a estar activo.',
+    variante: dar ? 'aviso' : 'info',
+  })
+  if (!ok) return
+  try {
+    await graphqlClient.request(ACTUALIZAR_CONTACTO, { data: { id: route.params.id, activo: !dar } })
+    toast.success(dar ? 'Contacto dado de baja.' : 'Contacto reactivado.')
+    await cargar()
+  } catch (e) {
+    toast.error(e?.response?.errors?.[0]?.message || 'No se pudo cambiar el estado.')
+  }
+}
+
+function verContacto(id) { router.push(`/contactos/${id}`) }
+
+onMounted(async () => {
+  await cargar()
+  // Catálogo de PF para el selector de representante (al editar/crear una PJ).
+  if (editing.value) cargarPFParaRepresentante()
+})
 </script>

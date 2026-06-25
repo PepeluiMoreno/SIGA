@@ -1,5 +1,13 @@
 <template>
   <AppLayout title="Contactos" :subtitle="subtitulo">
+    <template v-if="tienePermiso('CONTACTO_CREATE')" #actions>
+      <router-link to="/contactos/nuevo"
+        class="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+        <span class="text-base leading-none">+</span>
+        Nuevo contacto
+      </router-link>
+    </template>
+
     <div class="p-4 sm:p-6 max-w-7xl mx-auto">
       <div class="flex items-center justify-end mb-4">
         <span class="text-sm text-slate-500">{{ contactosFiltrados.length }} de {{ contactos.length }}</span>
@@ -86,10 +94,12 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
+import { usePermisos } from '@/composables/usePermisos.js'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_CONTACTOS } from '@/graphql/queries/contactos.js'
 
 const router = useRouter()
+const { tienePermiso } = usePermisos()
 const orgConfig = useOrgConfigStore()
 const subtitulo = computed(() =>
   `Directorio de personas y entidades relacionadas de algún modo con ${orgConfig.nombre || 'la asociación'}`)
