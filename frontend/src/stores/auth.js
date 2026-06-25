@@ -14,6 +14,7 @@ const LOGIN_MUTATION = gql`
       user {
         id
         email
+        username
         activo
         miembroId
       }
@@ -28,6 +29,7 @@ const ME_QUERY = gql`
     me {
       id
       email
+      username
       activo
       miembroId
     }
@@ -90,10 +92,12 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const isAuthenticated = computed(() => !!token.value)
-  const userName = computed(() => user.value?.email?.split('@')[0] || 'Usuario')
+  const userName = computed(() =>
+    user.value?.email?.split('@')[0] || user.value?.username || 'Usuario'
+  )
   const userInitials = computed(() => {
-    const email = user.value?.email || 'US'
-    return email.slice(0, 2).toUpperCase()
+    const base = user.value?.email || user.value?.username || 'US'
+    return base.slice(0, 2).toUpperCase()
   })
 
   // Perfil del miembro vinculado (avatar del sidebar). Estado compartido para
