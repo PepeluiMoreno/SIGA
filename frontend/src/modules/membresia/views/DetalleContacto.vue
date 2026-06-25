@@ -26,7 +26,7 @@
         <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
         <TabsNavigation :tabs="tabs" :active-tab="tab" @tab-change="tab = $event" />
 
-        <div class="p-5" style="background-color: var(--t-tabsheet-bg, #f1edfb)">
+        <div class="p-5 bg-indigo-50">
           <!-- TAB: Datos -->
           <div v-show="tab === 'datos'" class="flex flex-col sm:flex-row gap-6">
             <AvatarImg :src="contacto.fotoUrl" :nombre="contacto.nombre" :apellido="contacto.apellido1" size="2xl" shape="carnet" />
