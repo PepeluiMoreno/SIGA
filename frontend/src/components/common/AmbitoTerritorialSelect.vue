@@ -1,5 +1,6 @@
 <template>
-  <div class="space-y-2">
+  <!-- Sin jerarquía territorial (org sin despliegue) no se muestra nada -->
+  <div v-if="niveles.length" class="space-y-2">
     <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Ámbito territorial</span>
 
     <!-- Un desplegable por nivel de la jerarquía: solo se muestran los niveles que existen -->
