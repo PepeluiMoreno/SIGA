@@ -843,22 +843,22 @@ const CATALOGOS = computed(() => [
     ],
   },
   {
-    grupo: 'Usuarios',
+    grupo: 'Contactos',
     items: [
       {
         key: 'tiposVinculacion', label: 'Tipos de vinculación', labelSingular: 'Tipo de vinculación',
-        descripcion: 'Socio, Simpatizante, Empleado externo…',
+        descripcion: 'Socio, Voluntario, Donante, Simpatizante, Empleado…',
         queryName: 'tiposVinculacion', query: Q.GET_TIPOS_VINCULACION_CATALOGO,
         mutations: { create: Q.CREATE_TIPO_VINCULACION, update: Q.UPDATE_TIPO_VINCULACION, delete: Q.DELETE_TIPO_VINCULACION },
         columnas: [
-          { key: 'nombre',         label: 'Nombre' },
-          { key: 'requiereEntidad', label: 'Requiere entidad', type: 'bool' },
-          { key: 'activo',         label: 'Activo', type: 'toggle' },
+          { key: 'nombre',          label: 'Nombre' },
+          { key: 'requiereSatelite', label: 'Requiere satélite', type: 'bool' },
+          { key: 'activo',          label: 'Activo', type: 'toggle' },
         ],
         campos: [
-          { name: 'nombre',         label: 'Nombre',                     type: 'text',     required: true, maxLength: 150 },
-          { name: 'requiereEntidad', label: 'Requiere especificar entidad', type: 'checkbox', default: false },
-          { name: 'activo',         label: 'En uso',                     type: 'checkbox', default: true },
+          { name: 'nombre',          label: 'Nombre',                       type: 'text',     required: true, maxLength: 150 },
+          { name: 'requiereSatelite', label: 'Requiere satélite (datos propios)', type: 'checkbox', default: false },
+          { name: 'activo',          label: 'En uso',                       type: 'checkbox', default: true },
         ],
       },
     ],

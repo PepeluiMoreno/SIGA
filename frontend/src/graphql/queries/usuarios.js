@@ -62,7 +62,7 @@ export const GET_TIPOS_VINCULACION = `
     tiposVinculacion {
       id
       nombre
-      requiereEntidad
+      requiereSatelite
       activo
     }
   }

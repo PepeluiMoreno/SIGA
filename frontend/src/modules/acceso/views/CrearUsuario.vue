@@ -176,7 +176,7 @@
             </select>
           </div>
 
-          <div v-if="tipoSeleccionado?.requiereEntidad">
+          <div v-if="tipoSeleccionado?.requiereSatelite">
             <label for="entidad" class="block text-sm font-medium text-slate-700 mb-1.5">
               {{ tipoSeleccionado.nombre.toLowerCase().includes('asociac') ? 'Asociación amiga' : 'Empresa' }}
             </label>
@@ -530,7 +530,7 @@ async function handleSubmit() {
       activo:                 form.value.activo,
       miembroId:              miembroAceptado.value?.id ?? null,
       tipoVinculacionId:      form.value.tipoVinculacionId || null,
-      entidadVinculacion:     tipoSeleccionado.value?.requiereEntidad
+      entidadVinculacion:     tipoSeleccionado.value?.requiereSatelite
                                 ? (form.value.entidadVinculacion || null)
                                 : null,
       enviarEmailBienvenida:  form.value.enviarEmailBienvenida,
