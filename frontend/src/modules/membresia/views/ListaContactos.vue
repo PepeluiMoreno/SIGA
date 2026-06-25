@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="Contactos" subtitle="Directorio de personas y entidades">
+  <AppLayout title="Contactos" :subtitle="subtitulo">
     <div class="p-4 sm:p-6 max-w-7xl mx-auto">
       <div class="flex items-center justify-end mb-4">
         <span class="text-sm text-slate-500">{{ contactosFiltrados.length }} de {{ contactos.length }}</span>
@@ -40,7 +40,7 @@
             <th class="px-4 py-3">Nombre / Razón social</th>
             <th class="px-4 py-3">Documento</th>
             <th class="px-4 py-3">Contacto</th>
-            <th class="px-4 py-3">Vinculación vigente</th>
+            <th class="px-4 py-3">Vinculación actual</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
@@ -85,10 +85,14 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
+import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_CONTACTOS } from '@/graphql/queries/contactos.js'
 
 const router = useRouter()
+const orgConfig = useOrgConfigStore()
+const subtitulo = computed(() =>
+  `Directorio de personas y entidades relacionadas de algún modo con ${orgConfig.nombre || 'la asociación'}`)
 function abrirFicha(id) {
   router.push(`/contactos/${id}`)
 }
