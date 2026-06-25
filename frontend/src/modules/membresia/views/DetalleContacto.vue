@@ -49,6 +49,29 @@
             </dl>
           </div>
         </div>
+
+        <!-- Representante legal (solo persona jurídica) -->
+        <div v-if="esPJ" class="bg-white border border-slate-200 rounded-xl p-5 mt-3">
+          <h2 class="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+            <span class="w-1.5 h-5 rounded-full bg-amber-500"></span>
+            Representante legal
+          </h2>
+          <div v-if="contacto.representanteLegal" class="flex items-center gap-4 group">
+            <AvatarImg :src="contacto.representanteLegal.fotoUrl" :nombre="contacto.representanteLegal.nombre" :apellido="contacto.representanteLegal.apellido1" size="lg" shape="round" />
+            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm flex-1">
+              <Campo label="Nombre" :valor="[contacto.representanteLegal.nombre, contacto.representanteLegal.apellido1, contacto.representanteLegal.apellido2].filter(Boolean).join(' ')" />
+              <Campo label="Documento" :valor="[contacto.representanteLegal.tipoDocumento, contacto.representanteLegal.numeroDocumento].filter(Boolean).join(' ')" />
+              <Campo label="Email" :valor="contacto.representanteLegal.email" />
+              <Campo label="Teléfono" :valor="contacto.representanteLegal.telefono" />
+            </dl>
+            <button type="button" @click="verContacto(contacto.representanteLegal.id)"
+              class="shrink-0 p-1.5 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors opacity-0 group-hover:opacity-100"
+              title="Ver ficha del representante">
+              <EyeIcon class="w-5 h-5" />
+            </button>
+          </div>
+          <p v-else class="text-sm text-slate-400">Sin representante legal asignado.</p>
+        </div>
       </template>
     </div>
   </AppLayout>
@@ -56,7 +79,8 @@
 
 <script setup>
 import { ref, computed, onMounted, h } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { EyeIcon } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
 import { graphqlClient } from '@/graphql/client.js'
@@ -69,6 +93,8 @@ const Campo = (props) => h('div', {}, [
 Campo.props = ['label', 'valor']
 
 const route = useRoute()
+const router = useRouter()
+function verContacto(id) { router.push(`/contactos/${id}`) }
 const contacto = ref(null)
 const vinculaciones = ref([])
 const cargando = ref(true)

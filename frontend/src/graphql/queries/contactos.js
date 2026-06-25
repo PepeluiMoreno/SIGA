@@ -62,6 +62,9 @@ export const GET_CONTACTO = `
       agrupacionId
       fotoUrl
       activo
+      representanteLegal {
+        id nombre apellido1 apellido2 email telefono tipoDocumento numeroDocumento fotoUrl
+      }
     }
   }
 `
