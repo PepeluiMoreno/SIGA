@@ -156,6 +156,15 @@
       "sistema": true
     },
     {
+      "codigo": "SOC_VIEW_IBAN",
+      "nombre": "Ver datos bancarios del socio",
+      "descripcion": "Ver IBAN/SWIFT/referencia de pago. Solo Tesorería del ámbito del socio o superior",
+      "modulo": "militancia",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
       "codigo": "TIPOSOC_MANAGE",
       "nombre": "Gestionar tipos de miembro",
       "descripcion": "Crear, editar y eliminar categorías de miembro",

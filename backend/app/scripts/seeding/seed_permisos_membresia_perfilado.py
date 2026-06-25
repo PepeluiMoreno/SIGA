@@ -39,8 +39,9 @@ _REPARTO = {
     "SOL_REJECT":           _SECRETARIA,
     "LIBRO_SOCIOS_GENERAR": _SECRETARIA,
     "LIBRO_SOCIOS_VER":     _SECRETARIA + _TESORERIA + ["PRESIDENTE", "VICEPRESIDENTE"],
-    # Tesorería: dimensión económica del socio
+    # Tesorería: dimensión económica del socio (editar y VER datos bancarios)
     "SOC_EDIT_ECONOMICO":   _TESORERIA,
+    "SOC_VIEW_IBAN":        _TESORERIA,
     # Coordinación / voluntariado
     "AVAIL_EDIT":           _COORDINACION,
     "HAB_ASSIGN":           _COORDINACION,

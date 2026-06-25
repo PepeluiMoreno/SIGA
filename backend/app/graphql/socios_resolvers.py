@@ -302,6 +302,27 @@ async def _construir_socios(
     return socios
 
 
+_BANK_FIELDS = ("iban", "swift_bic", "referencia_pago")
+
+
+async def _enmascarar_datos_bancarios(info, session, socios):
+    """Oculta IBAN/SWIFT/referencia salvo al tesorero del ámbito del socio (o superior).
+
+    Exige el permiso `SOC_VIEW_IBAN` y que la agrupación del socio caiga en el
+    ámbito territorial del usuario (o que su ámbito sea global = `None`).
+    """
+    from app.modules.acceso.services.ambito_territorial import agrupaciones_en_ambito
+    user = getattr(info.context, "user", None)
+    puede = bool(user) and await info.context.check_permission("SOC_VIEW_IBAN")
+    ambito = await agrupaciones_en_ambito(session, user.id) if puede else set()
+    for s in socios:
+        visible = puede and (ambito is None or s.agrupacion_id in ambito)
+        if not visible:
+            for f in _BANK_FIELDS:
+                setattr(s, f, None)
+    return socios
+
+
 @strawberry.type
 class SociosQuery:
     @strawberry.field
@@ -321,15 +342,17 @@ class SociosQuery:
         frontend pueda aliasar `miembros: socios(contactoId: $id)` y seguir leyendo
         `data.miembros[0]`.)
         """
-        return await _construir_socios(
+        res = await _construir_socios(
             info.context.session, contacto_id=contacto_id, agrupacion_id=agrupacion_id,
             activo=activo, es_voluntario=es_voluntario, eliminado=eliminado,
         )
+        return await _enmascarar_datos_bancarios(info, info.context.session, res)
 
     @strawberry.field
     async def socio(self, info: strawberry.Info, id: uuid.UUID) -> Optional[SocioVistaType]:
         """Un socio por id de contacto."""
         res = await _construir_socios(info.context.session, contacto_id=id)
+        res = await _enmascarar_datos_bancarios(info, info.context.session, res)
         return res[0] if res else None
 
     @strawberry.field
