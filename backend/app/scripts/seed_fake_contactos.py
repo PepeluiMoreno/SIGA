@@ -17,13 +17,25 @@ from __future__ import annotations
 import asyncio
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from app.core.database import async_session
 from app.modules.membresia.models.contacto import Contacto
 from app.modules.membresia.models.vinculacion import Vinculacion, Socio, Voluntario
 from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
 from app.modules.core.geografico.direccion import UnidadOrganizativa
+
+
+# Definiciones canónicas de los tipos de vinculación (mismas que catalogos_base).
+# El seed las crea si faltan, para no depender de que el bootstrap ya corriera.
+_TIPOS_DEF = [
+    ("FIRMANTE",     "Firmante",     "central",     "COMUNICACION_FIRMAS",            False),
+    ("SIMPATIZANTE", "Simpatizante", "central",     "COMUNICACION_SIMPATIZANTES",     False),
+    ("SOCIO",        "Socio",        "territorial", "MEMBRESIA_SOCIO_GESTIONAR",       True),
+    ("VOLUNTARIO",   "Voluntario",   "territorial", "MEMBRESIA_VOLUNTARIO_GESTIONAR",  True),
+    ("DONANTE",      "Donante",      "central",     "TESORERIA_DONANTES",              False),
+    ("EMPLEADO",     "Empleado",     "central",     "RECURSOS_HUMANOS",                True),
+]
 
 
 # --- Catálogo de datos fake (determinista) -----------------------------------
@@ -144,6 +156,23 @@ _PJ = [
 ]
 
 
+async def _ensure_tipos(session) -> int:
+    """Crea los TipoVinculacion que falten (idempotente). Devuelve cuántos creó."""
+    existentes = {c for (c,) in (await session.execute(select(TipoVinculacion.codigo))).all()}
+    creados = 0
+    for codigo, nombre, ambito, area, sat in _TIPOS_DEF:
+        if codigo in existentes:
+            continue
+        session.add(TipoVinculacion(
+            codigo=codigo, nombre=nombre, ambito=ambito,
+            area_responsable=area, requiere_satelite=sat, activo=True,
+        ))
+        creados += 1
+    if creados:
+        await session.flush()
+    return creados
+
+
 async def _tipo_ids(session) -> dict[str, "uuid.UUID"]:  # noqa: F821
     rows = (await session.execute(select(TipoVinculacion.codigo, TipoVinculacion.id))).all()
     return {codigo: tid for (codigo, tid) in rows}
@@ -171,65 +200,70 @@ async def _alta_faceta(session, contacto_id, codigo, tipo_ids, *, sat, overrides
     # DONANTE/FIRMANTE/SIMPATIZANTE/EMPLEADO: sin satélite (requiere_satelite=False).
 
 
+async def _num_vinculaciones(session, contacto_id) -> int:
+    return (await session.execute(
+        select(func.count(Vinculacion.id)).where(Vinculacion.contacto_id == contacto_id)
+    )).scalar() or 0
+
+
 async def main() -> None:
     async with async_session() as session:
+        nuevos_tipos = await _ensure_tipos(session)
+        if nuevos_tipos:
+            print(f"[seed] TipoVinculacion creados: {nuevos_tipos}")
         tipo_ids = await _tipo_ids(session)
         agrupacion_id = (await session.execute(
             select(UnidadOrganizativa.id).limit(1)
         )).scalar_one_or_none()
 
-        creados = 0
-        omitidos = 0
+        stats = {"creados": 0, "rellenados": 0, "intactos": 0}
 
-        # --- Personas físicas ---
+        async def procesar(p, tipo, doc, etiqueta, build_kwargs):
+            existe = (await session.execute(
+                select(Contacto.id).where(Contacto.numero_documento == doc)
+            )).scalar_one_or_none()
+
+            if existe is None:
+                c = Contacto(tipo=tipo, numero_documento=doc,
+                             agrupacion_id=agrupacion_id, activo=True, **build_kwargs)
+                session.add(c)
+                await session.flush()
+                cid, facetas, marca, accion = c.id, p["facetas"], "+", "creados"
+            elif await _num_vinculaciones(session, existe) == 0:
+                # Existe pero sin facetas (p.ej. de una ejecución anterior fallida): rellenar.
+                cid, facetas, marca, accion = existe, p["facetas"], "~", "rellenados"
+            else:
+                stats["intactos"] += 1
+                return
+
+            for (codigo, sat, overrides) in facetas:
+                await _alta_faceta(session, cid, codigo, tipo_ids,
+                                   sat=sat, overrides=overrides, agrupacion_id=agrupacion_id)
+            stats[accion] += 1
+            print(f"{marca} {etiqueta} ({len(facetas)} facetas)")
+
         for p in _PF:
-            existe = (await session.execute(
-                select(Contacto.id).where(Contacto.numero_documento == p["doc"])
-            )).scalar_one_or_none()
-            if existe:
-                omitidos += 1
-                continue
-            c = Contacto(
-                tipo="PERSONA_FISICA",
-                nombre=p["nombre"], apellido1=p["apellido1"], apellido2=p.get("apellido2"),
-                email=p.get("email"), telefono=p.get("telefono"), sexo=p.get("sexo"),
-                tipo_documento="DNI", numero_documento=p["doc"],
-                agrupacion_id=agrupacion_id, activo=True,
+            await procesar(
+                p, "PERSONA_FISICA", p["doc"],
+                f"PF {p['nombre']} {p['apellido1']}",
+                dict(nombre=p["nombre"], apellido1=p["apellido1"], apellido2=p.get("apellido2"),
+                     email=p.get("email"), telefono=p.get("telefono"), sexo=p.get("sexo"),
+                     tipo_documento="DNI"),
             )
-            session.add(c)
-            await session.flush()
-            for (codigo, sat, overrides) in p["facetas"]:
-                await _alta_faceta(session, c.id, codigo, tipo_ids,
-                                   sat=sat, overrides=overrides, agrupacion_id=agrupacion_id)
-            creados += 1
-            print(f"+ PF {p['nombre']} {p['apellido1']} ({len(p['facetas'])} facetas)")
 
-        # --- Personas jurídicas ---
         for p in _PJ:
-            existe = (await session.execute(
-                select(Contacto.id).where(Contacto.cif == p["cif"])
-            )).scalar_one_or_none()
-            if existe:
-                omitidos += 1
-                continue
-            c = Contacto(
-                tipo="PERSONA_JURIDICA",
-                nombre=p["razon_social"], razon_social=p["razon_social"],
-                tipo_documento="CIF", cif=p["cif"], numero_documento=p["cif"],
-                actividad_principal=p.get("actividad_principal"),
-                email=p.get("email"), telefono=p.get("telefono"),
-                agrupacion_id=agrupacion_id, activo=True,
+            await procesar(
+                p, "PERSONA_JURIDICA", p["cif"],
+                f"PJ {p['razon_social']}",
+                dict(nombre=p["razon_social"], razon_social=p["razon_social"],
+                     tipo_documento="CIF", cif=p["cif"],
+                     actividad_principal=p.get("actividad_principal"),
+                     email=p.get("email"), telefono=p.get("telefono")),
             )
-            session.add(c)
-            await session.flush()
-            for (codigo, sat, overrides) in p["facetas"]:
-                await _alta_faceta(session, c.id, codigo, tipo_ids,
-                                   sat=sat, overrides=overrides, agrupacion_id=agrupacion_id)
-            creados += 1
-            print(f"+ PJ {p['razon_social']} ({len(p['facetas'])} facetas)")
 
         await session.commit()
-        print(f"\n[seed_fake_contactos] Creados: {creados} · Omitidos (ya existían): {omitidos}")
+        print(f"\n[seed_fake_contactos] Creados: {stats['creados']} · "
+              f"Rellenados: {stats['rellenados']} · Intactos: {stats['intactos']}")
 
 
 if __name__ == "__main__":
