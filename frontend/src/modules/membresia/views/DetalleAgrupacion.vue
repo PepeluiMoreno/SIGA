@@ -67,15 +67,15 @@
         </div>
       </section>
 
-      <!-- ══ 2 · CARGOS REGISTRADOS ════════════════════════════════════════ -->
+      <!-- ══ 2 · SOCIOS DE LA UNIDAD ═══════════════════════════════════════ -->
       <section :class="cardCls">
         <button type="button" @click="togglePanel('cargos')" :class="accordionBtn(open.cargos)">
           <span class="flex items-center gap-3">
             <span class="shrink-0 w-1.5 h-5 rounded-full bg-violet-500"></span>
-            <h2 :class="titleCls">Cargos registrados</h2>
-            <span v-if="todosRegistros.length"
+            <h2 :class="titleCls">Socios de la unidad</h2>
+            <span v-if="miembros.length"
               class="px-2 py-0.5 bg-violet-50 text-violet-700 border border-violet-200 text-xs font-semibold rounded-full tabular-nums">
-              {{ todosRegistros.length }}
+              {{ miembros.length }}
             </span>
           </span>
           <ChevronDownIcon :class="chevronCls(open.cargos)" />
@@ -90,60 +90,41 @@
             </button>
           </div>
 
-          <div v-if="!todosRegistros.length"
+          <div v-if="!miembros.length"
             class="py-8 text-center text-xs text-slate-400 italic">
-            Sin cargos registrados para esta unidad.
+            Sin socios en esta unidad.
           </div>
           <div v-else class="overflow-x-auto -mx-1"><table class="w-full">
             <thead>
               <tr class="border-b border-slate-100">
-                <th class="pb-2 text-left text-xs font-semibold text-slate-400 w-full sm:w-36">Cargo</th>
-                <th class="pb-2 text-left text-xs font-semibold text-slate-400">Titular</th>
-                <th class="pb-2 text-left text-xs font-semibold text-slate-400 hidden md:table-cell">Localidad</th>
-                <th class="pb-2 text-left text-xs font-semibold text-slate-400 w-full sm:w-28 hidden sm:table-cell">Desde</th>
-                <th class="pb-2 text-left text-xs font-semibold text-slate-400 w-24 hidden lg:table-cell">Estado</th>
-                <th class="w-20"></th>
+                <th class="pb-2 text-left text-xs font-semibold text-slate-400">Socio</th>
+                <th class="pb-2 text-left text-xs font-semibold text-slate-400">Cargo</th>
+                <th class="pb-2 text-left text-xs font-semibold text-slate-400 hidden md:table-cell">Email</th>
+                <th class="w-12"></th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="reg in todosRegistros" :key="reg.id"
-                class="group border-b border-slate-50 last:border-0">
+              <tr v-for="s in miembros" :key="s.id"
+                class="group border-b border-slate-50 last:border-0 hover:bg-indigo-50/40 cursor-pointer transition-colors"
+                @click="verFicha(s.id)">
                 <td class="py-2.5 pr-3">
-                  <span class="text-sm font-medium text-slate-700">{{ reg.rol?.nombre || '—' }}</span>
+                  <span class="text-sm font-medium text-slate-800">{{ s.apellido1 }}{{ s.apellido2 ? ' ' + s.apellido2 : '' }}, {{ s.nombre }}</span>
                 </td>
                 <td class="py-2.5 pr-3">
-                  <span class="text-sm text-slate-800">
-                    {{ reg.miembro?.nombre }} {{ reg.miembro?.apellido1 }}
+                  <span v-for="c in cargosDe(s.id)" :key="c"
+                    class="inline-block mr-1 px-2 py-0.5 bg-violet-100 text-violet-800 text-xs font-semibold rounded-full">
+                    {{ c }}
                   </span>
+                  <span v-if="!cargosDe(s.id).length" class="text-xs text-slate-300">—</span>
                 </td>
-                <td class="py-2.5 pr-3 text-sm text-slate-500 hidden md:table-cell">
-                  {{ reg.agrupacion?.nombre || '—' }}
+                <td class="py-2.5 pr-3 text-sm text-slate-500 hidden md:table-cell">{{ s.email || '—' }}</td>
+                <td class="py-2.5 text-right">
+                  <button type="button" @click.stop="verFicha(s.id)"
+                    class="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors opacity-0 group-hover:opacity-100"
+                    title="Ver ficha del socio">
+                    <EyeIcon class="w-4 h-4" />
+                  </button>
                 </td>
-                <td class="py-2.5 pr-3 text-sm text-slate-500 tabular-nums hidden sm:table-cell">
-                  {{ fmtFecha(reg.fechaInicio) }}
-                </td>
-                <td class="py-2.5 pr-3 hidden lg:table-cell">
-                  <span class="px-2 py-0.5 text-xs rounded-full font-medium"
-                    :class="estadoBadge(reg.estado)">
-                    {{ reg.estado }}
-                  </span>
-                </td>
-                <td class="py-2.5" v-if="!reg._esHijo">
-                  <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                    <button type="button" @click="abrirRegistro(reg)"
-                      class="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
-                      title="Editar">
-                      <PencilIcon class="w-3.5 h-3.5" />
-                    </button>
-                    <button v-if="reg.estado === 'ACTIVO'" type="button"
-                      @click="cesarRegistro(reg)"
-                      class="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                      title="Dar de baja">
-                      <XMarkIcon class="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </td>
-                <td v-else class="py-2.5"></td>
               </tr>
             </tbody>
           </table></div>
@@ -231,17 +212,29 @@
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   ChevronDownIcon, ChevronLeftIcon,
-  PencilIcon, PlusIcon, XMarkIcon,
+  PencilIcon, PlusIcon, XMarkIcon, EyeIcon,
 } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
 const confirmDialog = useConfirm()
 
 const route = useRoute()
+const router = useRouter()
 const agrupacionId = computed(() => route.params.id)
+
+// Navega a la ficha del socio (vista). Patrón "ojo" reutilizable en datagrids.
+function verFicha(socioId) { router.push(`/miembros/${socioId}`) }
+
+// Cargos electos (activos) que ostenta un socio en esta unidad → badges.
+function cargosDe(socioId) {
+  return nombramientos.value
+    .filter(n => n.miembro?.id === socioId && n.estado === 'ACTIVO')
+    .map(n => n.rol?.nombre)
+    .filter(Boolean)
+}
 
 // ── Estilos ─────────────────────────────────────────────────────────────────
 const cardCls = 'rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden'
@@ -341,7 +334,7 @@ const Q_HIJOS = `
 const Q_MIEMBROS = `
   query MiembrosAgrupacion($agrupacionId: UUID!) {
     miembros: socios(agrupacionId: $agrupacionId) {
-      id nombre apellido1
+      id nombre apellido1 apellido2 email
     }
   }
 `
