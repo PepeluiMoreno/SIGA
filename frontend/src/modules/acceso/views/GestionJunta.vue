@@ -215,20 +215,17 @@
             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             :placeholder="`Siguiente disponible: ${siguientePosicion}`"/>
         </div>
-        <div class="relative">
+        <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">{{ orgConfig.Miembro }} <span class="text-red-500">*</span></label>
-          <input v-model="busquedaMiembro" type="text" placeholder="Buscar por nombre..."
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"/>
-          <div v-if="miembrosFiltrados.length > 0 && busquedaMiembro.length > 1"
-            class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
-            <button v-for="m in miembrosFiltrados" :key="m.id" @click="seleccionarMiembro(m)"
-              class="w-full text-left px-4 py-2 text-sm hover:bg-purple-50 transition-colors">
-              {{ nombreCompleto(m) }}
-              <span class="text-xs text-gray-400 ml-2">{{ m.email }}</span>
-            </button>
-          </div>
-          <p v-if="formCargo.miembroId" class="mt-1 text-sm text-purple-700 font-medium">
-            Seleccionado: {{ miembroSeleccionadoNombre }}
+          <select v-model="formCargo.miembroId"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <option value="">Seleccionar socio activo…</option>
+            <option v-for="m in miembros" :key="m.id" :value="m.id">
+              {{ nombreCompleto(m) }}{{ m.email ? ` · ${m.email}` : '' }}
+            </option>
+          </select>
+          <p v-if="!miembros.length" class="mt-1 text-xs text-gray-400">
+            No hay socios activos en esta agrupación.
           </p>
         </div>
         <div>
@@ -355,7 +352,10 @@ async function cargarDatos() {
     const [juntas, tiposRes, miembrosRes] = await Promise.all([
       graphqlClient.request(GET_JUNTA_ACTIVA, { agrupacionId }),
       graphqlClient.request(GET_TIPOS_CARGO),
-      graphqlClient.request(`query { miembros: socios { id nombre apellido1 apellido2 email } }`),
+      graphqlClient.request(
+        `query($agrupacionId: UUID!) { miembros: socios(agrupacionId: $agrupacionId, activo: true) { id nombre apellido1 apellido2 email } }`,
+        { agrupacionId },
+      ),
     ])
     junta.value      = juntas.juntasDirectivas?.[0] || null
     tiposCargo.value = (tiposRes.tiposCargo || []).sort((a, b) => a.orden - b.orden)
