@@ -87,6 +87,15 @@ ORGANIZACION_ROLES = [
         "es_territorial": False,
         "nivel_territorial": None,
     },
+    {
+        # Captación de socios / extensión: gestiona el CRM de contactos (leads).
+        "codigo": "EXTENSION",
+        "nombre": "Extensión",
+        "descripcion": "Captación de socios y extensión: gestión del CRM de contactos",
+        "nivel": 10,
+        "es_territorial": False,
+        "nivel_territorial": None,
+    },
 ]
 
 

@@ -48,6 +48,51 @@
       "sistema": true
     },
     {
+      "codigo": "CONTACTO_LIST",
+      "nombre": "Listar contactos",
+      "descripcion": "Ver el directorio de contactos (CRM): personas y entidades relacionadas",
+      "modulo": "contactos",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CONTACTO_VIEW",
+      "nombre": "Ver ficha de contacto",
+      "descripcion": "Ver la ficha completa de un contacto",
+      "modulo": "contactos",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CONTACTO_CREATE",
+      "nombre": "Crear contacto",
+      "descripcion": "Alta de un contacto (persona física o jurídica) en el CRM",
+      "modulo": "contactos",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CONTACTO_EDIT",
+      "nombre": "Editar contacto",
+      "descripcion": "Modificar la identidad y datos de un contacto",
+      "modulo": "contactos",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "CONTACTO_DELETE",
+      "nombre": "Dar de baja contacto",
+      "descripcion": "Desactivar (baja lógica) un contacto",
+      "modulo": "contactos",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
       "codigo": "SOC_LIST",
       "nombre": "Listar miembros",
       "descripcion": "Ver listado de miembros registrados",

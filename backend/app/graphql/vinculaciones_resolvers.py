@@ -240,7 +240,7 @@ async def _ocultar_iban_facetas(info, session, vincs):
 @strawberry.type
 class VinculacionesMutation:
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_CREAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CONTACTO_CREATE")])
     async def crear_contacto(self, info: strawberry.Info, data: ContactoCreateInput) -> ContactoType:
         """Crea un Contacto (persona física o jurídica) sin vinculación inicial."""
         session = info.context.session
@@ -271,7 +271,7 @@ class VinculacionesMutation:
             select(Contacto).where(Contacto.id == contacto.id)
         )).scalar_one()
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_EDITAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CONTACTO_EDIT")])
     async def actualizar_contacto(self, info: strawberry.Info, data: ContactoUpdateInput) -> ContactoType:
         """Actualiza la identidad de un Contacto (campos no nulos del input)."""
         session = info.context.session
