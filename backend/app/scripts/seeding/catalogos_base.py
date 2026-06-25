@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select, text
+from sqlalchemy import or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
@@ -336,6 +336,28 @@ async def _ensure_by_field(session: AsyncSession, model, field: str, items: list
     return creados
 
 
+async def _ensure_by_codigo_o_nombre(session: AsyncSession, model, items: list[dict]) -> int:
+    """Para catálogos con UNIQUE en `codigo` Y en `nombre` (p. ej. TipoVinculacion):
+    omite la fila si ya existe por CUALQUIERA de los dos. Comprobar por un solo
+    campo rompía con `..._nombre_key`/`..._codigo_key` ante drift de datos.
+    """
+    creados = 0
+    for data in items:
+        existente = (
+            await session.execute(
+                select(model).where(
+                    or_(model.codigo == data["codigo"], model.nombre == data["nombre"])
+                )
+            )
+        ).scalars().first()
+        if existente is None:
+            session.add(model(id=uuid.uuid4(), **data))
+            creados += 1
+    if creados:
+        await session.flush()
+    return creados
+
+
 async def ensure_catalogos_base(session: AsyncSession) -> None:
     """Siembra todos los catálogos esenciales para un entorno greenfield.
 
@@ -412,10 +434,14 @@ async def ensure_catalogos_base(session: AsyncSession) -> None:
     if n:
         resultados["EstadoPlanificacion"] = n
 
+    # TipoVinculacion: UNIQUE en codigo Y nombre -> comprobar por ambos
+    n = await _ensure_by_codigo_o_nombre(session, TipoVinculacion, _TIPOS_VINCULACION)
+    if n:
+        resultados["TipoVinculacion"] = n
+
     # Catálogos por nombre
     for model, items in (
         (MotivoBaja, _MOTIVOS_BAJA),
-        (TipoVinculacion, _TIPOS_VINCULACION),
         (NivelEstudios, _NIVELES_ESTUDIOS),
         (NivelHabilidad, _NIVELES_HABILIDAD),
         (TipoReunion, _TIPOS_REUNION),

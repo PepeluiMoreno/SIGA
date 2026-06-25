@@ -19,7 +19,7 @@ from typing import Optional
 
 import uuid
 
-from sqlalchemy import or_, select
+from sqlalchemy import select
 
 from app.core.database import async_session
 from app.core.secrets import read_secret_env
@@ -42,7 +42,6 @@ from app.modules.core.geografico.nivel_organizativo import (
 from app.modules.membresia.models.estado_miembro import EstadoMiembro
 from app.modules.membresia.models.historial_nombramiento import HistorialNombramiento
 from app.modules.membresia.models.miembro import TipoMiembro
-from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
 from app.modules.membresia.models.contacto import Contacto
 from app.modules.economico.models.cobro.forma_pago import FormaPago  # noqa: F401 — registra mapper
 from app.scripts.seeding.seed_init_accesos import seed as seed_roles_funcionales
@@ -615,44 +614,6 @@ async def ensure_catalogos_iniciales(session) -> None:
             print(f"[bootstrap] {k}: +{v} registros creados")
 
 
-# Catálogo canónico de tipos de vínculo persona↔organización (antes sembrado en
-# la migración t5u6…p2; ahora bootstrap es su dueño único).
-_TIPOS_VINCULACION = [
-    {"nombre": "Firmante",     "codigo": "FIRMANTE",     "ambito": "central",     "area_responsable": "COMUNICACION_FIRMAS",            "requiere_satelite": False},
-    {"nombre": "Simpatizante", "codigo": "SIMPATIZANTE", "ambito": "central",     "area_responsable": "COMUNICACION_SIMPATIZANTES",     "requiere_satelite": False},
-    {"nombre": "Socio",        "codigo": "SOCIO",        "ambito": "territorial", "area_responsable": "MEMBRESIA_SOCIO_GESTIONAR",      "requiere_satelite": True},
-    {"nombre": "Voluntario",   "codigo": "VOLUNTARIO",   "ambito": "territorial", "area_responsable": "MEMBRESIA_VOLUNTARIO_GESTIONAR", "requiere_satelite": True},
-    {"nombre": "Donante",      "codigo": "DONANTE",      "ambito": "central",     "area_responsable": "TESORERIA_DONANTES",             "requiere_satelite": False},
-    {"nombre": "Empleado",     "codigo": "EMPLEADO",     "ambito": "central",     "area_responsable": "RECURSOS_HUMANOS",               "requiere_satelite": True},
-]
-
-
-async def ensure_tipos_vinculacion(session) -> None:
-    """Catálogo de tipos de vínculo persona↔organización. Idempotente.
-
-    Bootstrap es el dueño único de este catálogo. La tabla tiene UNIQUE en
-    `codigo` Y en `nombre`: se omite la fila si ya existe por cualquiera de los
-    dos, evitando el choque `tipos_vinculacion_nombre_key` ante drift de datos.
-    """
-    creados = 0
-    for d in _TIPOS_VINCULACION:
-        existe = (await session.execute(
-            select(TipoVinculacion).where(
-                or_(
-                    TipoVinculacion.codigo == d["codigo"],
-                    TipoVinculacion.nombre == d["nombre"],
-                )
-            )
-        )).scalar_one_or_none()
-        if existe:
-            continue
-        session.add(TipoVinculacion(id=uuid.uuid4(), activo=True, **d))
-        creados += 1
-    if creados:
-        await session.flush()
-        print(f"[bootstrap] TipoVinculacion: +{creados} registros creados")
-
-
 _PLANTILLAS_EMAIL = [
     {
         "codigo": "CAMP_APROBACION",
@@ -905,7 +866,6 @@ async def main() -> None:
             await ensure_niveles_organizativos(session)
             await ensure_temas_ui(session)
             await ensure_catalogos_iniciales(session)
-            await ensure_tipos_vinculacion(session)
             await ensure_catalogos_base(session)
             await ensure_plantillas_email(session)
             await seed_comunicacion(session)
