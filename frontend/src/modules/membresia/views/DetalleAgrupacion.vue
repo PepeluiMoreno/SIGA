@@ -444,28 +444,33 @@ async function guardarRegistro() {
   modal.guardando = true
   modal.error = null
   try {
-    const data = {
-      miembroId: modal.miembroId,
-      rolId: modal.rolId,
-      agrupacionId: agrupacionId.value,
-      fechaInicio: modal.fechaInicio,
-      fechaFin: modal.fechaFin || null,
-      observaciones: modal.observaciones || null,
-      estado: 'ACTIVO',
-    }
     if (modal.editandoId) {
+      // El update input de strawchemy excluye las FK: en edición solo cambian escalares.
       await executeMutation(
         `mutation ActualizarRegistro($data: HistorialNombramientoUpdateInput!) {
            actualizarHistorialNombramiento(data: $data) { id }
          }`,
-        { data: { id: modal.editandoId, ...data } }
+        { data: {
+            id: modal.editandoId,
+            fechaInicio: modal.fechaInicio,
+            fechaFin: modal.fechaFin || null,
+            observaciones: modal.observaciones || null,
+        } }
       )
     } else {
+      // Alta: mutación custom con FKs planas (el create input autogenerado no las acepta).
       await executeMutation(
-        `mutation CrearRegistro($data: HistorialNombramientoCreateInput!) {
-           crearHistorialNombramiento(data: $data) { id }
+        `mutation CrearNombramiento($miembroId: UUID!, $rolId: UUID!, $agrupacionId: UUID!, $fechaInicio: Date!, $fechaFin: Date, $observaciones: String) {
+           crearNombramiento(miembroId: $miembroId, rolId: $rolId, agrupacionId: $agrupacionId, fechaInicio: $fechaInicio, fechaFin: $fechaFin, observaciones: $observaciones) { id }
          }`,
-        { data }
+        {
+          miembroId: modal.miembroId,
+          rolId: modal.rolId,
+          agrupacionId: agrupacionId.value,
+          fechaInicio: modal.fechaInicio,
+          fechaFin: modal.fechaFin || null,
+          observaciones: modal.observaciones || null,
+        }
       )
     }
     modal.visible = false
