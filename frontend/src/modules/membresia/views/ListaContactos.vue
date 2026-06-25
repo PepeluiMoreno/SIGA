@@ -1,15 +1,9 @@
 <template>
-  <div class="p-4 sm:p-6 max-w-7xl mx-auto">
-    <!-- Cabecera -->
-    <div class="flex items-center justify-between mb-4">
-      <div>
-        <h1 class="text-xl font-semibold text-slate-800">Contactos</h1>
-        <p class="text-sm text-slate-500">
-          Directorio de personas y entidades. Cada contacto puede tener varias facetas.
-        </p>
+  <AppLayout title="Contactos" subtitle="Directorio de personas y entidades">
+    <div class="p-4 sm:p-6 max-w-7xl mx-auto">
+      <div class="flex items-center justify-end mb-4">
+        <span class="text-sm text-slate-500">{{ contactosFiltrados.length }} de {{ contactos.length }}</span>
       </div>
-      <span class="text-sm text-slate-500">{{ contactosFiltrados.length }} de {{ contactos.length }}</span>
-    </div>
 
     <!-- Filtros -->
     <div class="flex flex-wrap gap-2 mb-4">
@@ -78,11 +72,13 @@
         </tbody>
       </table>
     </div>
-  </div>
+    </div>
+  </AppLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import AppLayout from '@/components/common/AppLayout.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_CONTACTOS } from '@/graphql/queries/contactos.js'
 
