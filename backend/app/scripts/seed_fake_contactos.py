@@ -17,7 +17,7 @@ from __future__ import annotations
 import asyncio
 from datetime import date
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 
 from app.core.database import async_session
 from app.modules.membresia.models.contacto import Contacto
@@ -157,18 +157,30 @@ _PJ = [
 
 
 async def _ensure_tipos(session) -> int:
-    """Crea los TipoVinculacion que falten (idempotente). Devuelve cuántos creó."""
-    existentes = {c for (c,) in (await session.execute(select(TipoVinculacion.codigo))).all()}
+    """Asegura los TipoVinculacion canónicos tolerando drift.
+
+    `tipos_vinculacion` tiene unique en codigo Y en nombre. Empareja por codigo O
+    nombre; si la fila existe por nombre con un codigo distinto, reconcilia el
+    codigo (sin chocar con el unique); si no existe, la crea. Devuelve cuántos creó.
+    """
+    rows = (await session.execute(select(TipoVinculacion))).scalars().all()
+    por_codigo = {r.codigo: r for r in rows}
+    por_nombre = {r.nombre: r for r in rows}
     creados = 0
+    cambios = False
     for codigo, nombre, ambito, area, sat in _TIPOS_DEF:
-        if codigo in existentes:
-            continue
-        session.add(TipoVinculacion(
-            codigo=codigo, nombre=nombre, ambito=ambito,
-            area_responsable=area, requiere_satelite=sat, activo=True,
-        ))
-        creados += 1
-    if creados:
+        r = por_codigo.get(codigo) or por_nombre.get(nombre)
+        if r is None:
+            session.add(TipoVinculacion(
+                codigo=codigo, nombre=nombre, ambito=ambito,
+                area_responsable=area, requiere_satelite=sat, activo=True,
+            ))
+            creados += 1
+        elif r.codigo != codigo:
+            print(f"  · reconciliado TipoVinculacion '{nombre}': codigo '{r.codigo}' -> '{codigo}'")
+            r.codigo = codigo
+            cambios = True
+    if creados or cambios:
         await session.flush()
     return creados
 
@@ -222,25 +234,29 @@ async def main() -> None:
             existe = (await session.execute(
                 select(Contacto.id).where(Contacto.numero_documento == doc)
             )).scalar_one_or_none()
+            esperadas = len(p["facetas"])
 
-            if existe is None:
+            if existe is not None:
+                actual = await _num_vinculaciones(session, existe)
+                if actual == esperadas:
+                    stats["intactos"] += 1
+                    return
+                # Sembrado a medias (faltaban tipos): borra sus facetas y rehazlas
+                # (los satélites Socio/Voluntario caen por ON DELETE CASCADE).
+                await session.execute(delete(Vinculacion).where(Vinculacion.contacto_id == existe))
+                cid, marca, accion = existe, "~", "rellenados"
+            else:
                 c = Contacto(tipo=tipo, numero_documento=doc,
                              agrupacion_id=agrupacion_id, activo=True, **build_kwargs)
                 session.add(c)
                 await session.flush()
-                cid, facetas, marca, accion = c.id, p["facetas"], "+", "creados"
-            elif await _num_vinculaciones(session, existe) == 0:
-                # Existe pero sin facetas (p.ej. de una ejecución anterior fallida): rellenar.
-                cid, facetas, marca, accion = existe, p["facetas"], "~", "rellenados"
-            else:
-                stats["intactos"] += 1
-                return
+                cid, marca, accion = c.id, "+", "creados"
 
-            for (codigo, sat, overrides) in facetas:
+            for (codigo, sat, overrides) in p["facetas"]:
                 await _alta_faceta(session, cid, codigo, tipo_ids,
                                    sat=sat, overrides=overrides, agrupacion_id=agrupacion_id)
             stats[accion] += 1
-            print(f"{marca} {etiqueta} ({len(facetas)} facetas)")
+            print(f"{marca} {etiqueta} ({esperadas} facetas)")
 
         for p in _PF:
             await procesar(
