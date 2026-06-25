@@ -95,7 +95,7 @@
               </button>
               <div class="accordion-wrap" :class="{ closed: !openSections.membresia }">
                 <ul class="space-y-1 pb-1">
-                  <li v-if="tienePermiso('SOC_LIST')">
+                  <li v-if="tienePermiso('CONTACTO_LIST')">
                     <router-link to="/contactos" class="nav-item"
                       :class="$route.path.startsWith('/contactos') ? 'active' : 'inactive'">
                       <UserGroupIcon class="nav-icon" /><span>Contactos</span>
