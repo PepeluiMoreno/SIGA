@@ -10,14 +10,26 @@
       <div v-else-if="!contacto" class="text-center py-12 text-slate-400 text-sm">Contacto no encontrado.</div>
 
       <template v-else>
-        <!-- Cabecera -->
-        <div class="flex items-center gap-3 mb-6">
-          <span
-            class="inline-block px-2 py-0.5 rounded text-xs font-medium"
-            :class="esPJ ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800'"
-          >{{ esPJ ? 'Persona jurídica' : 'Persona física' }}</span>
-          <h1 class="text-lg font-semibold text-slate-800">{{ titulo }}</h1>
-          <span v-if="!contacto.activo" class="text-xs text-red-600">(inactivo)</span>
+        <!-- Cabecera con foto tamaño carnet -->
+        <div class="flex items-start gap-4 mb-6">
+          <img
+            v-if="contacto.fotoUrl"
+            :src="contacto.fotoUrl"
+            alt="Foto del contacto"
+            class="w-24 h-32 object-cover rounded-md border border-slate-300 shadow-sm flex-shrink-0"
+          />
+          <div
+            v-else
+            class="w-24 h-32 rounded-md border border-dashed border-slate-300 flex items-center justify-center text-xs text-slate-400 flex-shrink-0"
+          >sin foto</div>
+          <div class="flex items-center gap-3 pt-1">
+            <span
+              class="inline-block px-2 py-0.5 rounded text-xs font-medium"
+              :class="esPJ ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800'"
+            >{{ esPJ ? 'Persona jurídica' : 'Persona física' }}</span>
+            <h1 class="text-lg font-semibold text-slate-800">{{ titulo }}</h1>
+            <span v-if="!contacto.activo" class="text-xs text-red-600">(inactivo)</span>
+          </div>
         </div>
 
         <!-- Identidad -->

@@ -239,6 +239,29 @@ async def _num_vinculaciones(session, contacto_id) -> int:
     )).scalar() or 0
 
 
+async def _sembrar_fotos(session) -> int:
+    """Asigna a cada PF fake una foto de carnet (retratos fake de randomuser.me).
+
+    Determinista por su documento. URLs EXTERNAS de stopgap; cuando esté MinIO, se
+    sustituyen por la URL pública de cada objeto. Idempotente (sobrescribe).
+    """
+    rows = (await session.execute(
+        select(Contacto).where(Contacto.numero_documento.like("FAKE-PF-%"))
+    )).scalars().all()
+    n = 0
+    for c in rows:
+        try:
+            idx = int(c.numero_documento.split("-")[-1]) % 100
+        except ValueError:
+            idx = 0
+        genero = "men" if c.sexo == "H" else "women"
+        c.foto_url = f"https://randomuser.me/api/portraits/{genero}/{idx}.jpg"
+        n += 1
+    if n:
+        await session.flush()
+    return n
+
+
 async def _ensure_usuario(session, contacto_id, email) -> bool:
     """Crea un Usuario (acceso a la app) ligado al contacto si no existe. Idempotente.
 
@@ -329,9 +352,11 @@ async def main() -> None:
                      email=p.get("email"), telefono=p.get("telefono")),
             )
 
+        nfotos = await _sembrar_fotos(session)
         await session.commit()
         print(f"\n[seed_fake_contactos] Creados: {stats['creados']} · "
-              f"Rellenados: {stats['rellenados']} · Intactos: {stats['intactos']}")
+              f"Rellenados: {stats['rellenados']} · Intactos: {stats['intactos']} · "
+              f"Fotos asignadas: {nfotos}")
 
 
 if __name__ == "__main__":
