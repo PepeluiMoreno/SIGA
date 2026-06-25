@@ -21,12 +21,13 @@ from .comunicacion_resolvers import ComunicacionQuery
 from .chat_resolvers import ChatQuery
 from .membresia_resolvers import MembresiaQuery
 from .socios_resolvers import SociosQuery
+from .vinculaciones_resolvers import VinculacionesQuery
 from .types_auto import *  # Importar todos los tipos generados
 from .inputs_auto import *  # Importar inputs y filtros
 
 
 @strawberry.type
-class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, CategoriaFiscalQuery, CategorizacionQuery, PresupuestoQuery, SecretariaQuery, ComunicacionQuery, ChatQuery, MembresiaQuery, SociosQuery):
+class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, CategoriaFiscalQuery, CategorizacionQuery, PresupuestoQuery, SecretariaQuery, ComunicacionQuery, ChatQuery, MembresiaQuery, SociosQuery, VinculacionesQuery):
     """Queries GraphQL del sistema SIGA con generación automática.
 
     IMPORTANTE: Todos los nombres usan camelCase para consistencia con GraphQL.

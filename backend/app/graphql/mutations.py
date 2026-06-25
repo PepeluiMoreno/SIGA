@@ -16,6 +16,7 @@ from .configuracion_resolvers import ConfiguracionOrganizacionMutation
 from .acceso_resolvers import AccesoMutation
 from .economico_resolvers import EconomicoMutation
 from .membresia_resolvers import MembresiaResolverMutation
+from .vinculaciones_resolvers import VinculacionesMutation
 from .secretaria_resolvers import SecretariaResolverMutation
 from .geografico_resolvers import GeograficoMutation
 from .campania_resolvers import CampaniaResolverMutation, CampaniaClonarMutation
@@ -33,7 +34,7 @@ from .proteccion_datos_resolvers import ProteccionDatosMutation
 
 
 @strawberry.type
-class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionMutation, AccesoMutation, EconomicoMutation, MembresiaResolverMutation, GeograficoMutation, CampaniaResolverMutation, CampaniaClonarMutation, ActividadResolverMutation, PapeleraResolverMutation, SecretariaResolverMutation, CategoriaFiscalMutation, CategorizacionMutation, PresupuestoMutation, ComunicacionMutation, ChatMutation, ProteccionDatosMutation):
+class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionMutation, AccesoMutation, EconomicoMutation, MembresiaResolverMutation, VinculacionesMutation, GeograficoMutation, CampaniaResolverMutation, CampaniaClonarMutation, ActividadResolverMutation, PapeleraResolverMutation, SecretariaResolverMutation, CategoriaFiscalMutation, CategorizacionMutation, PresupuestoMutation, ComunicacionMutation, ChatMutation, ProteccionDatosMutation):
     """Mutations GraphQL del sistema SIGA con generación automática."""
 
     # === ACCESO: roles y transacciones (CRUD) ===

@@ -500,6 +500,31 @@ class ContactoType:
     pass
 
 
+# === VINCULACIONES (facetas CRM de un Contacto) ===
+# Una Vinculacion es la faceta tipada de un Contacto (SOCIO, VOLUNTARIO, …) con
+# su satélite de datos. Se exponen ahora como tipos GraphQL para poder navegar
+# las facetas de un contacto (resolver `vinculacionesDeContacto`).
+from ..modules.membresia.models import Vinculacion, Socio, Voluntario
+
+@strawchemy.type(Socio, include="all", exclude=["vinculacion"], override=True)
+class SocioType:
+    """Satélite económico/administrativo de una vinculación de tipo SOCIO."""
+    motivo_reduccion: Optional['MotivoReduccionCuotaType'] = None
+
+@strawchemy.type(Voluntario, include="all", exclude=["vinculacion"], override=True)
+class VoluntarioType:
+    """Satélite de una vinculación de tipo VOLUNTARIO."""
+    pass
+
+@strawchemy.type(Vinculacion, include="all", override=True)
+class VinculacionType:
+    """Faceta tipada de un Contacto (socio, voluntario, …) con su satélite."""
+    contacto: Optional['ContactoType'] = None
+    tipo_vinculacion: Optional['TipoVinculacionType'] = None
+    socio: Optional['SocioType'] = None
+    voluntario: Optional['VoluntarioType'] = None
+
+
 # === MILITANCIA ===
 
 @strawchemy.type(NivelEstudios, include="all", override=True)
