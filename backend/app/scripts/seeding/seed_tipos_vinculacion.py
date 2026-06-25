@@ -19,7 +19,7 @@ TIPOS = [
     ("Socio",        "SOCIO",        "territorial", "MEMBRESIA_SOCIO_GESTIONAR",      True),
     ("Voluntario",   "VOLUNTARIO",   "territorial", "MEMBRESIA_VOLUNTARIO_GESTIONAR", True),
     ("Donante",      "DONANTE",      "central",     "TESORERIA_DONANTES",             False),
-    ("Empleado",     "EMPLEADO",     "central",     "RECURSOS_HUMANOS",               True),
+    ("Contratado/a", "EMPLEADO",     "central",     "RECURSOS_HUMANOS",               True),
 ]
 
 

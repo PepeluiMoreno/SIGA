@@ -59,7 +59,7 @@ _TIPOS_VINCULACION = [
     {"nombre": "Socio",        "codigo": "SOCIO",        "ambito": "territorial", "area_responsable": "MEMBRESIA_SOCIO_GESTIONAR",      "requiere_satelite": True,  "activo": True},
     {"nombre": "Voluntario",   "codigo": "VOLUNTARIO",   "ambito": "territorial", "area_responsable": "MEMBRESIA_VOLUNTARIO_GESTIONAR", "requiere_satelite": True,  "activo": True},
     {"nombre": "Donante",      "codigo": "DONANTE",      "ambito": "central",     "area_responsable": "TESORERIA_DONANTES",             "requiere_satelite": False, "activo": True},
-    {"nombre": "Empleado",     "codigo": "EMPLEADO",     "ambito": "central",     "area_responsable": "RECURSOS_HUMANOS",               "requiere_satelite": True,  "activo": True},
+    {"nombre": "Contratado/a", "codigo": "EMPLEADO",     "ambito": "central",     "area_responsable": "RECURSOS_HUMANOS",               "requiere_satelite": True,  "activo": True},
 ]
 
 _FORMAS_PAGO = [
