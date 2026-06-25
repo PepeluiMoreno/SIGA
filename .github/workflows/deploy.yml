@@ -70,72 +70,60 @@ jobs:
           cache-from: type=registry,ref=${{ env.IMAGE_PREFIX }}-frontend:latest
           cache-to: type=inline
 
+  # El deploy corre en un runner SELF-HOSTED instalado en el propio VPS.
+  # El runner self-hosted solo abre conexiones SALIENTES a GitHub (no expone
+  # ningún puerto entrante) y ejecuta el despliegue localmente, junto a Docker,
+  # sin depender de SSH/scp entrante hacia el VPS.
+  #
+  # Requisitos de registro del runner (ver scripts no incluidos):
+  #   - STAGING (VPS2):     labels  self-hosted, siga-staging
+  #   - PRODUCCIÓN (VPS1):  labels  self-hosted, siga-production
+  #   - el usuario del runner debe estar en el grupo 'docker' y tener permiso de
+  #     escritura sobre /opt/docker/apps/SIGA
   deploy-staging:
     needs: build-and-push
     if: github.ref == 'refs/heads/master' && !(github.event_name == 'workflow_dispatch' && inputs.deploy_production)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, siga-staging]
+    env:
+      DEPLOY_DIR: /opt/docker/apps/SIGA
     steps:
       - uses: actions/checkout@v4
-      - name: Copiar compose + scripts (scp)
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DEPLOY_HOST_STAGING }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_KEY }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          source: "docker-compose.yml,docker-compose.prod.yml,scripts/"
-          target: /opt/docker/apps/SIGA/
-          overwrite: true
-      - name: Desplegar (SSH)
-        uses: appleboy/ssh-action@v1
+      - name: Desplegar (local en el VPS)
         env:
           DEPLOY_IMAGE_TAG: ${{ github.sha }}
-          ENV_STAGING: ${{ secrets.ENV_STAGING }}
+          ENV_STAGING: ${{ secrets.SIGA_ENV_STAGING }}
           GHCR_PAT: ${{ secrets.GHCR_PAT }}
-        with:
-          host: ${{ secrets.DEPLOY_HOST_STAGING }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_KEY }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          envs: DEPLOY_IMAGE_TAG,ENV_STAGING,GHCR_PAT
-          script: |
-            cd /opt/docker/apps/SIGA
-            umask 077
-            printf '%s\n' "$ENV_STAGING" > .env.production
-            export DEPLOY_IMAGE_TAG GHCR_PAT
-            ./scripts/deploy-remote-pull.sh
+        run: |
+          set -euo pipefail
+          mkdir -p "$DEPLOY_DIR/scripts"
+          cp -f docker-compose.yml docker-compose.prod.yml "$DEPLOY_DIR"/
+          cp -f scripts/*.sh "$DEPLOY_DIR/scripts"/
+          cd "$DEPLOY_DIR"
+          umask 077
+          printf '%s\n' "$ENV_STAGING" > .env.production
+          export DEPLOY_IMAGE_TAG GHCR_PAT
+          ./scripts/deploy-remote-pull.sh
 
   deploy-production:
     needs: build-and-push
     if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.deploy_production)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, siga-production]
+    env:
+      DEPLOY_DIR: /opt/docker/apps/SIGA
     steps:
       - uses: actions/checkout@v4
-      - name: Copiar compose + scripts (scp)
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_KEY }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          source: "docker-compose.yml,docker-compose.prod.yml,scripts/"
-          target: /opt/docker/apps/SIGA/
-          overwrite: true
-      - name: Desplegar (SSH)
-        uses: appleboy/ssh-action@v1
+      - name: Desplegar (local en el VPS)
         env:
           DEPLOY_IMAGE_TAG: ${{ github.sha }}
           ENV_PRODUCTION: ${{ secrets.ENV_PRODUCTION }}
           GHCR_PAT: ${{ secrets.GHCR_PAT }}
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_KEY }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          envs: DEPLOY_IMAGE_TAG,ENV_PRODUCTION,GHCR_PAT
-          script: |
-            cd /opt/docker/apps/SIGA
-            umask 077
-            printf '%s\n' "$ENV_PRODUCTION" > .env.production
-            export DEPLOY_IMAGE_TAG GHCR_PAT
-            ./scripts/deploy-remote-pull.sh
+        run: |
+          set -euo pipefail
+          mkdir -p "$DEPLOY_DIR/scripts"
+          cp -f docker-compose.yml docker-compose.prod.yml "$DEPLOY_DIR"/
+          cp -f scripts/*.sh "$DEPLOY_DIR/scripts"/
+          cd "$DEPLOY_DIR"
+          umask 077
+          printf '%s\n' "$ENV_PRODUCTION" > .env.production
+          export DEPLOY_IMAGE_TAG GHCR_PAT
+          ./scripts/deploy-remote-pull.sh
