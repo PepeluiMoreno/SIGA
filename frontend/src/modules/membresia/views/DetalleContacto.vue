@@ -13,7 +13,7 @@
         </button>
       </template>
       <template v-else-if="contacto">
-        <button v-if="tienePermiso('CONTACTO_EDIT')" type="button" @click="editMode = true"
+        <button v-if="tienePermiso('CONTACTO_EDIT')" type="button" @click="entrarEdicion"
           class="h-8 px-3 text-sm font-medium text-indigo-600 border border-slate-300 rounded-lg hover:bg-slate-50">
           Editar
         </button>
@@ -84,8 +84,22 @@
             Representante legal
           </h2>
 
-          <!-- Edición: desplegable de personas físicas -->
-          <div v-if="editing">
+          <!-- Alta: el representante se da de alta como PF junto con la PJ -->
+          <div v-if="isCreate" class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+            <p class="sm:col-span-2 -mt-1 text-xs text-slate-400">
+              Al crear la persona jurídica se da de alta también a su representante como persona física.
+            </p>
+            <FieldText v-model="repForm.nombre" label="Nombre del representante *" editing />
+            <FieldText v-model="repForm.apellido1" label="Primer apellido" editing />
+            <FieldText v-model="repForm.apellido2" label="Segundo apellido" editing />
+            <FieldSelect v-model="repForm.tipoDocumento" label="Tipo de documento" :options="tipoDocumentoOptions" editing />
+            <FieldText v-model="repForm.numeroDocumento" label="Nº documento" editing />
+            <FieldText v-model="repForm.email" label="Email" type="email" editing />
+            <FieldText v-model="repForm.telefono" label="Teléfono" editing />
+          </div>
+
+          <!-- Edición: reasignar a otra persona física existente -->
+          <div v-else-if="editMode">
             <label class="block text-xs font-medium text-slate-500 mb-1">Representante (persona física)</label>
             <select v-model="form.representanteLegalId"
               class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
@@ -193,6 +207,12 @@ const form = reactive({
   email: '', telefono: '', telefono2: '', direccion: '', codigoPostal: '', localidad: '',
 })
 
+// Alta de PJ: el representante legal se da de alta como PF junto con la entidad.
+const repForm = reactive({
+  nombre: '', apellido1: '', apellido2: '',
+  tipoDocumento: '', numeroDocumento: '', email: '', telefono: '',
+})
+
 const tiposPersona = [
   { value: 'PERSONA_FISICA', label: 'Persona física' },
   { value: 'PERSONA_JURIDICA', label: 'Persona jurídica' },
@@ -217,9 +237,15 @@ const pfContactos = computed(() =>
     .filter((c) => c.tipo !== 'PERSONA_JURIDICA' && c.id !== route.params.id)
     .sort((a, b) => nombrePF(a).localeCompare(nombrePF(b), 'es'))
 )
-const formValido = computed(() =>
-  esPJ.value ? !!form.razonSocial.trim() : !!form.nombre.trim()
-)
+const formValido = computed(() => {
+  if (esPJ.value) {
+    if (!form.razonSocial.trim()) return false
+    // En alta, el representante (PF) se crea junto con la PJ: requiere al menos su nombre.
+    if (isCreate.value && !repForm.nombre.trim()) return false
+    return true
+  }
+  return !!form.nombre.trim()
+})
 
 function nombrePF(c) {
   return [c?.nombre, c?.apellido1, c?.apellido2].filter(Boolean).join(' ') || '—'
@@ -272,14 +298,28 @@ function payload() {
   }
   return out
 }
+function repPayload() {
+  const out = {}
+  for (const k of Object.keys(repForm)) {
+    const v = repForm[k]
+    out[k] = (v === '' || v === undefined) ? null : v
+  }
+  return out
+}
 
 async function guardar() {
   if (!formValido.value || guardando.value) return
   guardando.value = true
   try {
     if (isCreate.value) {
-      const r = await graphqlClient.request(CREAR_CONTACTO, { data: { tipo: form.tipo, ...payload() } })
-      toast.success('Contacto creado.')
+      const data = { tipo: form.tipo, ...payload() }
+      // Alta de PJ: primero su representante como PF, luego la PJ apuntando a él.
+      if (esPJ.value && repForm.nombre.trim()) {
+        const rep = await graphqlClient.request(CREAR_CONTACTO, { data: { tipo: 'PERSONA_FISICA', ...repPayload() } })
+        data.representanteLegalId = rep.crearContacto.id
+      }
+      const r = await graphqlClient.request(CREAR_CONTACTO, { data })
+      toast.success(esPJ.value ? 'Persona jurídica y su representante creados.' : 'Contacto creado.')
       router.push(`/contactos/${r.crearContacto.id}`)
     } else {
       await graphqlClient.request(ACTUALIZAR_CONTACTO, { data: { id: route.params.id, ...payload() } })
@@ -320,9 +360,11 @@ async function toggleBaja() {
 
 function verContacto(id) { router.push(`/contactos/${id}`) }
 
-onMounted(async () => {
-  await cargar()
-  // Catálogo de PF para el selector de representante (al editar/crear una PJ).
-  if (editing.value) cargarPFParaRepresentante()
-})
+// Al entrar en edición de una PJ existente, carga las PF para el selector de reasignación.
+function entrarEdicion() {
+  editMode.value = true
+  if (esPJ.value) cargarPFParaRepresentante()
+}
+
+onMounted(cargar)
 </script>
