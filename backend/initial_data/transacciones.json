@@ -129,6 +129,33 @@
       "sistema": true
     },
     {
+      "codigo": "LIBRO_SOCIOS_VER",
+      "nombre": "Ver libro de socios",
+      "descripcion": "Consultar el libro registro de socios",
+      "modulo": "militancia",
+      "tipo": "consulta",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "LIBRO_SOCIOS_GENERAR",
+      "nombre": "Generar/certificar libro de socios",
+      "descripcion": "Generar y certificar el libro registro de socios (acto registral de Secretaría)",
+      "modulo": "militancia",
+      "tipo": "critica",
+      "activa": true,
+      "sistema": true
+    },
+    {
+      "codigo": "SOC_EDIT_ECONOMICO",
+      "nombre": "Editar datos económicos del socio",
+      "descripcion": "Modificar cuota, IBAN y forma de pago del socio (dimensión de Tesorería)",
+      "modulo": "militancia",
+      "tipo": "escritura",
+      "activa": true,
+      "sistema": true
+    },
+    {
       "codigo": "TIPOSOC_MANAGE",
       "nombre": "Gestionar tipos de miembro",
       "descripcion": "Crear, editar y eliminar categorías de miembro",

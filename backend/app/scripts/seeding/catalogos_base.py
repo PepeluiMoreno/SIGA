@@ -55,6 +55,7 @@ _MOTIVOS_REDUCCION_CUOTA = [
 _TIPOS_VINCULACION = [
     {"nombre": "Firmante",     "codigo": "FIRMANTE",     "ambito": "central",     "area_responsable": "COMUNICACION_FIRMAS",            "requiere_satelite": False, "activo": True},
     {"nombre": "Simpatizante", "codigo": "SIMPATIZANTE", "ambito": "central",     "area_responsable": "COMUNICACION_SIMPATIZANTES",     "requiere_satelite": False, "activo": True},
+    {"nombre": "Socio aspirante", "codigo": "SOCIO_ASPIRANTE", "ambito": "territorial", "area_responsable": "MEMBRESIA_SOCIO_GESTIONAR",   "requiere_satelite": False, "activo": True},
     {"nombre": "Socio",        "codigo": "SOCIO",        "ambito": "territorial", "area_responsable": "MEMBRESIA_SOCIO_GESTIONAR",      "requiere_satelite": True,  "activo": True},
     {"nombre": "Voluntario",   "codigo": "VOLUNTARIO",   "ambito": "territorial", "area_responsable": "MEMBRESIA_VOLUNTARIO_GESTIONAR", "requiere_satelite": True,  "activo": True},
     {"nombre": "Donante",      "codigo": "DONANTE",      "ambito": "central",     "area_responsable": "TESORERIA_DONANTES",             "requiere_satelite": False, "activo": True},
