@@ -61,7 +61,7 @@
       </template>
 
       <template #filters-prefix>
-        <AgrupacionCascada v-model="filters.agrupacion" :agrupaciones="agrupaciones" />
+        <AmbitoTerritorialSelect v-model="filters.agrupacion" :agrupaciones="agrupaciones" />
       </template>
 
     </FilterBar>
@@ -228,7 +228,7 @@ import { useGraphQL } from '@/composables/useGraphQL.js'
 import { useOrgConfigStore } from '@/stores/orgConfig'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_MIEMBROS, GET_AGRUPACIONES, GET_TIPOS_MIEMBRO, GET_ESTADOS_MIEMBRO, GET_MOTIVOS_BAJA, GET_NOMBRAMIENTOS_ACTIVOS } from '@/graphql/queries/miembros.js'
-import AgrupacionCascada from '@/components/common/AgrupacionCascada.vue'
+import AmbitoTerritorialSelect from '@/components/common/AmbitoTerritorialSelect.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import MiembroFichaDrawer from '@/components/miembros/MiembroFichaDrawer.vue'
 const toast = useToast()

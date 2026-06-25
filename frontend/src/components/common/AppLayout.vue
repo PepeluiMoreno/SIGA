@@ -487,7 +487,7 @@
 
       <!-- Main content -->
       <main class="flex-1 min-w-0 overflow-hidden lg:h-[calc(100vh-64px)]" style="background-color: var(--t-page-bg)">
-        <div class="h-full flex flex-col w-full mx-auto px-4 sm:px-6 lg:px-6 xl:px-8 max-w-screen-xl">
+        <div class="h-full flex flex-col w-full px-4 sm:px-6 lg:px-6">
           <div ref="mainRef" class="flex-1 min-h-0 overflow-y-auto pt-5" :class="$slots.footer ? 'pb-2' : 'pb-4'" @scroll="onMainScroll">
             <slot />
           </div>
