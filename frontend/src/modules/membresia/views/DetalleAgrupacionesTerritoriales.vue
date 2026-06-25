@@ -1,5 +1,6 @@
 <template>
-  <AppLayout title="Organización Territorial" subtitle="Árbol de unidades de la organización">
+  <AppLayout title="Organización Territorial"
+    :subtitle="`Presencia de ${orgConfig.nombre || 'la asociación'} en el territorio`">
 
     <!-- Filtros -->
     <FilterBar
