@@ -489,7 +489,11 @@
       <main class="flex-1 min-w-0 overflow-hidden lg:h-[calc(100vh-64px)]" style="background-color: var(--t-page-bg)">
         <div class="h-full flex flex-col w-full px-4 sm:px-6 lg:px-6">
           <div ref="mainRef" class="flex-1 min-h-0 overflow-y-auto pt-5" :class="$slots.footer ? 'pb-2' : 'pb-4'" @scroll="onMainScroll">
-            <slot />
+            <!-- fluid: ancho completo (vistas con FilterRail). Por defecto, el contenido se
+                 limita al ancho del cuerpo de una vista con filtro y se centra en el espacio. -->
+            <div :class="fluid ? 'w-full' : 'w-full lg:max-w-[calc(100%-19rem)] lg:mx-auto'">
+              <slot />
+            </div>
           </div>
           <div v-if="$slots.footer" class="flex-shrink-0 border-t border-slate-200 bg-white py-3 flex items-center gap-3">
             <slot name="footer" />
@@ -526,6 +530,9 @@ defineProps({
   title:    { type: String, default: '' },
   subtitle: { type: String, default: '' },
   icon:     { type: String, default: '' },
+  // Ancho completo (para vistas con FilterRail lateral). Por defecto el contenido
+  // se limita al ancho del cuerpo de una vista con filtro y se centra.
+  fluid:    { type: Boolean, default: false },
 })
 
 const router = useRouter()

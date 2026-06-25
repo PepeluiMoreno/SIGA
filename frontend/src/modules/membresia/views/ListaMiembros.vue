@@ -1,5 +1,5 @@
 <template>
-  <AppLayout :title="orgConfig.Miembros" subtitle="Gestión, colaboración y disponibilidad">
+  <AppLayout :title="orgConfig.Miembros" subtitle="Gestión, colaboración y disponibilidad" fluid>
     <!-- Acción principal en el topbar (estándar global) -->
     <template v-if="tienePermiso('MEMBRESIA_MIEMBRO_CREAR')" #actions>
       <router-link to="/miembros/nuevo"
