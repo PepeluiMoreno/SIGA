@@ -88,15 +88,27 @@
         </button>
       </div>
 
+      <!-- Tarjeta de contacto (arriba a la derecha, mismo formato que la ficha de contacto) -->
+      <div v-if="!isCreateMode && miembro.id" class="flex justify-end mb-4">
+        <div class="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-4 py-2.5 shadow-sm">
+          <AvatarImg :src="miembro.fotoUrl" :nombre="miembro.nombre" :apellido="miembro.apellido1" size="lg" shape="round" />
+          <div class="text-sm leading-tight">
+            <div class="font-medium text-slate-800">{{ nombreCompleto }}</div>
+            <div class="text-slate-500">{{ miembro.telefono || miembro.email || '—' }}</div>
+            <div v-if="miembro.numeroSocio" class="text-slate-400 text-xs">Nº {{ miembro.numeroSocio }}</div>
+          </div>
+        </div>
+      </div>
+
       <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
         <TabsNavigation :tabs="tabsDisponibles" :active-tab="tabActiva" @tab-change="tabActiva = $event" />
-        <div class="p-5">
+        <div class="p-5" style="background-color: var(--t-tabsheet-bg, #f1edfb)">
 
         <!-- ── 1. DATOS PERSONALES ── -->
         <div v-show="tabActiva === 'datos'">
           <div class="space-y-3">
 
-            <section class="rounded-xl border border-violet-100 bg-violet-50/50">
+            <section class="rounded-xl border border-violet-100 bg-white">
               <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
                 <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Identificación</h3>
@@ -147,7 +159,7 @@
               </div>
             </section>
 
-            <section class="rounded-xl border border-violet-100 bg-violet-50/50">
+            <section class="rounded-xl border border-violet-100 bg-white">
               <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
                 <span class="w-2 h-2 rounded-full bg-sky-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Contacto</h3>
@@ -178,7 +190,7 @@
               </div>
             </section>
 
-            <section class="rounded-xl border border-violet-100 bg-violet-50/50">
+            <section class="rounded-xl border border-violet-100 bg-white">
               <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
                 <span class="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Observaciones</h3>
@@ -188,7 +200,7 @@
               </div>
             </section>
 
-            <section class="rounded-xl border border-violet-100 bg-violet-50/50">
+            <section class="rounded-xl border border-violet-100 bg-white">
               <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
                 <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">RGPD y privacidad</h3>
@@ -243,7 +255,7 @@
           <div class="space-y-3">
 
             <!-- Procedimiento de pago -->
-            <section v-if="requiereCuota" class="rounded-xl border border-violet-100 bg-violet-50/50">
+            <section v-if="requiereCuota" class="rounded-xl border border-violet-100 bg-white">
               <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
                 <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Procedimiento de pago de cuotas</h3>
@@ -252,7 +264,7 @@
 
             <div class="flex gap-5 items-start">
               <!-- Selector de forma de pago -->
-              <section class="space-y-3 rounded-xl border border-violet-100 bg-violet-50/50 p-5 flex-shrink-0 w-80">
+              <section class="space-y-3 rounded-xl border border-violet-100 bg-white p-5 flex-shrink-0 w-80">
                 <div v-if="editMode || isCreateMode" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
                   <button
                     v-for="fp in catalogos.formasPago"
@@ -406,7 +418,7 @@
             </section>
 
             <!-- Cuota aplicada -->
-            <section v-if="requiereCuota" class="rounded-xl border border-violet-100 bg-violet-50/50">
+            <section v-if="requiereCuota" class="rounded-xl border border-violet-100 bg-white">
               <header class="flex items-center justify-between gap-2 px-5 py-3 border-b border-violet-100">
                 <div class="flex items-center gap-2">
                   <span class="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>
@@ -523,7 +535,7 @@
             </section>
 
             <!-- Justificantes de gasto -->
-            <section v-if="!isCreateMode" class="rounded-xl border border-violet-100 bg-violet-50/50">
+            <section v-if="!isCreateMode" class="rounded-xl border border-violet-100 bg-white">
               <header class="flex items-center gap-2 px-5 py-3 border-b border-violet-100">
                 <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
                 <h3 class="text-sm font-semibold text-slate-800">Justificantes de gasto</h3>
@@ -541,7 +553,7 @@
           <div class="p-1 space-y-5">
 
             <!-- Situación de membresía -->
-            <section class="space-y-4 rounded-xl border border-violet-100 bg-violet-50/50 p-5">
+            <section class="space-y-4 rounded-xl border border-violet-100 bg-white p-5">
               <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Situación</h3>
               <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 lg:grid-cols-4 gap-4">
                 <FieldSelect v-model="miembro.tipoMiembroId" :label="`Tipo de ${orgConfig.miembro} *`" :edit-mode="editAdmin"
@@ -586,7 +598,7 @@
             </section>
 
             <!-- Disposición a participar -->
-            <section class="rounded-xl border border-violet-100 bg-violet-50/50 p-5">
+            <section class="rounded-xl border border-violet-100 bg-white p-5">
               <FieldCheckbox v-model="miembro.esVoluntario"
                 label="Dispuesto/a a participar en actividades de la asociación"
                 :edit-mode="editForm" />
@@ -599,7 +611,7 @@
               <div class="grid grid-cols-1 lg:grid-cols-1 sm:grid-cols-2 gap-5">
 
                 <!-- Perfil voluntario -->
-                <section class="space-y-4 rounded-xl border border-violet-100 bg-violet-50/50 p-5">
+                <section class="space-y-4 rounded-xl border border-violet-100 bg-white p-5">
                   <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Perfil voluntario</h3>
                   <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-4">
                     <FieldText v-model="miembro.profesion" label="Profesión" :edit-mode="editForm" />
@@ -618,7 +630,7 @@
                 </section>
 
                 <!-- Habilidades -->
-                <section class="space-y-3 rounded-xl border border-violet-100 bg-violet-50/50 p-5">
+                <section class="space-y-3 rounded-xl border border-violet-100 bg-white p-5">
                   <div class="flex items-center justify-between">
                     <h3 class="text-xs font-semibold uppercase tracking-widest text-indigo-600">Habilidades</h3>
                     <button @click="mostrarFormHabilidad = !mostrarFormHabilidad"
@@ -684,7 +696,7 @@
               </div>
 
               <!-- Disponibilidad -->
-              <section class="space-y-4 rounded-xl border border-violet-100 bg-violet-50/50 p-5">
+              <section class="space-y-4 rounded-xl border border-violet-100 bg-white p-5">
                 <h3 class="text-xs font-semibold uppercase tracking-widest text-sky-600">Disponibilidad</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-4">
                   <FieldText v-model="miembro.disponibilidad" label="Disponibilidad" :edit-mode="editForm" />
@@ -878,7 +890,7 @@
 
             <template v-else>
               <!-- Datos de la cuenta -->
-              <section class="rounded-xl border border-violet-100 bg-violet-50/50 p-5 space-y-3">
+              <section class="rounded-xl border border-violet-100 bg-white p-5 space-y-3">
                 <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Cuenta de acceso</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                   <div>
@@ -945,7 +957,7 @@
               </section>
 
               <!-- Roles -->
-              <section class="rounded-xl border border-violet-100 bg-violet-50/50 p-5 space-y-3">
+              <section class="rounded-xl border border-violet-100 bg-white p-5 space-y-3">
                 <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Roles asignados</h3>
 
                 <div v-if="!rolesAsignados.length" class="text-sm text-gray-400 italic py-2">
@@ -1215,7 +1227,7 @@ if (props.modoPropio) {
 
 const tituloPage = computed(() => {
   if (isCreateMode.value) return `Nuevo ${orgConfig.miembro || 'miembro'}`
-  return nombreCompleto.value || orgConfig.Miembro || 'Miembro'
+  return `Ficha de ${orgConfig.miembro || 'socio'}`
 })
 
 const subtituloPage = computed(() => {

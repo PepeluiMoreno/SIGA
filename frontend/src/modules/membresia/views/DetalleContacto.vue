@@ -1,39 +1,32 @@
 <template>
-  <AppLayout :title="titulo" subtitle="Ficha del contacto">
+  <AppLayout title="Ficha de contacto" :subtitle="esPJ ? 'Persona jurídica' : 'Persona física'">
     <div class="p-4 sm:p-6 max-w-6xl mx-auto">
-      <div class="mb-3">
-        <router-link to="/contactos" class="text-sm text-purple-600 hover:text-purple-800">← Volver al directorio</router-link>
-      </div>
 
       <div v-if="cargando" class="text-center py-12 text-slate-400 text-sm">Cargando ficha…</div>
       <div v-else-if="error" class="rounded-md bg-red-50 border border-red-200 p-4 text-sm text-red-800">{{ error }}</div>
       <div v-else-if="!contacto" class="text-center py-12 text-slate-400 text-sm">Contacto no encontrado.</div>
 
       <template v-else>
-        <!-- Cabecera: título + tarjeta de contacto (arriba a la derecha, estilo flowww) -->
-        <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
-          <div>
-            <h1 class="text-xl font-semibold text-slate-800">{{ titulo }}</h1>
-            <span
-              class="inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium"
-              :class="esPJ ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800'"
-            >{{ esPJ ? 'Persona jurídica' : 'Persona física' }}</span>
-            <span v-if="!contacto.activo" class="ml-2 text-xs text-red-600">(inactivo)</span>
-          </div>
-          <div class="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm">
+        <!-- Tarjeta de contacto (arriba a la derecha, estilo flowww) -->
+        <div class="flex justify-end mb-4">
+          <div class="flex items-center gap-3 bg-white border border-slate-200 rounded-lg px-4 py-2.5 shadow-sm">
             <AvatarImg :src="contacto.fotoUrl" :nombre="contacto.nombre" :apellido="contacto.apellido1" size="lg" shape="round" />
             <div class="text-sm leading-tight">
               <div class="font-medium text-slate-800">{{ titulo }}</div>
               <div class="text-slate-500">{{ contacto.telefono || contacto.email || '—' }}</div>
-              <div v-if="numeroSocio" class="text-slate-400 text-xs">Nº {{ numeroSocio }}</div>
+              <div class="flex items-center gap-2">
+                <span v-if="numeroSocio" class="text-slate-400 text-xs">Nº {{ numeroSocio }}</span>
+                <span v-if="!contacto.activo" class="text-xs text-red-600">inactivo</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Pestañas -->
+        <!-- Pestañas (mismo contenedor que la ficha de socio) -->
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
         <TabsNavigation :tabs="tabs" :active-tab="tab" @tab-change="tab = $event" />
 
-        <div class="bg-white border border-slate-200 border-t-0 rounded-b-lg p-5">
+        <div class="p-5" style="background-color: var(--t-tabsheet-bg, #f1edfb)">
           <!-- TAB: Datos -->
           <div v-show="tab === 'datos'" class="flex flex-col sm:flex-row gap-6">
             <AvatarImg :src="contacto.fotoUrl" :nombre="contacto.nombre" :apellido="contacto.apellido1" size="2xl" shape="carnet" />
@@ -96,6 +89,7 @@
           <div v-show="tab === 'historial'">
             <HistorialVinculaciones :vinculaciones="vinculaciones" titulo="Trayectoria completa" />
           </div>
+        </div>
         </div>
       </template>
     </div>
