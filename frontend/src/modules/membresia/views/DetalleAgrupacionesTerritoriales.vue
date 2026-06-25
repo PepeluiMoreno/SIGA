@@ -1,5 +1,5 @@
 <template>
-  <AppLayout :title="orgConfig.tipoAgrupacion || 'Unidades organizativas'" subtitle="Árbol de unidades de la organización">
+  <AppLayout title="Organización Territorial" subtitle="Árbol de unidades de la organización">
 
     <!-- Filtros -->
     <FilterBar

@@ -110,7 +110,7 @@
                   <li v-if="tienePermiso('AGR_EDIT')">
                     <router-link to="/agrupaciones" class="nav-item"
                       :class="$route.path.startsWith('/agrupaciones') ? 'active' : 'inactive'">
-                      <MapPinIcon class="nav-icon" /><span>{{ orgConfigStore.tipoAgrupacion || 'Unidades Organizativas' }}</span>
+                      <MapPinIcon class="nav-icon" /><span>Organización Territorial</span>
                     </router-link>
                   </li>
                   <li v-if="tienePermiso('NOM_CREATE')">

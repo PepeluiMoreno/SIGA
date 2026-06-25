@@ -26,8 +26,8 @@ export const useOrgConfigStore = defineStore('orgConfig', {
     logo: '',
     nombre: '',
     tipoAgrupacion: '',
-    miembro: 'miembro',
-    miembros: 'miembros',
+    miembro: 'socio',
+    miembros: 'socios',
     organoGobierno: 'junta directiva',
     organoGobiernoPl: 'juntas directivas',
     sessionInactividad: 30,
@@ -41,8 +41,8 @@ export const useOrgConfigStore = defineStore('orgConfig', {
     loaded: false,
   }),
   getters: {
-    Miembro: (s) => s.miembro ? s.miembro.charAt(0).toUpperCase() + s.miembro.slice(1) : 'Miembro',
-    Miembros: (s) => s.miembros ? s.miembros.charAt(0).toUpperCase() + s.miembros.slice(1) : 'Miembros',
+    Miembro: (s) => s.miembro ? s.miembro.charAt(0).toUpperCase() + s.miembro.slice(1) : 'Socio',
+    Miembros: (s) => s.miembros ? s.miembros.charAt(0).toUpperCase() + s.miembros.slice(1) : 'Socios',
     OrganoGobierno: (s) => s.organoGobierno ? s.organoGobierno.charAt(0).toUpperCase() + s.organoGobierno.slice(1) : 'Junta Directiva',
     OrganoGobiernoPl: (s) => s.organoGobiernoPl ? s.organoGobiernoPl.charAt(0).toUpperCase() + s.organoGobiernoPl.slice(1) : 'Juntas Directivas',
     temaActivo: (s) => s.temas.find(t => t.slug === s.tema) ?? null,
@@ -58,8 +58,8 @@ export const useOrgConfigStore = defineStore('orgConfig', {
         this.logo             = p.logo ?? ''
         this.nombre           = p.nombre ?? ''
         this.tipoAgrupacion   = p.tipoUnidadOrganizativa ?? ''
-        this.miembro          = p.denominacionMiembro       ?? 'miembro'
-        this.miembros         = p.denominacionMiembroPlural ?? 'miembros'
+        this.miembro          = p.denominacionMiembro       ?? 'socio'
+        this.miembros         = p.denominacionMiembroPlural ?? 'socios'
         this.organoGobierno   = p.denominacionOrganoGobierno       ?? 'junta directiva'
         this.organoGobiernoPl = p.denominacionOrganoGobiernoPlural ?? 'juntas directivas'
         this.sessionInactividad = p.sessionInactividadMinutos ?? 30
