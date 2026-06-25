@@ -1,5 +1,96 @@
 <template>
-  <div class="bg-white border border-gray-200 rounded-lg p-3" @click.self="open = null">
+  <!-- ══════════ Modo VERTICAL (para FilterRail lateral) ══════════ -->
+  <div v-if="vertical" class="space-y-4">
+
+    <!-- Búsqueda (ancho completo) -->
+    <div v-if="search !== undefined" class="relative">
+      <MagnifyingGlassIcon class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+      <input
+        :value="search"
+        @input="$emit('update:search', $event.target.value)"
+        type="text"
+        :placeholder="searchPlaceholder"
+        class="w-full h-9 pl-8 pr-7 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+      />
+      <button v-if="search" @click="$emit('update:search', '')" tabindex="-1"
+        class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+        <XMarkIcon class="w-3.5 h-3.5" />
+      </button>
+    </div>
+
+    <!-- Slot para filtros especiales (p.ej. ámbito territorial) -->
+    <slot name="filters-prefix" />
+
+    <!-- Campos apilados -->
+    <div v-for="field in visibleFields" :key="field.key">
+      <!-- Toggle -->
+      <label v-if="field.type === 'toggle'" class="flex items-center gap-2 text-sm cursor-pointer select-none">
+        <input type="checkbox" :checked="modelValue[field.key]"
+          @change="update(field.key, $event.target.checked)"
+          class="w-4 h-4 text-indigo-600 border-slate-300 rounded" />
+        <span class="text-slate-700">{{ field.label }}</span>
+      </label>
+
+      <!-- Resto: etiqueta + control en línea (sin popover) -->
+      <div v-else class="space-y-1.5">
+        <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wide">{{ field.label }}</span>
+
+        <!-- Slot personalizado (override) -->
+        <slot v-if="$slots['dropdown-' + field.key]"
+          :name="'dropdown-' + field.key"
+          :filters="modelValue"
+          :setFilters="setFilters"
+          :close="() => {}" />
+
+        <!-- Auto: single select -->
+        <div v-else-if="field.type === 'select'" class="space-y-0.5">
+          <button type="button" @click="update(field.key, '')"
+            :class="['w-full text-left px-2 py-1.5 text-sm rounded transition-colors',
+              !modelValue[field.key] ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-600 hover:bg-slate-50']">
+            {{ field.allLabel || 'Todas' }}
+          </button>
+          <button type="button" v-for="opt in field.options" :key="opt.value"
+            @click="update(field.key, opt.value)"
+            :class="['w-full text-left px-2 py-1.5 text-sm rounded transition-colors',
+              modelValue[field.key] === opt.value ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700 hover:bg-slate-50']">
+            {{ opt.label }}
+          </button>
+        </div>
+
+        <!-- Auto: multiselect -->
+        <div v-else-if="field.type === 'multiselect'" class="space-y-1">
+          <label class="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-slate-50">
+            <input type="checkbox" :checked="isAllSelected(field)"
+              :indeterminate.prop="isSomeSelected(field) && !isAllSelected(field)"
+              @change="toggleAll(field, $event.target.checked)"
+              class="w-4 h-4 text-indigo-600 border-slate-300 rounded" />
+            <span class="text-sm font-medium text-slate-900">{{ field.allLabel || 'Todos' }}</span>
+          </label>
+          <label v-for="opt in field.options" :key="opt.value"
+            class="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-slate-50">
+            <input type="checkbox" :checked="(modelValue[field.key] || []).includes(opt.value)"
+              @change="toggleOption(field, opt.value, $event.target.checked)"
+              class="w-4 h-4 text-indigo-600 border-slate-300 rounded" />
+            <span class="text-sm text-slate-700">{{ opt.label }}</span>
+          </label>
+        </div>
+
+        <p v-if="field.hint" class="text-xs text-slate-400">{{ field.hint }}</p>
+      </div>
+    </div>
+
+    <!-- Limpiar -->
+    <button v-if="hasActive || (search !== undefined && search)" @click="doClear"
+      class="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-sm text-slate-500 hover:text-red-600 hover:border-red-300 transition-colors">
+      <XMarkIcon class="w-3.5 h-3.5" />
+      Limpiar filtros
+    </button>
+
+    <p v-if="description" class="text-xs text-indigo-700 italic">{{ description }}</p>
+  </div>
+
+  <!-- ══════════ Modo HORIZONTAL (por defecto) ══════════ -->
+  <div v-else class="bg-white border border-gray-200 rounded-lg p-3" @click.self="open = null">
 
     <!-- ── Fila 1: Nuevo + Búsqueda + botones de acción (nunca se rompe) ── -->
     <div class="flex items-center gap-2">
@@ -190,6 +281,8 @@ const props = defineProps({
   createRoute:       { type: String,  default: '' },
   // Retardo del auto-apply en modo lazy (ms)
   debounce:          { type: Number,  default: 400 },
+  // Disposición vertical (para alojarlo en el FilterRail lateral)
+  vertical:          { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:modelValue', 'update:search', 'apply', 'clear', 'create'])

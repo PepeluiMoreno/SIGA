@@ -1,15 +1,24 @@
 <template>
   <AppLayout :title="orgConfig.Miembros" subtitle="Gestión, colaboración y disponibilidad">
-    <!-- Panel de Filtros -->
+    <!-- Acción principal en el topbar (estándar global) -->
+    <template v-if="tienePermiso('MEMBRESIA_MIEMBRO_CREAR')" #actions>
+      <router-link to="/miembros/nuevo"
+        class="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+        <span class="text-base leading-none">+</span>
+        Nuevo {{ orgConfig.miembro }}
+      </router-link>
+    </template>
+
+    <!-- Layout piloto: filtro lateral colapsable (FilterRail) + resultados -->
+    <div class="flex flex-col lg:flex-row gap-4 items-start">
+    <FilterRail storage-key="miembros">
     <FilterBar
+      vertical
       v-model="filters"
       v-model:search="searchQuery"
       :search-placeholder="`Buscar por nombre, apellido o email…`"
-      :create-label="tienePermiso('MEMBRESIA_MIEMBRO_CREAR') ? `Nuevo ${orgConfig.miembro}` : ''"
-      create-route="/miembros/nuevo"
       :fields="filterFields"
       :description="descripcionBusqueda"
-      class="mb-4"
       @clear="limpiarFiltros">
 
       <!-- Situación: dropdown personalizado con sub-selección de motivo de baja -->
@@ -56,7 +65,10 @@
       </template>
 
     </FilterBar>
+    </FilterRail>
 
+    <!-- Columna de resultados -->
+    <div class="flex-1 min-w-0 w-full">
     <!-- Estado de carga -->
     <EstadoCarga v-if="loading" mensaje="Cargando registros de militancia..." />
 
@@ -191,6 +203,8 @@
         </table></div>
       </template>
     </div>
+    </div><!-- /columna resultados -->
+    </div><!-- /flex filtro + resultados -->
 
     <!-- Ficha de socio en drawer lateral (tónica general: detalle en drawer) -->
     <MiembroFichaDrawer
@@ -207,6 +221,7 @@ import { useToast } from '@/composables/useToast'
 import { ref, onMounted, computed, watch } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
+import FilterRail from '@/components/common/FilterRail.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
 import { EyeIcon, PencilIcon , ChevronRightIcon, UserIcon} from '@heroicons/vue/24/outline'
 import { useGraphQL } from '@/composables/useGraphQL.js'
