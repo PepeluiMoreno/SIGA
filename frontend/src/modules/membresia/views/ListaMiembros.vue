@@ -131,7 +131,6 @@
 
               <!-- Fila de miembro -->
               <tr v-else class="hover:bg-purple-50 cursor-pointer"
-                :class="miembroSel === fila.miembro.id ? 'bg-purple-50' : ''"
                 @click="abrirFicha(fila.miembro, false)">
                 <td class="py-3 pr-4" :style="{ paddingLeft: (fila.depth * 20 + 16) + 'px' }">
                   <div class="flex items-center gap-3">
@@ -206,19 +205,13 @@
     </div><!-- /columna resultados -->
     </div><!-- /flex filtro + resultados -->
 
-    <!-- Ficha de socio en drawer lateral (tónica general: detalle en drawer) -->
-    <MiembroFichaDrawer
-      v-model="drawerAbierto"
-      :miembro-id="miembroSel"
-      :editar-inicial="editarInicial"
-      :titulo="tituloFicha"
-    />
   </AppLayout>
 </template>
 
 <script setup>
 import { useToast } from '@/composables/useToast'
 import { ref, onMounted, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import FilterRail from '@/components/common/FilterRail.vue'
@@ -230,29 +223,15 @@ import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_MIEMBROS, GET_AGRUPACIONES, GET_TIPOS_MIEMBRO, GET_ESTADOS_MIEMBRO, GET_MOTIVOS_BAJA, GET_NOMBRAMIENTOS_ACTIVOS } from '@/graphql/queries/miembros.js'
 import AmbitoTerritorialSelect from '@/components/common/AmbitoTerritorialSelect.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
-import MiembroFichaDrawer from '@/components/miembros/MiembroFichaDrawer.vue'
 const toast = useToast()
+const router = useRouter()
 
-// ── Ficha de socio en drawer ────────────────────────────────────────────────
-const drawerAbierto = ref(false)
-const miembroSel = ref(null)
-const miembroSelObj = ref(null)
-const editarInicial = ref(false)
+// ── Navegación a la ficha (vista completa) ──────────────────────────────────
 function abrirFicha(m, editar) {
-  miembroSel.value = m.id
-  miembroSelObj.value = m
-  editarInicial.value = !!editar
-  drawerAbierto.value = true
+  router.push(editar
+    ? { path: `/miembros/${m.id}`, query: { modo: 'editar' } }
+    : `/miembros/${m.id}`)
 }
-const tituloFicha = computed(() => {
-  const m = miembroSelObj.value
-  if (!m) return 'Ficha de socio'
-  return `${m.apellido1 || ''}${m.apellido2 ? ' ' + m.apellido2 : ''}, ${m.nombre || ''}`.trim()
-})
-// Al cerrar el drawer tras una posible edición, refrescar el listado.
-watch(drawerAbierto, (abierto, antes) => {
-  if (antes && !abierto) loadMiembros()
-})
 const { loading, error, query, mutation } = useGraphQL()
 const orgConfig = useOrgConfigStore()
 const { tienePermiso } = usePermisos()

@@ -46,7 +46,6 @@
         <tbody class="divide-y divide-slate-100">
           <tr v-for="c in contactosFiltrados" :key="c.id"
             class="hover:bg-purple-50 cursor-pointer"
-            :class="contactoSel === c.id ? 'bg-purple-50' : ''"
             @click="abrirFicha(c.id)">
             <td class="px-4 py-3">
               <span
@@ -79,23 +78,19 @@
     </div>
     </div>
 
-    <!-- Ficha de contacto en drawer lateral -->
-    <ContactoFichaDrawer v-model="drawerAbierto" :contacto-id="contactoSel" />
   </AppLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
-import ContactoFichaDrawer from '@/components/miembros/ContactoFichaDrawer.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_CONTACTOS } from '@/graphql/queries/contactos.js'
 
-const drawerAbierto = ref(false)
-const contactoSel = ref(null)
+const router = useRouter()
 function abrirFicha(id) {
-  contactoSel.value = id
-  drawerAbierto.value = true
+  router.push(`/contactos/${id}`)
 }
 
 const contactos = ref([])
