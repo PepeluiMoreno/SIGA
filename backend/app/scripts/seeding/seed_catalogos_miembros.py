@@ -29,7 +29,7 @@ ESTADOS_MIEMBRO = [
 TIPOS_MIEMBRO = [
     {"nombre": "Ordinario",   "descripcion": "Miembro de pleno derecho",                     "requiere_cuota": True,  "puede_votar": True,  "orden": 1, "activo": True},
     {"nombre": "De honor",    "descripcion": "Miembro honorario",                            "requiere_cuota": False, "puede_votar": False, "orden": 2, "activo": True},
-    {"nombre": "Simpatizante","descripcion": "Simpatizante sin derecho a voto",              "requiere_cuota": False, "puede_votar": False, "orden": 3, "activo": True},
+    # "Simpatizante" se retira de los tipos de socio: es una vinculación (SIMPATIZANTE), no un tipo de socio.
 ]
 
 FORMAS_PAGO = [

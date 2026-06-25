@@ -533,7 +533,8 @@ _ESTADOS_CAMPANIA = [
 _TIPOS_MIEMBRO = [
     {"nombre": "Ordinario",    "descripcion": "Miembro de pleno derecho",        "requiere_cuota": True,  "puede_votar": True,  "orden": 1},
     {"nombre": "De honor",     "descripcion": "Miembro honorario",               "requiere_cuota": False, "puede_votar": False, "orden": 2},
-    {"nombre": "Simpatizante", "descripcion": "Simpatizante sin derecho a voto", "requiere_cuota": False, "puede_votar": False, "orden": 3},
+    # "Simpatizante" NO es un tipo de socio (no paga cuota): es una vinculación
+    # (TipoVinculacion SIMPATIZANTE). Retirado de los tipos de socio.
 ]
 
 _ESTADOS_MIEMBRO = [
