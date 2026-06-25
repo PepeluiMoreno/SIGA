@@ -484,14 +484,15 @@ class CoordinacionTerritorialType:
     agrupacion: Optional['UnidadOrganizativaType'] = None
 
 # El antiguo MiembroType se sustituye por ContactoType (la identidad viva es el
-# Contacto). Se exponen las columnas escalares; las relaciones de membresía
-# (vinculaciones/participaciones/firmas) se consultan vía resolvers dedicados, así
-# que se excluyen aquí para no exigir tipos GraphQL que aún no existen
-# (p.ej. VinculacionType) ni colisionar con ParticipacionType (=AsistenciaActividad).
+# Contacto). Se exponen las columnas escalares y `vinculaciones` (facetas del
+# contacto, ahora que VinculacionType existe) para que el directorio saque los
+# badges de faceta en una sola query. Las participaciones/firmas se siguen
+# consultando vía resolvers dedicados (y se excluyen aquí para no colisionar con
+# ParticipacionType = AsistenciaActividad).
 @strawchemy.type(
     Contacto, include="all", override=True,
     exclude=[
-        "vinculaciones", "participaciones", "firmas_campania",
+        "participaciones", "firmas_campania",
         "contactos_donde_represento", "representante_legal",
     ],
 )
