@@ -44,31 +44,35 @@ El workflow (`.github/workflows/deploy.yml`) selecciona el runner por **labels**
 
 ## Requisitos previos en el VPS
 
-El runner corre bajo un usuario **dedicado `deployer`**, separado del usuario
-admin/SSH `elaicatec`. Es deliberado: el runner ejecuta el contenido de los
-workflows, así que conviene aislarlo en un usuario de **mínimo privilegio**.
+El runner corre bajo el usuario **`deployer`**, el **usuario de despliegue común**
+del VPS (lo usan GSH, SIGA y cualquier otra app). Ya existe, ya está en el grupo
+`docker` y tiene su propio par de claves SSH y home (`/home/deployer`).
 
-`deployer` es una **cuenta de servicio no interactiva** (sin shell de login). Eso
-es correcto: el runner se instala como **servicio systemd** y no necesita shell.
-Por eso los comandos de instalación se lanzan con `sudo -u deployer <comando>`
-(no `sudo -iu`, que exige login) y desde un directorio dedicado.
+> Consideración de seguridad (asumida por diseño): al instalar el runner como
+> `deployer`, el runner —que ejecuta el contenido de los workflows de SIGA—
+> comparte la identidad de `deployer` (su clave SSH y su acceso al resto de apps
+> en `/opt/docker/apps`). Es el acoplamiento aceptado al usar un único usuario de
+> despliegue para todo.
+
+Los comandos de instalación se lanzan con `sudo -u deployer <comando>` desde un
+directorio dedicado del runner.
 
 1. **Docker** y **docker compose** funcionando.
-2. `deployer` (ya existe) en el grupo `docker`:
+2. `deployer` en el grupo `docker` (ya lo está; comando idempotente):
    ```bash
    sudo usermod -aG docker deployer
    ```
-3. Dar a `deployer` escritura sobre el directorio de deploy y crear el directorio
-   del runner:
+3. Dar a `deployer` escritura sobre el directorio de deploy de SIGA y crear el
+   directorio del runner:
    ```bash
    sudo chown -R deployer:deployer /opt/docker/apps/SIGA
    sudo mkdir -p /opt/actions-runner
    sudo chown deployer:deployer /opt/actions-runner
    ```
 
-   Comprobar Docker como `deployer` (sin login shell):
+   Comprobar Docker como `deployer`:
    ```bash
-   sudo -u deployer bash -c 'id -nG | tr " " "\n" | grep -qx docker && echo "grupo docker OK"; docker ps >/dev/null 2>&1 && echo "docker OK" || echo "docker NO"'
+   sudo -u deployer bash -c 'docker ps >/dev/null 2>&1 && echo "docker OK" || echo "docker NO"'
    ```
 
 ## Instalar y registrar el runner (STAGING / VPS2)
