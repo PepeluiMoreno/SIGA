@@ -77,22 +77,24 @@ class UnidadOrganizativaCreateInput:
 
 @strawberry.input
 class UnidadOrganizativaUpdateInput:
+    # Todos los campos opcionales con UNSET por defecto: omitir un campo = no
+    # tocarlo (update parcial seguro; editar una sección no borra las demás).
     id: uuid.UUID
-    nombre: Optional[str] = None
-    nombre_corto: Optional[str] = None
+    nombre: Optional[str] = strawberry.UNSET
+    nombre_corto: Optional[str] = strawberry.UNSET
     tipo_id: Optional[uuid.UUID] = strawberry.UNSET
     agrupacion_padre_id: Optional[uuid.UUID] = strawberry.UNSET
     pais_id: Optional[uuid.UUID] = strawberry.UNSET
     provincia_id: Optional[uuid.UUID] = strawberry.UNSET
     municipio_id: Optional[uuid.UUID] = strawberry.UNSET
-    email: Optional[str] = None
-    telefono: Optional[str] = None
-    web: Optional[str] = None
-    descripcion: Optional[str] = None
-    nif: Optional[str] = None
+    email: Optional[str] = strawberry.UNSET
+    telefono: Optional[str] = strawberry.UNSET
+    web: Optional[str] = strawberry.UNSET
+    descripcion: Optional[str] = strawberry.UNSET
+    nif: Optional[str] = strawberry.UNSET
     fecha_constitucion: Optional[date] = strawberry.UNSET
-    registro_oficial: Optional[str] = None
-    activo: Optional[bool] = None
+    registro_oficial: Optional[str] = strawberry.UNSET
+    activo: Optional[bool] = strawberry.UNSET
 
 
 _AG_FIELDS = [

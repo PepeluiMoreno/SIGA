@@ -5,7 +5,7 @@
 
     <!-- El registro de cargos es una acción de edición, no de consulta -->
     <template v-if="agrupacion && tienePermiso('NOM_CREATE')" #actions>
-      <button type="button" @click="editMode = !editMode"
+      <button type="button" @click="toggleEdicion"
         class="h-8 px-3 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
         :class="editMode ? 'text-slate-600' : 'text-indigo-600'">
         {{ editMode ? 'Hecho' : 'Editar' }}
@@ -40,38 +40,99 @@
           </span>
           <ChevronDownIcon :class="chevronCls(open.info)" />
         </button>
-        <div v-show="open.info" class="px-5 py-4 grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
-          <div class="col-span-4">
-            <p :class="lbl">Nombre oficial</p>
-            <p class="text-slate-800 font-medium">{{ agrupacion.nombre }}</p>
+        <div v-show="open.info" class="px-5 py-4 space-y-5">
+
+          <!-- Generales -->
+          <div class="grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
+            <div class="col-span-12 sm:col-span-5">
+              <p :class="lbl">Nombre oficial</p>
+              <input v-if="editMode" v-model="form.nombre" type="text" :class="inp" />
+              <p v-else :class="ro + ' font-medium text-slate-800'">{{ agrupacion.nombre }}</p>
+            </div>
+            <div class="col-span-6 sm:col-span-3">
+              <p :class="lbl">Nombre corto</p>
+              <input v-if="editMode" v-model="form.nombreCorto" type="text" :class="inp" />
+              <p v-else :class="ro">{{ agrupacion.nombreCorto || '—' }}</p>
+            </div>
+            <div class="col-span-6 sm:col-span-2">
+              <p :class="lbl">Tipo de unidad</p>
+              <p :class="ro">{{ agrupacion.tipoUnidad?.nombre || '—' }}</p>
+            </div>
+            <div class="col-span-12 sm:col-span-2">
+              <p :class="lbl">Depende de</p>
+              <p :class="ro">{{ agrupacion.agrupacionPadreId ? '—' : '(raíz)' }}</p>
+            </div>
+            <div class="col-span-12">
+              <p :class="lbl">Descripción</p>
+              <textarea v-if="editMode" v-model="form.descripcion" rows="2" :class="inpTa"></textarea>
+              <p v-else :class="ro">{{ agrupacion.descripcion || '—' }}</p>
+            </div>
           </div>
-          <div class="col-span-2">
-            <p :class="lbl">Nombre corto</p>
-            <p class="text-slate-700">{{ agrupacion.nombreCorto || '—' }}</p>
+
+          <!-- Contacto -->
+          <div>
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">Contacto</p>
+            <div class="grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
+              <div class="col-span-12 sm:col-span-5">
+                <p :class="lbl">Email</p>
+                <input v-if="editMode" v-model="form.email" type="email" :class="inp" />
+                <a v-else-if="agrupacion.email" :href="`mailto:${agrupacion.email}`" :class="ro + ' block text-indigo-600 hover:underline'">{{ agrupacion.email }}</a>
+                <p v-else :class="ro">—</p>
+              </div>
+              <div class="col-span-6 sm:col-span-3">
+                <p :class="lbl">Teléfono</p>
+                <input v-if="editMode" v-model="form.telefono" type="text" :class="inp" />
+                <p v-else :class="ro">{{ agrupacion.telefono || '—' }}</p>
+              </div>
+              <div class="col-span-6 sm:col-span-4">
+                <p :class="lbl">Web</p>
+                <input v-if="editMode" v-model="form.web" type="url" :class="inp" />
+                <a v-else-if="agrupacion.web" :href="agrupacion.web" target="_blank" rel="noopener" :class="ro + ' block text-indigo-600 hover:underline truncate'">{{ agrupacion.web }}</a>
+                <p v-else :class="ro">—</p>
+              </div>
+            </div>
           </div>
-          <div class="col-span-3">
-            <p :class="lbl">Tipo de unidad</p>
-            <p class="text-slate-700">{{ agrupacion.tipoUnidad?.nombre || '—' }}</p>
+
+          <!-- Ubicación -->
+          <div>
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">Ubicación</p>
+            <div class="grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
+              <div class="col-span-12 sm:col-span-4">
+                <p :class="lbl">País</p>
+                <select v-if="editMode" v-model="form.paisId" @change="onPaisChange" :class="inp">
+                  <option value="">— Seleccionar —</option>
+                  <option v-for="p in paises" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+                </select>
+                <p v-else :class="ro">{{ paisNombre }}</p>
+              </div>
+              <div class="col-span-6 sm:col-span-4">
+                <p :class="lbl">Provincia</p>
+                <select v-if="editMode" v-model="form.provinciaId" @change="onProvinciaChange" :disabled="!form.paisId" :class="inp + ' disabled:bg-slate-50 disabled:text-slate-400'">
+                  <option value="">— Seleccionar —</option>
+                  <option v-for="p in provinciasDelPais" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+                </select>
+                <p v-else :class="ro">{{ provinciaNombre }}</p>
+              </div>
+              <div class="col-span-6 sm:col-span-4">
+                <p :class="lbl">Municipio</p>
+                <select v-if="editMode" v-model="form.municipioId" :disabled="!form.provinciaId" :class="inp + ' disabled:bg-slate-50 disabled:text-slate-400'">
+                  <option value="">— Seleccionar —</option>
+                  <option v-for="m in municipios" :key="m.id" :value="m.id">{{ m.nombre }}</option>
+                </select>
+                <p v-else :class="ro">{{ municipioNombre }}</p>
+              </div>
+            </div>
           </div>
-          <div class="col-span-3">
-            <p :class="lbl">Depende de</p>
-            <p class="text-slate-700">{{ agrupacion.agrupacionPadreId ? '—' : '(unidad raíz)' }}</p>
-          </div>
-          <div class="col-span-4" v-if="agrupacion.email">
-            <p :class="lbl">Email</p>
-            <a :href="`mailto:${agrupacion.email}`" class="text-indigo-600 hover:underline">{{ agrupacion.email }}</a>
-          </div>
-          <div class="col-span-3" v-if="agrupacion.telefono">
-            <p :class="lbl">Teléfono</p>
-            <p class="text-slate-700">{{ agrupacion.telefono }}</p>
-          </div>
-          <div class="col-span-5" v-if="agrupacion.web">
-            <p :class="lbl">Web</p>
-            <a :href="agrupacion.web" target="_blank" rel="noopener" class="text-indigo-600 hover:underline">{{ agrupacion.web }}</a>
-          </div>
-          <div class="col-span-12" v-if="agrupacion.descripcion">
-            <p :class="lbl">Descripción</p>
-            <p class="text-slate-700">{{ agrupacion.descripcion }}</p>
+
+          <ErrorAlert v-if="datosError" :message="datosError" />
+
+          <!-- Guardar (solo en edición) -->
+          <div v-if="editMode" class="flex justify-end pt-3 border-t border-slate-100">
+            <button type="button" @click="guardarDatos" :disabled="guardandoDatos || !form.nombre.trim()"
+              class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50">
+              <span v-if="guardandoDatos" class="animate-spin inline-block h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
+              Guardar cambios
+            </button>
           </div>
         </div>
       </section>
@@ -332,6 +393,8 @@ const inp = 'h-10 w-full px-3 py-2 text-sm border border-slate-300 rounded-lg tr
 const inpTa = 'w-full px-3 py-2 text-sm border border-slate-300 rounded-lg transition-all ' +
               'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ' +
               'bg-white placeholder:text-slate-300'
+// Campo en solo lectura con aspecto de campo (detalle = edición en readonly)
+const ro = 'min-h-[2.5rem] px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-700 break-words'
 
 const accordionBtn = (isOpen) =>
   'w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50/60 transition-colors ' +
@@ -358,6 +421,83 @@ const rolesTerritoriales  = ref([])   // roles organizacionales territoriales
 const miembros            = ref([])   // miembros para el buscador
 const unidadesDestino     = ref([])   // todas las unidades activas (selector de traslado)
 const trasladoModal       = reactive({ visible: false, socio: null, destinoId: '', guardando: false, error: null })
+
+// ── Edición de datos generales / contacto / ubicación ───────────────────────
+const paises         = ref([])
+const provincias     = ref([])
+const municipios     = ref([])
+const guardandoDatos = ref(false)
+const datosError     = ref(null)
+const form = reactive({
+  nombre: '', nombreCorto: '', descripcion: '',
+  email: '', telefono: '', web: '',
+  paisId: '', provinciaId: '', municipioId: '',
+})
+
+const provinciasDelPais = computed(() =>
+  !form.paisId ? [] : provincias.value.filter(p => p.paisId === form.paisId)
+)
+// Nombres para la vista en solo lectura (resueltos desde los catálogos cargados)
+const paisNombre      = computed(() => paises.value.find(p => p.id === agrupacion.value?.paisId)?.nombre || '—')
+const provinciaNombre = computed(() => provincias.value.find(p => p.id === agrupacion.value?.provinciaId)?.nombre || '—')
+const municipioNombre = computed(() => municipios.value.find(m => m.id === agrupacion.value?.municipioId)?.nombre || '—')
+
+function sincronizarForm() {
+  const a = agrupacion.value
+  if (!a) return
+  Object.assign(form, {
+    nombre: a.nombre ?? '', nombreCorto: a.nombreCorto ?? '', descripcion: a.descripcion ?? '',
+    email: a.email ?? '', telefono: a.telefono ?? '', web: a.web ?? '',
+    paisId: a.paisId ?? '', provinciaId: a.provinciaId ?? '', municipioId: a.municipioId ?? '',
+  })
+  if (form.provinciaId) cargarMunicipios(form.provinciaId)
+}
+
+async function cargarMunicipios(provinciaId) {
+  if (!provinciaId) { municipios.value = []; return }
+  try {
+    const r = await executeQuery(Q_MUNICIPIOS, { provinciaId })
+    municipios.value = (r.municipios ?? []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+  } catch { municipios.value = [] }
+}
+function onPaisChange()      { form.provinciaId = ''; form.municipioId = ''; municipios.value = [] }
+function onProvinciaChange() { form.municipioId = ''; cargarMunicipios(form.provinciaId) }
+
+function toggleEdicion() {
+  editMode.value = !editMode.value
+  datosError.value = null
+  if (editMode.value) sincronizarForm()
+}
+
+async function guardarDatos() {
+  if (!form.nombre.trim()) return
+  guardandoDatos.value = true
+  datosError.value = null
+  try {
+    await executeMutation(
+      `mutation ActualizarUnidad($data: UnidadOrganizativaUpdateInput!) {
+         actualizarUnidadOrganizativa(data: $data) { id }
+       }`,
+      { data: {
+        id: agrupacionId.value,
+        nombre: form.nombre.trim(),
+        nombreCorto: form.nombreCorto.trim() || null,
+        descripcion: form.descripcion.trim() || null,
+        email: form.email.trim() || null,
+        telefono: form.telefono.trim() || null,
+        web: form.web.trim() || null,
+        paisId: form.paisId || null,
+        provinciaId: form.provinciaId || null,
+        municipioId: form.municipioId || null,
+      } }
+    )
+    await cargar()
+  } catch (e) {
+    datosError.value = e?.response?.errors?.[0]?.message || 'No se pudieron guardar los datos.'
+  } finally {
+    guardandoDatos.value = false
+  }
+}
 
 // ── Computed ─────────────────────────────────────────────────────────────────
 // Todos los registros activos: directos primero, luego hijos (marcados)
@@ -391,10 +531,14 @@ const Q_AGRUPACION = `
     unidadesOrganizativas(filter: { id: { eq: $id } }) {
       id nombre nombreCorto descripcion email telefono web activo
       tipoId agrupacionPadreId
+      paisId provinciaId municipioId
       tipoUnidad { id nombre naturaleza nivel }
     }
   }
 `
+const Q_PAISES     = `query { paises(filter: { activo: { eq: true } }) { id nombre } }`
+const Q_PROVINCIAS = `query { provincias(filter: { activo: { eq: true } }) { id nombre paisId activo } }`
+const Q_MUNICIPIOS = `query Municipios($provinciaId: UUID!) { municipios(filter: { provinciaId: { eq: $provinciaId } }) { id nombre } }`
 const Q_ROLES_TERRITORIALES = `
   query RolesTerritoriales {
     roles(filter: { tipo: { eq: "ORGANIZACION" }, eliminado: { eq: false } }) {
@@ -442,15 +586,23 @@ async function cargar() {
   loading.value = true
   error.value = null
   try {
-    const [rAgr, rRoles, rNombr, rHijos, rMbs] = await Promise.allSettled([
+    const [rAgr, rRoles, rNombr, rHijos, rMbs, rPaises, rProvs] = await Promise.allSettled([
       executeQuery(Q_AGRUPACION, { id: agrupacionId.value }),
       executeQuery(Q_ROLES_TERRITORIALES),
       executeQuery(Q_NOMBRAMIENTOS, { agrupacionId: agrupacionId.value }),
       executeQuery(Q_HIJOS, { padreId: agrupacionId.value }),
       executeQuery(Q_MIEMBROS, { agrupacionId: agrupacionId.value }),
+      paises.value.length ? Promise.resolve(null) : executeQuery(Q_PAISES),
+      provincias.value.length ? Promise.resolve(null) : executeQuery(Q_PROVINCIAS),
     ])
-    if (rAgr.status === 'fulfilled')
+    if (rPaises.status === 'fulfilled' && rPaises.value)
+      paises.value = (rPaises.value.paises ?? []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+    if (rProvs.status === 'fulfilled' && rProvs.value)
+      provincias.value = (rProvs.value.provincias ?? []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+    if (rAgr.status === 'fulfilled') {
       agrupacion.value = rAgr.value.unidadesOrganizativas?.[0] ?? null
+      sincronizarForm()
+    }
     if (rRoles.status === 'fulfilled')
       rolesTerritoriales.value = (rRoles.value.roles ?? [])
         .filter(r => r.esTerritorial)
