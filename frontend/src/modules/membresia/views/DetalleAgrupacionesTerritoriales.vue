@@ -85,12 +85,11 @@
 
 <script setup>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import { ref, reactive, computed, watch, onMounted, onActivated, provide } from 'vue'
+import { ref, reactive, computed, onMounted, onActivated, provide } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import { useUnidadesOrganizativas } from '@/composables/useUnidadesOrganizativas'
-import { useGraphQL } from '@/composables/useGraphQL'
 import { useOrgConfigStore } from '@/stores/orgConfig'
 import { usePermisos } from '@/composables/usePermisos.js'
 import NodoArbol from './NodoArbol.vue'
@@ -99,9 +98,8 @@ import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
 
 defineOptions({ name: 'DetalleAgrupacionesTerritoriales' })
 
-const { tipos, unidades, coordinaciones, miembros, loading, error, cargarTipos, cargarArbol, construirArbol, crearUnidad, actualizarUnidad, archivarUnidad } = useUnidadesOrganizativas()
+const { tipos, unidades, coordinaciones, miembros, loading, error, cargarTipos, cargarArbol, construirArbol, archivarUnidad } = useUnidadesOrganizativas()
 const filtersApplied = ref(false)
-const { query: gqlQuery } = useGraphQL()
 const orgConfig = useOrgConfigStore()
 const router = useRouter()
 const { tienePermiso } = usePermisos()
@@ -115,21 +113,10 @@ const irANuevaRaiz  = () => router.push({ name: 'NuevaAgrupacion' })
 const busqueda = ref('')
 const filtros  = ref({ agrupacionId: '' })
 
-// ── Estado formulario ─────────────────────────────────────────────────────────
-const paises            = ref([])
-const provincias        = ref([])
-const mostrarFormulario = ref(false)
-const editando          = ref(null)
+// ── Estado de borrado ───────────────────────────────────────────────────────────
 const unidadAEliminar   = ref(null)
 const errorEliminar     = ref('')
 const archivando        = ref(false)
-
-const formVacio = () => ({
-  nombre: '', nombreCorto: '', tipoId: '', agrupacionPadreId: '',
-  paisId: '', provinciaId: '', email: '', telefono: '', web: '', descripcion: '',
-  nif: '', fechaConstitucion: '', registroOficial: '', activo: true,
-})
-const form = ref(formVacio())
 
 // ── Computeds ─────────────────────────────────────────────────────────────────
 
@@ -163,16 +150,6 @@ const agrupacionesParaFiltro = computed(() => {
     return result
   }
   return flatten(arbolCompleto.value)
-})
-
-const provinciasDelPais = computed(() => {
-  if (!form.value.paisId) return []
-  return provincias.value
-    .filter(p => p.paisId === form.value.paisId && p.activo)
-    .sort((a, b) => {
-      const ca = (a.comunidadAutonoma ?? '').localeCompare(b.comunidadAutonoma ?? '', 'es')
-      return ca !== 0 ? ca : a.nombre.localeCompare(b.nombre, 'es')
-    })
 })
 
 const hayFiltros = computed(() =>
@@ -250,8 +227,6 @@ const toggleTodos = () => {
 provide('expandedMap', expandedMap)
 provide('toggleNodo', toggleNodo)
 
-const tipoSeleccionado = computed(() => tipos.value.find(t => t.id === form.value.tipoId) ?? null)
-
 // ── FilterBar fields ──────────────────────────────────────────────────────────
 
 const filterFields = computed(() => {
@@ -277,34 +252,7 @@ const countText = computed(() => {
   return `${totalNodos.value} unidad${totalNodos.value !== 1 ? 'es' : ''}`
 })
 
-// Tipos disponibles según el contexto: raíz → sólo tipo raíz; hijo → sólo hijos del tipo del padre
-const tiposDisponibles = computed(() => {
-  const territoriales = tipos.value.filter(t => t.naturaleza === 'TERRITORIAL')
-  const padreId = form.value.agrupacionPadreId
-  if (!padreId) {
-    return territoriales.filter(t => !t.padreTipoId)
-  }
-  const padre = unidades.value.find(u => u.id === padreId)
-  if (!padre?.tipoId) return territoriales
-  return territoriales.filter(t => t.padreTipoId === padre.tipoId)
-})
-
-// Auto-seleccionar tipo cuando sólo hay una opción disponible
-watch(tiposDisponibles, (lista) => {
-  if (lista.length === 1) {
-    form.value.tipoId = lista[0].id
-  } else if (!lista.find(t => t.id === form.value.tipoId)) {
-    form.value.tipoId = ''
-  }
-})
-
-const unidadesSinActual = computed(() =>
-  unidades.value.filter(u => u.id !== editando.value)
-)
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-const labelNaturaleza = (n) => ({ TERRITORIAL: 'Territorial', FUNCIONAL: 'Funcional', PROGRAMATICA: 'Programática', ADMINISTRATIVA: 'Administrativa' }[n] ?? '')
 
 const limpiarFiltros = () => { busqueda.value = '' }
 
@@ -315,59 +263,7 @@ async function aplicarFiltros() {
   filtersApplied.value = true
 }
 
-// ── Formulario ────────────────────────────────────────────────────────────────
-
-const abrirFormulario = (nodo) => {
-  if (nodo) {
-    editando.value = nodo.id
-    form.value = {
-      nombre:            nodo.nombre ?? '',
-      nombreCorto:       nodo.nombreCorto ?? '',
-      tipoId:            nodo.tipoId ?? '',
-      agrupacionPadreId: nodo.agrupacionPadreId ?? '',
-      paisId:            nodo.paisId ?? '',
-      provinciaId:       nodo.provinciaId ?? '',
-      email:             nodo.email ?? '',
-      telefono:          nodo.telefono ?? '',
-      web:               nodo.web ?? '',
-      descripcion:       nodo.descripcion ?? '',
-      nif:               nodo.nif ?? '',
-      fechaConstitucion: nodo.fechaConstitucion ?? '',
-      registroOficial:   nodo.registroOficial ?? '',
-      activo:            nodo.activo ?? true,
-    }
-  } else {
-    editando.value = null
-    form.value = formVacio()
-  }
-  mostrarFormulario.value = true
-}
-
-const abrirFormularioHijo = (nodo) => {
-  editando.value = null
-  form.value = { ...formVacio(), agrupacionPadreId: nodo.id }
-  mostrarFormulario.value = true
-}
-
-const cerrarFormulario = () => {
-  mostrarFormulario.value = false
-  editando.value = null
-}
-
-const guardarUnidad = async () => {
-  const payload = { ...form.value }
-  if (!payload.agrupacionPadreId)  payload.agrupacionPadreId = null
-  if (!payload.tipoId)             payload.tipoId = null
-  if (!payload.provinciaId)        payload.provinciaId = null
-  if (!payload.fechaConstitucion)  payload.fechaConstitucion = null
-
-  if (editando.value) {
-    await actualizarUnidad({ id: editando.value, ...payload })
-  } else {
-    await crearUnidad(payload)
-  }
-  cerrarFormulario()
-}
+// ── Borrado ───────────────────────────────────────────────────────────────────
 
 const confirmarEliminar = (nodo) => {
   if (nodo.hijos?.length) return
@@ -390,17 +286,8 @@ const ejecutarEliminar = async () => {
 
 // ── Carga de datos ────────────────────────────────────────────────────────────
 
-const cargarGeo = async () => {
-  const [dataPaises, dataProvs] = await Promise.all([
-    gqlQuery(`query { paises(filter: { activo: { eq: true } }) { id nombre } }`),
-    gqlQuery(`query { provincias(filter: { activo: { eq: true } }) { id nombre comunidadAutonoma paisId activo } }`),
-  ])
-  paises.value     = (dataPaises.paises ?? []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-  provincias.value = (dataProvs.provincias ?? []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-}
-
 onMounted(async () => {
-  await Promise.all([cargarTipos(), cargarGeo()])
+  await cargarTipos()
   await cargarArbol()
   filtersApplied.value = true
 })
