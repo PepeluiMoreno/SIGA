@@ -117,6 +117,16 @@ Se mantiene la convención del repo: `tipo(scope): descripción` en español.
 
 ---
 
+## 5.bis Local vs. remoto (importante)
+
+**Todo el trabajo en paralelo es LOCAL.** El remoto (GitHub `origin`) solo tiene `master`.
+- Las ramas `feature/<modulo>` viven **solo en la máquina del usuario**; NO se suben.
+- Los operarios y el integrador commitean y mergean en local. GitHub no se entera de nada.
+- **Solo se hace `git push` de `master`**, y **solo cuando el usuario lo pide explícitamente**.
+  Ningún agente sube ramas ni hace push por su cuenta.
+- Resultado: el remoto siempre recibe `master` ya integrado y limpio; nunca ve las ramas de trabajo.
+- Las `feature/*` son carriles desechables: una vez integradas en `master`, se pueden borrar en local.
+
 ## 6. Reglas duras (alembic, BD, stack dev)
 
 - **Una sola BD Postgres compartida** (`docker-compose.dev.yml`, BD `siga`). Todos los
