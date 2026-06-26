@@ -829,6 +829,7 @@ export const GET_TIPOS_UNIDADES_ORGANIZATIVAS = `
       id nombre naturaleza vinculo nivel padreTipoId
       ambitoGeograficoId
       ambitoGeografico { id nombre granularidad }
+      denominacionSingular denominacionPlural
       activo
     }
   }
@@ -845,6 +846,7 @@ export const UPDATE_TIPO_UNIDAD_ORGANIZATIVA = `
     actualizarNivelOrganizativo(data: $data) {
       id nombre naturaleza vinculo nivel padreTipoId ambitoGeograficoId
       ambitoGeografico { id nombre granularidad }
+      denominacionSingular denominacionPlural
       activo
     }
   }

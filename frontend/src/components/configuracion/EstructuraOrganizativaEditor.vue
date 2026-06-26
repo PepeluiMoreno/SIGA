@@ -27,6 +27,10 @@
             class="flex-shrink-0 px-1.5 py-0.5 text-xs rounded-full bg-slate-50 text-slate-400 border border-slate-200 leading-none italic">
             sin ámbito
           </span>
+          <span v-if="item.denominacionSingular" class="flex-shrink-0 text-xs text-slate-400 italic truncate"
+            title="Denominación interna de la unidad en este ámbito">
+            → {{ item.denominacionSingular }}
+          </span>
         </div>
 
         <!-- ↑ Subir nivel (promover al nivel de su padre) -->
@@ -74,6 +78,12 @@
           <option value="">sin ámbito</option>
           <option v-for="a in ambitosOrdenados" :key="a.id" :value="a.id">{{ a.nombre }}</option>
         </select>
+        <input v-model="formDenomSingular" type="text" placeholder="unidad (sing.)"
+          title="Denominación interna de la unidad en este ámbito (singular)"
+          class="flex-shrink-0 w-28 border border-slate-300 rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+        <input v-model="formDenomPlural" type="text" placeholder="unidades (pl.)"
+          title="Denominación interna de la unidad en este ámbito (plural)"
+          class="flex-shrink-0 w-28 border border-slate-300 rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
         <button type="button" @click="guardar(item)"
           class="text-xs px-2 py-0.5 bg-purple-600 text-white rounded hover:bg-purple-700 flex-shrink-0">OK</button>
         <button type="button" @click="editandoId = null"
@@ -140,6 +150,8 @@ async function recargarConfig() {
 const editandoId    = ref(null)
 const formNombre    = ref('')
 const formAmbitoId  = ref('')
+const formDenomSingular = ref('')
+const formDenomPlural   = ref('')
 const guardando     = ref(false)
 const errorMsg      = ref('')
 const pendingDelete = ref(null)
@@ -203,6 +215,8 @@ const prevSiblingOf = (nodo) => {
 const iniciarEdicion = (tipo) => {
   formNombre.value   = tipo.nombre
   formAmbitoId.value = tipo.ambitoGeograficoId ?? ''
+  formDenomSingular.value = tipo.denominacionSingular ?? ''
+  formDenomPlural.value   = tipo.denominacionPlural ?? ''
   editandoId.value   = tipo.id
 }
 
@@ -212,6 +226,8 @@ const guardar = async (tipo) => {
     id: tipo.id,
     nombre: formNombre.value.trim(),
     ambitoGeograficoId: formAmbitoId.value || null,
+    denominacionSingular: formDenomSingular.value.trim() || null,
+    denominacionPlural: formDenomPlural.value.trim() || null,
   })
   editandoId.value = null
   await recargarConfig()

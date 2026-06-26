@@ -67,6 +67,12 @@ class NivelOrganizativo(BaseModel):
     )
     activo: Mapped[bool] = mapped_column(Boolean, default=True, server_default='true', nullable=False)
 
+    # Denominación interna de la organización para una unidad de este nivel/ámbito
+    # (p.ej. nivel "Provincia" → "Agrupación Provincial" / "Agrupaciones Provinciales").
+    # Es la etiqueta que usa la UI para las unidades de este nivel (no hardcodear).
+    denominacion_singular: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    denominacion_plural: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
     ambito_geografico: Mapped[Optional[AmbitoGeografico]] = relationship(
         "AmbitoGeografico", back_populates="niveles_organizativos", lazy="selectin"
     )
