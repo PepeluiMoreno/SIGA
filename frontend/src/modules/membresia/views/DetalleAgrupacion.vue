@@ -4,7 +4,7 @@
     :subtitle="agrupacion?.tipoUnidad?.nombre || ''">
 
     <!-- El registro de cargos es una acción de edición, no de consulta -->
-    <template v-if="agrupacion && tienePermiso('NOM_CREATE')" #actions>
+    <template v-if="agrupacion && (tienePermiso('CFG_TERRITORIO_EDITAR') || tienePermiso('NOM_CREATE'))" #actions>
       <button type="button" @click="toggleEdicion"
         class="h-8 px-3 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
         :class="editMode ? 'text-slate-600' : 'text-indigo-600'">
@@ -152,8 +152,8 @@
         </button>
         <div v-show="open.cargos" class="px-5 pb-4 pt-2">
 
-          <!-- Barra de acción (solo en modo edición) -->
-          <div v-if="editMode" class="flex justify-end mb-3">
+          <!-- Barra de acción (solo en modo edición y con permiso de cargos) -->
+          <div v-if="editMode && tienePermiso('NOM_CREATE')" class="flex justify-end mb-3">
             <button type="button" @click="abrirRegistro(null)"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 transition-colors">
               <PlusIcon class="w-3.5 h-3.5" /> Registrar cargo
