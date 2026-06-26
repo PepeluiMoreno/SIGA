@@ -1,6 +1,6 @@
 <template>
   <AppLayout title="Contactos" :subtitle="subtitulo" fluid>
-    <template v-if="tienePermiso('CONTACTO_CREATE')" #actions>
+    <template v-if="tienePermiso('CONTACTO_CREAR')" #actions>
       <router-link to="/contactos/nuevo"
         class="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
         <span class="text-base leading-none">+</span>

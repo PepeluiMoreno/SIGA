@@ -9,6 +9,9 @@ from ..acceso.services.registry import (
 )
 
 MODULO = "membresia"
+# Contactos (base CRM): el modelo Contacto vive en este módulo pero se agrupa
+# como su propio módulo en el control de acceso, con prefijo CONTACTO_.
+MODULO_CONTACTOS = "contactos"
 
 _TRANSACCIONES = [
     TransaccionDef("MEMBRESIA_SOCIO_GESTIONAR",      "Gestionar socios",                  "MUTACION"),
@@ -34,6 +37,30 @@ _TRANSACCIONES = [
 
 for _t in _TRANSACCIONES:
     ModuleCatalog.register_transaccion(MODULO, _t)
+
+_TRANSACCIONES_CONTACTOS = [
+    TransaccionDef("CONTACTO_LISTAR",   "Listar contactos",        "CONSULTA"),
+    TransaccionDef("CONTACTO_VER",      "Ver ficha de contacto",   "CONSULTA"),
+    TransaccionDef("CONTACTO_CREAR",    "Crear contacto",          "MUTACION"),
+    TransaccionDef("CONTACTO_EDITAR",   "Editar contacto",         "MUTACION"),
+    TransaccionDef("CONTACTO_ELIMINAR", "Dar de baja contacto",    "MUTACION"),
+]
+for _t in _TRANSACCIONES_CONTACTOS:
+    ModuleCatalog.register_transaccion(MODULO_CONTACTOS, _t)
+
+ModuleCatalog.register_funcionalidad(FuncionalidadDef(
+    codigo="GESTION_CONTACTOS",
+    nombre="Gestión de contactos",
+    modulo=MODULO_CONTACTOS,
+    descripcion="Alta, edición, consulta y baja de contactos (base CRM)",
+    transacciones=[
+        FuncionalidadTransaccionDef("CONTACTO_LISTAR",   AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("CONTACTO_VER",      AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("CONTACTO_CREAR",    AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("CONTACTO_EDITAR",   AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("CONTACTO_ELIMINAR", AmbitoTransaccion.TERRITORIAL),
+    ],
+))
 
 ModuleCatalog.register_funcionalidad(FuncionalidadDef(
     codigo="GESTION_MIEMBROS",

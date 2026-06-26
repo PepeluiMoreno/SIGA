@@ -273,7 +273,7 @@ class VinculacionesMutation:
             select(HistorialNombramiento).where(HistorialNombramiento.id == n.id)
         )).scalar_one()
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CONTACTO_CREATE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CONTACTO_CREAR")])
     async def crear_contacto(self, info: strawberry.Info, data: ContactoCreateInput) -> ContactoType:
         """Crea un Contacto (persona física o jurídica) sin vinculación inicial."""
         session = info.context.session
@@ -304,7 +304,7 @@ class VinculacionesMutation:
             select(Contacto).where(Contacto.id == contacto.id)
         )).scalar_one()
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CONTACTO_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CONTACTO_EDITAR")])
     async def actualizar_contacto(self, info: strawberry.Info, data: ContactoUpdateInput) -> ContactoType:
         """Actualiza la identidad de un Contacto (campos no nulos del input)."""
         session = info.context.session
@@ -330,7 +330,7 @@ class VinculacionesMutation:
             select(Contacto).where(Contacto.id == contacto.id)
         )).scalar_one()
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CONTACTO_DELETE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CONTACTO_ELIMINAR")])
     async def eliminar_contacto(self, info: strawberry.Info, id: uuid.UUID) -> ContactoType:
         """Baja lógica (soft delete) de un Contacto: lo retira del directorio.
 

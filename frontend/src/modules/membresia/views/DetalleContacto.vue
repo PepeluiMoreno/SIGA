@@ -13,16 +13,16 @@
         </button>
       </template>
       <template v-else-if="contacto">
-        <button v-if="tienePermiso('CONTACTO_EDIT')" type="button" @click="entrarEdicion"
+        <button v-if="tienePermiso('CONTACTO_EDITAR')" type="button" @click="entrarEdicion"
           class="h-8 px-3 text-sm font-medium text-indigo-600 border border-slate-300 rounded-lg hover:bg-slate-50">
           Editar
         </button>
-        <button v-if="tienePermiso('CONTACTO_DELETE')" type="button" @click="toggleBaja"
+        <button v-if="tienePermiso('CONTACTO_ELIMINAR')" type="button" @click="toggleBaja"
           class="h-8 px-3 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50"
           :class="contacto.activo ? 'text-amber-600' : 'text-emerald-600'">
           {{ contacto.activo ? 'Dar de baja' : 'Reactivar' }}
         </button>
-        <button v-if="tienePermiso('CONTACTO_DELETE')" type="button" @click="eliminarContacto"
+        <button v-if="tienePermiso('CONTACTO_ELIMINAR')" type="button" @click="eliminarContacto"
           class="h-8 px-3 text-sm font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
           Eliminar
         </button>

@@ -155,19 +155,19 @@ const routes = [
     path: '/contactos',
     component: () => import('@/modules/membresia/views/ListaContactos.vue'),
     name: 'Contactos',
-    meta: { requiresAuth: true, requiredPermission: 'CONTACTO_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'CONTACTO_LISTAR' }
   },
   {
     path: '/contactos/nuevo',
     component: () => import('@/modules/membresia/views/DetalleContacto.vue'),
     name: 'NuevoContacto',
-    meta: { requiresAuth: true, requiredPermission: 'CONTACTO_CREATE' }
+    meta: { requiresAuth: true, requiredPermission: 'CONTACTO_CREAR' }
   },
   {
     path: '/contactos/:id',
     component: () => import('@/modules/membresia/views/DetalleContacto.vue'),
     name: 'DetalleContacto',
-    meta: { requiresAuth: true, requiredPermission: 'CONTACTO_VIEW' }
+    meta: { requiresAuth: true, requiredPermission: 'CONTACTO_VER' }
   },
   {
     path: '/agrupaciones',
