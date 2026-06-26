@@ -122,7 +122,7 @@ class ParticipacionCreateData:
 @strawberry.type
 class ActividadResolverMutation:
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ACT_CREATE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_CREAR")])
     async def crear_actividad(self, info: strawberry.Info, data: ActividadCreateData) -> ActividadType:
         return await ActividadService(info.context.session).crear(
             nombre=data.nombre, tipo_actividad_id=data.tipo_actividad_id,
@@ -141,7 +141,7 @@ class ActividadResolverMutation:
             presupuesto_estimado=data.presupuesto_estimado,
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ACT_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_EDITAR")])
     async def actualizar_actividad(self, info: strawberry.Info, data: ActividadUpdateData) -> ActividadType:
         campos = {k: getattr(data, k) for k in [
             'nombre', 'tipo_actividad_id', 'estado_id', 'descripcion',
@@ -156,7 +156,7 @@ class ActividadResolverMutation:
         ]}
         return await ActividadService(info.context.session).actualizar(data.id, campos)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ACT_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_EDITAR")])
     async def crear_tarea(self, info: strawberry.Info, data: TareaCreateData) -> TareaType:
         return await ActividadService(info.context.session).crear_tarea(
             titulo=data.titulo, estado_id=data.estado_id, descripcion=data.descripcion,
@@ -165,7 +165,7 @@ class ActividadResolverMutation:
             fecha_limite=data.fecha_limite, actividad_id=data.actividad_id, grupo_id=data.grupo_id,
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ACT_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_EDITAR")])
     async def actualizar_tarea(self, info: strawberry.Info, data: TareaUpdateData) -> TareaType:
         campos = {k: getattr(data, k) for k in [
             'titulo', 'estado_id', 'descripcion', 'prioridad', 'orden',
@@ -173,7 +173,7 @@ class ActividadResolverMutation:
         ]}
         return await ActividadService(info.context.session).actualizar_tarea(data.id, campos)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("PART_MANAGE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_PARTICIPANTE_GESTIONAR")])
     async def crear_participacion(self, info: strawberry.Info, data: ParticipacionCreateData) -> ParticipacionType:
         return await ActividadService(info.context.session).crear_participacion(
             actividad_id=data.actividad_id, rol=data.rol, miembro_id=data.miembro_id,
@@ -182,14 +182,14 @@ class ActividadResolverMutation:
             horas_aportadas=data.horas_aportadas,
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ACT_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_EDITAR")])
     async def transicionar_actividad(
         self, info: strawberry.Info,
         id: uuid.UUID, estado_id: uuid.UUID, notas: Optional[str] = None,
     ) -> ActividadType:
         return await ActividadService(info.context.session).transicionar_estado(id, estado_id, notas)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ACT_APPROVE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_APROBAR")])
     async def aprobar_actividad(
         self, info: strawberry.Info,
         id: uuid.UUID, estado_id: uuid.UUID, notas: Optional[str] = None,
@@ -200,7 +200,7 @@ class ActividadResolverMutation:
             notas=notas,
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("TEAM_CREATE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("GRUPO_CREAR")])
     async def crear_grupo_trabajo_seguro(
         self, info: strawberry.Info, nombre: str,
         tipo_grupo_id: Optional[uuid.UUID] = None,
@@ -217,7 +217,7 @@ class ActividadResolverMutation:
             campania_id=campania_id,
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ACT_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_EDITAR")])
     async def cerrar_actividad(
         self, info: strawberry.Info, id: uuid.UUID,
         valoracion: Optional[str] = None, objetivos_cumplidos: Optional[bool] = None,

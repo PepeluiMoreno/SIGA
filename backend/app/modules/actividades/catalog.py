@@ -21,7 +21,9 @@ _TRANSACCIONES = [
     TransaccionDef("CAMPANA_PROPONER_PRESUPUESTO",  "Proponer presupuesto de campaña",   "MUTACION"),
     TransaccionDef("CAMPANA_APROBAR_PRESUPUESTO",   "Aprobar presupuesto de campaña",    "APROBACION"),
     TransaccionDef("CAMPANA_RECHAZAR_PRESUPUESTO",  "Rechazar presupuesto de campaña",   "APROBACION"),
+    TransaccionDef("CAMPANA_APROBAR",            "Aprobar campaña",                      "APROBACION"),
     # Grupos de trabajo
+    TransaccionDef("GRUPO_LISTAR",              "Listar grupos de trabajo",             "CONSULTA"),
     TransaccionDef("GRUPO_CREAR",               "Crear grupo de trabajo",               "MUTACION"),
     TransaccionDef("GRUPO_EDITAR",              "Editar grupo de trabajo",              "MUTACION"),
     TransaccionDef("GRUPO_ASIGNAR_MIEMBRO",     "Asignar miembro a grupo",              "MUTACION"),
@@ -33,9 +35,14 @@ _TRANSACCIONES = [
     TransaccionDef("EVENTO_PUBLICAR",           "Publicar evento",                      "MUTACION"),
     TransaccionDef("EVENTO_INSCRIBIR",          "Inscribir participante en evento",     "MUTACION"),
     # Actividades generales
+    TransaccionDef("ACTIVIDAD_LISTAR",          "Listar actividades",                   "CONSULTA"),
+    TransaccionDef("ACTIVIDAD_CREAR",           "Crear actividad",                      "MUTACION"),
+    TransaccionDef("ACTIVIDAD_EDITAR",          "Editar actividad",                     "MUTACION"),
     TransaccionDef("ACTIVIDAD_PROPONER",        "Proponer actividad",                   "MUTACION"),
     TransaccionDef("ACTIVIDAD_APROBAR",         "Aprobar propuesta de actividad",       "APROBACION"),
     TransaccionDef("ACTIVIDAD_RECHAZAR",        "Rechazar propuesta de actividad",      "APROBACION"),
+    TransaccionDef("ACTIVIDAD_PARTICIPANTE_GESTIONAR", "Gestionar participantes",       "MUTACION"),
+    TransaccionDef("ACTIVIDAD_CATALOGO_GESTIONAR",     "Gestionar catálogos de actividad", "MUTACION"),
 ]
 
 for _t in _TRANSACCIONES:
@@ -52,8 +59,25 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
         FuncionalidadTransaccionDef("CAMPANA_EDITAR",  AmbitoTransaccion.PROPIO),
         FuncionalidadTransaccionDef("CAMPANA_PUBLICAR", AmbitoTransaccion.PROPIO),
         FuncionalidadTransaccionDef("CAMPANA_PROPONER_PRESUPUESTO", AmbitoTransaccion.PROPIO),
+        FuncionalidadTransaccionDef("CAMPANA_LISTAR",   AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("GRUPO_LISTAR",             AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("GRUPO_CREAR",              AmbitoTransaccion.PROPIO),
         FuncionalidadTransaccionDef("GRUPO_ASIGNAR_MIEMBRO",    AmbitoTransaccion.PROPIO),
+    ],
+))
+
+ModuleCatalog.register_funcionalidad(FuncionalidadDef(
+    codigo="GESTION_ACTIVIDADES",
+    nombre="Gestión de actividades",
+    modulo=MODULO,
+    descripcion="Creación, edición, participantes y catálogos de actividades",
+    transacciones=[
+        FuncionalidadTransaccionDef("ACTIVIDAD_LISTAR",                 AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("ACTIVIDAD_CREAR",                  AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("ACTIVIDAD_EDITAR",                 AmbitoTransaccion.PROPIO),
+        FuncionalidadTransaccionDef("ACTIVIDAD_PROPONER",              AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("ACTIVIDAD_PARTICIPANTE_GESTIONAR", AmbitoTransaccion.PROPIO),
+        FuncionalidadTransaccionDef("ACTIVIDAD_CATALOGO_GESTIONAR",     AmbitoTransaccion.GLOBAL),
     ],
 ))
 

@@ -5,7 +5,7 @@
       v-model="filtros"
       v-model:search="filtroNombre"
       search-placeholder="Buscar por nombre…"
-      :create-label="tienePermiso('ACT_CREATE') ? 'Nueva actividad' : ''"
+      :create-label="tienePermiso('ACTIVIDAD_CREAR') ? 'Nueva actividad' : ''"
       create-route="/actividades/nueva"
       :fields="camposFiltro"
       :count-text="`${actividadesFiltradas.length} de ${actividades.length}`"

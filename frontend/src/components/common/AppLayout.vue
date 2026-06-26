@@ -126,32 +126,32 @@
             <hr class="nav-sep" />
 
             <!-- Actividades -->
-            <div v-if="tieneAlguno('CAMP_LIST','ACT_LIST','TEAM_LIST')" class="mb-1">
+            <div v-if="tieneAlguno('CAMPANA_LISTAR','ACTIVIDAD_LISTAR','GRUPO_LISTAR')" class="mb-1">
               <button @click="toggleSection('actividades')" class="section-btn">
                 <span>Actividades</span>
                 <ChevronDownIcon class="chevron" :class="openSections.actividades ? '' : '-rotate-90'" />
               </button>
               <div class="accordion-wrap" :class="{ closed: !openSections.actividades }">
                 <ul class="space-y-1 pb-1">
-                  <li v-if="tienePermiso('CAMP_LIST')">
+                  <li v-if="tienePermiso('CAMPANA_LISTAR')">
                     <router-link to="/campanias" class="nav-item"
                       :class="$route.path.startsWith('/campanias') ? 'active' : 'inactive'">
                       <FlagIcon class="nav-icon" /><span>Campañas</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('CAMP_LIST')">
+                  <li v-if="tienePermiso('CAMPANA_LISTAR')">
                     <router-link to="/memoria-anual" class="nav-item"
                       :class="$route.path === '/memoria-anual' ? 'active' : 'inactive'">
                       <BookOpenIcon class="nav-icon" /><span>Memoria Anual</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('ACT_LIST')">
+                  <li v-if="tienePermiso('ACTIVIDAD_LISTAR')">
                     <router-link to="/actividades" class="nav-item"
                       :class="$route.path.startsWith('/actividades') ? 'active' : 'inactive'">
                       <CalendarDaysIcon class="nav-icon" /><span>Actividades</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('TEAM_LIST')">
+                  <li v-if="tienePermiso('GRUPO_LISTAR')">
                     <router-link to="/grupos" class="nav-item"
                       :class="$route.path.startsWith('/grupos') ? 'active' : 'inactive'">
                       <UserGroupIcon class="nav-icon" /><span>Grupos de Trabajo</span>
@@ -368,7 +368,7 @@
           <!-- Configuración — anclada al fondo -->
           <div class="mt-auto pt-2">
             <hr class="nav-sep" />
-            <div v-if="tieneAlguno('CFG_VIEW','CFG_EDIT','CAT_ACT_MANAGE','USR_LIST','ROL_LIST','PERM_ASSIGN','AUD_VIEW')" class="mb-1">
+            <div v-if="tieneAlguno('CFG_VIEW','CFG_EDIT','ACTIVIDAD_CATALOGO_GESTIONAR','USR_LIST','ROL_LIST','PERM_ASSIGN','AUD_VIEW')" class="mb-1">
               <button @click="toggleSection('configuracion')" class="section-btn">
                 <span>Configuración</span>
                 <ChevronDownIcon class="chevron" :class="openSections.configuracion ? '' : '-rotate-90'" />
@@ -381,7 +381,7 @@
                       <BuildingOffice2Icon class="nav-icon" /><span>Parámetros Generales</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('CAT_ACT_MANAGE')">
+                  <li v-if="tienePermiso('ACTIVIDAD_CATALOGO_GESTIONAR')">
                     <router-link to="/parametrizacion/catalogos" class="nav-item"
                       :class="$route.path.startsWith('/parametrizacion/catalogos') ? 'active' : 'inactive'">
                       <ListBulletIcon class="nav-icon" /><span>Catálogos</span>

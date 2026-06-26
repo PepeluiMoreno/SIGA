@@ -2,6 +2,7 @@
 
 from .nivel_organizativo import AmbitoGeografico, NivelOrganizativo, NaturalezaUnidad, VinculoUnidad
 from .direccion import Pais, Provincia, Municipio, Direccion, UnidadOrganizativa
+from .entidad_geografica import EntidadGeografica
 from .unidad_organizativa_view import UnidadOrganizativaVista
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     'Municipio',
     'Direccion',
     'UnidadOrganizativa',
+    'EntidadGeografica',
 ]

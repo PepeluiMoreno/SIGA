@@ -5,7 +5,7 @@
       v-model="filters"
       v-model:search="searchQuery"
       search-placeholder="Buscar grupos…"
-      :create-label="tienePermiso('TEAM_CREATE') ? 'Nuevo Grupo' : ''"
+      :create-label="tienePermiso('GRUPO_CREAR') ? 'Nuevo Grupo' : ''"
       create-route="/grupos/nuevo"
       :fields="filterFields"
       :lazy="true"

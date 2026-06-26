@@ -37,14 +37,14 @@ _ROLES = [
         "es_territorial": True,   # El rol puede ser de ámbito territorial via UsuarioRol.agrupacion_id
         "transacciones": [
             # Campañas
-            "CAMP_LIST", "CAMP_VIEW", "CAMP_CREATE", "CAMP_EDIT",
+            "CAMPANA_LISTAR", "CAMP_VIEW", "CAMPANA_CREAR", "CAMPANA_EDITAR",
             "CAMP_ACTIVATE", "CAMP_CLOSE", "CAMP_CANCEL",
             "PART_ENROLL", "PART_REMOVE", "PART_HOURS",
             # Eventos
             "EVT_LIST", "EVT_VIEW", "EVT_CREATE", "EVT_EDIT",
             "EVT_CANCEL", "EVT_MANAGE_REG", "EVT_ATTENDANCE",
             # Grupos de trabajo
-            "TEAM_LIST", "TEAM_VIEW", "TEAM_CREATE", "TEAM_EDIT",
+            "GRUPO_LISTAR", "TEAM_VIEW", "GRUPO_CREAR", "TEAM_EDIT",
             "TEAM_DISSOLVE", "TMBR_ADD", "TMBR_REMOVE",
             # Tareas y reuniones
             "TASK_CREATE", "TASK_UPDATE", "MEET_SCHEDULE",

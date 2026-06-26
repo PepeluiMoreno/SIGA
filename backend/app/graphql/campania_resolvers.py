@@ -195,7 +195,7 @@ class ResultadoEnvioNotificacion:
 @strawberry.type
 class CampaniaResolverMutation:
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_CREATE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_CREAR")])
     async def crear_campania(self, info: strawberry.Info, data: CampaniaCreateInput) -> CampaniaType:
         kwargs = {k: getattr(data, k) for k in [
             'fecha_inicio_plan', 'fecha_fin_plan', 'responsable_id', 'agrupacion_id',
@@ -211,7 +211,7 @@ class CampaniaResolverMutation:
             await ensure_rol_coordinador_campania(info.context.session, data.responsable_id)
         return campania
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def actualizar_campania(self, info: strawberry.Info, data: CampaniaUpdateInput) -> CampaniaType:
         campos = {k: getattr(data, k) for k in [
             'nombre', 'tipo_campania_id', 'estado_id', 'fecha_inicio_plan', 'fecha_fin_plan',
@@ -224,13 +224,13 @@ class CampaniaResolverMutation:
             await ensure_rol_coordinador_campania(info.context.session, campos['responsable_id'])
         return campania
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def transicionar_campania(
         self, info: strawberry.Info, id: uuid.UUID, estado_id: uuid.UUID, notas: Optional[str] = None,
     ) -> CampaniaType:
         return await CampaniaService(info.context.session).transicionar_estado(id, estado_id, notas)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_APPROVE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_APROBAR")])
     async def aprobar_campania(
         self, info: strawberry.Info, id: uuid.UUID, estado_id: uuid.UUID, notas: Optional[str] = None,
     ) -> CampaniaType:
@@ -238,21 +238,21 @@ class CampaniaResolverMutation:
             id, estado_id, aprobado_por_id=getattr(info.context, 'user_id', None), notas=notas,
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def previsualizar_notificacion_campania(
         self, info: strawberry.Info, campania_id: uuid.UUID, plantilla_codigo: Optional[str] = None,
     ) -> NotificacionCampaniaPreview:
         r = await CampaniaService(info.context.session).previsualizar_notificacion(campania_id, plantilla_codigo)
         return NotificacionCampaniaPreview(**r)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def enviar_notificacion_campania(
         self, info: strawberry.Info, campania_id: uuid.UUID, asunto: str, cuerpo_html: str,
     ) -> ResultadoEnvioNotificacion:
         r = await CampaniaService(info.context.session).enviar_notificacion(campania_id, asunto, cuerpo_html)
         return ResultadoEnvioNotificacion(**r)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def cerrar_campania(
         self, info: strawberry.Info, id: uuid.UUID, estado_id: uuid.UUID,
         presupuesto_ejecutado: Decimal, resultados_metas: list[ResultadoMetaInput],
@@ -265,7 +265,7 @@ class CampaniaResolverMutation:
             valoracion=valoracion,
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def guardar_metas_campania(
         self, info: strawberry.Info, campania_id: uuid.UUID, metas: list[MetaInput],
     ) -> CampaniaType:
@@ -274,13 +274,13 @@ class CampaniaResolverMutation:
                            "notas": m.notas, "orden": m.orden} for m in metas],
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def guardar_canales_campania(
         self, info: strawberry.Info, campania_id: uuid.UUID, canal_ids: list[uuid.UUID],
     ) -> CampaniaType:
         return await CampaniaService(info.context.session).guardar_canales(campania_id, canal_ids)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def guardar_partidas_campania(
         self, info: strawberry.Info, campania_id: uuid.UUID, partidas: list[PartidaInput],
     ) -> CampaniaType:
@@ -289,25 +289,25 @@ class CampaniaResolverMutation:
                            "tipo_partida": p.tipo_partida, "orden": p.orden} for p in partidas],
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def aplicar_plantilla(
         self, info: strawberry.Info, campania_id: uuid.UUID, plantilla_id: uuid.UUID,
     ) -> CampaniaType:
         return await CampaniaService(info.context.session).aplicar_plantilla(campania_id, plantilla_id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def crear_plantilla(self, info: strawberry.Info, data: PlantillaCreateInput) -> PlantillaCampaniaType:
         return await CampaniaService(info.context.session).crear_plantilla(
             data.tipo_campania_id, data.nombre, data.descripcion, data.activo,
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def actualizar_plantilla(self, info: strawberry.Info, data: PlantillaUpdateInput) -> PlantillaCampaniaType:
         return await CampaniaService(info.context.session).actualizar_plantilla(
             data.plantilla_id, {"nombre": data.nombre, "descripcion": data.descripcion, "activo": data.activo},
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def guardar_metas_plantilla(
         self, info: strawberry.Info, plantilla_id: uuid.UUID, metas: list[PlantillaMetaItemInput],
     ) -> PlantillaCampaniaType:
@@ -316,7 +316,7 @@ class CampaniaResolverMutation:
                             "notas": m.notas, "orden": m.orden} for m in metas],
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def guardar_partidas_plantilla(
         self, info: strawberry.Info, plantilla_id: uuid.UUID, partidas: list[PlantillaPartidaItemInput],
     ) -> PlantillaCampaniaType:
@@ -325,7 +325,7 @@ class CampaniaResolverMutation:
                             "tipo_partida": p.tipo_partida, "orden": p.orden} for p in partidas],
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def crear_plantilla_actividad(
         self, info: strawberry.Info, data: PlantillaActividadItemInput,
     ) -> PlantillaActividadType:
@@ -339,7 +339,7 @@ class CampaniaResolverMutation:
         await session.refresh(act)
         return act
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def actualizar_plantilla_actividad(
         self, info: strawberry.Info, data: PlantillaActividadUpdateItemInput,
     ) -> PlantillaActividadType:
@@ -353,7 +353,7 @@ class CampaniaResolverMutation:
         await session.refresh(act)
         return act
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def crear_plantilla_tarea(
         self, info: strawberry.Info, data: PlantillaTareaItemInput,
     ) -> PlantillaTareaType:
@@ -368,7 +368,7 @@ class CampaniaResolverMutation:
         await session.refresh(tarea)
         return tarea
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def actualizar_plantilla_tarea(
         self, info: strawberry.Info, data: PlantillaTareaUpdateItemInput,
     ) -> PlantillaTareaType:
@@ -386,7 +386,7 @@ class CampaniaResolverMutation:
 @strawberry.type
 class CampaniaClonarMutation:
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def clonar_campania(self, info: strawberry.Info, data: ClonarCampaniaInput) -> CampaniaType:
         return await CampaniaService(info.context.session).clonar(
             campania_id=data.campania_id, nombre=data.nombre, offset_dias=data.offset_dias,
@@ -395,7 +395,7 @@ class CampaniaClonarMutation:
             incluir_subcampanias=data.incluir_subcampanias, padre_id=data.padre_id,
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CAMP_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
     async def propagar_a_subcampanias(
         self, info: strawberry.Info, data: PropagarACampaniasInput,
     ) -> list[CampaniaType]:

@@ -205,19 +205,19 @@ const routes = [
     path: '/grupos',
     component: ListaGrupos,
     name: 'Grupos',
-    meta: { requiresAuth: true, requiredPermission: 'TEAM_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'GRUPO_LISTAR' }
   },
   {
     path: '/grupos/nuevo',
     component: () => import('@/modules/actividades/views/NuevoGrupo.vue'),
     name: 'NuevoGrupo',
-    meta: { requiresAuth: true, requiredPermission: 'TEAM_CREATE' }
+    meta: { requiresAuth: true, requiredPermission: 'GRUPO_CREAR' }
   },
   {
     path: '/grupos/:id',
     component: () => import('@/modules/actividades/views/DetalleGrupo.vue'),
     name: 'DetalleGrupo',
-    meta: { requiresAuth: true, requiredPermission: 'TEAM_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'GRUPO_LISTAR' }
   },
   // Redirects legacy URLs
   { path: '/eventos', redirect: '/actividades' },
@@ -229,19 +229,19 @@ const routes = [
     path: '/actividades',
     component: () => import('@/modules/actividades/views/ListaAcciones.vue'),
     name: 'Actividades',
-    meta: { requiresAuth: true, requiredPermission: 'ACT_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_LISTAR' }
   },
   {
     path: '/actividades/nueva',
     component: () => import('@/modules/actividades/views/NuevaAccion.vue'),
     name: 'NuevaActividad',
-    meta: { requiresAuth: true, requiredPermission: 'ACT_CREATE' }
+    meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_CREAR' }
   },
   {
     path: '/actividades/:id',
     component: () => import('@/modules/actividades/views/DetalleAccion.vue'),
     name: 'DetalleActividad',
-    meta: { requiresAuth: true, requiredPermission: 'ACT_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_LISTAR' }
   },
 
   // ─── COMUNICACIONES ───────────────────────────────────────────────────────
@@ -249,7 +249,7 @@ const routes = [
     path: '/campanias',
     component: () => import('@/modules/comunicaciones/views/ListaCampanias.vue'),
     name: 'Campañas',
-    meta: { requiresAuth: true, requiredPermission: 'CAMP_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'CAMPANA_LISTAR' }
   },
   {
     path: '/chat',
@@ -261,27 +261,27 @@ const routes = [
     path: '/campanias/nueva',
     component: () => import('@/modules/comunicaciones/views/CampaniaForm.vue'),
     name: 'NuevaCampania',
-    meta: { requiresAuth: true, requiredPermission: 'CAMP_CREATE' }
+    meta: { requiresAuth: true, requiredPermission: 'CAMPANA_CREAR' }
   },
   {
     path: '/campanias/:id',
     component: () => import('@/modules/comunicaciones/views/DetalleCampania.vue'),
     name: 'DetalleCampania',
-    meta: { requiresAuth: true, requiredPermission: 'CAMP_LIST' },
+    meta: { requiresAuth: true, requiredPermission: 'CAMPANA_LISTAR' },
     props: true
   },
   {
     path: '/campanias/:id/editar',
     component: () => import('@/modules/comunicaciones/views/CampaniaForm.vue'),
     name: 'EditarCampania',
-    meta: { requiresAuth: true, requiredPermission: 'CAMP_EDIT' },
+    meta: { requiresAuth: true, requiredPermission: 'CAMPANA_EDITAR' },
     props: true
   },
   {
     path: '/memoria-anual',
     component: () => import('@/modules/comunicaciones/views/MemoriaAnual.vue'),
     name: 'MemoriaAnual',
-    meta: { requiresAuth: true, requiredPermission: 'CAMP_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'CAMPANA_LISTAR' }
   },
 
   // ─── ECONOMICO ────────────────────────────────────────────────────────────
@@ -516,75 +516,75 @@ const routes = [
     path: '/parametrizacion/catalogos',
     component: () => import('@/modules/configuracion/views/GestorCatalogos.vue'),
     name: 'Catalogos',
-    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+    meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_CATALOGO_GESTIONAR' }
   },
   {
     path: '/parametrizacion/tipos-miembro',
     component: () => import('@/modules/configuracion/views/catalogos/TiposMiembro.vue'),
     name: 'TiposMiembro',
-    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+    meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_CATALOGO_GESTIONAR' }
   },
   {
     path: '/parametrizacion/estados-miembro',
     component: () => import('@/modules/configuracion/views/catalogos/EstadosMiembro.vue'),
     name: 'EstadosMiembro',
-    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+    meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_CATALOGO_GESTIONAR' }
   },
   {
     path: '/parametrizacion/motivos-baja',
     component: () => import('@/modules/configuracion/views/catalogos/MotivosBaja.vue'),
     name: 'MotivosBaja',
-    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+    meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_CATALOGO_GESTIONAR' }
   },
   {
     path: '/parametrizacion/estados-cuota',
     component: () => import('@/modules/configuracion/views/catalogos/EstadosCuota.vue'),
     name: 'EstadosCuota',
-    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+    meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_CATALOGO_GESTIONAR' }
   },
   {
     path: '/parametrizacion/plataformas-telematicas',
     component: () => import('@/modules/configuracion/views/catalogos/PlataformasTelematicas.vue'),
     name: 'PlataformasTelematicas',
-    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+    meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_CATALOGO_GESTIONAR' }
   },
   // Catálogos de campañas
   {
     path: '/parametrizacion/tipos-campania',
     component: () => import('@/modules/comunicaciones/views/catalogos/TiposCampania.vue'),
     name: 'TiposCampania',
-    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+    meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_CATALOGO_GESTIONAR' }
   },
   {
     path: '/parametrizacion/estados-campania',
     component: () => import('@/modules/comunicaciones/views/catalogos/EstadosCampania.vue'),
     name: 'EstadosCampania',
-    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+    meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_CATALOGO_GESTIONAR' }
   },
   {
     path: '/parametrizacion/tipos-meta-campania',
     component: () => import('@/modules/comunicaciones/views/catalogos/TiposMetaCampania.vue'),
     name: 'TiposMetaCampania',
-    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+    meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_CATALOGO_GESTIONAR' }
   },
   {
     path: '/parametrizacion/canales-difusion',
     component: () => import('@/modules/comunicaciones/views/catalogos/CanalesDifusion.vue'),
     name: 'CanalesDifusion',
-    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+    meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_CATALOGO_GESTIONAR' }
   },
   // Plantillas de campaña
   {
     path: '/parametrizacion/plantillas-campania',
     component: () => import('@/modules/comunicaciones/views/PlantillasCampania.vue'),
     name: 'PlantillasCampania',
-    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+    meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_CATALOGO_GESTIONAR' }
   },
   {
     path: '/parametrizacion/plantillas-campania/:id',
     component: () => import('@/modules/comunicaciones/views/DetallePlantilla.vue'),
     name: 'DetallePlantilla',
-    meta: { requiresAuth: true, requiredPermission: 'CAT_ACT_MANAGE' }
+    meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_CATALOGO_GESTIONAR' }
   },
   {
     path: '/ayuda',

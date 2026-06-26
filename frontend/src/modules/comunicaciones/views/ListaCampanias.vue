@@ -26,7 +26,7 @@
       v-model="filters"
       v-model:search="searchQuery"
       search-placeholder="Buscar por nombre o lema…"
-      :create-label="tienePermiso('CAMP_CREATE') ? 'Nueva campaña' : ''"
+      :create-label="tienePermiso('CAMPANA_CREAR') ? 'Nueva campaña' : ''"
       create-route="/campanias/nueva"
       :fields="filterFields"
       :lazy="false"
@@ -62,7 +62,7 @@
         class="py-16 text-center text-slate-400">
         <RectangleStackIcon class="w-12 h-12 mx-auto mb-3 text-slate-300" />
         <p class="text-base font-medium text-slate-600">No hay campañas todavía</p>
-        <router-link v-if="tienePermiso('CAMP_CREATE')" to="/campanias/nueva"
+        <router-link v-if="tienePermiso('CAMPANA_CREAR')" to="/campanias/nueva"
           class="mt-3 inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 font-medium">
           <PlusIcon class="w-4 h-4" /> Crear primera campaña
         </router-link>
