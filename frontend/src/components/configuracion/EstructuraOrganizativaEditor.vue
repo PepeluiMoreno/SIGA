@@ -27,28 +27,37 @@
       </div>
     </fieldset>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+    <div class="flex flex-col lg:flex-row gap-5 items-start">
 
-      <!-- IZQUIERDA · operaciones sobre el árbol -->
-      <div>
+      <!-- IZQUIERDA · toolbar vertical de operaciones (≈1/8) -->
+      <div class="w-full lg:w-44 lg:flex-shrink-0">
+        <VerticalToolbar :actions="acciones" :disabled="guardando || !!editandoId" @select="onAccion" />
+        <p v-if="!nodoSel && !editandoId" class="text-[11px] text-slate-400 italic mt-2 leading-tight">
+          Selecciona un nivel en el árbol para operar sobre él.
+        </p>
+      </div>
+
+      <!-- DERECHA · árbol resultante (≈3/4) -->
+      <div class="flex-1 min-w-0 w-full lg:border-l lg:border-slate-100 lg:pl-5">
+
         <!-- Edición del nivel seleccionado -->
-        <div v-if="editandoId" class="rounded-xl border border-purple-300 bg-purple-50/40 p-3 space-y-2.5">
+        <div v-if="editandoId" class="mb-3 rounded-xl border border-purple-300 bg-purple-50/40 p-3 space-y-2.5">
           <p class="text-[11px] font-semibold uppercase tracking-wide text-purple-500">Editar nivel</p>
-          <label class="block">
-            <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Nombre del nivel</span>
-            <input v-model="formNombre" type="text" autofocus
-              class="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
-              @keydown.enter.prevent="guardar({ id: editandoId })" @keydown.escape="editandoId = null" />
-          </label>
-          <label class="block">
-            <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Ámbito geográfico</span>
-            <select v-model="formAmbitoId"
-              class="w-full border border-slate-300 rounded px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
-              <option value="">— sin ámbito —</option>
-              <option v-for="a in ambitosOrdenados" :key="a.id" :value="a.id">{{ a.nombre }}</option>
-            </select>
-          </label>
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2">
+            <label class="block">
+              <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Nombre del nivel</span>
+              <input v-model="formNombre" type="text" autofocus
+                class="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                @keydown.enter.prevent="guardar({ id: editandoId })" @keydown.escape="editandoId = null" />
+            </label>
+            <label class="block">
+              <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Ámbito geográfico</span>
+              <select v-model="formAmbitoId"
+                class="w-full border border-slate-300 rounded px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                <option value="">— sin ámbito —</option>
+                <option v-for="a in ambitosOrdenados" :key="a.id" :value="a.id">{{ a.nombre }}</option>
+              </select>
+            </label>
             <label class="block">
               <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Denominación (singular)</span>
               <input v-model="formDenomSingular" type="text" placeholder="p.ej. Agrupación Provincial"
@@ -68,30 +77,6 @@
           </div>
         </div>
 
-        <!-- Operaciones -->
-        <div v-else class="space-y-3">
-          <button v-if="!scoped" type="button" @click="añadirRaiz" :disabled="guardando"
-            class="w-full text-sm font-medium px-3 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-40">
-            ＋ Añadir nivel raíz
-          </button>
-          <button v-else-if="nodoScope" type="button" @click="añadirHijo(nodoScope)" :disabled="guardando"
-            class="w-full text-sm font-medium px-3 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-40">
-            ＋ Añadir subnivel
-          </button>
-
-          <div v-if="nodoSel" class="rounded-xl border border-slate-200 p-3 space-y-2.5">
-            <div>
-              <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Nivel seleccionado</p>
-              <p class="text-sm font-medium text-slate-800 truncate">{{ nodoSel.nombre }}</p>
-            </div>
-            <VerticalToolbar :actions="accionesNivel" :disabled="guardando" @select="onAccionNivel" />
-          </div>
-          <p v-else class="text-sm text-slate-400 italic px-1 py-2">Selecciona un nivel en el árbol de la derecha para operar sobre él.</p>
-        </div>
-      </div>
-
-      <!-- DERECHA · árbol resultante (clic para seleccionar) -->
-      <div class="lg:border-l lg:border-slate-100 lg:pl-6">
         <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 min-h-[7rem]">
           <div v-if="arbolPreview.length">
             <div v-for="node in arbolPreview" :key="node.id"
@@ -517,22 +502,33 @@ const confirmarEliminar = async () => {
   }
 }
 
-// Acciones del VerticalToolbar para el nivel seleccionado
-const accionesNivel = computed(() => {
+// Acciones del VerticalToolbar: crear raíz/subnivel + operaciones del nivel seleccionado
+const acciones = computed(() => {
+  const list = []
+  if (scoped.value) {
+    if (nodoScope.value) list.push({ key: 'raiz', label: 'Añadir subnivel', variant: 'primary' })
+  } else {
+    list.push({ key: 'raiz', label: 'Añadir nivel raíz', variant: 'primary' })
+  }
   const n = nodoSel.value
-  if (!n) return []
-  return [
-    { key: 'editar',   label: 'Editar nombre, ámbito y denominación' },
-    { key: 'hijo',     label: 'Añadir nivel inferior' },
-    { key: 'hermano',  label: 'Añadir al mismo nivel',        hidden: !puedeHermano(n) },
-    { key: 'superior', label: 'Insertar nivel encima',        hidden: !puedeSuperior(n) },
-    { key: 'subir',    label: 'Subir un nivel',               hidden: !puedeSubir(n) },
-    { key: 'anidar',   label: 'Anidar en el nivel anterior',  hidden: !prevSiblingOf(n) },
-    { key: 'eliminar', label: 'Eliminar nivel', variant: 'danger', hidden: !puedeEliminar(n) },
-  ]
+  if (n) {
+    list.push({ key: 'editar',   label: 'Editar' })
+    list.push({ key: 'hijo',     label: 'Añadir nivel inferior' })
+    list.push({ key: 'hermano',  label: 'Añadir al mismo nivel', hidden: !puedeHermano(n) })
+    list.push({ key: 'superior', label: 'Insertar encima',       hidden: !puedeSuperior(n) })
+    list.push({ key: 'subir',    label: 'Subir un nivel',        hidden: !puedeSubir(n) })
+    list.push({ key: 'anidar',   label: 'Anidar en el anterior', hidden: !prevSiblingOf(n) })
+    list.push({ key: 'eliminar', label: 'Eliminar', variant: 'danger', hidden: !puedeEliminar(n) })
+  }
+  return list
 })
 
-const onAccionNivel = (key) => {
+const onAccion = (key) => {
+  if (key === 'raiz') {
+    if (scoped.value) { if (nodoScope.value) añadirHijo(nodoScope.value) }
+    else añadirRaiz()
+    return
+  }
   const n = nodoSel.value
   if (!n) return
   if (key === 'editar')        iniciarEdicion(n)
