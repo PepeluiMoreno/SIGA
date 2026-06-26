@@ -157,7 +157,7 @@ class ConfiguracionService:
             datos: Input con los atributos definidos en _MAPPING (normalmente
                    ParametrosOrganizacionInput del resolver).
             ya_inicializado: Si True, el caller ya verificó que el usuario tiene
-                             permiso CFG_EDIT. El servicio no comprueba permisos
+                             permiso CFG_CONFIGURACION_EDITAR. El servicio no comprueba permisos
                              directamente (eso es responsabilidad del resolver).
 
         Side effects:

@@ -258,15 +258,15 @@ class ConfiguracionOrganizacionMutation:
 
         ya_inicializado = await svc.esta_inicializado()
         if ya_inicializado:
-            if not await info.context.check_permission("CFG_EDIT"):
-                raise PermissionError("Permiso denegado: CFG_EDIT")
+            if not await info.context.check_permission("CFG_CONFIGURACION_EDITAR"):
+                raise PermissionError("Permiso denegado: CFG_CONFIGURACION_EDITAR")
 
         await svc.guardar_parametros(datos, ya_inicializado=ya_inicializado)
 
         cfg = await svc.cargar_parametros()
         return _dict_to_parametros(cfg)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_CONFIGURACION_EDITAR")])
     async def crear_tipo_unidad_organizativa(
         self,
         info: strawberry.Info,
@@ -287,7 +287,7 @@ class ConfiguracionOrganizacionMutation:
             activo=activo,
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_EDIT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_CONFIGURACION_EDITAR")])
     async def probar_conexion_indico(self, info: strawberry.Info) -> ResultadoConexionIndicoType:
         """Valida la URL + API token de Indico configurados (golpea /api/user/)."""
         client = await IndicoClient.desde_config(info.context.session)

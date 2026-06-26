@@ -32,6 +32,7 @@ _TRANSACCIONES = [
     TransaccionDef("ACCESO_USUARIO_CREAR",    "Crear usuario",                   "MUTACION"),
     TransaccionDef("ACCESO_USUARIO_EDITAR",   "Editar usuario",                  "MUTACION"),
     TransaccionDef("ACCESO_USUARIO_SUSPENDER","Suspender usuario",               "MUTACION"),
+    TransaccionDef("ACCESO_USUARIO_ELIMINAR", "Eliminar usuario",                "MUTACION"),
     TransaccionDef("ACCESO_AUDITORIA_LEER",   "Leer log de auditoría",           "CONSULTA"),
 ]
 
@@ -72,6 +73,7 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
         FuncionalidadTransaccionDef("ACCESO_USUARIO_CREAR",     AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("ACCESO_USUARIO_EDITAR",    AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("ACCESO_USUARIO_SUSPENDER", AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("ACCESO_USUARIO_ELIMINAR",  AmbitoTransaccion.TERRITORIAL),
     ],
 ))
 

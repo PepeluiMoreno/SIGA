@@ -45,6 +45,11 @@ class TipoVinculacion(BaseModel):
         Boolean, default=False, nullable=False
     )  # Si True, existe tabla satélite
 
+    # Acceso a la aplicación
+    permite_cuenta: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )  # Si True, un contacto con este vínculo puede ser dotado de cuenta de usuario
+
     # Estado
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 

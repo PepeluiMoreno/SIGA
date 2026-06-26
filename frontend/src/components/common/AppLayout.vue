@@ -368,7 +368,7 @@
           <!-- Configuración — anclada al fondo -->
           <div class="mt-auto pt-2">
             <hr class="nav-sep" />
-            <div v-if="tieneAlguno('CFG_VIEW','CFG_EDIT','ACTIVIDAD_CATALOGO_GESTIONAR','USR_LIST','ROL_LIST','PERM_ASSIGN','AUD_VIEW')" class="mb-1">
+            <div v-if="tieneAlguno('CFG_VIEW','CFG_CONFIGURACION_EDITAR','ACTIVIDAD_CATALOGO_GESTIONAR','USR_LIST','ROL_LIST','PERM_ASSIGN','AUD_VIEW')" class="mb-1">
               <button @click="toggleSection('configuracion')" class="section-btn">
                 <span>Configuración</span>
                 <ChevronDownIcon class="chevron" :class="openSections.configuracion ? '' : '-rotate-90'" />
@@ -387,7 +387,7 @@
                       <ListBulletIcon class="nav-icon" /><span>Catálogos</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('CFG_EDIT')">
+                  <li v-if="tienePermiso('CFG_CONFIGURACION_EDITAR')">
                     <router-link to="/parametrizacion/temas" class="nav-item"
                       :class="$route.path.startsWith('/parametrizacion/temas') ? 'active' : 'inactive'">
                       <SwatchIcon class="nav-icon" /><span>Temas de color</span>
