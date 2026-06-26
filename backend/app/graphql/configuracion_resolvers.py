@@ -240,6 +240,12 @@ class ConfiguracionOrganizacionQuery:
 # ---------------------------------------------------------------------------
 
 @strawberry.type
+class ResultadoConexionIndicoType:
+    ok: bool
+    mensaje: str
+
+
+@strawberry.type
 class ConfiguracionOrganizacionMutation:
 
     @strawberry.mutation
@@ -280,3 +286,10 @@ class ConfiguracionOrganizacionMutation:
             padre_tipo_id=padre_tipo_id,
             activo=activo,
         )
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_EDIT")])
+    async def probar_conexion_indico(self, info: strawberry.Info) -> ResultadoConexionIndicoType:
+        """Valida la URL + API token de Indico configurados (golpea /api/user/)."""
+        client = await IndicoClient.desde_config(info.context.session)
+        res = await client.probar_conexion()
+        return ResultadoConexionIndicoType(ok=res.ok, mensaje=res.mensaje)

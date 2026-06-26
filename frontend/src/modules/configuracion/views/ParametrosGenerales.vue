@@ -298,6 +298,13 @@
                       :autocomplete="campo.tipo === 'password' ? 'off' : undefined"
                     />
                   </div>
+                  <div v-if="feat.clave === 'indico'" class="pt-1">
+                    <button type="button" @click="probarIndico" :disabled="probandoIndico"
+                      class="h-8 px-3 text-xs font-medium rounded-lg border border-indigo-300 text-indigo-700 hover:bg-indigo-50 disabled:opacity-50">
+                      {{ probandoIndico ? 'Probando…' : 'Probar conexión' }}
+                    </button>
+                    <p class="text-[11px] text-slate-400 mt-1">Prueba la configuración guardada (guarda antes si has cambiado la URL o el token).</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -525,6 +532,26 @@ const editorRef = ref(null)
 // para que el radiogroup (que vive aquí, junto a Tipo entidad) se actualice.
 const estructuraDistribuida = ref(false)
 watchEffect(() => { estructuraDistribuida.value = !!editorRef.value?.distribuida })
+
+// Probar conexión con Indico (valida la URL + token guardados contra /api/user/)
+const PROBAR_CONEXION_INDICO = `
+  mutation ProbarConexionIndico { probarConexionIndico { ok mensaje } }
+`
+const probandoIndico = ref(false)
+async function probarIndico() {
+  if (probandoIndico.value) return
+  probandoIndico.value = true
+  try {
+    const data = await graphqlClient.request(PROBAR_CONEXION_INDICO)
+    const r = data.probarConexionIndico
+    if (r.ok) toast.success(r.mensaje)
+    else toast.error(r.mensaje)
+  } catch (e) {
+    toast.error(e?.response?.errors?.[0]?.message || 'No se pudo probar la conexión con Indico.')
+  } finally {
+    probandoIndico.value = false
+  }
+}
 
 const guardando = ref(false)
 const guardadoOk = ref(false)
