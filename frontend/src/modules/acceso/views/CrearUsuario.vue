@@ -1,196 +1,83 @@
 <template>
-  <AppLayout title="Nuevo usuario" subtitle="Crea las credenciales de acceso al sistema">
+  <AppLayout title="Nuevo usuario" subtitle="Dota de cuenta de acceso a un contacto de la organización">
 
-    <!-- ══ Modal: coincidencia con socio existente ════════════════════════════ -->
-    <Teleport to="body">
-      <Transition name="modal-fade">
-        <div v-if="modalVisible"
-          class="fixed inset-0 z-50 flex items-center justify-center p-4"
-          @click.self="candidato?.tieneAcceso ? cerrarYReinicializar() : rechazarCoincidencia()">
-          <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-          <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-            <!-- Cabecera modal -->
-            <div class="px-6 pt-6 pb-4 flex items-start gap-4">
-              <div class="shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                <UserCircleIcon class="w-6 h-6 text-amber-600" />
-              </div>
-              <div class="flex-1 min-w-0">
-                <h3 class="text-base font-semibold text-slate-800">¿Es para este socio?</h3>
-                <p class="text-sm text-slate-500 mt-1">
-                  Hay registrado un socio con ese nombre
-                  <template v-if="candidato?.agrupacion">
-                    perteneciente a <strong class="text-slate-700">{{ candidato.agrupacion.nombre }}</strong>
-                  </template>.
-                  ¿Se trata de la cuenta de usuario para esa persona?
-                </p>
-              </div>
-            </div>
-
-            <!-- Ficha del socio -->
-            <div class="mx-6 mb-4 p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <p class="text-sm font-semibold text-slate-800">
-                {{ candidato?.apellido1 }} {{ candidato?.apellido2 ?? '' }}, {{ candidato?.nombre }}
-              </p>
-              <div class="flex flex-wrap gap-x-3 mt-0.5">
-                <span v-if="candidato?.tipoMiembro" class="text-xs text-slate-500">
-                  {{ candidato.tipoMiembro.nombre }}
-                </span>
-                <span v-if="candidato?.email" class="text-xs text-slate-400">{{ candidato.email }}</span>
-              </div>
-              <div v-if="candidato?.tieneAcceso"
-                class="mt-2 flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
-                <ExclamationTriangleIcon class="w-4 h-4 shrink-0" />
-                Este socio ya tiene un usuario en el sistema
-              </div>
-            </div>
-
-            <!-- Botones: si ya tiene cuenta solo permitir reiniciar -->
-            <div class="px-6 pb-5 flex justify-end gap-3">
-              <template v-if="candidato?.tieneAcceso">
-                <button type="button" @click="cerrarYReinicializar"
-                  class="px-5 py-2 text-sm font-semibold text-white bg-slate-600 rounded-lg hover:bg-slate-700 transition-colors">
-                  Entendido, empezar de nuevo
-                </button>
-              </template>
-              <template v-else>
-                <button type="button" @click="rechazarCoincidencia"
-                  class="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-                  No, es diferente
-                </button>
-                <button type="button" @click="aceptarCoincidencia"
-                  class="px-5 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
-                  Sí, es para esta persona
-                </button>
-              </template>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-
-    <!-- ══ Formulario ═════════════════════════════════════════════════════════ -->
     <div v-if="loading" class="flex items-center justify-center py-20">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
     </div>
 
-    <form v-else @submit.prevent="handleSubmit" class="space-y-3 pb-20">
+    <form v-else @submit.prevent="handleSubmit" class="max-w-2xl mx-auto space-y-3 pb-24">
 
-      <!-- ══ 1. Identificación ═══════════════════════════════════════════════ -->
+      <!-- ══ 1. Destinatario de la cuenta ════════════════════════════════════ -->
       <section class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div class="flex items-center gap-3 px-5 py-3.5 border-b border-slate-200">
+        <div class="flex items-center gap-3 px-5 py-3 border-b border-slate-200">
           <span class="shrink-0 w-1.5 h-5 rounded-full bg-slate-400"></span>
-          <h2 class="text-sm font-semibold text-slate-800">Identificación</h2>
+          <h2 class="text-sm font-semibold text-slate-800">¿A qué contacto se le da acceso?</h2>
         </div>
-        <div class="px-5 py-4">
 
-          <!-- Socio aceptado: ficha compacta -->
-          <div v-if="miembroAceptado"
+        <div class="px-5 py-4">
+          <!-- Contacto elegido: chip compacto -->
+          <div v-if="contactoElegido"
             class="flex items-center justify-between gap-3 p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
             <div class="min-w-0">
-              <p class="text-sm font-semibold text-indigo-900">
-                {{ miembroAceptado.apellido1 }} {{ miembroAceptado.apellido2 ?? '' }}, {{ miembroAceptado.nombre }}
-              </p>
-              <p class="text-xs text-indigo-500 mt-0.5">
-                {{ miembroAceptado.tipoMiembro?.nombre }}
-                <template v-if="miembroAceptado.agrupacion">
-                  · {{ miembroAceptado.agrupacion.nombre }}
-                </template>
+              <p class="text-sm font-semibold text-indigo-900 truncate">{{ nombreContacto(contactoElegido) }}</p>
+              <p class="text-xs text-indigo-500 mt-0.5 truncate">
+                {{ contactoElegido.tipoVinculacionNombre }}
+                <template v-if="contactoElegido.agrupacion"> · {{ contactoElegido.agrupacion.nombre }}</template>
+                <template v-if="contactoElegido.email"> · {{ contactoElegido.email }}</template>
               </p>
             </div>
-            <button type="button" @click="limpiarCoincidencia"
-              class="shrink-0 text-xs text-indigo-500 hover:text-indigo-700 underline">
-              Cambiar
-            </button>
+            <button type="button" @click="quitarContacto"
+              class="shrink-0 text-xs text-indigo-500 hover:text-indigo-700 underline">Cambiar</button>
           </div>
 
-          <!-- Campos de nombre (cuando no hay socio aceptado) -->
+          <!-- Buscador: filtro por tipo de vínculo + texto -->
           <div v-else class="space-y-3">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <!-- Nombre -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1.5">
-                  Nombre <span class="text-red-500">*</span>
-                </label>
-                <input
-                  v-model="form.nombre"
-                  type="text"
-                  placeholder="Nombre"
-                  class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white placeholder:text-slate-300"
-                />
-              </div>
-              <!-- Apellido 1 -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1.5">
-                  Primer apellido <span class="text-red-500">*</span>
-                </label>
-                <input
-                  v-model="form.apellido1"
-                  type="text"
-                  placeholder="Apellido 1"
-                  class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white placeholder:text-slate-300"
-                />
+            <div class="flex gap-2">
+              <select v-model="filtroTipoId"
+                class="h-10 shrink-0 w-44 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                <option value="">Todos los vínculos</option>
+                <option v-for="t in tiposDotables" :key="t.id" :value="t.id">{{ t.nombre }}</option>
+              </select>
+              <div class="relative flex-1">
+                <MagnifyingGlassIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input v-model="texto" type="text" placeholder="Buscar por nombre o apellidos…"
+                  class="h-10 w-full pl-9 pr-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white placeholder:text-slate-300" />
               </div>
             </div>
-            <!-- Apellido 2 -->
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1.5">
-                Segundo apellido
-                <span class="ml-1 text-xs font-normal text-slate-400">(opcional)</span>
-              </label>
-              <input
-                v-model="form.apellido2"
-                type="text"
-                placeholder="Apellido 2"
-                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white placeholder:text-slate-300"
-              />
-            </div>
-            <!-- Indicador de búsqueda -->
-            <p v-if="buscando" class="text-xs text-slate-400 italic">Buscando coincidencias…</p>
-            <p v-else-if="sinCoincidencias" class="text-xs text-slate-400">
-              No hay ningún socio registrado con ese nombre — elige el tipo de vinculación abajo.
-            </p>
-          </div>
 
+            <!-- Resultados -->
+            <div class="rounded-lg border border-slate-200 divide-y divide-slate-100 max-h-72 overflow-y-auto">
+              <p v-if="buscando" class="px-3 py-4 text-xs text-slate-400 italic text-center">Buscando…</p>
+              <p v-else-if="resultados.length === 0"
+                class="px-3 py-6 text-xs text-slate-400 text-center">
+                {{ texto || filtroTipoId ? 'Ningún contacto coincide con el filtro.' : 'No hay contactos a los que dotar de cuenta.' }}
+              </p>
+              <button v-for="c in resultados" :key="c.id" type="button"
+                :disabled="c.tieneAcceso"
+                @click="elegirContacto(c)"
+                class="w-full flex items-center justify-between gap-3 px-3 py-2 text-left transition-colors"
+                :class="c.tieneAcceso ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50'">
+                <div class="min-w-0">
+                  <p class="text-sm font-medium text-slate-800 truncate">{{ nombreContacto(c) }}</p>
+                  <p class="text-xs text-slate-400 truncate">
+                    {{ c.tipoVinculacionNombre }}
+                    <template v-if="c.agrupacion"> · {{ c.agrupacion.nombre }}</template>
+                  </p>
+                </div>
+                <span v-if="c.tieneAcceso"
+                  class="shrink-0 inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                  <CheckCircleIcon class="w-3 h-3" /> Ya tiene cuenta
+                </span>
+                <ChevronRightIcon v-else class="shrink-0 w-4 h-4 text-slate-300" />
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
-      <!-- ══ 2. Vinculación (cuando no hay socio aceptado) ══════════════════ -->
-      <section v-if="mostrarVinculacion"
-        class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div class="flex items-center gap-3 px-5 py-3.5 border-b border-slate-200">
-          <span class="shrink-0 w-1.5 h-5 rounded-full bg-amber-500"></span>
-          <h2 class="text-sm font-semibold text-slate-800">Vinculación con la organización</h2>
-        </div>
-        <div class="px-5 py-4 space-y-4">
-
-          <div>
-            <label for="tipo-vinculacion" class="block text-sm font-medium text-slate-700 mb-1.5">
-              Tipo de vinculación
-            </label>
-            <select id="tipo-vinculacion" v-model="form.tipoVinculacionId"
-              class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-              <option value="">— Sin especificar —</option>
-              <option v-for="t in tiposVinculacion" :key="t.id" :value="t.id">
-                {{ t.nombre }}
-              </option>
-            </select>
-          </div>
-
-          <div v-if="tipoSeleccionado?.requiereSatelite">
-            <label for="entidad" class="block text-sm font-medium text-slate-700 mb-1.5">
-              {{ tipoSeleccionado.nombre.toLowerCase().includes('asociac') ? 'Asociación amiga' : 'Empresa' }}
-            </label>
-            <input id="entidad" v-model="form.entidadVinculacion" type="text"
-              placeholder="Nombre de la entidad"
-              class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white placeholder:text-slate-300" />
-          </div>
-
-        </div>
-      </section>
-
-      <!-- ══ 3. Credenciales ════════════════════════════════════════════════ -->
+      <!-- ══ 2. Credenciales ════════════════════════════════════════════════ -->
       <section class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div class="flex items-center gap-3 px-5 py-3.5 border-b border-slate-200">
+        <div class="flex items-center gap-3 px-5 py-3 border-b border-slate-200">
           <span class="shrink-0 w-1.5 h-5 rounded-full bg-indigo-500"></span>
           <h2 class="text-sm font-semibold text-slate-800">Credenciales de acceso</h2>
         </div>
@@ -210,99 +97,78 @@
             <ErrorAlert v-if="errors.email" :message="errors.email" />
           </div>
 
-          <!-- Modo email de activación: oculta campos de contraseña -->
+          <!-- Modo email de activación -->
           <div v-if="form.enviarEmailBienvenida"
             class="flex items-start gap-2.5 px-3 py-2.5 bg-indigo-50 border border-indigo-200 rounded-lg text-xs text-indigo-700">
             <EnvelopeIcon class="w-4 h-4 mt-0.5 shrink-0" />
-            <span>Se enviará un enlace al email del usuario para que establezca su propia contraseña. No es necesario definirla aquí.</span>
+            <span>Se enviará un enlace al email para que el usuario establezca su contraseña.</span>
           </div>
 
-          <!-- Campos de contraseña (solo si NO se envía email) -->
           <template v-else>
-            <div>
-              <label for="password" class="block text-sm font-medium text-slate-700 mb-1.5">
-                Contraseña <span class="text-red-500">*</span>
-              </label>
-              <div class="relative">
-                <input id="password" v-model="form.password"
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="password" class="block text-sm font-medium text-slate-700 mb-1.5">
+                  Contraseña <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                  <input id="password" v-model="form.password"
+                    :type="showPassword ? 'text' : 'password'"
+                    autocomplete="new-password" placeholder="Mínimo 8 caracteres"
+                    class="h-10 w-full px-3 pr-10 text-sm border rounded-lg transition-all focus:outline-none focus:ring-2 bg-white placeholder:text-slate-300"
+                    :class="errors.password
+                      ? 'border-red-400 bg-red-50 focus:ring-red-400/30 focus:border-red-400'
+                      : 'border-slate-300 focus:ring-indigo-500 focus:border-indigo-500'"
+                    @blur="validatePassword" />
+                  <button type="button" tabindex="-1" @click="showPassword = !showPassword"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <EyeSlashIcon v-if="showPassword" class="w-4 h-4" />
+                    <EyeIcon v-else class="w-4 h-4" />
+                  </button>
+                </div>
+                <ErrorAlert v-if="errors.password" :message="errors.password" />
+              </div>
+              <div>
+                <label for="confirm" class="block text-sm font-medium text-slate-700 mb-1.5">
+                  Confirmar <span class="text-red-500">*</span>
+                </label>
+                <input id="confirm" v-model="form.confirm"
                   :type="showPassword ? 'text' : 'password'"
-                  autocomplete="new-password" placeholder="Mínimo 8 caracteres"
-                  class="h-10 w-full px-3 pr-10 text-sm border rounded-lg transition-all focus:outline-none focus:ring-2 bg-white placeholder:text-slate-300"
-                  :class="errors.password
+                  autocomplete="new-password" placeholder="Repite la contraseña"
+                  class="h-10 w-full px-3 text-sm border rounded-lg transition-all focus:outline-none focus:ring-2 bg-white placeholder:text-slate-300"
+                  :class="errors.confirm
                     ? 'border-red-400 bg-red-50 focus:ring-red-400/30 focus:border-red-400'
                     : 'border-slate-300 focus:ring-indigo-500 focus:border-indigo-500'"
-                  @blur="validatePassword" />
-                <button type="button" tabindex="-1"
-                  @click="showPassword = !showPassword"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                  <EyeSlashIcon v-if="showPassword" class="w-4 h-4" />
-                  <EyeIcon v-else class="w-4 h-4" />
-                </button>
-              </div>
-              <ErrorAlert v-if="errors.password" :message="errors.password" />
-              <div v-if="form.password" class="mt-2">
-                <div class="flex gap-1 mb-1">
-                  <div v-for="i in 4" :key="i"
-                    class="h-1 flex-1 rounded-full transition-colors duration-300"
-                    :class="strengthBarColor(i)" />
-                </div>
-                <p class="text-xs" :class="strengthTextClass">{{ strengthLabel }}</p>
+                  @blur="validateConfirm" />
+                <ErrorAlert v-if="errors.confirm" :message="errors.confirm" />
               </div>
             </div>
-
-            <div>
-              <label for="confirm" class="block text-sm font-medium text-slate-700 mb-1.5">
-                Confirmar contraseña <span class="text-red-500">*</span>
-              </label>
-              <input id="confirm" v-model="form.confirm"
-                :type="showPassword ? 'text' : 'password'"
-                autocomplete="new-password" placeholder="Repite la contraseña"
-                class="h-10 w-full px-3 text-sm border rounded-lg transition-all focus:outline-none focus:ring-2 bg-white placeholder:text-slate-300"
-                :class="errors.confirm
-                  ? 'border-red-400 bg-red-50 focus:ring-red-400/30 focus:border-red-400'
-                  : 'border-slate-300 focus:ring-indigo-500 focus:border-indigo-500'"
-                @blur="validateConfirm" />
-              <ErrorAlert v-if="errors.confirm" :message="errors.confirm" />
+            <div v-if="form.password" class="flex gap-1">
+              <div v-for="i in 4" :key="i"
+                class="h-1 flex-1 rounded-full transition-colors duration-300"
+                :class="strengthBarColor(i)" />
             </div>
           </template>
 
-        </div>
-      </section>
-
-      <!-- ══ 4. Configuración ════════════════════════════════════════════════ -->
-      <section class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div class="flex items-center gap-3 px-5 py-3.5 border-b border-slate-200">
-          <span class="shrink-0 w-1.5 h-5 rounded-full bg-violet-500"></span>
-          <h2 class="text-sm font-semibold text-slate-800">Configuración</h2>
-        </div>
-        <div class="px-5 py-4 space-y-3">
-          <!-- Enviar email de activación -->
-          <div class="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg border border-slate-200">
-            <div>
-              <p class="text-sm font-medium text-slate-700">Enviar enlace de activación</p>
-              <p class="text-xs text-slate-500">El usuario establece su contraseña por email (requiere SMTP)</p>
-            </div>
-            <button type="button"
-              @click="form.enviarEmailBienvenida = !form.enviarEmailBienvenida"
-              class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
-              :class="form.enviarEmailBienvenida ? 'bg-indigo-600' : 'bg-slate-300'">
-              <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
-                :class="form.enviarEmailBienvenida ? 'translate-x-6' : 'translate-x-1'" />
-            </button>
-          </div>
-          <!-- Usuario activo -->
-          <div class="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg border border-slate-200">
-            <div>
-              <p class="text-sm font-medium text-slate-700">Usuario activo</p>
-              <p class="text-xs text-slate-500">Podrá iniciar sesión inmediatamente</p>
-            </div>
-            <button type="button"
-              @click="form.activo = !form.activo"
-              class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
-              :class="form.activo ? 'bg-indigo-600' : 'bg-slate-300'">
-              <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
-                :class="form.activo ? 'translate-x-6' : 'translate-x-1'" />
-            </button>
+          <!-- Configuración inline compacta -->
+          <div class="flex flex-wrap items-center gap-x-6 gap-y-2 pt-1">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <button type="button" @click="form.enviarEmailBienvenida = !form.enviarEmailBienvenida"
+                class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+                :class="form.enviarEmailBienvenida ? 'bg-indigo-600' : 'bg-slate-300'">
+                <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform"
+                  :class="form.enviarEmailBienvenida ? 'translate-x-5' : 'translate-x-1'" />
+              </button>
+              <span class="text-sm text-slate-700">Enviar enlace de activación por email</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <button type="button" @click="form.activo = !form.activo"
+                class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+                :class="form.activo ? 'bg-indigo-600' : 'bg-slate-300'">
+                <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform"
+                  :class="form.activo ? 'translate-x-5' : 'translate-x-1'" />
+              </button>
+              <span class="text-sm text-slate-700">Usuario activo</span>
+            </label>
           </div>
         </div>
       </section>
@@ -318,7 +184,7 @@
 
     <!-- ══ Barra de acciones fija ═════════════════════════════════════════════ -->
     <div class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-t border-slate-200 shadow-[0_-4px_16px_-4px_rgba(0,0,0,0.08)]">
-      <div class="max-w-screen-xl mx-auto px-6 py-3 flex items-center justify-between">
+      <div class="max-w-2xl mx-auto px-6 py-3 flex items-center justify-between">
         <p v-if="serverError" class="flex items-center gap-1.5 text-xs text-red-600">
           <ExclamationCircleIcon class="w-4 h-4 shrink-0" />
           {{ serverError }}
@@ -330,7 +196,7 @@
             <ChevronLeftIcon class="w-4 h-4" />
             Cancelar
           </button>
-          <button type="button" :disabled="submitting || success"
+          <button type="button" :disabled="submitting || success || !contactoElegido"
             @click="handleSubmit"
             class="inline-flex items-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 shadow-sm transition-colors">
             <span v-if="submitting" class="animate-spin rounded-full h-3.5 w-3.5 border-[2px] border-white border-t-transparent"></span>
@@ -349,22 +215,20 @@ import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  EyeIcon, EyeSlashIcon, CheckIcon,
-  ExclamationCircleIcon, ChevronLeftIcon,
-  UserCircleIcon, ExclamationTriangleIcon,
+  EyeIcon, EyeSlashIcon, CheckIcon, CheckCircleIcon,
+  ExclamationCircleIcon, ChevronLeftIcon, ChevronRightIcon,
+  EnvelopeIcon, MagnifyingGlassIcon,
 } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { graphqlClient } from '@/graphql/client.js'
-import { CREAR_USUARIO, GET_TIPOS_VINCULACION, GET_MIEMBROS_SIMPLE } from '@/graphql/queries/usuarios.js'
+import { CREAR_USUARIO, GET_TIPOS_VINCULACION, GET_CONTACTOS_DOTABLES } from '@/graphql/queries/usuarios.js'
 
 const router = useRouter()
 
 // ── Estado del formulario ────────────────────────────────────────────────────
 const loading = ref(true)
 const form = ref({
-  nombre: '', apellido1: '', apellido2: '',
   email: '', password: '', confirm: '', activo: true,
-  tipoVinculacionId: '', entidadVinculacion: '',
   enviarEmailBienvenida: true,
 })
 const errors       = ref({ email: '', password: '', confirm: '' })
@@ -373,91 +237,49 @@ const submitting   = ref(false)
 const serverError  = ref('')
 const success      = ref(false)
 
-// ── Catálogos ────────────────────────────────────────────────────────────────
-const tiposVinculacion = ref([])
-const todosMiembros    = ref([])
-
-const tipoSeleccionado = computed(() =>
-  tiposVinculacion.value.find(t => t.id === form.value.tipoVinculacionId) ?? null
-)
-
-// ── Match con socio existente ────────────────────────────────────────────────
-const candidato       = ref(null)   // candidato actual en el modal
-const modalVisible    = ref(false)
-const miembroAceptado = ref(null)   // socio confirmado
-const yaRechazado     = ref(false)  // el usuario rechazó la coincidencia
+// ── Selección de contacto ────────────────────────────────────────────────────
+const tiposDotables   = ref([])
+const filtroTipoId    = ref('')
+const texto           = ref('')
+const resultados      = ref([])
 const buscando        = ref(false)
-const sinCoincidencias = ref(false)
+const contactoElegido = ref(null)
 
-// La sección de vinculación manual se muestra solo si no hay socio aceptado
-const mostrarVinculacion = computed(() => miembroAceptado.value === null)
+function nombreContacto(c) {
+  if (c.tipo === 'PERSONA_JURIDICA') return c.razonSocial || c.nombre || '—'
+  return [c.apellido1, c.apellido2].filter(Boolean).join(' ') + (c.nombre ? `, ${c.nombre}` : '')
+}
 
-// Temporizador para debounce
 let searchTimer = null
-
-watch([() => form.value.nombre, () => form.value.apellido1], () => {
-  if (miembroAceptado.value) return  // ya hay socio confirmado
+watch([filtroTipoId, texto], () => {
   clearTimeout(searchTimer)
-  candidato.value = null
-  modalVisible.value = false
-  sinCoincidencias.value = false
-
-  const n  = form.value.nombre.trim()
-  const a1 = form.value.apellido1.trim()
-  if (n.length < 2 || a1.length < 2) { buscando.value = false; return }
-
   buscando.value = true
-  searchTimer = setTimeout(() => {
-    buscarCoincidencia(n.toLowerCase(), a1.toLowerCase())
-  }, 350)
+  searchTimer = setTimeout(buscarContactos, 300)
 })
 
-function buscarCoincidencia(n, a1) {
-  if (yaRechazado.value) { buscando.value = false; return }
-  const matches = todosMiembros.value.filter(m =>
-    m.apellido1?.toLowerCase().startsWith(a1) &&
-    m.nombre?.toLowerCase().startsWith(n)
-  )
-  buscando.value = false
-  if (matches.length > 0) {
-    candidato.value = matches[0]
-    modalVisible.value = true
-    sinCoincidencias.value = false
-  } else {
-    sinCoincidencias.value = true
+async function buscarContactos() {
+  try {
+    const data = await graphqlClient.request(GET_CONTACTOS_DOTABLES, {
+      tipoVinculacionId: filtroTipoId.value || null,
+      texto: texto.value.trim() || null,
+    })
+    resultados.value = data.contactosDotables ?? []
+  } catch {
+    resultados.value = []
+  } finally {
+    buscando.value = false
   }
 }
 
-function aceptarCoincidencia() {
-  miembroAceptado.value = candidato.value
-  modalVisible.value = false
-  yaRechazado.value = false
-  // Auto-set tipo a "Socio"
-  const socio = tiposVinculacion.value.find(t => t.nombre.toLowerCase().includes('socio') && !t.nombre.toLowerCase().includes('amiga'))
-  if (socio) form.value.tipoVinculacionId = socio.id
+function elegirContacto(c) {
+  if (c.tieneAcceso) return
+  contactoElegido.value = c
+  // Prerrellena el email si el contacto tiene uno y aún no se ha escrito.
+  if (c.email && !form.value.email) form.value.email = c.email
 }
 
-function rechazarCoincidencia() {
-  modalVisible.value = false
-  yaRechazado.value = true
-  candidato.value = null
-  sinCoincidencias.value = true
-}
-
-function limpiarCoincidencia() {
-  miembroAceptado.value = null
-  yaRechazado.value = false
-  sinCoincidencias.value = false
-  candidato.value = null
-  form.value.nombre = ''
-  form.value.apellido1 = ''
-  form.value.apellido2 = ''
-  form.value.tipoVinculacionId = ''
-}
-
-function cerrarYReinicializar() {
-  modalVisible.value = false
-  limpiarCoincidencia()
+function quitarContacto() {
+  contactoElegido.value = null
 }
 
 // ── Fortaleza de contraseña ──────────────────────────────────────────────────
@@ -471,8 +293,6 @@ const passwordStrength = computed(() => {
   if (/\d/.test(p) && /[^a-zA-Z0-9]/.test(p)) score++
   return score
 })
-const strengthLabel     = computed(() => ['', 'Débil', 'Regular', 'Buena', 'Fuerte'][passwordStrength.value])
-const strengthTextClass = computed(() => ['', 'text-red-500', 'text-yellow-500', 'text-blue-500', 'text-green-600'][passwordStrength.value])
 function strengthBarColor(i) {
   const s = passwordStrength.value
   if (i > s) return 'bg-slate-200'
@@ -502,14 +322,13 @@ function validateConfirm() {
 // ── Carga inicial ────────────────────────────────────────────────────────────
 onMounted(async () => {
   try {
-    const [vinc, miembros] = await Promise.allSettled([
+    const [tipos] = await Promise.allSettled([
       graphqlClient.request(GET_TIPOS_VINCULACION),
-      graphqlClient.request(GET_MIEMBROS_SIMPLE),
     ])
-    if (vinc.status === 'fulfilled')
-      tiposVinculacion.value = (vinc.value.tiposVinculacion ?? []).filter(t => t.activo)
-    if (miembros.status === 'fulfilled')
-      todosMiembros.value = miembros.value.miembros ?? []
+    if (tipos.status === 'fulfilled')
+      tiposDotables.value = (tipos.value.tiposVinculacion ?? [])
+        .filter(t => t.activo && t.permiteCuenta)
+    await buscarContactos()
   } finally {
     loading.value = false
   }
@@ -517,6 +336,7 @@ onMounted(async () => {
 
 // ── Submit ───────────────────────────────────────────────────────────────────
 async function handleSubmit() {
+  if (!contactoElegido.value) { serverError.value = 'Elige primero el contacto al que dar acceso'; return }
   const emailOk = validateEmail()
   const pwdOk = form.value.enviarEmailBienvenida || (validatePassword() & validateConfirm())
   if (!emailOk || !pwdOk) return
@@ -528,11 +348,7 @@ async function handleSubmit() {
       email:                  form.value.email.trim(),
       password:               form.value.enviarEmailBienvenida ? null : form.value.password,
       activo:                 form.value.activo,
-      miembroId:              miembroAceptado.value?.id ?? null,
-      tipoVinculacionId:      form.value.tipoVinculacionId || null,
-      entidadVinculacion:     tipoSeleccionado.value?.requiereSatelite
-                                ? (form.value.entidadVinculacion || null)
-                                : null,
+      miembroId:              contactoElegido.value.id,
       enviarEmailBienvenida:  form.value.enviarEmailBienvenida,
     })
     success.value = true
@@ -544,10 +360,3 @@ async function handleSubmit() {
   }
 }
 </script>
-
-<style scoped>
-.modal-fade-enter-active,
-.modal-fade-leave-active { transition: opacity 0.2s ease; }
-.modal-fade-enter-from,
-.modal-fade-leave-to    { opacity: 0; }
-</style>

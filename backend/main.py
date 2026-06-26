@@ -12,6 +12,7 @@ from typing import Optional
 
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from strawberry.fastapi import GraphQLRouter
 
@@ -188,6 +189,56 @@ async def upload_foto_miembro(
         await session.commit()
 
         return {"fotoUrl": foto_url}
+
+
+@app.get("/secretaria/libro-socios/{snapshot_id}/pdf")
+async def descargar_libro_socios_pdf(
+    snapshot_id: str,
+    authorization: Optional[str] = Header(None),
+):
+    """Descarga autenticada del PDF del Libro de Socios.
+
+    Contiene datos personales (nombres, NIF) → NO se sirve como estático público:
+    requiere token + permiso SEC_LIBRO_SOCIOS_CONSULTAR.
+    """
+    from app.core.security import extract_bearer_token, load_user_from_token
+    from app.core.database import async_session
+    from app.modules.acceso.services.matrix import matrix_cache
+    from app.modules.acceso.models.usuario import UsuarioRol
+    from app.modules.secretaria.models.libro_socios import LibroSociosSnapshot
+    from sqlalchemy import select
+
+    token = extract_bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="No autenticado")
+
+    async with async_session() as session:
+        user = await load_user_from_token(session, token)
+        if not user:
+            raise HTTPException(status_code=401, detail="Token inválido")
+
+        role_ids = frozenset(str(r[0]) for r in (await session.execute(
+            select(UsuarioRol.rol_id).where(
+                UsuarioRol.usuario_id == user.id,
+                UsuarioRol.activo == True,  # noqa: E712
+                UsuarioRol.eliminado == False,  # noqa: E712
+            )
+        )).all())
+        if not (matrix_cache.is_ready() and matrix_cache.can(role_ids, "SEC_LIBRO_SOCIOS_CONSULTAR")):
+            raise HTTPException(status_code=403, detail="Permiso denegado")
+
+        snap = (await session.execute(
+            select(LibroSociosSnapshot).where(LibroSociosSnapshot.id == uuid_lib.UUID(snapshot_id))
+        )).scalar_one_or_none()
+        if not snap or not snap.ruta_pdf:
+            raise HTTPException(status_code=404, detail="PDF no disponible")
+        ruta = Path(snap.ruta_pdf)
+        if not ruta.exists():
+            raise HTTPException(status_code=404, detail="Fichero no encontrado")
+        return FileResponse(
+            str(ruta), media_type="application/pdf",
+            filename=f"libro_socios_{snap.fecha_corte.isoformat()}.pdf",
+        )
 
 
 @app.post("/upload/foto-campania/{campania_id}")

@@ -1,7 +1,9 @@
 """Bootstrap idempotente al arrancar el backend.
 
-Sincroniza el catálogo de transacciones desde initial_data/transacciones.json,
-asegura el rol SUPERADMIN con todas las transacciones asignadas y, si el secreto
+Las transacciones (permisos) son fuente única de los catalog.py de cada módulo,
+sincronizadas por CatalogSyncService en el lifespan de FastAPI; aquí ya no se
+cargan desde JSON. Este bootstrap asegura el rol SUPERADMIN con todas las
+transacciones asignadas y, si el secreto
 SUPERADMIN_PASSWORD está definido, asegura la cuenta de sistema `superadmin`
 (break-glass, username fijo, sin email) vinculada a SUPERADMIN. Los
 administradores de trabajo se crean desde dentro de la aplicación.
@@ -12,7 +14,6 @@ nada destructivo.
 """
 
 import asyncio
-import json
 import os
 from datetime import datetime
 from pathlib import Path
@@ -53,49 +54,6 @@ from app.scripts.seeding.catalogos_base import ensure_catalogos_base
 INITIAL_DATA_DIR = Path(__file__).resolve().parents[2] / "initial_data"
 SUPERADMIN_CODE = "SUPERADMIN"
 SUPERADMIN_USERNAME = "superadmin"
-
-
-async def sync_transacciones(session) -> dict[str, Transaccion]:
-    """Inserta o actualiza transacciones desde transacciones.json. Idempotente."""
-    file_path = INITIAL_DATA_DIR / "transacciones.json"
-    if not file_path.exists():
-        print(f"[bootstrap] {file_path} no existe; se omite sync de transacciones")
-        return {}
-
-    data = json.loads(file_path.read_text(encoding="utf-8"))
-    by_codigo: dict[str, Transaccion] = {}
-
-    for entry in data["transacciones"]:
-        codigo = entry["codigo"]
-        existing = (
-            await session.execute(
-                select(Transaccion).where(Transaccion.codigo == codigo)
-            )
-        ).scalar_one_or_none()
-
-        if existing is None:
-            t = Transaccion(
-                codigo=codigo,
-                nombre=entry["nombre"],
-                descripcion=entry.get("descripcion"),
-                modulo=entry["modulo"],
-                tipo=entry["tipo"],
-                activa=entry.get("activa", True),
-                sistema=entry.get("sistema", True),
-            )
-            session.add(t)
-            by_codigo[codigo] = t
-        else:
-            existing.nombre = entry["nombre"]
-            existing.descripcion = entry.get("descripcion")
-            existing.modulo = entry["modulo"]
-            existing.tipo = entry["tipo"]
-            existing.activa = entry.get("activa", True)
-            existing.sistema = entry.get("sistema", True)
-            by_codigo[codigo] = existing
-
-    await session.flush()
-    return by_codigo
 
 
 async def ensure_superadmin(
@@ -841,8 +799,15 @@ async def ensure_coordinadores_usuarios(session) -> None:
 async def main() -> None:
     async with async_session() as session:
         try:
-            transacciones = await sync_transacciones(session)
-            print(f"[bootstrap] Transacciones sincronizadas: {len(transacciones)}")
+            # Las transacciones son fuente única de los catalog.py de cada módulo
+            # (CatalogSyncService, en el lifespan de FastAPI). Aquí solo tomamos
+            # las que ya existan en la BD; el lifespan completa los enlaces que
+            # falten (sync_superadmin_all_transactions + sync_roles_funcionales_catalog).
+            transacciones = {
+                t.codigo: t
+                for t in (await session.execute(select(Transaccion))).scalars()
+            }
+            print(f"[bootstrap] Transacciones en BD: {len(transacciones)}")
             superadmin = await ensure_superadmin(session, transacciones)
             print(f"[bootstrap] Rol SUPERADMIN listo (id={superadmin.id})")
             await ensure_superadmin_user(session, superadmin)

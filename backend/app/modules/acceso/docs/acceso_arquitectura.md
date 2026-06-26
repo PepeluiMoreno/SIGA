@@ -135,15 +135,16 @@ lo que partía un mismo módulo en varias etiquetas —`eco` frente a `economico
 `campana`/`grupo`/`evento` frente a `actividades`— y producía duplicados en la
 pantalla de control de acceso.)
 
-> **Migración pendiente (deuda técnica).** En la base de datos conviven todavía
-> transacciones del seed monolítico antiguo `initial_data/transacciones.json`
-> (módulos `militancia`, `contable`, `administracion`, `comunicaciones`,
-> `contactos`, `miembros` y el `actividad` viejo), que son la versión anterior
-> de módulos ya migrados a `catalog.py`. No se pueden borrar sin más porque
-> algunos de esos códigos legacy aún se exigen en el código (p. ej.
-> `SOC_EXPORT`). Retirarlos es una migración por módulo: primero trasladar cada
-> permiso legacy aún en uso a su código de catálogo, y solo después eliminar la
-> entrada del JSON y la transacción obsoleta.
+> **Fuente única (migración completada).** Antes coexistían dos vocabularios de
+> permisos: el seed monolítico `initial_data/transacciones.json` (módulos
+> `militancia`, `contable`, `administracion`, etc., con códigos cortos
+> `SOC_`/`CON_`/`REM_`…) y los `catalog.py` por módulo. Se ha unificado todo bajo
+> `catalog.py` con el esquema canónico `PREFIJO_ENTIDAD_ACCION` (ECO_*,
+> MEMBRESIA_*, ACTIVIDAD_/CAMPANA_/GRUPO_, CONTACTO_*, ACCESO_*, CFG_*, SEC_*,
+> RGPD_*): el enforcement, los seeds y el frontend usan los códigos del catálogo,
+> el JSON y su cargador (`bootstrap.sync_transacciones`) se han retirado, y la BD
+> de permisos se reconstruye desde los catálogos en cada arranque. Todo permiso
+> exigido en backend o frontend existe en un `catalog.py`.
 
 ### Ejemplo — catalog.py de un módulo
 

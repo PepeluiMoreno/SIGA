@@ -411,14 +411,27 @@ async def _construir_contactos_dotables(
             tipo_vinculacion_nombre=tipo.nombre,
             tipo_vinculacion_codigo=tipo.codigo,
             agrupacion_id=contacto.agrupacion_id,
-            agrupacion=contacto.agrupacion if contacto.agrupacion_id else None,
         )
 
     if not por_contacto:
         return []
 
-    # tiene_acceso: existe un Usuario (no eliminado) ligado a ese contacto.
     ids = list(por_contacto.keys())
+
+    # Agrupaciones por lote (Contacto solo guarda el FK, sin relación cargada).
+    agr_ids = {c.agrupacion_id for c in por_contacto.values() if c.agrupacion_id}
+    if agr_ids:
+        agrupaciones = {
+            u.id: u
+            for u in (await session.execute(
+                select(UnidadOrganizativa).where(UnidadOrganizativa.id.in_(agr_ids))
+            )).scalars().all()
+        }
+        for c in por_contacto.values():
+            if c.agrupacion_id:
+                c.agrupacion = agrupaciones.get(c.agrupacion_id)
+
+    # tiene_acceso: existe un Usuario (no eliminado) ligado a ese contacto.
     con_cuenta = set(
         (await session.execute(
             select(Usuario.contacto_id).where(

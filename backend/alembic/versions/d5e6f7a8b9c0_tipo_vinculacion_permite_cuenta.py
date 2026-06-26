@@ -4,14 +4,14 @@ Distingue qué tipos de vinculación con la organización habilitan a un contact
 para ser dotado de cuenta de usuario de la aplicación. Por defecto FALSE; se marca
 TRUE en los vínculos que implican operar el sistema (socio, voluntario, contratado).
 
-Revision ID: a2b3c4d5e6f7
-Revises: z1a2b3c4d5e6
+Revision ID: d5e6f7a8b9c0
+Revises: c4d5e6f7a8b9
 Create Date: 2026-06-26 00:00:00.000000
 """
 from alembic import op
 
-revision = 'a2b3c4d5e6f7'
-down_revision = 'z1a2b3c4d5e6'
+revision = 'd5e6f7a8b9c0'
+down_revision = 'c4d5e6f7a8b9'
 branch_labels = None
 depends_on = None
 

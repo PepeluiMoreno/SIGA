@@ -105,7 +105,7 @@ async def seed(session, transacciones: dict) -> None:
 
     Args:
         session: AsyncSession activa (la misma que usa bootstrap para no fragmentar la tx).
-        transacciones: dict {codigo: Transaccion} cargado por sync_transacciones().
+        transacciones: dict {codigo: Transaccion} con las transacciones del catálogo en BD.
     """
     now = datetime.utcnow()
 

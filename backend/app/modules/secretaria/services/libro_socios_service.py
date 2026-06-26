@@ -63,19 +63,20 @@ class LibroSociosService:
             creado_por_id=creado_por_id,
         )
         self.session.add(snapshot)
-        await self.session.flush()  # asigna snapshot.id antes de nombrar el PDF
+        await self.session.commit()
+        await self.session.refresh(snapshot)
 
+        # PDF en una operación aparte: si falla, el snapshot (con sus conteos) ya
+        # está guardado sin PDF y se hace rollback de la generación.
         try:
             socios = await self._socios_para_libro()
             org_nombre = await self._org_nombre()
             ruta = await self._generar_pdf(snapshot, socios, org_nombre)
             snapshot.ruta_pdf = ruta
+            await self.session.commit()
+            await self.session.refresh(snapshot)
         except Exception:
-            # El snapshot (con sus conteos) se conserva aunque falle el PDF.
-            snapshot.ruta_pdf = None
-
-        await self.session.commit()
-        await self.session.refresh(snapshot)
+            await self.session.rollback()
         return snapshot
 
     # ── Datos ────────────────────────────────────────────────────────────────
@@ -91,13 +92,17 @@ class LibroSociosService:
         return (row.get_valor() if row else "") or "La asociación"
 
     async def _socios_para_libro(self) -> List[dict]:
-        """Lista de socios (histórico) ordenada por agrupación → apellidos."""
+        """Lista de socios (histórico) ordenada por agrupación → apellidos.
+
+        Selecciona COLUMNAS (no entidades) a propósito: evita el selectin-load de
+        relaciones (p.ej. TipoVinculacion) y, por tanto, es robusto frente a desfases
+        modelo↔BD de otros campos no usados aquí.
+        """
         from ...membresia.models.vinculacion import Vinculacion, Socio
         from ...membresia.models.tipo_vinculacion import TipoVinculacion
         from ...membresia.models.contacto import Contacto
         from ...core.geografico.direccion import UnidadOrganizativa
 
-        # Nombre de cada agrupación
         unidades = {
             uid: nombre for (uid, nombre) in (await self.session.execute(
                 select(UnidadOrganizativa.id, UnidadOrganizativa.nombre)
@@ -105,7 +110,13 @@ class LibroSociosService:
         }
 
         rows = (await self.session.execute(
-            select(Vinculacion, Contacto, Socio)
+            select(
+                Contacto.agrupacion_id, Contacto.razon_social,
+                Contacto.apellido1, Contacto.apellido2, Contacto.nombre,
+                Contacto.numero_documento, Contacto.cif,
+                Vinculacion.fecha_inicio, Vinculacion.fecha_fin, Vinculacion.estado,
+                Socio.numero_socio,
+            )
             .join(Contacto, Vinculacion.contacto_id == Contacto.id)
             .join(TipoVinculacion, Vinculacion.tipo_vinculacion_id == TipoVinculacion.id)
             .outerjoin(Socio, Socio.vinculacion_id == Vinculacion.id)
@@ -113,19 +124,19 @@ class LibroSociosService:
         )).all()
 
         socios = []
-        for vinc, c, socio in rows:
-            nombre = (c.razon_social or
-                      " ".join(filter(None, [c.apellido1, c.apellido2, c.nombre])) or
-                      c.nombre or "—")
+        for r in rows:
+            nombre = (r.razon_social or
+                      " ".join(filter(None, [r.apellido1, r.apellido2, r.nombre])) or
+                      r.nombre or "—")
             socios.append({
-                "agrupacion": unidades.get(c.agrupacion_id, "(sin agrupación)"),
-                "orden": (c.apellido1 or "", c.apellido2 or "", c.nombre or ""),
-                "num": (socio.numero_socio if socio else "") or "",
+                "agrupacion": unidades.get(r.agrupacion_id, "(sin agrupación)"),
+                "orden": (r.apellido1 or "", r.apellido2 or "", r.nombre or ""),
+                "num": r.numero_socio or "",
                 "nombre": nombre,
-                "nif": (c.numero_documento or c.cif or "") or "—",
-                "alta": vinc.fecha_inicio.strftime("%d/%m/%Y") if vinc.fecha_inicio else "—",
-                "baja": vinc.fecha_fin.strftime("%d/%m/%Y") if vinc.fecha_fin else "—",
-                "estado": "Activo" if vinc.estado == "activa" else "Baja",
+                "nif": (r.numero_documento or r.cif or "") or "—",
+                "alta": r.fecha_inicio.strftime("%d/%m/%Y") if r.fecha_inicio else "—",
+                "baja": r.fecha_fin.strftime("%d/%m/%Y") if r.fecha_fin else "—",
+                "estado": "Activo" if r.estado == "activa" else "Baja",
             })
         socios.sort(key=lambda s: (s["agrupacion"].lower(), s["orden"]))
         return socios

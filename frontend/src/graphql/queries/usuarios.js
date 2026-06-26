@@ -14,15 +14,16 @@ export const GET_USUARIOS = `
   }
 `
 
-// Mutation para crear usuario
+// Mutation para crear usuario.
+// La cuenta se asocia al contacto elegido (miembroId = id de contacto). La
+// vinculación con la organización ya la tiene el contacto; aquí solo se le dota
+// de credenciales de acceso.
 export const CREAR_USUARIO = `
   mutation CrearUsuario(
     $email: String!
     $password: String
     $activo: Boolean
     $miembroId: UUID
-    $tipoVinculacionId: UUID
-    $entidadVinculacion: String
     $enviarEmailBienvenida: Boolean
   ) {
     crearUsuario(
@@ -30,8 +31,6 @@ export const CREAR_USUARIO = `
       password: $password
       activo: $activo
       miembroId: $miembroId
-      tipoVinculacionId: $tipoVinculacionId
-      entidadVinculacion: $entidadVinculacion
       enviarEmailBienvenida: $enviarEmailBienvenida
     ) {
       id
@@ -63,20 +62,28 @@ export const GET_TIPOS_VINCULACION = `
       id
       nombre
       requiereSatelite
+      permiteCuenta
       activo
     }
   }
 `
 
-export const GET_MIEMBROS_SIMPLE = `
-  query MiembrosSimple {
-    miembros: socios {
+// Contactos a los que se puede dotar de cuenta de usuario, filtrables por tipo de
+// vínculo y por texto. Cada uno indica si ya tiene cuenta (tieneAcceso).
+export const GET_CONTACTOS_DOTABLES = `
+  query ContactosDotables($tipoVinculacionId: UUID, $texto: String) {
+    contactosDotables(tipoVinculacionId: $tipoVinculacionId, texto: $texto) {
       id
+      tipo
       nombre
       apellido1
       apellido2
+      razonSocial
       email
-      tipoMiembro { id nombre }
+      telefono
+      tipoVinculacionId
+      tipoVinculacionNombre
+      tipoVinculacionCodigo
       agrupacion { id nombre }
       tieneAcceso
     }
