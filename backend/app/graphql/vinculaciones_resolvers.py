@@ -106,6 +106,7 @@ class ContactoCreateInput:
     codigo_postal: Optional[str] = None
     localidad: Optional[str] = None
     provincia_id: Optional[uuid.UUID] = None
+    entidad_geografica_id: Optional[uuid.UUID] = None
     pais_domicilio_id: Optional[uuid.UUID] = None
     # Contacto
     telefono: Optional[str] = None
@@ -140,6 +141,7 @@ class ContactoUpdateInput:
     codigo_postal: Optional[str] = None
     localidad: Optional[str] = None
     provincia_id: Optional[uuid.UUID] = None
+    entidad_geografica_id: Optional[uuid.UUID] = None
     pais_domicilio_id: Optional[uuid.UUID] = None
     telefono: Optional[str] = None
     telefono2: Optional[str] = None
@@ -155,7 +157,8 @@ _CONTACTO_FIELDS: tuple[str, ...] = (
     "tipo_documento", "numero_documento", "pais_documento_id",
     "sexo", "fecha_nacimiento", "pais_nacimiento_id", "profesion", "nivel_estudios_id",
     "cif", "tipo_entidad_juridica_id", "actividad_principal", "representante_legal_id",
-    "direccion", "codigo_postal", "localidad", "provincia_id", "pais_domicilio_id",
+    "direccion", "codigo_postal", "localidad", "provincia_id", "entidad_geografica_id",
+    "pais_domicilio_id",
     "telefono", "telefono2", "email", "agrupacion_id", "foto_url",
 )
 

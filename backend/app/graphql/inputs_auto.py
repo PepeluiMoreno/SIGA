@@ -421,7 +421,7 @@ class EstadoNotificacionFilter:
 # GEOGRÁFICO
 # ============================================================================
 
-from ..modules.core.geografico import AmbitoGeografico, Pais, Provincia, Municipio, UnidadOrganizativa, NivelOrganizativo
+from ..modules.core.geografico import AmbitoGeografico, Pais, Provincia, Municipio, UnidadOrganizativa, NivelOrganizativo, EntidadGeografica
 
 
 @strawchemy.input(AmbitoGeografico, mode="create_input", include="all",
@@ -488,6 +488,11 @@ class MunicipioFilter:
 
 @strawchemy.filter(UnidadOrganizativa)
 class UnidadOrganizativaFilter:
+    pass
+
+
+@strawchemy.filter(EntidadGeografica, exclude=["padre", "hijos"])
+class EntidadGeograficaFilter:
     pass
 
 

@@ -80,6 +80,7 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
     paises: list[PaisType] = strawchemy.field(filter_input=PaisFilter)
     provincias: list[ProvinciaType] = strawchemy.field(filter_input=ProvinciaFilter)
     municipios: list[MunicipioType] = strawchemy.field(filter_input=MunicipioFilter)
+    entidades_geograficas: list[EntidadGeograficaType] = strawchemy.field(filter_input=EntidadGeograficaFilter)
     direcciones: list[DireccionType] = strawchemy.field()
     unidadesOrganizativas: list[UnidadOrganizativaType] = strawchemy.field(filter_input=UnidadOrganizativaFilter)
 

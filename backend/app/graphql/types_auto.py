@@ -184,7 +184,7 @@ class IntentoAccesoType:
 
 
 # === GEOGRÁFICO ===
-from ..modules.core.geografico import AmbitoGeografico, Pais, Provincia, Municipio, Direccion, UnidadOrganizativa, NivelOrganizativo
+from ..modules.core.geografico import AmbitoGeografico, Pais, Provincia, Municipio, Direccion, UnidadOrganizativa, NivelOrganizativo, EntidadGeografica
 
 @strawchemy.type(AmbitoGeografico, include="all", exclude=["niveles_organizativos"], override=True)
 class AmbitoGeograficoType:
@@ -208,6 +208,10 @@ class MunicipioType:
 
 @strawchemy.type(Direccion, include="all", override=True)
 class DireccionType:
+    pass
+
+@strawchemy.type(EntidadGeografica, include="all", exclude=["padre", "hijos"], override=True)
+class EntidadGeograficaType:
     pass
 
 @strawchemy.type(UnidadOrganizativa, include="all", exclude=["agrupacion_padre", "agrupaciones_hijas"], override=True)

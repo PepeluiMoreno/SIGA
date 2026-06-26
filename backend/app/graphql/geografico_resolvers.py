@@ -66,6 +66,7 @@ class UnidadOrganizativaCreateInput:
     pais_id: Optional[uuid.UUID] = None
     provincia_id: Optional[uuid.UUID] = None
     municipio_id: Optional[uuid.UUID] = None
+    entidad_geografica_id: Optional[uuid.UUID] = None
     email: Optional[str] = None
     telefono: Optional[str] = None
     web: Optional[str] = None
@@ -88,6 +89,7 @@ class UnidadOrganizativaUpdateInput:
     pais_id: Optional[uuid.UUID] = strawberry.UNSET
     provincia_id: Optional[uuid.UUID] = strawberry.UNSET
     municipio_id: Optional[uuid.UUID] = strawberry.UNSET
+    entidad_geografica_id: Optional[uuid.UUID] = strawberry.UNSET
     email: Optional[str] = strawberry.UNSET
     telefono: Optional[str] = strawberry.UNSET
     web: Optional[str] = strawberry.UNSET
@@ -100,7 +102,7 @@ class UnidadOrganizativaUpdateInput:
 
 _AG_FIELDS = [
     'nombre', 'nombre_corto', 'tipo_id', 'agrupacion_padre_id',
-    'pais_id', 'provincia_id', 'municipio_id',
+    'pais_id', 'provincia_id', 'municipio_id', 'entidad_geografica_id',
     'email', 'telefono', 'web', 'descripcion',
     'nif', 'fecha_constitucion', 'registro_oficial', 'activo',
 ]
