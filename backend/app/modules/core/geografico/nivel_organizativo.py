@@ -82,6 +82,14 @@ class NivelOrganizativo(BaseModel):
         Boolean, default=False, server_default='false', nullable=False
     )
 
+    # Propietario del nivel cuando la estructura es distribuida:
+    #   NULL = plantilla global (la matriz; el/los primeros niveles compartidos).
+    #   set  = sub-nivel definido por esa unidad concreta (no afecta a otras unidades).
+    unidad_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('unidades_organizativas.id', ondelete='CASCADE'),
+        nullable=True, index=True
+    )
+
     ambito_geografico: Mapped[Optional[AmbitoGeografico]] = relationship(
         "AmbitoGeografico", back_populates="niveles_organizativos", lazy="selectin"
     )

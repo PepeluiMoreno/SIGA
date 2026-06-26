@@ -233,7 +233,11 @@ class UnidadOrganizativa(BaseModel):
     provincia = relationship('Provincia', lazy='selectin')
     municipio = relationship('Municipio', lazy='selectin')
     direccion = relationship('Direccion', lazy='selectin')
-    tipo_unidad: Mapped[Optional[NivelOrganizativo]] = relationship('NivelOrganizativo', lazy='selectin')
+    # foreign_keys explícito: NivelOrganizativo.unidad_id crea una 2ª ruta de FK
+    # entre ambas tablas; aquí la unión es por tipo_id (el tipo/nivel de la unidad).
+    tipo_unidad: Mapped[Optional[NivelOrganizativo]] = relationship(
+        'NivelOrganizativo', foreign_keys=[tipo_id], lazy='selectin'
+    )
 
     # Relación jerárquica
     agrupacion_padre = relationship(
