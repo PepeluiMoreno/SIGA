@@ -59,6 +59,7 @@ class ModuleCatalog:
 
     _funcionalidades: Dict[str, FuncionalidadDef] = {}
     _transacciones: Dict[str, TransaccionDef] = {}
+    _transaccion_modulos: Dict[str, str] = {}
     _flujos: Dict[str, FlujoAprobacionDef] = {}
 
     @classmethod
@@ -73,6 +74,7 @@ class ModuleCatalog:
         if codigo in cls._transacciones:
             raise ValueError(f"Transaccion '{codigo}' ya registrada")
         cls._transacciones[codigo] = transaccion
+        cls._transaccion_modulos[codigo] = modulo
 
     @classmethod
     def register_flujo(cls, flujo: FlujoAprobacionDef) -> None:
@@ -93,6 +95,18 @@ class ModuleCatalog:
         return list(cls._flujos.values())
 
     @classmethod
+    def get_modulo_transaccion(cls, codigo: str) -> Optional[str]:
+        """Módulo canónico declarado para una transacción al registrarla.
+
+        Es la fuente de verdad del módulo (la constante MODULO del catálogo),
+        no el prefijo del código: un mismo módulo puede declarar transacciones
+        con prefijos distintos (p.ej. actividades → CAMPANA_/GRUPO_/EVENTO_).
+        """
+        return cls._transaccion_modulos.get(codigo)
+
+    @classmethod
     def get_transacciones_by_modulo(cls, modulo: str) -> List[TransaccionDef]:
-        prefix = f"{modulo.upper()}_"
-        return [t for t in cls._transacciones.values() if t.codigo.startswith(prefix)]
+        return [
+            t for t in cls._transacciones.values()
+            if cls._transaccion_modulos.get(t.codigo) == modulo
+        ]

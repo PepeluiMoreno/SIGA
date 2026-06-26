@@ -40,6 +40,11 @@ class CatalogSyncService:
 
     async def _sync_transacciones(self) -> None:
         for defn in ModuleCatalog.get_transacciones():
+            # Módulo canónico declarado en el catálogo (constante MODULO), no el
+            # prefijo del código: un módulo puede declarar varios prefijos
+            # (actividades → CAMPANA_/GRUPO_/EVENTO_/ACTIVIDAD_). El fallback al
+            # prefijo solo cubre transacciones registradas sin módulo explícito.
+            modulo = ModuleCatalog.get_modulo_transaccion(defn.codigo) or defn.codigo.split("_")[0].lower()
             result = await self.session.execute(
                 select(Transaccion).where(Transaccion.codigo == defn.codigo)
             )
@@ -51,7 +56,7 @@ class CatalogSyncService:
                     nombre=defn.nombre,
                     descripcion=defn.descripcion,
                     tipo=defn.tipo,
-                    modulo=defn.codigo.split("_")[0].lower(),
+                    modulo=modulo,
                     activa=True,
                     sistema=defn.sistema,
                 )
@@ -60,6 +65,7 @@ class CatalogSyncService:
             else:
                 obj.nombre = defn.nombre
                 obj.descripcion = defn.descripcion
+                obj.modulo = modulo
                 obj.sistema = defn.sistema
 
     # ------------------------------------------------------------------

@@ -120,6 +120,31 @@ transacciones llamando a `ModuleCatalog.register_*`. Al arrancar la aplicación,
 Resultado: la UI del `EditorRol` siempre muestra las funcionalidades actuales
 del código sin intervención manual.
 
+### El módulo es el declarado, no el prefijo del código
+
+El módulo al que pertenece una transacción es **el que declara el catálogo**
+(el primer argumento de `register_transaccion(modulo, ...)`, normalmente la
+constante `MODULO` del módulo), no el prefijo de su código. Un mismo módulo
+puede declarar transacciones con prefijos distintos: por ejemplo, *Actividades*
+agrupa `CAMPANA_*`, `GRUPO_*`, `EVENTO_*` y `ACTIVIDAD_*` bajo el módulo
+`actividades`. `CatalogSyncService` graba ese módulo canónico en
+`Transaccion.modulo` tanto al crear como al actualizar la fila, de modo que la
+vista de Transacciones agrupa cada permiso bajo un único módulo coherente con
+el de su funcionalidad. (Antes el módulo se derivaba del prefijo del código,
+lo que partía un mismo módulo en varias etiquetas —`eco` frente a `economico`,
+`campana`/`grupo`/`evento` frente a `actividades`— y producía duplicados en la
+pantalla de control de acceso.)
+
+> **Migración pendiente (deuda técnica).** En la base de datos conviven todavía
+> transacciones del seed monolítico antiguo `initial_data/transacciones.json`
+> (módulos `militancia`, `contable`, `administracion`, `comunicaciones`,
+> `contactos`, `miembros` y el `actividad` viejo), que son la versión anterior
+> de módulos ya migrados a `catalog.py`. No se pueden borrar sin más porque
+> algunos de esos códigos legacy aún se exigen en el código (p. ej.
+> `SOC_EXPORT`). Retirarlos es una migración por módulo: primero trasladar cada
+> permiso legacy aún en uso a su código de catálogo, y solo después eliminar la
+> entrada del JSON y la transacción obsoleta.
+
 ### Ejemplo — catalog.py de un módulo
 
 ```python
@@ -128,7 +153,7 @@ from app.modules.acceso.services.registry import (
     TransaccionDef, AmbitoTransaccion,
 )
 
-ModuleCatalog.register_transaccion("campana", TransaccionDef(
+ModuleCatalog.register_transaccion("actividades", TransaccionDef(
     codigo="CAMPANA_CREAR",
     nombre="Crear campaña",
     tipo="MUTACION",
