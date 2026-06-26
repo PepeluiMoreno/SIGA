@@ -31,6 +31,10 @@ from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
 from app.modules.membresia.models.historial_nombramiento import HistorialNombramiento
 from app.graphql.permissions import RequireTransaction
 from app.graphql.types_auto import VinculacionType, ContactoType, HistorialNombramientoType
+from app.modules.acceso.services.ambito_territorial import (
+    assert_unidad_en_ambito,
+    assert_miembro_en_ambito,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -254,6 +258,10 @@ class VinculacionesMutation:
         nombramientos con titular/rol/agrupación se hace por esta mutación.
         """
         session = info.context.session
+        # Fase 2: solo se registran cargos en unidades del propio ámbito (global ⇒ libre).
+        usuario = info.context.user
+        if usuario:
+            await assert_unidad_en_ambito(session, usuario.id, agrupacion_id)
         n = HistorialNombramiento(
             miembro_id=miembro_id, rol_id=rol_id, agrupacion_id=agrupacion_id,
             fecha_inicio=fecha_inicio, fecha_fin=fecha_fin,
@@ -305,6 +313,12 @@ class VinculacionesMutation:
         )).scalar_one_or_none()
         if contacto is None:
             raise ValueError("Contacto no encontrado.")
+        # Fase 2: trasladar de unidad (cambiar agrupacion_id) exige que tanto el socio
+        # (unidad de origen) como la unidad de destino estén en el ámbito del gestor.
+        usuario = info.context.user
+        if usuario and data.agrupacion_id is not None and data.agrupacion_id != contacto.agrupacion_id:
+            await assert_miembro_en_ambito(session, usuario.id, contacto.id)
+            await assert_unidad_en_ambito(session, usuario.id, data.agrupacion_id)
         for field in _CONTACTO_FIELDS:
             val = getattr(data, field, None)
             if val is not None:

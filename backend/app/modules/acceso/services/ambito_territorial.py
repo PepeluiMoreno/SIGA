@@ -149,6 +149,23 @@ async def ensure_rol_coordinador_campania(
     await session.commit()
 
 
+async def assert_unidad_en_ambito(
+    session: AsyncSession, usuario_id: uuid.UUID, unidad_id: uuid.UUID | None,
+) -> None:
+    """Lanza PermissionError si la unidad está fuera del ámbito territorial del usuario.
+
+    Global ⇒ no restringe. Guard para gestionar por delegación (editar la unidad,
+    registrar cargos en ella, trasladar socios a ella, editar su subestructura).
+    `unidad_id` None ⇒ se exige ámbito global (operación sobre la matriz / plantilla).
+    """
+    ambito = await agrupaciones_en_ambito(session, usuario_id)
+    if ambito is None:
+        return  # global
+    if unidad_id is not None and unidad_id in ambito:
+        return
+    raise PermissionError("La unidad está fuera de tu ámbito territorial.")
+
+
 async def assert_miembro_en_ambito(
     session: AsyncSession, usuario_id: uuid.UUID, miembro_id: uuid.UUID,
 ) -> None:

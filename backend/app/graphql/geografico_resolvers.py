@@ -8,6 +8,7 @@ from sqlalchemy import select
 from app.modules.core.geografico import UnidadOrganizativa, NivelOrganizativo
 from .types_auto import UnidadOrganizativaType, NivelOrganizativoType
 from .permissions import RequireTransaction
+from app.modules.acceso.services.ambito_territorial import assert_unidad_en_ambito
 
 
 # ── NivelOrganizativo: inputs y helpers ──────────────────────────────────────
@@ -121,6 +122,11 @@ class GeograficoMutation:
         self, info: strawberry.Info, data: NivelOrganizativoCreateInput
     ) -> NivelOrganizativoType:
         session = info.context.session
+        # Fase 2: un sub-nivel propio de una unidad (distribuida) solo lo crea quien
+        # tiene esa unidad en su ámbito. Plantillas globales (unidad_id NULL): sin filtro.
+        usuario = info.context.user
+        if usuario and data.unidad_id is not None:
+            await assert_unidad_en_ambito(session, usuario.id, data.unidad_id)
         kwargs = {f: getattr(data, f) for f in _NV_FIELDS}
         nivel = NivelOrganizativo(**kwargs)
         session.add(nivel)
@@ -133,6 +139,10 @@ class GeograficoMutation:
     ) -> NivelOrganizativoType:
         session = info.context.session
         nivel = await _fetch_nivel(session, data.id)
+        # Fase 2: editar un sub-nivel propio de una unidad exige tenerla en el ámbito.
+        usuario = info.context.user
+        if usuario and nivel.unidad_id is not None:
+            await assert_unidad_en_ambito(session, usuario.id, nivel.unidad_id)
         for field in _NV_FIELDS:
             val = getattr(data, field, strawberry.UNSET)
             if val is strawberry.UNSET:
@@ -162,6 +172,10 @@ class GeograficoMutation:
         self, info: strawberry.Info, data: UnidadOrganizativaUpdateInput
     ) -> UnidadOrganizativaType:
         session = info.context.session
+        # Fase 2: solo se edita una unidad dentro del propio ámbito (global ⇒ libre).
+        usuario = info.context.user
+        if usuario:
+            await assert_unidad_en_ambito(session, usuario.id, data.id)
         ag = await _fetch_agrupacion(session, data.id)
 
         for field in _AG_FIELDS:
