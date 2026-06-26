@@ -95,6 +95,10 @@
                 <option v-for="m in municipios" :key="m.id" :value="m.id">{{ m.nombre }}</option>
               </select>
             </div>
+            <div class="col-span-12">
+              <p :class="lbl">Ubicación (geografía unificada)</p>
+              <EntidadGeograficaSelect v-model="form.entidadGeograficaId" :editing="true" :niveles="[2, 3]" />
+            </div>
           </div>
         </div>
 
@@ -217,6 +221,10 @@
                   <option v-for="m in municipios" :key="m.id" :value="m.id">{{ m.nombre }}</option>
                 </select>
                 <p v-else :class="ro">{{ municipioNombre }}</p>
+              </div>
+              <div class="col-span-12">
+                <p :class="lbl">Ubicación (geografía unificada)</p>
+                <EntidadGeograficaSelect v-model="form.entidadGeograficaId" :editing="editMode" :niveles="[2, 3]" />
               </div>
             </div>
           </div>
@@ -535,6 +543,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import EstructuraOrganizativaEditor from '@/components/configuracion/EstructuraOrganizativaEditor.vue'
+import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
@@ -644,6 +653,7 @@ async function guardarNuevo() {
         paisId: form.paisId || null,
         provinciaId: form.provinciaId || null,
         municipioId: form.municipioId || null,
+        entidadGeograficaId: form.entidadGeograficaId || null,
         email: form.email.trim() || null,
         telefono: form.telefono.trim() || null,
         web: form.web.trim() || null,
@@ -757,7 +767,7 @@ const datosError     = ref(null)
 const form = reactive({
   nombre: '', nombreCorto: '', descripcion: '',
   email: '', telefono: '', web: '',
-  paisId: '', provinciaId: '', municipioId: '',
+  paisId: '', provinciaId: '', municipioId: '', entidadGeograficaId: null,
   nif: '', fechaConstitucion: '', registroOficial: '',
 })
 
@@ -786,6 +796,7 @@ function sincronizarForm() {
     nombre: a.nombre ?? '', nombreCorto: a.nombreCorto ?? '', descripcion: a.descripcion ?? '',
     email: a.email ?? '', telefono: a.telefono ?? '', web: a.web ?? '',
     paisId: a.paisId ?? '', provinciaId: a.provinciaId ?? '', municipioId: a.municipioId ?? '',
+    entidadGeograficaId: a.entidadGeograficaId ?? null,
     nif: a.nif ?? '', fechaConstitucion: a.fechaConstitucion ?? '', registroOficial: a.registroOficial ?? '',
   })
   if (form.provinciaId) cargarMunicipios(form.provinciaId)
@@ -827,6 +838,7 @@ async function guardarDatos() {
         paisId: form.paisId || null,
         provinciaId: form.provinciaId || null,
         municipioId: form.municipioId || null,
+        entidadGeograficaId: form.entidadGeograficaId || null,
         nif: form.nif.trim() || null,
         fechaConstitucion: form.fechaConstitucion || null,
         registroOficial: form.registroOficial.trim() || null,
@@ -890,7 +902,7 @@ const Q_AGRUPACION = `
     unidadesOrganizativas(filter: { id: { eq: $id } }) {
       id nombre nombreCorto descripcion email telefono web activo
       tipoId agrupacionPadreId
-      paisId provinciaId municipioId
+      paisId provinciaId municipioId entidadGeograficaId
       nif fechaConstitucion registroOficial
       tipoUnidad { id nombre naturaleza nivel vinculo estructuraDistribuida denominacionSingular }
     }
