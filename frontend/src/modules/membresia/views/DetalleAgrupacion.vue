@@ -128,11 +128,18 @@
                 </td>
                 <td class="py-2.5 pr-3 text-sm text-slate-500 hidden md:table-cell">{{ s.email || '—' }}</td>
                 <td class="py-2.5 text-right">
-                  <button type="button" @click.stop="verFicha(s.id)"
-                    class="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors opacity-0 group-hover:opacity-100"
-                    :title="`Ver ficha del ${orgConfig.miembro}`">
-                    <EyeIcon class="w-4 h-4" />
-                  </button>
+                  <div class="inline-flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
+                    <button v-if="editMode" type="button" @click.stop="abrirTraslado(s)"
+                      class="p-1 rounded text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                      :title="`Trasladar ${orgConfig.miembro} a otra unidad`">
+                      <ArrowsRightLeftIcon class="w-4 h-4" />
+                    </button>
+                    <button type="button" @click.stop="verFicha(s.id)"
+                      class="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                      :title="`Ver ficha del ${orgConfig.miembro}`">
+                      <EyeIcon class="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -208,6 +215,39 @@
       </div>
     </div>
 
+    <!-- ══ Modal traslado de socio a otra unidad ══════════════════════════ -->
+    <div v-if="trasladoModal.visible" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h3 class="font-semibold text-slate-800">Trasladar {{ orgConfig.miembro }} de unidad</h3>
+          <button @click="trasladoModal.visible = false" class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+        </div>
+        <div class="px-6 py-5 space-y-4">
+          <p class="text-sm text-slate-600">
+            Trasladar a <strong>{{ trasladoModal.socio?.nombre }} {{ trasladoModal.socio?.apellido1 }}</strong>
+            desde <strong>{{ agrupacion?.nombre }}</strong> a otra unidad.
+          </p>
+          <div>
+            <label :class="lbl">Unidad de destino <span class="text-red-400">*</span></label>
+            <select v-model="trasladoModal.destinoId" :class="inp">
+              <option value="">— Seleccionar unidad —</option>
+              <option v-for="u in unidadesDestinoFiltradas" :key="u.id" :value="u.id">{{ etiquetaUnidad(u) }}</option>
+            </select>
+          </div>
+          <ErrorAlert v-if="trasladoModal.error" :message="trasladoModal.error" />
+        </div>
+        <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+          <button @click="trasladoModal.visible = false"
+            class="px-4 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50">Cancelar</button>
+          <button @click="confirmarTraslado" :disabled="!trasladoModal.destinoId || trasladoModal.guardando"
+            class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium">
+            <span v-if="trasladoModal.guardando" class="animate-spin inline-block h-3 w-3 border-2 border-white border-t-transparent rounded-full mr-1"></span>
+            Trasladar
+          </button>
+        </div>
+      </div>
+    </div>
+
   </AppLayout>
 </template>
 
@@ -218,7 +258,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ChevronDownIcon, ChevronLeftIcon,
-  PencilIcon, PlusIcon, XMarkIcon, EyeIcon,
+  PencilIcon, PlusIcon, XMarkIcon, EyeIcon, ArrowsRightLeftIcon,
 } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { usePermisos } from '@/composables/usePermisos.js'
@@ -243,6 +283,43 @@ function cargosDe(socioId) {
     .filter(n => n.miembro?.id === socioId && n.estado === 'ACTIVO')
     .map(n => n.rol?.nombre)
     .filter(Boolean)
+}
+
+// ── Traslado de socio a otra unidad (acción de edición) ─────────────────────
+// Autorización por ámbito (coordinador/presidente de la unidad) → Fase 2 en backend
+// (ambito_territorial.py). De momento gateado por permiso + selector de destino.
+const unidadesDestinoFiltradas = computed(() =>
+  unidadesDestino.value.filter(u => u.id !== agrupacionId.value)
+)
+function etiquetaUnidad(u) {
+  const niv = u.tipoUnidad?.denominacionSingular || u.tipoUnidad?.nombre
+  return niv ? `${u.nombre} · ${niv}` : u.nombre
+}
+async function abrirTraslado(socio) {
+  Object.assign(trasladoModal, { visible: true, socio, destinoId: '', error: null, guardando: false })
+  if (!unidadesDestino.value.length) {
+    try {
+      const r = await executeQuery(Q_TODAS_UNIDADES)
+      unidadesDestino.value = (r.unidadesOrganizativas || []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+    } catch { /* el selector quedará vacío */ }
+  }
+}
+async function confirmarTraslado() {
+  if (!trasladoModal.destinoId) return
+  trasladoModal.guardando = true
+  trasladoModal.error = null
+  try {
+    await executeMutation(
+      `mutation TrasladarSocio($data: ContactoUpdateInput!) { actualizarContacto(data: $data) { id } }`,
+      { data: { id: trasladoModal.socio.id, agrupacionId: trasladoModal.destinoId } }
+    )
+    trasladoModal.visible = false
+    await cargar()
+  } catch (e) {
+    trasladoModal.error = e?.response?.errors?.[0]?.message || 'No se pudo trasladar.'
+  } finally {
+    trasladoModal.guardando = false
+  }
 }
 
 // ── Estilos ─────────────────────────────────────────────────────────────────
@@ -279,6 +356,8 @@ const nombramientos       = ref([])   // registros directos de esta unidad
 const nombramientosHijos  = ref([])   // registros de unidades hijas
 const rolesTerritoriales  = ref([])   // roles organizacionales territoriales
 const miembros            = ref([])   // miembros para el buscador
+const unidadesDestino     = ref([])   // todas las unidades activas (selector de traslado)
+const trasladoModal       = reactive({ visible: false, socio: null, destinoId: '', guardando: false, error: null })
 
 // ── Computed ─────────────────────────────────────────────────────────────────
 // Todos los registros activos: directos primero, luego hijos (marcados)
@@ -344,6 +423,14 @@ const Q_MIEMBROS = `
   query MiembrosAgrupacion($agrupacionId: UUID!) {
     miembros: socios(agrupacionId: $agrupacionId, activo: true) {
       id nombre apellido1 apellido2 email
+    }
+  }
+`
+const Q_TODAS_UNIDADES = `
+  query TodasUnidades {
+    unidadesOrganizativas(filter: { activo: { eq: true } }) {
+      id nombre
+      tipoUnidad { id nombre nivel denominacionSingular }
     }
   }
 `
