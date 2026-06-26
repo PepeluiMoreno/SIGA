@@ -87,6 +87,8 @@
             <FieldText v-model="form.codigoPostal" label="Código postal" :editing="editing" />
             <FieldText v-model="form.localidad" label="Localidad" :editing="editing" />
             <FieldSelect v-model="form.provinciaId" label="Provincia" :editing="editing" :options="provinciaOptions" />
+            <EntidadGeograficaSelect v-model="form.entidadGeograficaId" label="Ubicación (geografía unificada)"
+              :editing="editing" :niveles="[2, 3]" class="sm:col-span-2" />
             <div>
               <label class="block text-xs font-medium text-slate-500 mb-1">Comunidad autónoma</label>
               <div class="py-1.5 text-sm text-slate-500 min-h-[34px]">{{ ccaaActual || '—' }}</div>
@@ -159,6 +161,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_CONTACTO, GET_CONTACTOS, CREAR_CONTACTO, ACTUALIZAR_CONTACTO, ELIMINAR_CONTACTO } from '@/graphql/queries/contactos.js'
 import { GET_PROVINCIAS } from '@/graphql/queries/catalogos.js'
+import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
 import { useAuthStore } from '@/stores/auth.js'
 
 // ── Componentes de campo: input en edición, texto en vista ──────────────────
@@ -229,7 +232,7 @@ const form = reactive({
   tipoDocumento: '', numeroDocumento: '', sexo: '', fechaNacimiento: '', profesion: '',
   cif: '', actividadPrincipal: '', representanteLegalId: '',
   email: '', telefono: '', telefono2: '', direccion: '', codigoPostal: '', localidad: '',
-  provinciaId: '',
+  provinciaId: '', entidadGeograficaId: null,
 })
 
 // Catálogo de provincias (para el select de ubicación; la CCAA se deriva de la provincia)

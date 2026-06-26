@@ -55,6 +55,7 @@ export const GET_CONTACTO = `
       codigoPostal
       localidad
       provinciaId
+      entidadGeograficaId
       paisDomicilioId
       telefono
       telefono2
