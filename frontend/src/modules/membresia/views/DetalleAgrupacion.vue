@@ -137,6 +137,115 @@
         </div>
       </section>
 
+      <!-- ══ CONFIGURACIÓN ═════════════════════════════════════════════════ -->
+      <section :class="cardCls">
+        <button type="button" @click="togglePanel('config')" :class="accordionBtn(open.config)">
+          <span class="flex items-center gap-3">
+            <span class="shrink-0 w-1.5 h-5 rounded-full bg-sky-500"></span>
+            <h2 :class="titleCls">Configuración</h2>
+          </span>
+          <ChevronDownIcon :class="chevronCls(open.config)" />
+        </button>
+        <div v-show="open.config" class="px-5 py-4 space-y-5">
+
+          <!-- Datos jurídicos -->
+          <div>
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">Datos jurídicos</p>
+            <div class="grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
+              <div class="col-span-6 sm:col-span-4">
+                <p :class="lbl">NIF / CIF</p>
+                <input v-if="editMode" v-model="form.nif" type="text" :class="inp" />
+                <p v-else :class="ro">{{ agrupacion.nif || '—' }}</p>
+              </div>
+              <div class="col-span-6 sm:col-span-4">
+                <p :class="lbl">Fecha de constitución</p>
+                <input v-if="editMode" v-model="form.fechaConstitucion" type="date" :class="inp" />
+                <p v-else :class="ro">{{ fmtFecha(agrupacion.fechaConstitucion) }}</p>
+              </div>
+              <div class="col-span-12 sm:col-span-4">
+                <p :class="lbl">Registro oficial</p>
+                <input v-if="editMode" v-model="form.registroOficial" type="text" :class="inp" />
+                <p v-else :class="ro">{{ agrupacion.registroOficial || '—' }}</p>
+              </div>
+            </div>
+            <div v-if="editMode" class="flex justify-end pt-3 mt-3 border-t border-slate-100">
+              <button type="button" @click="guardarDatos" :disabled="guardandoDatos || !form.nombre.trim()"
+                class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50">
+                <span v-if="guardandoDatos" class="animate-spin inline-block h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
+                Guardar cambios
+              </button>
+            </div>
+          </div>
+
+          <!-- Estructura interna -->
+          <div>
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">Estructura interna</p>
+            <div v-if="esDistribuida">
+              <p class="text-xs text-slate-500 mb-3">
+                El nivel «{{ agrupacion.tipoUnidad?.nombre }}» es de estructura <strong>distribuida</strong>:
+                esta unidad define su propia subestructura territorial.
+              </p>
+              <EstructuraOrganizativaEditor
+                :nivel-raiz-id="agrupacion.tipoId"
+                :unidad-id="agrupacionId"
+                :mostrar-radiogroup="false" />
+            </div>
+            <p v-else class="text-xs text-slate-400 italic">
+              Estructura <strong>centralizada</strong>: los niveles se definen en Parámetros Generales (iguales para todas las unidades).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ JUNTA DIRECTIVA ═══════════════════════════════════════════════ -->
+      <section :class="cardCls">
+        <button type="button" @click="togglePanel('junta')" :class="accordionBtn(open.junta)">
+          <span class="flex items-center gap-3">
+            <span class="shrink-0 w-1.5 h-5 rounded-full bg-amber-500"></span>
+            <h2 :class="titleCls">{{ orgConfig.OrganoGobierno }}</h2>
+            <span v-if="composicionJunta.length"
+              class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold rounded-full tabular-nums">
+              {{ composicionJunta.length }}
+            </span>
+          </span>
+          <ChevronDownIcon :class="chevronCls(open.junta)" />
+        </button>
+        <div v-show="open.junta" class="px-5 pb-4 pt-2">
+          <div v-if="!composicionJunta.length" class="py-8 text-center text-xs text-slate-400 italic">
+            Sin cargos electos en esta unidad. Regístralos en «{{ orgConfig.Miembros }} de la unidad» (modo edición).
+          </div>
+          <div v-else class="overflow-x-auto -mx-1"><table class="w-full">
+            <thead>
+              <tr class="border-b border-slate-100">
+                <th class="pb-2 text-left text-xs font-semibold text-slate-400">Cargo</th>
+                <th class="pb-2 text-left text-xs font-semibold text-slate-400">Titular</th>
+                <th class="pb-2 text-left text-xs font-semibold text-slate-400 hidden sm:table-cell">Desde</th>
+                <th class="w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="c in composicionJunta" :key="c.id"
+                class="group border-b border-slate-50 last:border-0 hover:bg-amber-50/40 transition-colors">
+                <td class="py-2.5 pr-3">
+                  <span class="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full">{{ c.rol?.nombre || '—' }}</span>
+                </td>
+                <td class="py-2.5 pr-3 text-sm font-medium text-slate-800">
+                  {{ c.miembro?.apellido1 }}{{ c.miembro?.apellido2 ? ' ' + c.miembro.apellido2 : '' }}, {{ c.miembro?.nombre }}
+                </td>
+                <td class="py-2.5 pr-3 text-sm text-slate-500 hidden sm:table-cell">{{ fmtFecha(c.fechaInicio) }}</td>
+                <td class="py-2.5 text-right">
+                  <button v-if="c.miembro?.id" type="button" @click="verFicha(c.miembro.id)"
+                    class="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors opacity-0 group-hover:opacity-100"
+                    :title="`Ver ficha del ${orgConfig.miembro}`">
+                    <EyeIcon class="w-4 h-4" />
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table></div>
+        </div>
+      </section>
+
       <!-- ══ 2 · SOCIOS DE LA UNIDAD ═══════════════════════════════════════ -->
       <section :class="cardCls">
         <button type="button" @click="togglePanel('cargos')" :class="accordionBtn(open.cargos)">
@@ -322,6 +431,7 @@ import {
   PencilIcon, PlusIcon, XMarkIcon, EyeIcon, ArrowsRightLeftIcon,
 } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
+import EstructuraOrganizativaEditor from '@/components/configuracion/EstructuraOrganizativaEditor.vue'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
@@ -403,7 +513,7 @@ const chevronCls = (isOpen) =>
   'w-4 h-4 text-slate-400 transition-transform duration-200 ' + (isOpen ? 'rotate-180' : '')
 
 // ── Acordeones ───────────────────────────────────────────────────────────────
-const open = reactive({ info: true, cargos: true })
+const open = reactive({ info: true, config: false, junta: false, cargos: true })
 
 function togglePanel(key) {
   const wasOpen = open[key]
@@ -432,6 +542,7 @@ const form = reactive({
   nombre: '', nombreCorto: '', descripcion: '',
   email: '', telefono: '', web: '',
   paisId: '', provinciaId: '', municipioId: '',
+  nif: '', fechaConstitucion: '', registroOficial: '',
 })
 
 const provinciasDelPais = computed(() =>
@@ -441,6 +552,14 @@ const provinciasDelPais = computed(() =>
 const paisNombre      = computed(() => paises.value.find(p => p.id === agrupacion.value?.paisId)?.nombre || '—')
 const provinciaNombre = computed(() => provincias.value.find(p => p.id === agrupacion.value?.provinciaId)?.nombre || '—')
 const municipioNombre = computed(() => municipios.value.find(m => m.id === agrupacion.value?.municipioId)?.nombre || '—')
+// ¿El nivel de esta unidad delega la subestructura en cada unidad? (distribuida)
+const esDistribuida = computed(() => !!agrupacion.value?.tipoUnidad?.estructuraDistribuida)
+// Composición del órgano de gobierno: cargos electos activos de esta unidad
+const composicionJunta = computed(() =>
+  [...nombramientos.value].sort((a, b) =>
+    (a.rol?.nivel ?? 99) - (b.rol?.nivel ?? 99) ||
+    (a.rol?.nombre || '').localeCompare(b.rol?.nombre || '', 'es'))
+)
 
 function sincronizarForm() {
   const a = agrupacion.value
@@ -449,6 +568,7 @@ function sincronizarForm() {
     nombre: a.nombre ?? '', nombreCorto: a.nombreCorto ?? '', descripcion: a.descripcion ?? '',
     email: a.email ?? '', telefono: a.telefono ?? '', web: a.web ?? '',
     paisId: a.paisId ?? '', provinciaId: a.provinciaId ?? '', municipioId: a.municipioId ?? '',
+    nif: a.nif ?? '', fechaConstitucion: a.fechaConstitucion ?? '', registroOficial: a.registroOficial ?? '',
   })
   if (form.provinciaId) cargarMunicipios(form.provinciaId)
 }
@@ -489,6 +609,9 @@ async function guardarDatos() {
         paisId: form.paisId || null,
         provinciaId: form.provinciaId || null,
         municipioId: form.municipioId || null,
+        nif: form.nif.trim() || null,
+        fechaConstitucion: form.fechaConstitucion || null,
+        registroOficial: form.registroOficial.trim() || null,
       } }
     )
     await cargar()
@@ -532,7 +655,8 @@ const Q_AGRUPACION = `
       id nombre nombreCorto descripcion email telefono web activo
       tipoId agrupacionPadreId
       paisId provinciaId municipioId
-      tipoUnidad { id nombre naturaleza nivel }
+      nif fechaConstitucion registroOficial
+      tipoUnidad { id nombre naturaleza nivel vinculo estructuraDistribuida }
     }
   }
 `
@@ -550,8 +674,8 @@ const Q_NOMBRAMIENTOS = `
   query Nombramientos($agrupacionId: UUID!) {
     historialNombramientos(filter: { agrupacionId: { eq: $agrupacionId }, estado: { eq: "ACTIVO" } }) {
       id rolId estado fechaInicio fechaFin observaciones
-      miembro { id nombre apellido1 }
-      rol { id codigo nombre }
+      miembro { id nombre apellido1 apellido2 }
+      rol { id codigo nombre nivel }
       agrupacion { id nombre }
     }
   }

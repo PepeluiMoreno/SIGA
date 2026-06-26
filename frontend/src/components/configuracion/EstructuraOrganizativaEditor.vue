@@ -268,8 +268,10 @@ const nodoRaizActual = computed(() =>
   nodoScope.value ?? (raicesReales.value.length ? raicesReales.value[0] : null)
 )
 const distribuida = computed(() => !!nodoRaizActual.value?.estructuraDistribuida)
-// En distribuida no se anidan subniveles aquí: cada agrupación define los suyos
-const permiteSubniveles = computed(() => !distribuida.value)
+// En distribuida NO se anidan subniveles en el editor global (Parámetros): se
+// delegan a cada agrupación. Pero en el editor de una agrupación (scoped) SÍ se
+// añaden — es precisamente donde la unidad define su propia subestructura.
+const permiteSubniveles = computed(() => scoped.value || !distribuida.value)
 
 // Niveles que se borrarían al pasar a distribuida (de segundo nivel hacia abajo)
 const nivelesBajoElPrimero = computed(() => arbolPlano.value.filter(n => n.depth >= 1))
