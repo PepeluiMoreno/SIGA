@@ -176,6 +176,12 @@ const routes = [
     meta: { requiresAuth: true, requiredPermission: 'AGR_EDIT' }
   },
   {
+    path: '/agrupaciones/nueva',
+    component: () => import('@/modules/membresia/views/DetalleAgrupacion.vue'),
+    name: 'NuevaAgrupacion',
+    meta: { requiresAuth: true, requiredPermission: 'CFG_TERRITORIO_CREAR' }
+  },
+  {
     path: '/agrupaciones/:id',
     component: () => import('@/modules/membresia/views/DetalleAgrupacion.vue'),
     name: 'DetalleAgrupacion',

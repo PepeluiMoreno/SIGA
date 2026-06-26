@@ -2,6 +2,13 @@
   <AppLayout title="Organización Territorial"
     :subtitle="`Presencia de ${orgConfig.nombre || 'la asociación'} en el territorio`">
 
+    <template v-if="tienePermiso('CFG_TERRITORIO_CREAR')" #actions>
+      <button type="button" @click="irANuevaRaiz"
+        class="h-8 px-3 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+        + Nueva unidad
+      </button>
+    </template>
+
     <!-- Filtros -->
     <FilterBar
       v-model="filtros"
@@ -47,111 +54,10 @@
         :profundidad="0"
         :coordinador-map="coordinadorPorAgrupacion"
         :conteo-map="conteoPorAgrupacion"
-        @editar="abrirFormulario"
+        @editar="irAEditar"
         @eliminar="confirmarEliminar"
-        @anadir-hijo="abrirFormularioHijo"
+        @anadir-hijo="irAAnadirHijo"
       />
-    </div>
-
-    <!-- Modal formulario -->
-    <div v-if="mostrarFormulario" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h3 class="font-semibold text-gray-900">
-            {{ editando ? 'Editar unidad' : (form.agrupacionPadreId ? 'Nueva sub-unidad' : 'Nueva unidad raíz') }}
-          </h3>
-          <button @click="cerrarFormulario" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
-        </div>
-        <div class="px-6 py-5 space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-              <input v-model="form.nombre" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Nombre corto</label>
-              <input v-model="form.nombreCorto" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de unidad *</label>
-              <select v-model="form.tipoId" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                <option value="">Seleccionar tipo...</option>
-                <option v-for="t in tiposDisponibles" :key="t.id" :value="t.id">{{ t.nombre }}</option>
-              </select>
-              <p v-if="tiposDisponibles.length === 0" class="text-xs text-amber-600 mt-1">
-                Define los niveles en Parámetros · Estructura organizativa.
-              </p>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Depende de</label>
-              <select v-model="form.agrupacionPadreId" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                <option value="">Sin unidad padre</option>
-                <option v-for="u in unidadesSinActual" :key="u.id" :value="u.id">{{ u.nombre }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">País *</label>
-              <select v-model="form.paisId" @change="form.provinciaId = ''" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                <option value="">Seleccionar país...</option>
-                <option v-for="p in paises" :key="p.id" :value="p.id">{{ p.nombre }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Provincia</label>
-              <select v-model="form.provinciaId" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                <option value="">Sin provincia</option>
-                <option v-for="p in provinciasDelPais" :key="p.id" :value="p.id">
-                  <template v-if="p.comunidadAutonoma">{{ p.comunidadAutonoma }} — </template>{{ p.nombre }}
-                </option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input v-model="form.email" type="email" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-              <input v-model="form.telefono" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Web</label>
-              <input v-model="form.web" type="url" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            </div>
-            <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-              <textarea v-model="form.descripcion" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
-            </div>
-          </div>
-
-          <!-- Datos jurídicos — solo si vínculo FILIAL o FEDERADA -->
-          <template v-if="tipoSeleccionado && ['FILIAL','FEDERADA'].includes(tipoSeleccionado.vinculo)">
-            <div class="border-t border-gray-100 pt-4">
-              <h4 class="text-sm font-semibold text-gray-700 mb-3">Datos jurídicos</h4>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">NIF / CIF</label>
-                  <input v-model="form.nif" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Fecha constitución</label>
-                  <input v-model="form.fechaConstitucion" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-                </div>
-                <div class="col-span-2">
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Registro oficial</label>
-                  <input v-model="form.registroOficial" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-                </div>
-              </div>
-            </div>
-          </template>
-        </div>
-        <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-          <button @click="cerrarFormulario" class="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
-          <button @click="guardarUnidad" :disabled="!form.nombre || !form.paisId"
-            class="px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
-            {{ editando ? 'Guardar cambios' : 'Crear unidad' }}
-          </button>
-        </div>
-      </div>
     </div>
 
     <!-- Modal confirmación eliminar -->
@@ -180,11 +86,13 @@
 <script setup>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, reactive, computed, watch, onMounted, onActivated, provide } from 'vue'
+import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import { useUnidadesOrganizativas } from '@/composables/useUnidadesOrganizativas'
 import { useGraphQL } from '@/composables/useGraphQL'
 import { useOrgConfigStore } from '@/stores/orgConfig'
+import { usePermisos } from '@/composables/usePermisos.js'
 import NodoArbol from './NodoArbol.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
@@ -195,6 +103,13 @@ const { tipos, unidades, coordinaciones, miembros, loading, error, cargarTipos, 
 const filtersApplied = ref(false)
 const { query: gqlQuery } = useGraphQL()
 const orgConfig = useOrgConfigStore()
+const router = useRouter()
+const { tienePermiso } = usePermisos()
+
+// Crear/editar viven en la vista de detalle (no en modal)
+const irAEditar     = (nodo) => router.push(`/agrupaciones/${nodo.id}?edit=1`)
+const irAAnadirHijo = (nodo) => router.push({ name: 'NuevaAgrupacion', query: { padre: nodo.id } })
+const irANuevaRaiz  = () => router.push({ name: 'NuevaAgrupacion' })
 
 // ── Estado de filtros ──────────────────────────────────────────────────────────
 const busqueda = ref('')

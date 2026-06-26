@@ -1,10 +1,10 @@
 <template>
   <AppLayout
-    :title="agrupacion?.nombre || 'Agrupación'"
-    :subtitle="agrupacion?.tipoUnidad?.nombre || ''">
+    :title="tituloVista"
+    :subtitle="subtituloVista">
 
     <!-- El registro de cargos es una acción de edición, no de consulta -->
-    <template v-if="agrupacion && (tienePermiso('CFG_TERRITORIO_EDITAR') || tienePermiso('NOM_CREATE'))" #actions>
+    <template v-if="!esNuevo && agrupacion && (tienePermiso('CFG_TERRITORIO_EDITAR') || tienePermiso('NOM_CREATE'))" #actions>
       <button type="button" @click="toggleEdicion"
         class="h-8 px-3 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
         :class="editMode ? 'text-slate-600' : 'text-indigo-600'">
@@ -25,6 +25,93 @@
     <div v-else-if="error" class="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
       {{ error }}
     </div>
+
+    <!-- ══ ALTA DE NUEVA UNIDAD ══════════════════════════════════════════════ -->
+    <section v-else-if="esNuevo" :class="cardCls">
+      <div class="px-5 py-4 space-y-5">
+        <!-- Tipo + padre -->
+        <div class="grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
+          <div class="col-span-12 sm:col-span-6">
+            <p :class="lbl">Depende de</p>
+            <p :class="ro">{{ padreUnidad?.nombre || '(unidad raíz)' }}</p>
+          </div>
+          <div class="col-span-12 sm:col-span-6">
+            <p :class="lbl">Tipo de unidad <span class="text-red-400">*</span></p>
+            <select v-model="formTipoId" :class="inp">
+              <option value="">— Seleccionar —</option>
+              <option v-for="t in tiposDisponibles" :key="t.id" :value="t.id">{{ t.nombre }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Generales -->
+        <div class="grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
+          <div class="col-span-12 sm:col-span-8">
+            <p :class="lbl">Nombre oficial <span class="text-red-400">*</span></p>
+            <input v-model="form.nombre" type="text" :class="inp" />
+          </div>
+          <div class="col-span-12 sm:col-span-4">
+            <p :class="lbl">Nombre corto</p>
+            <input v-model="form.nombreCorto" type="text" :class="inp" />
+          </div>
+          <div class="col-span-12">
+            <p :class="lbl">Descripción</p>
+            <textarea v-model="form.descripcion" rows="2" :class="inpTa"></textarea>
+          </div>
+        </div>
+
+        <!-- Contacto -->
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">Contacto</p>
+          <div class="grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
+            <div class="col-span-12 sm:col-span-5"><p :class="lbl">Email</p><input v-model="form.email" type="email" :class="inp" /></div>
+            <div class="col-span-6 sm:col-span-3"><p :class="lbl">Teléfono</p><input v-model="form.telefono" type="text" :class="inp" /></div>
+            <div class="col-span-6 sm:col-span-4"><p :class="lbl">Web</p><input v-model="form.web" type="url" :class="inp" /></div>
+          </div>
+        </div>
+
+        <!-- Ubicación -->
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">Ubicación</p>
+          <div class="grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
+            <div class="col-span-12 sm:col-span-4">
+              <p :class="lbl">País <span class="text-red-400">*</span></p>
+              <select v-model="form.paisId" @change="onPaisChange" :class="inp">
+                <option value="">— Seleccionar —</option>
+                <option v-for="p in paises" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+              </select>
+            </div>
+            <div class="col-span-6 sm:col-span-4">
+              <p :class="lbl">Provincia</p>
+              <select v-model="form.provinciaId" @change="onProvinciaChange" :disabled="!form.paisId" :class="inp + ' disabled:bg-slate-50 disabled:text-slate-400'">
+                <option value="">— Seleccionar —</option>
+                <option v-for="p in provinciasDelPais" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+              </select>
+            </div>
+            <div class="col-span-6 sm:col-span-4">
+              <p :class="lbl">Municipio</p>
+              <select v-model="form.municipioId" :disabled="!form.provinciaId" :class="inp + ' disabled:bg-slate-50 disabled:text-slate-400'">
+                <option value="">— Seleccionar —</option>
+                <option v-for="m in municipios" :key="m.id" :value="m.id">{{ m.nombre }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <ErrorAlert v-if="datosError" :message="datosError" />
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+          <router-link to="/agrupaciones"
+            class="px-4 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50">Cancelar</router-link>
+          <button type="button" @click="guardarNuevo" :disabled="creando || !form.nombre.trim() || !form.paisId || !formTipoId"
+            class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50">
+            <span v-if="creando" class="animate-spin inline-block h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
+            Crear unidad
+          </button>
+        </div>
+      </div>
+    </section>
+
     <div v-else-if="!agrupacion" class="rounded-xl border border-slate-200 bg-white px-6 py-10 text-center text-sm text-slate-500">
       Agrupación no encontrada.
     </div>
@@ -424,7 +511,7 @@
 <script setup>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { useConfirm } from '@/composables/useConfirm'
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ChevronDownIcon, ChevronLeftIcon,
@@ -444,6 +531,89 @@ const router = useRouter()
 const agrupacionId = computed(() => route.params.id)
 // Modo edición: el registro de cargos vive en edición, no en consulta.
 const editMode = ref(false)
+
+// ── Modo alta (crear nueva unidad) ──────────────────────────────────────────
+const esNuevo       = computed(() => route.name === 'NuevaAgrupacion')
+const padreIdParam  = computed(() => route.query.padre || null)
+const niveles       = ref([])   // plantillas de nivel (NivelOrganizativo)
+const todasUnidades = ref([])   // unidades activas (para resolver el padre)
+const formTipoId    = ref('')
+const creando       = ref(false)
+
+const tituloVista = computed(() =>
+  esNuevo.value ? 'Nueva unidad organizativa' : (agrupacion.value?.nombre || 'Agrupación'))
+const subtituloVista = computed(() =>
+  esNuevo.value ? (padreUnidad.value ? `Dependiente de ${padreUnidad.value.nombre}` : 'Unidad raíz')
+                : (agrupacion.value?.tipoUnidad?.nombre || ''))
+
+const padreUnidad = computed(() => todasUnidades.value.find(u => u.id === padreIdParam.value) || null)
+const tiposDisponibles = computed(() => {
+  const terr = niveles.value.filter(t => t.naturaleza === 'TERRITORIAL')
+  if (!padreIdParam.value) return terr.filter(t => !t.padreTipoId)
+  const padreTipoId = padreUnidad.value?.tipoId
+  if (!padreTipoId) return terr
+  return terr.filter(t => t.padreTipoId === padreTipoId)
+})
+watch(tiposDisponibles, (lista) => {
+  if (lista.length === 1) formTipoId.value = lista[0].id
+  else if (!lista.find(t => t.id === formTipoId.value)) formTipoId.value = ''
+})
+
+async function iniciarAlta() {
+  loading.value = true
+  error.value = null
+  try {
+    const [rNiv, rUni, rPaises, rProvs] = await Promise.allSettled([
+      executeQuery(Q_NIVELES),
+      executeQuery(Q_TODAS_UNIDADES),
+      executeQuery(Q_PAISES),
+      executeQuery(Q_PROVINCIAS),
+    ])
+    if (rNiv.status === 'fulfilled')   niveles.value = rNiv.value.nivelesOrganizativos ?? []
+    if (rUni.status === 'fulfilled')   todasUnidades.value = rUni.value.unidadesOrganizativas ?? []
+    if (rPaises.status === 'fulfilled') paises.value = (rPaises.value.paises ?? []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+    if (rProvs.status === 'fulfilled') provincias.value = (rProvs.value.provincias ?? []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+  } catch (e) {
+    error.value = e?.response?.errors?.[0]?.message || 'Error preparando el alta'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function guardarNuevo() {
+  if (!form.nombre.trim() || !form.paisId || !formTipoId.value) return
+  creando.value = true
+  datosError.value = null
+  try {
+    const r = await executeMutation(
+      `mutation CrearUnidad($data: UnidadOrganizativaCreateInput!) {
+         crearUnidadOrganizativa(data: $data) { id }
+       }`,
+      { data: {
+        nombre: form.nombre.trim(),
+        nombreCorto: form.nombreCorto.trim() || null,
+        descripcion: form.descripcion.trim() || null,
+        tipoId: formTipoId.value || null,
+        agrupacionPadreId: padreIdParam.value || null,
+        paisId: form.paisId || null,
+        provinciaId: form.provinciaId || null,
+        municipioId: form.municipioId || null,
+        email: form.email.trim() || null,
+        telefono: form.telefono.trim() || null,
+        web: form.web.trim() || null,
+        nif: form.nif.trim() || null,
+        fechaConstitucion: form.fechaConstitucion || null,
+        registroOficial: form.registroOficial.trim() || null,
+      } }
+    )
+    const nuevoId = r.crearUnidadOrganizativa?.id
+    if (nuevoId) router.push(`/agrupaciones/${nuevoId}`)
+  } catch (e) {
+    datosError.value = e?.response?.errors?.[0]?.message || 'No se pudo crear la unidad.'
+  } finally {
+    creando.value = false
+  }
+}
 
 // Navega a la ficha del socio (vista). Patrón "ojo" reutilizable en datagrids.
 function verFicha(socioId) { router.push(`/miembros/${socioId}`) }
@@ -697,14 +867,27 @@ const Q_MIEMBROS = `
 const Q_TODAS_UNIDADES = `
   query TodasUnidades {
     unidadesOrganizativas(filter: { activo: { eq: true } }) {
-      id nombre
+      id nombre tipoId
       tipoUnidad { id nombre nivel denominacionSingular }
+    }
+  }
+`
+const Q_NIVELES = `
+  query Niveles {
+    nivelesOrganizativos(filter: { activo: { eq: true } }) {
+      id nombre naturaleza padreTipoId
     }
   }
 `
 
 // ── Carga ────────────────────────────────────────────────────────────────────
-onMounted(cargar)
+onMounted(() => {
+  if (esNuevo.value) iniciarAlta()
+  else {
+    cargar()
+    if (route.query.edit) editMode.value = true   // llegada desde "Editar" del árbol
+  }
+})
 
 async function cargar() {
   loading.value = true
