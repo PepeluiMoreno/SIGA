@@ -25,7 +25,7 @@
       :fields="filterFields"
       :lazy="true"
       :loading="loading"
-      :create-label="tienePermiso('ROL_CREATE') ? 'Nuevo rol' : ''"
+      :create-label="tienePermiso('ACCESO_ROL_CREAR') ? 'Nuevo rol' : ''"
       create-route="/roles/nuevo"
       class="mb-4"
       @apply="aplicarFiltros"

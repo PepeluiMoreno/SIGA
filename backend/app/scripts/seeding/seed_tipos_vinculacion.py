@@ -11,21 +11,22 @@ from app.core.database import get_database_url
 from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
 
 
-# (nombre, codigo, ambito, area_responsable, requiere_satelite) — alineado con el
-# catálogo canónico (ver migración p2 y 1_crear_catalogos_base.crear_tipos_vinculacion).
+# (nombre, codigo, ambito, area_responsable, requiere_satelite, permite_cuenta) — alineado
+# con el catálogo canónico (ver migración p2 y 1_crear_catalogos_base.crear_tipos_vinculacion).
+# permite_cuenta: el contacto con ese vínculo puede ser dotado de cuenta de usuario.
 TIPOS = [
-    ("Firmante",     "FIRMANTE",     "central",     "COMUNICACION_FIRMAS",            False),
-    ("Simpatizante", "SIMPATIZANTE", "central",     "COMUNICACION_SIMPATIZANTES",     False),
-    ("Socio",        "SOCIO",        "territorial", "MEMBRESIA_SOCIO_GESTIONAR",      True),
-    ("Voluntario",   "VOLUNTARIO",   "territorial", "MEMBRESIA_VOLUNTARIO_GESTIONAR", True),
-    ("Donante",      "DONANTE",      "central",     "TESORERIA_DONANTES",             False),
-    ("Contratado/a", "EMPLEADO",     "central",     "RECURSOS_HUMANOS",               True),
+    ("Firmante",     "FIRMANTE",     "central",     "COMUNICACION_FIRMAS",            False, False),
+    ("Simpatizante", "SIMPATIZANTE", "central",     "COMUNICACION_SIMPATIZANTES",     False, False),
+    ("Socio",        "SOCIO",        "territorial", "MEMBRESIA_SOCIO_GESTIONAR",      True,  True),
+    ("Voluntario",   "VOLUNTARIO",   "territorial", "MEMBRESIA_VOLUNTARIO_GESTIONAR", True,  True),
+    ("Donante",      "DONANTE",      "central",     "TESORERIA_DONANTES",             False, False),
+    ("Contratado/a", "EMPLEADO",     "central",     "RECURSOS_HUMANOS",               True,  True),
 ]
 
 
 async def seed(session: AsyncSession):
     print("\n— Tipos de vinculación —")
-    for nombre, codigo, ambito, area, requiere_satelite in TIPOS:
+    for nombre, codigo, ambito, area, requiere_satelite, permite_cuenta in TIPOS:
         res = await session.execute(
             select(TipoVinculacion).where(TipoVinculacion.codigo == codigo)
         )
@@ -35,6 +36,7 @@ async def seed(session: AsyncSession):
         session.add(TipoVinculacion(
             nombre=nombre, codigo=codigo, ambito=ambito,
             area_responsable=area, requiere_satelite=requiere_satelite,
+            permite_cuenta=permite_cuenta,
         ))
         print(f"  + creado:    {codigo}")
     await session.flush()

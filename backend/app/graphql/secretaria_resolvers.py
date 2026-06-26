@@ -189,6 +189,7 @@ class LibroSociosSnapshotGQL:
     total_socios_historico: int
     motivo: Optional[str]
     observaciones: Optional[str]
+    tiene_pdf: bool
 
     @staticmethod
     def from_model(m: LibroSociosSnapshot) -> 'LibroSociosSnapshotGQL':
@@ -199,6 +200,7 @@ class LibroSociosSnapshotGQL:
             total_socios_baja=m.total_socios_baja,
             total_socios_historico=m.total_socios_historico,
             motivo=m.motivo, observaciones=m.observaciones,
+            tiene_pdf=bool(m.ruta_pdf),
         )
 
 

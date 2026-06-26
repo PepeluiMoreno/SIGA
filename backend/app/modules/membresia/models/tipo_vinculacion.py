@@ -25,6 +25,7 @@ class TipoVinculacion(BaseModel):
     - ambito: 'territorial' o 'central' (quién lo gestiona)
     - area_responsable: transacción RBAC que lo gobierna (ej. MEMBRESIA_SOCIO_GESTIONAR)
     - requiere_satelite: si este tipo necesita una tabla satélite con datos propios
+    - permite_cuenta: si un contacto con este vínculo puede recibir cuenta de usuario
     """
 
     __tablename__ = "tipos_vinculacion"

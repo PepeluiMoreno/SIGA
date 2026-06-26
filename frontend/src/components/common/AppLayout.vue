@@ -368,14 +368,14 @@
           <!-- Configuración — anclada al fondo -->
           <div class="mt-auto pt-2">
             <hr class="nav-sep" />
-            <div v-if="tieneAlguno('CFG_VIEW','CFG_CONFIGURACION_EDITAR','ACTIVIDAD_CATALOGO_GESTIONAR','USR_LIST','ROL_LIST','PERM_ASSIGN','AUD_VIEW')" class="mb-1">
+            <div v-if="tieneAlguno('CFG_CONFIGURACION_LEER','CFG_CONFIGURACION_EDITAR','ACTIVIDAD_CATALOGO_GESTIONAR','ACCESO_USUARIO_LISTAR','ACCESO_ROL_LISTAR','ACCESO_ROL_ASIGNAR','ACCESO_AUDITORIA_LEER')" class="mb-1">
               <button @click="toggleSection('configuracion')" class="section-btn">
                 <span>Configuración</span>
                 <ChevronDownIcon class="chevron" :class="openSections.configuracion ? '' : '-rotate-90'" />
               </button>
               <div class="accordion-wrap" :class="{ closed: !openSections.configuracion }">
                 <ul class="space-y-1 pb-1">
-                  <li v-if="tienePermiso('CFG_VIEW')">
+                  <li v-if="tienePermiso('CFG_CONFIGURACION_LEER')">
                     <router-link to="/configuracion/general" class="nav-item"
                       :class="$route.path.startsWith('/configuracion/general') ? 'active' : 'inactive'">
                       <BuildingOffice2Icon class="nav-icon" /><span>Parámetros Generales</span>
@@ -393,28 +393,28 @@
                       <SwatchIcon class="nav-icon" /><span>Temas de color</span>
                     </router-link>
                   </li>
-                  <li v-if="tieneAlguno('USR_LIST','ROL_LIST','PERM_ASSIGN','AUD_VIEW')" class="pt-2 pb-0.5 px-3">
+                  <li v-if="tieneAlguno('ACCESO_USUARIO_LISTAR','ACCESO_ROL_LISTAR','ACCESO_ROL_ASIGNAR','ACCESO_AUDITORIA_LEER')" class="pt-2 pb-0.5 px-3">
                     <span class="text-[10px] font-semibold text-purple-500 uppercase tracking-wider">Control de Acceso</span>
                   </li>
-                  <li v-if="tienePermiso('USR_LIST')">
+                  <li v-if="tienePermiso('ACCESO_USUARIO_LISTAR')">
                     <router-link to="/usuarios" class="nav-item"
                       :class="$route.path.startsWith('/usuarios') ? 'active' : 'inactive'">
                       <UsersIcon class="nav-icon" /><span>Usuarios</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('ROL_LIST')">
+                  <li v-if="tienePermiso('ACCESO_ROL_LISTAR')">
                     <router-link to="/roles" class="nav-item"
                       :class="$route.path.startsWith('/roles') ? 'active' : 'inactive'">
                       <KeyIcon class="nav-icon" /><span>Roles y Permisos</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('PERM_ASSIGN')">
+                  <li v-if="tienePermiso('ACCESO_ROL_ASIGNAR')">
                     <router-link to="/transacciones" class="nav-item"
                       :class="$route.path.startsWith('/transacciones') ? 'active' : 'inactive'">
                       <ListBulletIcon class="nav-icon" /><span>Catálogo RBAC</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('AUD_VIEW')">
+                  <li v-if="tienePermiso('ACCESO_AUDITORIA_LEER')">
                     <router-link to="/auditoria" class="nav-item"
                       :class="$route.path.startsWith('/auditoria') ? 'active' : 'inactive'">
                       <ClipboardDocumentListIcon class="nav-icon" /><span>Auditoría</span>

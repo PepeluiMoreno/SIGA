@@ -66,7 +66,7 @@ _ROLES = [
         "nivel": 15,
         "es_territorial": True,
         "transacciones": [
-            "MEMBRESIA_MIEMBRO_LISTAR", "SOC_VIEW", "SOC_CREATE", "SOC_EDIT",
+            "MEMBRESIA_MIEMBRO_LISTAR", "SOC_VIEW", "MEMBRESIA_MIEMBRO_CREAR", "SOC_EDIT",
             "SOC_DEACTIVATE", "SOC_REACTIVATE", "SOC_CHANGE_TYPE", "MEMBRESIA_MIEMBRO_EXPORTAR",
             "TIPOSOC_MANAGE",
             "TRAS_REQUEST", "TRAS_LIST", "TRAS_APPROVE", "TRAS_REJECT",

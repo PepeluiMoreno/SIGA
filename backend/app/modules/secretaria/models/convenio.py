@@ -101,9 +101,41 @@ class Convenio(BaseModel):
     firmante = relationship('Contacto', foreign_keys=[firmante_id], lazy='selectin')
     acuerdo_autorizacion = relationship('Acuerdo', foreign_keys=[acuerdo_autorizacion_id])
     participacion = relationship('Participacion', back_populates='convenio', foreign_keys=[participacion_id], lazy='selectin')
+    firmantes = relationship(
+        'ConvenioFirmante', back_populates='convenio', lazy='selectin',
+        cascade='all, delete-orphan', order_by='ConvenioFirmante.orden',
+    )
 
     def __repr__(self) -> str:
         return f"<Convenio(referencia='{self.referencia}', estado='{self.estado}')>"
+
+
+class ConvenioFirmante(BaseModel):
+    """Firmante de un convenio, por cada parte (asociación / contraparte).
+
+    Guarda nombre/NIF/cargo como **instantánea** del momento de la firma: un
+    convenio es un documento legal, así que importan los datos del firmante tal
+    como firmó, no un enlace vivo a un Contacto que puede cambiar.
+    """
+    __tablename__ = 'sec_convenio_firmantes'
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    convenio_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('sec_convenios.id', ondelete='CASCADE'), nullable=False, index=True
+    )
+    parte: Mapped[str] = mapped_column(
+        String(20), nullable=False,
+        comment="ASOCIACION | CONTRAPARTE",
+    )
+    nombre: Mapped[str] = mapped_column(String(200), nullable=False)
+    nif: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    cargo: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
+    orden: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    convenio = relationship('Convenio', back_populates='firmantes')
+
+    def __repr__(self) -> str:
+        return f"<ConvenioFirmante(parte='{self.parte}', nombre='{self.nombre}')>"
 
 
 # Alias de compatibilidad: el modelo se llamaba ConvenioInstitucional.

@@ -323,6 +323,125 @@ async def _enmascarar_datos_bancarios(info, session, socios):
     return socios
 
 
+@strawberry.type(name="ContactoDotable")
+class ContactoDotableType:
+    """Contacto candidato a recibir cuenta de usuario, con su vínculo y estado de acceso.
+
+    Vista plana para el panel de «Nuevo usuario»: identidad mínima del contacto,
+    el tipo de vínculo vigente que lo hace dotable y si ya tiene cuenta.
+    """
+    id: uuid.UUID
+    tipo: str = "PERSONA_FISICA"  # PERSONA_FISICA | PERSONA_JURIDICA
+    nombre: str = ""
+    apellido1: Optional[str] = None
+    apellido2: Optional[str] = None
+    razon_social: Optional[str] = None
+    email: Optional[str] = None
+    telefono: Optional[str] = None
+    foto_url: Optional[str] = None
+
+    tipo_vinculacion_id: Optional[uuid.UUID] = None
+    tipo_vinculacion_nombre: Optional[str] = None
+    tipo_vinculacion_codigo: Optional[str] = None
+
+    agrupacion_id: Optional[uuid.UUID] = None
+    agrupacion: Optional[UnidadOrganizativaType] = None
+
+    tiene_acceso: bool = False
+
+
+async def _construir_contactos_dotables(
+    session,
+    *,
+    tipo_vinculacion_id: Optional[uuid.UUID] = None,
+    texto: Optional[str] = None,
+) -> List[ContactoDotableType]:
+    """Reconstruye los `ContactoDotableType` con consultas por lote (sin N+1).
+
+    Un contacto es dotable si tiene una vinculación vigente (no cerrada, no
+    eliminada) cuyo tipo declara `permite_cuenta=True`. Si un mismo contacto
+    tiene varios vínculos dotables, se prioriza el de mayor «peso» de acceso
+    (por orden de aparición); basta uno para que aparezca una vez.
+    """
+    q = (
+        select(Vinculacion, TipoVinculacion, Contacto)
+        .join(TipoVinculacion, Vinculacion.tipo_vinculacion_id == TipoVinculacion.id)
+        .join(Contacto, Vinculacion.contacto_id == Contacto.id)
+        .where(
+            TipoVinculacion.permite_cuenta == True,  # noqa: E712
+            TipoVinculacion.activo == True,  # noqa: E712
+            Vinculacion.eliminado == False,  # noqa: E712
+            Vinculacion.estado != "cerrada",
+            Contacto.eliminado == False,  # noqa: E712
+            Contacto.activo == True,  # noqa: E712
+        )
+    )
+    if tipo_vinculacion_id is not None:
+        q = q.where(Vinculacion.tipo_vinculacion_id == tipo_vinculacion_id)
+    if texto:
+        patron = f"%{texto.strip().lower()}%"
+        q = q.where(
+            func.lower(
+                func.concat_ws(
+                    " ", Contacto.nombre, Contacto.apellido1,
+                    Contacto.apellido2, Contacto.razon_social,
+                )
+            ).like(patron)
+        )
+
+    filas = (await session.execute(q)).all()
+
+    # Dedup por contacto: un contacto dotable aparece una sola vez. Conservamos
+    # el primer vínculo encontrado (orden de la consulta).
+    por_contacto: dict[uuid.UUID, ContactoDotableType] = {}
+    for vinc, tipo, contacto in filas:
+        if contacto.id in por_contacto:
+            continue
+        por_contacto[contacto.id] = ContactoDotableType(
+            id=contacto.id,
+            tipo=contacto.tipo,
+            nombre=contacto.nombre,
+            apellido1=contacto.apellido1,
+            apellido2=contacto.apellido2,
+            razon_social=contacto.razon_social,
+            email=contacto.email,
+            telefono=contacto.telefono,
+            foto_url=contacto.foto_url,
+            tipo_vinculacion_id=tipo.id,
+            tipo_vinculacion_nombre=tipo.nombre,
+            tipo_vinculacion_codigo=tipo.codigo,
+            agrupacion_id=contacto.agrupacion_id,
+            agrupacion=contacto.agrupacion if contacto.agrupacion_id else None,
+        )
+
+    if not por_contacto:
+        return []
+
+    # tiene_acceso: existe un Usuario (no eliminado) ligado a ese contacto.
+    ids = list(por_contacto.keys())
+    con_cuenta = set(
+        (await session.execute(
+            select(Usuario.contacto_id).where(
+                Usuario.contacto_id.in_(ids),
+                Usuario.eliminado == False,  # noqa: E712
+            )
+        )).scalars().all()
+    )
+    for cid in con_cuenta:
+        if cid in por_contacto:
+            por_contacto[cid].tiene_acceso = True
+
+    # Orden estable: apellidos / razón social.
+    return sorted(
+        por_contacto.values(),
+        key=lambda c: (
+            (c.apellido1 or c.razon_social or c.nombre or "").lower(),
+            (c.apellido2 or "").lower(),
+            (c.nombre or "").lower(),
+        ),
+    )
+
+
 @strawberry.type
 class SociosQuery:
     @strawberry.field
@@ -364,3 +483,26 @@ class SociosQuery:
             .join(TipoVinculacion, Vinculacion.tipo_vinculacion_id == TipoVinculacion.id)
             .where(TipoVinculacion.codigo == "SOCIO", Vinculacion.eliminado == False)  # noqa: E712
         )).scalar() or 0
+
+    @strawberry.field(permission_classes=[RequireTransaction("ACCESO_USUARIO_CREAR")])
+    async def contactos_dotables(
+        self,
+        info: strawberry.Info,
+        tipo_vinculacion_id: Optional[uuid.UUID] = None,
+        texto: Optional[str] = None,
+    ) -> List['ContactoDotableType']:
+        """Contactos que pueden ser dotados de cuenta de usuario de la aplicación.
+
+        Un contacto es «dotable» si tiene una vinculación vigente cuyo
+        `TipoVinculacion.permite_cuenta` es True. Alimenta el panel de la vista
+        «Nuevo usuario», donde se elige a quién se le da acceso.
+
+        Filtros opcionales:
+          - tipoVinculacionId: restringe a un tipo de vínculo concreto (debe ser
+            de los que permiten cuenta).
+          - texto: subcadena (case-insensitive) sobre nombre/apellidos/razón social.
+        """
+        session = info.context.session
+        return await _construir_contactos_dotables(
+            session, tipo_vinculacion_id=tipo_vinculacion_id, texto=texto,
+        )

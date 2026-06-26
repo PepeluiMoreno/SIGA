@@ -6,7 +6,7 @@
       v-model="filters"
       v-model:search="searchQuery"
       search-placeholder="Buscar por nombre, apellido o email…"
-      :create-label="tienePermiso('USR_CREATE') ? 'Nuevo usuario' : ''"
+      :create-label="tienePermiso('ACCESO_USUARIO_CREAR') ? 'Nuevo usuario' : ''"
       create-route="/usuarios/crear"
       :fields="filterFields"
       description="usuarios con acceso a SIGA"

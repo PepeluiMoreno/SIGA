@@ -45,7 +45,7 @@
             class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200 rounded-lg transition-colors">
             <DocumentDuplicateIcon class="w-3.5 h-3.5" /> Clonar
           </button>
-          <button v-if="esEliminable && tienePermiso('CAMP_DELETE')"
+          <button v-if="esEliminable && tienePermiso('CAMPANA_ELIMINAR')"
             @click="confirmarEliminar = true"
             class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200 rounded-lg transition-colors">
             <TrashIcon class="w-3.5 h-3.5" /> Eliminar

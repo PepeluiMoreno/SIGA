@@ -86,49 +86,49 @@ const routes = [
     path: '/usuarios',
     component: ListaUsuarios,
     name: 'Usuarios',
-    meta: { requiresAuth: true, requiredPermission: 'USR_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'ACCESO_USUARIO_LISTAR' }
   },
   {
     path: '/usuarios/crear',
     component: () => import('@/modules/acceso/views/CrearUsuario.vue'),
     name: 'CrearUsuario',
-    meta: { requiresAuth: true, requiredPermission: 'USR_CREATE' }
+    meta: { requiresAuth: true, requiredPermission: 'ACCESO_USUARIO_CREAR' }
   },
   {
     path: '/roles',
     component: () => import('@/modules/acceso/views/ListaRoles.vue'),
     name: 'Roles',
-    meta: { requiresAuth: true, requiredPermission: 'ROL_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'ACCESO_ROL_LISTAR' }
   },
   {
     path: '/roles/nuevo',
     component: () => import('@/modules/acceso/views/FormularioRol.vue'),
     name: 'NuevoRol',
-    meta: { requiresAuth: true, requiredPermission: 'ROL_CREATE' }
+    meta: { requiresAuth: true, requiredPermission: 'ACCESO_ROL_CREAR' }
   },
   {
     path: '/roles/:id/editar',
     component: () => import('@/modules/acceso/views/FormularioRol.vue'),
     name: 'EditarRol',
-    meta: { requiresAuth: true, requiredPermission: 'ROL_EDIT' }
+    meta: { requiresAuth: true, requiredPermission: 'ACCESO_ROL_EDITAR' }
   },
   {
     path: '/roles/:id/permisos',
     component: () => import('@/modules/acceso/views/PermisosRol.vue'),
     name: 'PermisosRol',
-    meta: { requiresAuth: true, requiredPermission: 'ROL_EDIT' }
+    meta: { requiresAuth: true, requiredPermission: 'ACCESO_ROL_EDITAR' }
   },
   {
     path: '/transacciones',
     component: () => import('@/modules/acceso/views/ListaTransacciones.vue'),
     name: 'Transacciones',
-    meta: { requiresAuth: true, requiredPermission: 'PERM_ASSIGN' }
+    meta: { requiresAuth: true, requiredPermission: 'ACCESO_ROL_ASIGNAR' }
   },
   {
     path: '/auditoria',
     component: () => import('@/modules/acceso/views/LogAuditoria.vue'),
     name: 'Auditoria',
-    meta: { requiresAuth: true, requiredPermission: 'AUD_VIEW' }
+    meta: { requiresAuth: true, requiredPermission: 'ACCESO_AUDITORIA_LEER' }
   },
 
   // ─── MEMBRESIA ────────────────────────────────────────────────────────────
@@ -142,7 +142,7 @@ const routes = [
     path: '/miembros/nuevo',
     component: () => import('@/modules/membresia/views/DetalleMiembro.vue'),
     name: 'NuevoMiembro',
-    meta: { requiresAuth: true, requiredPermission: 'SOC_CREATE' }
+    meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_MIEMBRO_CREAR' }
   },
   {
     path: '/miembros/:id',
@@ -506,7 +506,7 @@ const routes = [
     path: '/configuracion/general',
     component: () => import('@/modules/configuracion/views/ParametrosGenerales.vue'),
     name: 'ParametrosGenerales',
-    meta: { requiresAuth: true, requiredPermission: 'CFG_VIEW' }
+    meta: { requiresAuth: true, requiredPermission: 'CFG_CONFIGURACION_LEER' }
   },
   {
     path: '/parametrizacion',

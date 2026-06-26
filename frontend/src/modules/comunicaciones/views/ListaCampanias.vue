@@ -139,7 +139,7 @@
             <!-- Pie de tarjeta -->
             <div class="px-4 py-2.5 border-t border-slate-100 flex items-center justify-between">
               <div class="flex items-center gap-1">
-                <button v-if="esEliminable(c) && tienePermiso('CAMP_DELETE')"
+                <button v-if="esEliminable(c) && tienePermiso('CAMPANA_ELIMINAR')"
                   @click.stop="campanaAEliminar = c"
                   class="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
                   title="Eliminar">
