@@ -35,6 +35,7 @@ class ParametrosOrganizacion:
     cp: str
     provincia: str
     pais: str
+    sede_entidad_geografica_id: Optional[str]
     telefono: str
     email: str
     web: str
@@ -97,6 +98,7 @@ def _dict_to_parametros(cfg: dict) -> ParametrosOrganizacion:
         cp=cfg.get('org.cp', ''),
         provincia=cfg.get('org.provincia', ''),
         pais=cfg.get('org.pais', 'España'),
+        sede_entidad_geografica_id=cfg.get('org.sede_entidad_geografica_id', '') or None,
         telefono=cfg.get('org.telefono', ''),
         email=cfg.get('org.email', ''),
         web=cfg.get('org.web', ''),
@@ -162,6 +164,7 @@ class ParametrosOrganizacionInput:
     cp: Optional[str] = ''
     provincia: Optional[str] = ''
     pais: Optional[str] = 'España'
+    sede_entidad_geografica_id: Optional[str] = ''
     telefono: Optional[str] = ''
     email: Optional[str] = ''
     web: Optional[str] = ''

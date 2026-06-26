@@ -60,6 +60,18 @@
                 <input v-model="form.pais" type="text" class="input" />
               </div>
             </div>
+            <!-- Entidad geográfica de la sede (referencia canónica a la tabla geográfica) -->
+            <div>
+              <EntidadGeograficaSelect
+                v-model="form.sede_entidad_geografica_id"
+                label="Entidad geográfica de la sede"
+                :niveles="[2, 3]"
+                placeholder="Buscar municipio o provincia…"
+              />
+              <p class="mt-1 text-xs text-slate-400">
+                Vincula la sede al municipio o provincia del catálogo geográfico (se usa para informes y ámbitos).
+              </p>
+            </div>
             <div class="flex flex-wrap items-end gap-3">
               <div class="w-full sm:w-40 flex-shrink-0">
                 <label class="label">Teléfono <span class="text-red-500">*</span></label>
@@ -519,6 +531,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import EstructuraOrganizativaEditor from '@/components/configuracion/EstructuraOrganizativaEditor.vue'
+import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { CheckCircleIcon } from '@heroicons/vue/24/outline'
@@ -571,6 +584,7 @@ const form = reactive({
   cp: '',
   provincia: '',
   pais: 'España',
+  sede_entidad_geografica_id: null,
   telefono: '',
   email: '',
   web: '',
@@ -712,7 +726,7 @@ const QUERY_PARAMETROS = `
   query {
     parametrosOrganizacion {
       nombre nif numeroRegistro tipoEntidad contabilidadCompleja usaPresupuesto
-      sedeSocial localidad cp provincia pais
+      sedeSocial localidad cp provincia pais sedeEntidadGeograficaId
       telefono email web
       rrssTwitter rrssFacebook rrssInstagram rrssLinkedin rrssYoutube rrssTelegram
       logo denominacionMiembro denominacionMiembroPlural
@@ -779,6 +793,7 @@ onMounted(async () => {
     form.cp                              = p.cp                               ?? ''
     form.provincia                       = p.provincia                        ?? ''
     form.pais                            = p.pais                             ?? 'España'
+    form.sede_entidad_geografica_id      = p.sedeEntidadGeograficaId          ?? null
     form.telefono                        = p.telefono                         ?? ''
     form.email                           = p.email                            ?? ''
     form.web                             = p.web                              ?? ''
@@ -854,6 +869,7 @@ async function guardar() {
         cp:                              form.cp,
         provincia:                       form.provincia,
         pais:                            form.pais,
+        sedeEntidadGeograficaId:         form.sede_entidad_geografica_id || '',
         telefono:                        form.telefono,
         email:                           form.email,
         web:                             form.web,
