@@ -40,7 +40,7 @@ jobs:
           uv run python -c "
           import ast, sys, pathlib
           errores = []
-          for f in pathlib.Path('app/domains/financiero').rglob('*.py'):
+          for f in pathlib.Path('app/modules').rglob('*.py'):
               try:
                   ast.parse(f.read_text())
               except SyntaxError as e:
@@ -49,18 +49,18 @@ jobs:
               print('ERRORES DE SINTAXIS:')
               for e in errores: print(e)
               sys.exit(1)
-          print(f'OK: sintaxis correcta en {len(list(pathlib.Path(\"app/domains/financiero\").rglob(\"*.py\")))} archivos')
+          print(f'OK: sintaxis correcta en {len(list(pathlib.Path(\"app/modules\").rglob(\"*.py\")))} archivos')
           "
 
       - name: Lint (ruff)
         run: |
           cd backend
-          uv run ruff check app/domains/financiero/ --select E,F,W --ignore E501 || true
+          uv run ruff check app/modules/ --select E,F,W --ignore E501 || true
 
       - name: Run tests
         run: |
           cd backend
-          uv run python -m pytest app/tests/ -v --tb=short -q 2>/dev/null || echo 'No tests found yet'
+          uv run python -m pytest tests/ -v --tb=short -q 2>/dev/null || echo 'No tests found yet'
 
   validate-frontend:
     runs-on: ubuntu-latest

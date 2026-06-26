@@ -52,7 +52,6 @@ out/
 
 # Logs & temp
 *.log
-.claude/
 instance/
 .pytest_cache/
 .coverage
@@ -62,3 +61,8 @@ htmlcov/
 etl/
 migration_scripts/
 docs/etl_migracion_legacy.md
+
+# Multi-agente: identidad por-worktree (local, no viaja) y carpeta de worktrees
+.claude/AGENTE.local.md
+.claude/settings.local.json
+/SIGA-wt/
