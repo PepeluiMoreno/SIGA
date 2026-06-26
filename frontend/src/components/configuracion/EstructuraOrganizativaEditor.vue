@@ -138,6 +138,31 @@
       </div>
     </div>
   </Teleport>
+
+  <!-- Modal confirmación de paso a estructura distribuida -->
+  <Teleport to="body">
+    <div v-if="confirmDistribuida" class="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-xl p-5 max-w-md w-full mx-4">
+        <h3 class="font-semibold text-gray-900 mb-3">Cambiar a estructura distribuida</h3>
+        <p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded p-3 mb-3">
+          <strong>Atención:</strong> en una estructura distribuida solo se conserva el
+          <strong>primer nivel</strong>. Se eliminarán
+          <strong>{{ nivelesBajoElPrimero.length }} nivel{{ nivelesBajoElPrimero.length === 1 ? '' : 'es' }}</strong>
+          (de segundo nivel hacia abajo) y a partir de ahora <strong>cada agrupación territorial
+          definirá su propia subestructura</strong>.
+        </p>
+        <p class="text-sm text-gray-500 mb-4">Esta acción no se puede deshacer.</p>
+        <div class="flex justify-end gap-2">
+          <button type="button" @click="confirmDistribuida = false"
+            class="text-sm px-3 py-1.5 border border-gray-200 rounded hover:bg-gray-50">Cancelar</button>
+          <button type="button" @click="aplicarDistribuida(true)" :disabled="guardando"
+            class="text-sm px-3 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-40">
+            Borrar subniveles y distribuir
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -176,6 +201,7 @@ const guardando     = ref(false)
 const errorMsg      = ref('')
 const pendingDelete = ref(null)
 const seleccionadoId = ref(null)
+const confirmDistribuida = ref(false)
 
 const ambitos = ref([])
 const ambitosOrdenados = computed(() =>
@@ -236,19 +262,48 @@ const nodoRaizActual = computed(() =>
   nodoScope.value ?? (raicesReales.value.length ? raicesReales.value[0] : null)
 )
 const distribuida = computed(() => !!nodoRaizActual.value?.estructuraDistribuida)
+// En distribuida no se anidan subniveles aquí: cada agrupación define los suyos
+const permiteSubniveles = computed(() => !distribuida.value)
+
+// Niveles que se borrarían al pasar a distribuida (de segundo nivel hacia abajo)
+const nivelesBajoElPrimero = computed(() => arbolPlano.value.filter(n => n.depth >= 1))
 
 const setDistribuida = async (val) => {
   const nodo = nodoRaizActual.value
   if (!nodo || guardando.value || distribuida.value === val) return
+  // Pasar a distribuida borra la jerarquía de 2.º nivel hacia abajo → confirmar
+  if (val && nivelesBajoElPrimero.value.length) {
+    confirmDistribuida.value = true
+    return
+  }
+  await aplicarDistribuida(val)
+}
+
+// Aplica el cambio de modelo. Al pasar a distribuida, borra los niveles por
+// debajo del primero (cada agrupación definirá su subestructura) y deja la
+// bandera puesta para habilitar el editor dentro de la agrupación territorial.
+const aplicarDistribuida = async (val) => {
+  const nodo = nodoRaizActual.value
+  if (!nodo) return
   guardando.value = true
   errorMsg.value  = ''
   try {
+    if (val) {
+      // borrar de más profundo a más superficial; reubicar unidades en su padre
+      const aBorrar = [...nivelesBajoElPrimero.value].sort((a, b) => b.depth - a.depth)
+      for (const n of aBorrar) {
+        const units = unidades.value.filter(u => u.tipoId === n.id)
+        for (const u of units) await actualizarUnidad({ id: u.id, tipoId: n.padreTipoId || null })
+        await eliminarTipo(n.id)
+      }
+    }
     await actualizarTipo({ id: nodo.id, estructuraDistribuida: val })
     await recargarConfig()
   } catch (e) {
     errorMsg.value = e?.response?.errors?.[0]?.message ?? 'Error al cambiar el modelo de estructura'
   } finally {
     guardando.value = false
+    confirmDistribuida.value = false
   }
 }
 
@@ -512,12 +567,13 @@ const acciones = computed(() => {
   }
   const n = nodoSel.value
   if (n) {
+    const sin = !permiteSubniveles.value  // distribuida ⇒ no se anidan subniveles
     list.push({ key: 'editar',   label: 'Editar' })
-    list.push({ key: 'hijo',     label: 'Añadir nivel inferior' })
+    list.push({ key: 'hijo',     label: 'Añadir nivel inferior', hidden: sin })
     list.push({ key: 'hermano',  label: 'Añadir al mismo nivel', hidden: !puedeHermano(n) })
-    list.push({ key: 'superior', label: 'Insertar encima',       hidden: !puedeSuperior(n) })
+    list.push({ key: 'superior', label: 'Insertar encima',       hidden: !puedeSuperior(n) || sin })
     list.push({ key: 'subir',    label: 'Subir un nivel',        hidden: !puedeSubir(n) })
-    list.push({ key: 'anidar',   label: 'Anidar en el anterior', hidden: !prevSiblingOf(n) })
+    list.push({ key: 'anidar',   label: 'Anidar en el anterior', hidden: !prevSiblingOf(n) || sin })
     list.push({ key: 'eliminar', label: 'Eliminar', variant: 'danger', hidden: !puedeEliminar(n) })
   }
   return list
