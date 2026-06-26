@@ -31,36 +31,32 @@
 
       <!-- IZQUIERDA · grid de niveles (nivel · ámbito · denominación) -->
       <div>
-        <table class="w-full text-sm border-separate border-spacing-0">
+        <table class="w-full text-sm border-collapse border border-slate-200">
           <thead>
-            <tr class="text-left text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              <th class="pb-2 pr-2">Nivel</th>
-              <th class="pb-2 pr-2 w-28">Ámbito</th>
-              <th class="pb-2 pr-2">Denominación</th>
-              <th class="pb-2 w-0"></th>
+            <tr class="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              <th class="px-2 py-2 border-b border-slate-200 w-14 text-center">Nivel</th>
+              <th class="px-3 py-2 border-b border-slate-200">Nombre</th>
+              <th class="px-3 py-2 border-b border-slate-200 w-32">Ámbito</th>
+              <th class="px-3 py-2 border-b border-slate-200">Denominación</th>
+              <th class="px-1 py-2 border-b border-slate-200 w-px"></th>
             </tr>
           </thead>
           <tbody>
             <template v-for="item in arbolPlano" :key="item.id">
               <!-- Lectura -->
-              <tr v-if="editandoId !== item.id" class="group border-t border-slate-100 hover:bg-slate-50/70">
-                <td class="py-2 pr-2 align-middle">
-                  <span class="flex items-center gap-1.5 min-w-0" :style="{ paddingLeft: item.depth * 16 + 'px' }">
-                    <span class="flex-shrink-0 w-3 text-center"
-                      :class="item.depth === 0 ? 'text-purple-400 text-xs' : 'text-slate-300 text-sm'">{{ item.depth === 0 ? '●' : '└' }}</span>
-                    <span class="truncate" :class="item.depth === 0 ? 'font-medium text-slate-800' : 'text-slate-700'">{{ item.nombre }}</span>
-                  </span>
+              <tr v-if="editandoId !== item.id" class="group border-b border-slate-100 hover:bg-slate-50">
+                <td class="px-2 py-1.5 align-middle text-center text-slate-400 tabular-nums">{{ item.depth + 1 }}</td>
+                <td class="px-3 py-1.5 align-middle">
+                  <span class="block truncate" :class="item.depth === 0 ? 'font-medium text-slate-800' : 'text-slate-700'">{{ item.nombre }}</span>
                 </td>
-                <td class="py-2 pr-2 align-middle">
-                  <span v-if="item.ambitoGeografico"
-                    class="inline-block px-1.5 py-0.5 text-[11px] rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 leading-none">{{ item.ambitoGeografico.nombre }}</span>
-                  <span v-else class="text-xs text-slate-300 italic">sin ámbito</span>
+                <td class="px-3 py-1.5 align-middle text-slate-600">
+                  {{ item.ambitoGeografico?.nombre || '—' }}
                 </td>
-                <td class="py-2 pr-2 align-middle text-xs text-slate-500">
-                  <span v-if="item.denominacionSingular" class="truncate" :title="item.denominacionSingular">{{ item.denominacionSingular }}<span v-if="item.denominacionPlural" class="text-slate-400"> / {{ item.denominacionPlural }}</span></span>
-                  <span v-else class="text-slate-300">—</span>
+                <td class="px-3 py-1.5 align-middle text-slate-600">
+                  <span class="block truncate"
+                    :title="item.denominacionPlural ? `${item.denominacionSingular} / ${item.denominacionPlural}` : (item.denominacionSingular || '')">{{ item.denominacionSingular || '—' }}</span>
                 </td>
-                <td class="py-1 align-middle">
+                <td class="px-1 py-1 align-middle">
                   <div class="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                     <button v-if="puedeSubir(item)" type="button" @click="promover(item)" :disabled="guardando"
                       title="Subir un nivel (promover)"
@@ -88,7 +84,7 @@
 
               <!-- Edición: mini-formulario con etiquetas (ocupa toda la fila) -->
               <tr v-else class="border-t border-purple-200">
-                <td colspan="4" class="py-2">
+                <td colspan="5" class="py-2">
                   <div class="rounded-lg border border-purple-300 bg-purple-50/40 p-2.5 space-y-2">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2">
                       <label class="block">
