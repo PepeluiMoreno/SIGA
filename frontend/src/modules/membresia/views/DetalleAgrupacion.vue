@@ -298,8 +298,14 @@
           <ChevronDownIcon :class="chevronCls(open.junta)" />
         </button>
         <div v-show="open.junta" class="px-5 pb-4 pt-2">
+          <div v-if="editMode && tienePermiso('NOM_CREATE')" class="flex justify-end mb-3">
+            <button type="button" @click="abrirRegistro(null)"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition-colors">
+              <PlusIcon class="w-3.5 h-3.5" /> Registrar cargo
+            </button>
+          </div>
           <div v-if="!composicionJunta.length" class="py-8 text-center text-xs text-slate-400 italic">
-            Sin cargos electos en esta unidad. Regístralos en «{{ orgConfig.Miembros }} de la unidad» (modo edición).
+            Sin cargos electos en esta unidad.<template v-if="!editMode"> Entra en modo edición para registrarlos.</template>
           </div>
           <div v-else class="overflow-x-auto -mx-1"><table class="w-full">
             <thead>
@@ -429,16 +435,16 @@
             <p class="text-sm text-slate-700 font-medium">{{ modal.rolNombre }}</p>
           </div>
 
-          <!-- Titular: solo socios activos de esta unidad territorial -->
+          <!-- Titular: socios de esta unidad y de las que cuelgan de ella (recursivo) -->
           <div>
             <label :class="lbl">Titular <span class="text-red-400">*</span></label>
             <select v-model="modal.miembroId" :class="inp">
               <option :value="null">— Seleccionar {{ orgConfig.miembro }} activo —</option>
-              <option v-for="m in miembros" :key="m.id" :value="m.id">
-                {{ [m.apellido1, m.apellido2].filter(Boolean).join(' ') }}, {{ m.nombre }}{{ m.email ? ` · ${m.email}` : '' }}
+              <option v-for="m in candidatosJunta" :key="m.id" :value="m.id">
+                {{ [m.apellido1, m.apellido2].filter(Boolean).join(' ') }}, {{ m.nombre }}<template v-if="m.agrupacionId && m.agrupacionId !== agrupacionId"> · {{ nombreUnidad(m.agrupacionId) }}</template>
               </option>
             </select>
-            <p v-if="!miembros.length" class="mt-1 text-xs text-slate-400">No hay {{ orgConfig.miembros }} activos en esta unidad.</p>
+            <p v-if="!candidatosJunta.length" class="mt-1 text-xs text-slate-400">No hay {{ orgConfig.miembros }} activos en esta unidad ni en las que dependen de ella.</p>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -536,9 +542,36 @@ const editMode = ref(false)
 const esNuevo       = computed(() => route.name === 'NuevaAgrupacion')
 const padreIdParam  = computed(() => route.query.padre || null)
 const niveles       = ref([])   // plantillas de nivel (NivelOrganizativo)
-const todasUnidades = ref([])   // unidades activas (para resolver el padre)
+const todasUnidades = ref([])   // unidades activas (árbol: id + agrupacionPadreId)
+const candidatos    = ref([])   // todos los socios activos (pool de candidatos a cargos)
 const formTipoId    = ref('')
 const creando       = ref(false)
+
+// Subárbol de esta unidad (ella + descendientes). Recursivo: la raíz abarca todo.
+const idsSubarbol = computed(() => {
+  const ids = new Set()
+  if (!agrupacionId.value) return ids
+  ids.add(agrupacionId.value)
+  const hijosDe = {}
+  todasUnidades.value.forEach(u => {
+    if (u.agrupacionPadreId) (hijosDe[u.agrupacionPadreId] ||= []).push(u.id)
+  })
+  const pila = [agrupacionId.value]
+  while (pila.length) {
+    for (const h of (hijosDe[pila.pop()] || [])) {
+      if (!ids.has(h)) { ids.add(h); pila.push(h) }
+    }
+  }
+  return ids
+})
+
+// Candidatos a cargos de esta unidad: socios de la unidad y de sus descendientes.
+const candidatosJunta = computed(() =>
+  candidatos.value
+    .filter(s => idsSubarbol.value.has(s.agrupacionId))
+    .sort((a, b) => `${a.apellido1} ${a.nombre}`.localeCompare(`${b.apellido1} ${b.nombre}`, 'es'))
+)
+const nombreUnidad = (id) => todasUnidades.value.find(u => u.id === id)?.nombre || ''
 
 const tituloVista = computed(() =>
   esNuevo.value ? 'Nueva unidad organizativa' : (agrupacion.value?.nombre || 'Agrupación'))
@@ -867,8 +900,16 @@ const Q_MIEMBROS = `
 const Q_TODAS_UNIDADES = `
   query TodasUnidades {
     unidadesOrganizativas(filter: { activo: { eq: true } }) {
-      id nombre tipoId
+      id nombre tipoId agrupacionPadreId
       tipoUnidad { id nombre nivel denominacionSingular }
+    }
+  }
+`
+// Todos los socios activos (para el pool recursivo de candidatos a cargos)
+const Q_TODOS_SOCIOS = `
+  query TodosSocios {
+    socios(activo: true) {
+      id nombre apellido1 apellido2 email agrupacionId
     }
   }
 `
@@ -893,7 +934,7 @@ async function cargar() {
   loading.value = true
   error.value = null
   try {
-    const [rAgr, rRoles, rNombr, rHijos, rMbs, rPaises, rProvs] = await Promise.allSettled([
+    const [rAgr, rRoles, rNombr, rHijos, rMbs, rPaises, rProvs, rUni, rCand] = await Promise.allSettled([
       executeQuery(Q_AGRUPACION, { id: agrupacionId.value }),
       executeQuery(Q_ROLES_TERRITORIALES),
       executeQuery(Q_NOMBRAMIENTOS, { agrupacionId: agrupacionId.value }),
@@ -901,7 +942,13 @@ async function cargar() {
       executeQuery(Q_MIEMBROS, { agrupacionId: agrupacionId.value }),
       paises.value.length ? Promise.resolve(null) : executeQuery(Q_PAISES),
       provincias.value.length ? Promise.resolve(null) : executeQuery(Q_PROVINCIAS),
+      executeQuery(Q_TODAS_UNIDADES),
+      executeQuery(Q_TODOS_SOCIOS),
     ])
+    if (rUni.status === 'fulfilled')
+      todasUnidades.value = rUni.value.unidadesOrganizativas ?? []
+    if (rCand.status === 'fulfilled')
+      candidatos.value = rCand.value.socios ?? []
     if (rPaises.status === 'fulfilled' && rPaises.value)
       paises.value = (rPaises.value.paises ?? []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
     if (rProvs.status === 'fulfilled' && rProvs.value)
