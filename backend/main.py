@@ -154,7 +154,7 @@ async def upload_foto_miembro(
     from app.core.security import extract_bearer_token, load_user_from_token
     from app.core.database import async_session
     from sqlalchemy import update
-    from app.modules.membresia.models.miembro import Miembro
+    from app.modules.membresia.models.contacto import Contacto
 
     token = extract_bearer_token(authorization)
     if not token:
@@ -181,8 +181,8 @@ async def upload_foto_miembro(
 
         foto_url = f"/api/media/fotos/{filename}"
         await session.execute(
-            update(Miembro)
-            .where(Miembro.id == uuid_lib.UUID(miembro_id))
+            update(Contacto)
+            .where(Contacto.id == uuid_lib.UUID(miembro_id))
             .values(foto_url=foto_url)
         )
         await session.commit()
