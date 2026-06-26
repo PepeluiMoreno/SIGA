@@ -217,6 +217,10 @@ class UnidadOrganizativa(BaseModel):
     pais_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('paises.id'), nullable=False, index=True)
     provincia_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('provincias.id'), nullable=True, index=True)
     municipio_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('municipios.id'), nullable=True, index=True)
+    # Nueva geografía unificada (jerarquía única recursiva). Transitorio: convive con
+    # provincia_id/municipio_id mientras se migran consumidores; luego se retiran.
+    entidad_geografica_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('entidades_geograficas.id', ondelete='SET NULL'), nullable=True, index=True)
     direccion_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('direcciones.id'), nullable=True)
 
     # Datos de contacto

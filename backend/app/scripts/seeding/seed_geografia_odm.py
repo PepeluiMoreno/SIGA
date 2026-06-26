@@ -250,6 +250,50 @@ def fetch_municipios_odm(query_name: str, base_url: str, timeout: int = 60) -> L
     return out
 
 
+async def backfill_referencias(session: AsyncSession) -> Dict[str, int]:
+    """Backfill transitorio: rellena `entidad_geografica_id` desde las FKs viejas.
+
+    - Contacto.provincia_id  → nodo provincia (codigo 'PR'+codigo INE).
+    - UnidadOrganizativa.municipio_id → nodo municipio ('MU'+codigo); si no, su
+      provincia_id → nodo provincia. Idempotente (solo rellena lo que esté a NULL).
+    """
+    from app.modules.membresia.models.contacto import Contacto
+    from app.modules.core.geografico.direccion import UnidadOrganizativa, Provincia, Municipio
+    ents = {e.codigo: e for e in (await session.execute(select(EntidadGeografica))).scalars().all()}
+    prov = {p.id: p for p in (await session.execute(select(Provincia))).scalars().all()}
+    muni = {m.id: m for m in (await session.execute(select(Municipio))).scalars().all()}
+
+    def _ent_prov(pid):
+        p = prov.get(pid)
+        return ents.get("PR" + str(p.codigo).zfill(2)) if p else None
+
+    def _ent_muni(mid):
+        m = muni.get(mid)
+        return ents.get("MU" + str(m.codigo).zfill(5)) if m else None
+
+    c_set = u_set = 0
+    contactos = (await session.execute(
+        select(Contacto).where(Contacto.provincia_id.isnot(None), Contacto.entidad_geografica_id.is_(None))
+    )).scalars().all()
+    for c in contactos:
+        e = _ent_prov(c.provincia_id)
+        if e:
+            c.entidad_geografica_id = e.id
+            c_set += 1
+
+    unidades = (await session.execute(
+        select(UnidadOrganizativa).where(UnidadOrganizativa.entidad_geografica_id.is_(None))
+    )).scalars().all()
+    for u in unidades:
+        e = (_ent_muni(u.municipio_id) if u.municipio_id else None) or (_ent_prov(u.provincia_id) if u.provincia_id else None)
+        if e:
+            u.entidad_geografica_id = e.id
+            u_set += 1
+
+    await session.commit()
+    return {"contactos_actualizados": c_set, "unidades_actualizadas": u_set}
+
+
 async def _main(args) -> None:
     municipios = cargar_municipios_jsonl(args.jsonl) if args.jsonl else fetch_municipios_odm(args.query, args.odm_url)
     print(f"Municipios crudos: {len(municipios)}")

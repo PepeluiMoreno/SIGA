@@ -92,6 +92,11 @@ class Contacto(BaseModel):
     pais_domicilio_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         ForeignKey("paises.id"), nullable=True
     )
+    # Nueva geografía unificada (jerarquía única recursiva). Transitorio: convive con
+    # provincia_id mientras se migran consumidores; luego se retiran las FKs viejas.
+    entidad_geografica_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        ForeignKey("entidades_geograficas.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     # ========== CONTACTO (COMÚN) ==========
     telefono: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
