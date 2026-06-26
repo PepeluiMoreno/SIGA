@@ -963,6 +963,7 @@ export const GET_TIPOS_VINCULACION_CATALOGO = `
       id
       nombre
       requiereSatelite
+      permiteCuenta
       activo
     }
   }

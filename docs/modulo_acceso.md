@@ -39,6 +39,30 @@ Documentos detallados en `backend/app/modules/acceso/docs/`:
 
 ---
 
+## Reglas de negocio
+
+### Dotación de cuenta a un contacto (vista «Nuevo usuario»)
+
+Una cuenta de usuario de la aplicación no se crea «en el vacío»: siempre se otorga
+**a un contacto** que ya tiene un vínculo con la organización. Por eso, al dar de
+alta un usuario no se declara la vinculación, sino que se **elige a qué contacto se
+le dota de cuenta de acceso**.
+
+No cualquier contacto puede recibir cuenta. Cada **tipo de vinculación** declara, con
+el atributo `permite_cuenta`, si los contactos que mantienen ese vínculo pueden ser
+dotados de cuenta de usuario. Por defecto la habilitan los vínculos que implican
+operar el sistema —**socio, voluntario y contratado/a**—, mientras que los vínculos
+meramente relacionales —**firmante, simpatizante, donante**— no la habilitan. Este
+atributo es editable en el catálogo de tipos de vinculación, de modo que cada
+organización puede ajustar qué perfiles tienen acceso a la aplicación.
+
+La vista «Nuevo usuario» presenta, en consecuencia, un buscador de contactos: se
+puede filtrar por tipo de vínculo y por nombre/apellidos, y solo aparecen los
+contactos cuyo vínculo permite cuenta. Cada resultado indica si el contacto **ya
+tiene cuenta**; en ese caso no se puede volver a seleccionar. Al elegir un contacto,
+la nueva cuenta queda asociada a él (y el contacto pasa a constar como dotado de
+cuenta). El correo del contacto, si lo tiene, se propone como email de acceso.
+
 ## Pendientes de diseño
 
 ### 1. Control de acceso en UI según rol (pendiente)

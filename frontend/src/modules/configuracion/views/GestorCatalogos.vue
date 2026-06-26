@@ -861,11 +861,13 @@ const CATALOGOS = computed(() => [
         columnas: [
           { key: 'nombre',          label: 'Nombre' },
           { key: 'requiereSatelite', label: 'Requiere satélite', type: 'bool' },
+          { key: 'permiteCuenta',   label: 'Permite cuenta', type: 'bool' },
           { key: 'activo',          label: 'Activo', type: 'toggle' },
         ],
         campos: [
           { name: 'nombre',          label: 'Nombre',                       type: 'text',     required: true, maxLength: 150 },
           { name: 'requiereSatelite', label: 'Requiere satélite (datos propios)', type: 'checkbox', default: false },
+          { name: 'permiteCuenta',   label: 'Permite cuenta de usuario de la aplicación', type: 'checkbox', default: false },
           { name: 'activo',          label: 'En uso',                       type: 'checkbox', default: true },
         ],
       },
