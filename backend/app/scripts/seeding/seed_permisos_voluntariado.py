@@ -7,10 +7,10 @@ Reparto (Fase 1 — restricción por rol; el scoping territorial es Fase 2):
 - COORDINADOR_CAMPANA: ámbito de su campaña.
 
 Transacciones (códigos reales del catálogo):
-- VOL_LIST                       — listar voluntarios.
+- MEMBRESIA_VOLUNTARIO_LISTAR                       — listar voluntarios.
 - VOL_VIEW                       — ver perfil de voluntario.
 - MEMBRESIA_VOLUNTARIO_GESTIONAR — gestionar el perfil (disponibilidad) por delegación.
-- HAB_ASSIGN                     — asignar habilidad a un miembro (delegación).
+- MEMBRESIA_VOLUNTARIO_GESTIONAR                     — asignar habilidad a un miembro (delegación).
 - HAB_LIST                       — ver el catálogo de habilidades (para elegir al asignar).
 (HAB_ASSIGN_OWN = "declarar habilidades propias" es del propio socio; no se reparte aquí.)
 
@@ -29,7 +29,7 @@ from app.modules.acceso.models.transaccion import Transaccion
 from app.modules.acceso.models.rol_transaccion import RolTransaccion
 
 
-_TRANS = ["VOL_LIST", "VOL_VIEW", "MEMBRESIA_VOLUNTARIO_GESTIONAR", "HAB_ASSIGN", "HAB_LIST"]
+_TRANS = ["MEMBRESIA_VOLUNTARIO_LISTAR", "VOL_VIEW", "MEMBRESIA_VOLUNTARIO_GESTIONAR", "MEMBRESIA_VOLUNTARIO_GESTIONAR", "HAB_LIST"]
 
 REPARTO = {
     "PRESIDENTE":          _TRANS,

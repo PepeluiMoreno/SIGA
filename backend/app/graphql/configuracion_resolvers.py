@@ -12,6 +12,7 @@ from typing import Optional
 import strawberry
 
 from app.modules.configuracion.services.configuracion_service import ConfiguracionService
+from app.modules.configuracion.services.indico_client import IndicoClient
 from app.core.email_service import _load_smtp_config
 from app.graphql.permissions import RequireTransaction
 

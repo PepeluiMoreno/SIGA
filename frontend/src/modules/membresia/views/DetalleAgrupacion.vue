@@ -4,7 +4,7 @@
     :subtitle="subtituloVista">
 
     <!-- El registro de cargos es una acción de edición, no de consulta -->
-    <template v-if="!esNuevo && agrupacion && (tienePermiso('CFG_TERRITORIO_EDITAR') || tienePermiso('NOM_CREATE'))" #actions>
+    <template v-if="!esNuevo && agrupacion && (tienePermiso('CFG_TERRITORIO_EDITAR') || tienePermiso('MEMBRESIA_CARGO_ASIGNAR'))" #actions>
       <button type="button" @click="toggleEdicion"
         class="h-8 px-3 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
         :class="editMode ? 'text-slate-600' : 'text-indigo-600'">
@@ -308,7 +308,7 @@
           <ChevronDownIcon :class="chevronCls(open.junta)" />
         </button>
         <div v-show="open.junta" class="px-5 pb-4 pt-2">
-          <div v-if="editMode && tienePermiso('NOM_CREATE')" class="flex justify-end mb-3">
+          <div v-if="editMode && tienePermiso('MEMBRESIA_CARGO_ASIGNAR')" class="flex justify-end mb-3">
             <button type="button" @click="abrirRegistro(null)"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition-colors">
               <PlusIcon class="w-3.5 h-3.5" /> Registrar cargo
@@ -365,7 +365,7 @@
         <div v-show="open.cargos" class="px-5 pb-4 pt-2">
 
           <!-- Barra de acción (solo en modo edición y con permiso de cargos) -->
-          <div v-if="editMode && tienePermiso('NOM_CREATE')" class="flex justify-end mb-3">
+          <div v-if="editMode && tienePermiso('MEMBRESIA_CARGO_ASIGNAR')" class="flex justify-end mb-3">
             <button type="button" @click="abrirRegistro(null)"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 transition-colors">
               <PlusIcon class="w-3.5 h-3.5" /> Registrar cargo

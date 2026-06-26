@@ -224,7 +224,7 @@ async def _ocultar_iban_facetas(info, session, vincs):
     """
     from app.modules.acceso.services.ambito_territorial import agrupaciones_en_ambito
     user = getattr(info.context, "user", None)
-    puede = bool(user) and await info.context.check_permission("SOC_VIEW_IBAN")
+    puede = bool(user) and await info.context.check_permission("MEMBRESIA_MIEMBRO_VER_IBAN")
     ambito = await agrupaciones_en_ambito(session, user.id) if puede else set()
     for v in vincs:
         socio = getattr(v, "socio", None)
@@ -245,7 +245,7 @@ async def _ocultar_iban_facetas(info, session, vincs):
 @strawberry.type
 class VinculacionesMutation:
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("NOM_CREATE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_CARGO_ASIGNAR")])
     async def crear_nombramiento(
         self, info: strawberry.Info,
         miembro_id: uuid.UUID, rol_id: uuid.UUID, agrupacion_id: uuid.UUID,

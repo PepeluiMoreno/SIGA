@@ -136,7 +136,7 @@ const routes = [
     path: '/miembros',
     component: ListaMiembros,
     name: 'Miembros',
-    meta: { requiresAuth: true, requiredPermission: 'SOC_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_MIEMBRO_LISTAR' }
   },
   {
     path: '/miembros/nuevo',
@@ -148,7 +148,7 @@ const routes = [
     path: '/miembros/:id',
     component: () => import('@/modules/membresia/views/DetalleMiembro.vue'),
     name: 'DetalleMiembro',
-    meta: { requiresAuth: true, requiredPermission: 'SOC_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_MIEMBRO_LISTAR' }
   },
   {
     // Directorio CRM contacto-céntrico (PF+PJ, facetas). MVP: gateado con
@@ -173,7 +173,7 @@ const routes = [
     path: '/agrupaciones',
     component: DetalleAgrupacionesTerritoriales,
     name: 'Agrupaciones',
-    meta: { requiresAuth: true, requiredPermission: 'AGR_EDIT' }
+    meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_AGRUPACION_EDITAR' }
   },
   {
     path: '/agrupaciones/nueva',
@@ -191,13 +191,13 @@ const routes = [
     path: '/agrupaciones/:id/junta',
     component: () => import('@/modules/acceso/views/GestionJunta.vue'),
     name: 'GestionJunta',
-    meta: { requiresAuth: true, requiredPermission: 'NOM_CREATE' }
+    meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_CARGO_ASIGNAR' }
   },
   {
     path: '/voluntarios',
     component: ListaVoluntarios,
     name: 'Voluntarios',
-    meta: { requiresAuth: true, requiredPermission: 'VOL_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_VOLUNTARIO_LISTAR' }
   },
 
   // ─── ACTIVIDADES / GRUPOS ─────────────────────────────────────────────────

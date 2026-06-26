@@ -184,7 +184,7 @@ _SOCIO_FIELDS = (
     'motivo_baja_id', 'motivo_baja_texto',
 )
 # Dimensión ECONÓMICA del socio (competencia de Tesorería): editarla exige el
-# permiso SOC_EDIT_ECONOMICO, aparte del permiso de edición registral. Los
+# permiso MEMBRESIA_MIEMBRO_EDITAR_DATOS_ECONOMICOS, aparte del permiso de edición registral. Los
 # motivo_baja_* quedan fuera: son acto registral (situación), no económico.
 _ECONOMIC_FIELDS = frozenset({
     'iban', 'swift_bic', 'referencia_pago', 'forma_pago_id', 'motivo_reduccion_id',
@@ -357,7 +357,7 @@ class MembresiaResolverMutation:
         await session.commit()
         return await _fetch_miembro(session, contacto.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("HAB_ASSIGN")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_VOLUNTARIO_GESTIONAR")])
     async def asignar_habilidad_voluntario(
         self,
         info: strawberry.Info,
@@ -386,7 +386,7 @@ class MembresiaResolverMutation:
         await session.commit()
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("HAB_ASSIGN")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_VOLUNTARIO_GESTIONAR")])
     async def quitar_habilidad_voluntario(
         self,
         info: strawberry.Info,
@@ -467,10 +467,10 @@ class MembresiaResolverMutation:
         faltantes_antes = _campos_perfil_faltantes(miembro)
 
         # Enforcement por dimensión: los datos económicos del socio son competencia
-        # de Tesorería. Si la edición los toca, exige SOC_EDIT_ECONOMICO (además del
+        # de Tesorería. Si la edición los toca, exige MEMBRESIA_MIEMBRO_EDITAR_DATOS_ECONOMICOS (además del
         # permiso registral de la mutación). Se comprueba antes de aplicar nada.
         if any(getattr(data, f, None) is not None for f in _ECONOMIC_FIELDS):
-            if not await info.context.check_permission("SOC_EDIT_ECONOMICO"):
+            if not await info.context.check_permission("MEMBRESIA_MIEMBRO_EDITAR_DATOS_ECONOMICOS"):
                 raise ValueError(
                     "No tienes permiso para editar los datos económicos del socio "
                     "(IBAN, forma de pago, reducción de cuota): es competencia de Tesorería."
@@ -563,7 +563,7 @@ class MembresiaResolverMutation:
         await session.commit()
         return await _fetch_miembro(session, miembro_id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("SOC_EXPORT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_EXPORTAR")])
     async def exportar_miembros_xlsx(
         self,
         info: strawberry.Info,
@@ -667,7 +667,7 @@ class VoluntarioAmbitoType:
 
 @strawberry.type
 class MembresiaQuery:
-    @strawberry.field(permission_classes=[RequireTransaction("VOL_LIST")])
+    @strawberry.field(permission_classes=[RequireTransaction("MEMBRESIA_VOLUNTARIO_LISTAR")])
     async def voluntarios_en_ambito(self, info: strawberry.Info) -> List[VoluntarioAmbitoType]:
         """Voluntarios visibles según el ámbito territorial del usuario (Fase 2).
 

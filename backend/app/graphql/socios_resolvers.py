@@ -308,12 +308,12 @@ _BANK_FIELDS = ("iban", "swift_bic", "referencia_pago")
 async def _enmascarar_datos_bancarios(info, session, socios):
     """Oculta IBAN/SWIFT/referencia salvo al tesorero del ámbito del socio (o superior).
 
-    Exige el permiso `SOC_VIEW_IBAN` y que la agrupación del socio caiga en el
+    Exige el permiso `MEMBRESIA_MIEMBRO_VER_IBAN` y que la agrupación del socio caiga en el
     ámbito territorial del usuario (o que su ámbito sea global = `None`).
     """
     from app.modules.acceso.services.ambito_territorial import agrupaciones_en_ambito
     user = getattr(info.context, "user", None)
-    puede = bool(user) and await info.context.check_permission("SOC_VIEW_IBAN")
+    puede = bool(user) and await info.context.check_permission("MEMBRESIA_MIEMBRO_VER_IBAN")
     ambito = await agrupaciones_en_ambito(session, user.id) if puede else set()
     for s in socios:
         visible = puede and (ambito is None or s.agrupacion_id in ambito)

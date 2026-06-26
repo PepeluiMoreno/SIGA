@@ -107,7 +107,7 @@
             </span>
           </div>
           <div class="flex items-center gap-4">
-            <button v-if="tienePermiso('SOC_EXPORT') && miembros.length"
+            <button v-if="tienePermiso('MEMBRESIA_MIEMBRO_EXPORTAR') && miembros.length"
               @click="exportarExcel" :disabled="exportando"
               class="inline-flex items-center gap-1.5 text-sm font-medium text-green-700 hover:text-green-900 disabled:opacity-50">
               <ArrowDownTrayIcon class="w-4 h-4" />
@@ -268,7 +268,7 @@ const {
 } = useSeleccionMultiple(() => miembros.value)
 
 const accionesMasivas = [
-  { key: 'exportar', label: 'Exportar selección a Excel', permiso: 'SOC_EXPORT' },
+  { key: 'exportar', label: 'Exportar selección a Excel', permiso: 'MEMBRESIA_MIEMBRO_EXPORTAR' },
   { key: 'comunicacion', label: 'Enviar comunicación interna' },
 ]
 function ejecutarAccionMasiva(key) {

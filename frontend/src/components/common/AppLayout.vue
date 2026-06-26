@@ -88,7 +88,7 @@
             <hr class="nav-sep" />
 
             <!-- Membresía -->
-            <div v-if="tieneAlguno('SOC_LIST','AGR_EDIT','NOM_CREATE','HAB_LIST')" class="mb-1">
+            <div v-if="tieneAlguno('MEMBRESIA_MIEMBRO_LISTAR','MEMBRESIA_AGRUPACION_EDITAR','MEMBRESIA_CARGO_ASIGNAR','HAB_LIST')" class="mb-1">
               <button @click="toggleSection('membresia')" class="section-btn">
                 <span>Membresía</span>
                 <ChevronDownIcon class="chevron" :class="openSections.membresia ? '' : '-rotate-90'" />
@@ -101,19 +101,19 @@
                       <UserGroupIcon class="nav-icon" /><span>Contactos</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('SOC_LIST')">
+                  <li v-if="tienePermiso('MEMBRESIA_MIEMBRO_LISTAR')">
                     <router-link to="/miembros" class="nav-item"
                       :class="$route.path.startsWith('/miembros') ? 'active' : 'inactive'">
                       <UserIcon class="nav-icon" /><span>{{ orgConfigStore.Miembros }}</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('AGR_EDIT')">
+                  <li v-if="tienePermiso('MEMBRESIA_AGRUPACION_EDITAR')">
                     <router-link to="/agrupaciones" class="nav-item"
                       :class="$route.path.startsWith('/agrupaciones') ? 'active' : 'inactive'">
                       <MapPinIcon class="nav-icon" /><span>Organización Territorial</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('VOL_LIST')">
+                  <li v-if="tienePermiso('MEMBRESIA_VOLUNTARIO_LISTAR')">
                     <router-link to="/voluntarios" class="nav-item"
                       :class="$route.path.startsWith('/voluntarios') ? 'active' : 'inactive'">
                       <HeartIcon class="nav-icon" /><span>Voluntariado</span>

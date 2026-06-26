@@ -1,4 +1,4 @@
-"""Asigna la transacción SOC_EXPORT (exportar listado de miembros a Excel) a los
+"""Asigna la transacción MEMBRESIA_MIEMBRO_EXPORTAR (exportar listado de miembros a Excel) a los
 roles de presidencia. Idempotente.
 
 Reparto: SUPERADMIN, PRESIDENTE, VICEPRESIDENTE. No se concede a coordinadores
@@ -21,7 +21,7 @@ from app.modules.acceso.models.rol_transaccion import RolTransaccion
 
 
 ROLES = ["SUPERADMIN", "PRESIDENTE", "VICEPRESIDENTE"]
-TRANSACCION = "SOC_EXPORT"
+TRANSACCION = "MEMBRESIA_MIEMBRO_EXPORTAR"
 
 
 async def seed():
@@ -55,7 +55,7 @@ async def seed():
             creadas += 1
 
         await session.commit()
-        print(f"✓ SOC_EXPORT: +{creadas} transacciones enlazadas a roles de presidencia.")
+        print(f"✓ MEMBRESIA_MIEMBRO_EXPORTAR: +{creadas} transacciones enlazadas a roles de presidencia.")
 
 
 if __name__ == "__main__":

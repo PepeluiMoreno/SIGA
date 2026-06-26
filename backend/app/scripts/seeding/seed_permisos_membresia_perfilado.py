@@ -44,11 +44,11 @@ _REPARTO = {
     "LIBRO_SOCIOS_GENERAR": _SECRETARIA,
     "LIBRO_SOCIOS_VER":     _SECRETARIA + _TESORERIA + ["PRESIDENTE", "VICEPRESIDENTE"],
     # Tesorería: dimensión económica del socio (editar y VER datos bancarios)
-    "SOC_EDIT_ECONOMICO":   _TESORERIA,
-    "SOC_VIEW_IBAN":        _TESORERIA,
+    "MEMBRESIA_MIEMBRO_EDITAR_DATOS_ECONOMICOS":   _TESORERIA,
+    "MEMBRESIA_MIEMBRO_VER_IBAN":        _TESORERIA,
     # Coordinación / voluntariado
     "AVAIL_EDIT":           _COORDINACION,
-    "HAB_ASSIGN":           _COORDINACION,
+    "MEMBRESIA_VOLUNTARIO_GESTIONAR":           _COORDINACION,
     "HAB_VALIDATE":         _COORDINACION,
 }
 

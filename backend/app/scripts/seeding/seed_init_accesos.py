@@ -49,9 +49,9 @@ _ROLES = [
             # Tareas y reuniones
             "TASK_CREATE", "TASK_UPDATE", "MEET_SCHEDULE",
             # Voluntariado / habilidades (para dotar de RR.HH. las actividades)
-            "VOL_LIST", "VOL_VIEW", "HAB_LIST", "HAB_ASSIGN",
+            "MEMBRESIA_VOLUNTARIO_LISTAR", "VOL_VIEW", "HAB_LIST", "MEMBRESIA_VOLUNTARIO_GESTIONAR",
             # Consulta de miembros (necesaria para asignar participantes y responsables)
-            "SOC_LIST", "SOC_VIEW",
+            "MEMBRESIA_MIEMBRO_LISTAR", "SOC_VIEW",
             # Informes de actividad
             "RPT_CAMPAIGNS", "RPT_VOLUNTEERS",
         ],
@@ -66,12 +66,12 @@ _ROLES = [
         "nivel": 15,
         "es_territorial": True,
         "transacciones": [
-            "SOC_LIST", "SOC_VIEW", "SOC_CREATE", "SOC_EDIT",
-            "SOC_DEACTIVATE", "SOC_REACTIVATE", "SOC_CHANGE_TYPE", "SOC_EXPORT",
+            "MEMBRESIA_MIEMBRO_LISTAR", "SOC_VIEW", "SOC_CREATE", "SOC_EDIT",
+            "SOC_DEACTIVATE", "SOC_REACTIVATE", "SOC_CHANGE_TYPE", "MEMBRESIA_MIEMBRO_EXPORTAR",
             "TIPOSOC_MANAGE",
             "TRAS_REQUEST", "TRAS_LIST", "TRAS_APPROVE", "TRAS_REJECT",
             "TRAS_CANCEL", "TRAS_APPROVE_DEST", "TRAS_EXECUTE",
-            "HAB_LIST", "HAB_ASSIGN", "HAB_VALIDATE",
+            "HAB_LIST", "MEMBRESIA_VOLUNTARIO_GESTIONAR", "HAB_VALIDATE",
             "AVAIL_VIEW", "AVAIL_EDIT",
             "MBR_HISTORY",
             "AGR_LIST", "AGR_VIEW",
