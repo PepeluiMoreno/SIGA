@@ -3,6 +3,15 @@
     :title="agrupacion?.nombre || 'Agrupación'"
     :subtitle="agrupacion?.tipoUnidad?.nombre || ''">
 
+    <!-- El registro de cargos es una acción de edición, no de consulta -->
+    <template v-if="agrupacion && tienePermiso('NOM_CREATE')" #actions>
+      <button type="button" @click="editMode = !editMode"
+        class="h-8 px-3 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+        :class="editMode ? 'text-slate-600' : 'text-indigo-600'">
+        {{ editMode ? 'Hecho' : 'Editar' }}
+      </button>
+    </template>
+
     <div class="flex items-center justify-between mb-4">
       <router-link to="/agrupaciones"
         class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors">
@@ -82,8 +91,8 @@
         </button>
         <div v-show="open.cargos" class="px-5 pb-4 pt-2">
 
-          <!-- Barra de acción -->
-          <div class="flex justify-end mb-3">
+          <!-- Barra de acción (solo en modo edición) -->
+          <div v-if="editMode" class="flex justify-end mb-3">
             <button type="button" @click="abrirRegistro(null)"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 transition-colors">
               <PlusIcon class="w-3.5 h-3.5" /> Registrar cargo
@@ -212,12 +221,16 @@ import {
   PencilIcon, PlusIcon, XMarkIcon, EyeIcon,
 } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
+import { usePermisos } from '@/composables/usePermisos.js'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
 const confirmDialog = useConfirm()
+const { tienePermiso } = usePermisos()
 
 const route = useRoute()
 const router = useRouter()
 const agrupacionId = computed(() => route.params.id)
+// Modo edición: el registro de cargos vive en edición, no en consulta.
+const editMode = ref(false)
 
 // Navega a la ficha del socio (vista). Patrón "ojo" reutilizable en datagrids.
 function verFicha(socioId) { router.push(`/miembros/${socioId}`) }
