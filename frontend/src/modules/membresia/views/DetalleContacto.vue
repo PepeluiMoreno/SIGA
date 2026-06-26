@@ -51,6 +51,14 @@
             <span v-if="!isCreate && contacto && !contacto.activo" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">inactivo</span>
           </h2>
 
+          <div class="flex items-center gap-4 mb-4">
+            <AvatarImg :src="fotoActual" :nombre="form.nombre || form.razonSocial" :apellido="form.apellido1" size="2xl" :shape="esPJ ? 'carnet' : 'round'" />
+            <label v-if="editing" class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg cursor-pointer hover:bg-indigo-100 transition-colors">
+              Cambiar foto
+              <input type="file" accept="image/*" class="hidden" @change="onFotoChange" />
+            </label>
+          </div>
+
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
             <template v-if="esPJ">
               <FieldText v-model="form.razonSocial" label="Razón social *" :editing="editing" />
@@ -141,6 +149,7 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_CONTACTO, GET_CONTACTOS, CREAR_CONTACTO, ACTUALIZAR_CONTACTO } from '@/graphql/queries/contactos.js'
+import { useAuthStore } from '@/stores/auth.js'
 
 // ── Componentes de campo: input en edición, texto en vista ──────────────────
 const INP = 'w-full h-10 rounded-lg border border-slate-300 px-3 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30'
@@ -198,6 +207,11 @@ const guardando = ref(false)
 const contacto = ref(null)
 const representante = ref(null)
 const todosContactos = ref([])
+const authStore = useAuthStore()
+const fotoUrl = ref('')
+const fotoFilePendiente = ref(null)   // alta: se sube tras crear (aún no hay id)
+const fotoPreview = ref('')
+const fotoActual = computed(() => fotoPreview.value || fotoUrl.value || null)
 
 const form = reactive({
   tipo: 'PERSONA_FISICA',
@@ -256,6 +270,36 @@ function poblarForm(c) {
   for (const k of Object.keys(form)) {
     if (k === 'tipo') continue
     if (c[k] != null) form[k] = c[k]
+  }
+  fotoUrl.value = c.fotoUrl || ''
+}
+
+async function subirFotoAlServidor(id, file) {
+  const fd = new FormData()
+  fd.append('file', file)
+  const resp = await fetch(`/api/upload/foto-miembro/${id}`, {
+    method: 'POST', headers: { Authorization: `Bearer ${authStore.token}` }, body: fd,
+  })
+  if (!resp.ok) throw new Error('upload')
+  const data = await resp.json()
+  return data.fotoUrl
+}
+async function onFotoChange(event) {
+  const file = event.target.files?.[0]
+  event.target.value = ''
+  if (!file) return
+  if (isCreate.value) {
+    // Sin id todavía: se sube tras crear el contacto.
+    fotoFilePendiente.value = file
+    fotoPreview.value = URL.createObjectURL(file)
+    return
+  }
+  try {
+    const url = await subirFotoAlServidor(route.params.id, file)
+    fotoUrl.value = `${url}?t=${Date.now()}`
+    toast.success('Foto actualizada.')
+  } catch {
+    toast.error('No se pudo subir la foto.')
   }
 }
 
@@ -319,6 +363,9 @@ async function guardar() {
         data.representanteLegalId = rep.crearContacto.id
       }
       const r = await graphqlClient.request(CREAR_CONTACTO, { data })
+      if (fotoFilePendiente.value) {
+        try { await subirFotoAlServidor(r.crearContacto.id, fotoFilePendiente.value) } catch { /* se puede reintentar al editar */ }
+      }
       toast.success(esPJ.value ? 'Persona jurídica y su representante creados.' : 'Contacto creado.')
       router.push(`/contactos/${r.crearContacto.id}`)
     } else {
