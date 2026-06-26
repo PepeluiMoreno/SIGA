@@ -96,6 +96,17 @@ def _pad(value: Any, width: int) -> Optional[str]:
     return s.zfill(width)
 
 
+def normalizar_toponimo(nombre: str) -> str:
+    """Antepone el artículo/cualificador que el INE pospone tras coma, para mostrar
+    o componer: 'Rioja, La'→'La Rioja', 'Coruña, A'→'A Coruña', 'Palmas, Las'→
+    'Las Palmas', 'Madrid, Comunidad de'→'Comunidad de Madrid'. Idempotente (sin
+    coma no cambia)."""
+    if not nombre or ", " not in nombre:
+        return nombre
+    base, sufijo = nombre.split(", ", 1)
+    return f"{sufijo} {base}".strip()
+
+
 # ── T) Transformación: municipios planos → árbol territorial ────────────────────
 def construir_jerarquia(municipios: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """De filas crudas de municipios (cpro, cmun, nombre) construye el árbol
@@ -129,8 +140,9 @@ def construir_jerarquia(municipios: List[Dict[str, Any]]) -> List[Dict[str, Any]
         ca = PROV_A_CCAA.get(cp) if cp else None
         if not ca or not cp or not cm or not nom:
             continue
-        ccaa_vistas.setdefault(ca, CCAA_NOMBRES.get(ca, ca))
-        municipios_norm.append({"ca": ca, "cp": cp, "codigo_ine": cp + cm, "nombre": nom})
+        ccaa_vistas.setdefault(ca, normalizar_toponimo(CCAA_NOMBRES.get(ca, ca)))
+        municipios_norm.append({"ca": ca, "cp": cp, "codigo_ine": cp + cm,
+                                "nombre": normalizar_toponimo(nom)})
 
     for ca in sorted(ccaa_vistas):
         out.append({
@@ -143,7 +155,7 @@ def construir_jerarquia(municipios: List[Dict[str, Any]]) -> List[Dict[str, Any]
         if m["cp"] not in prov_vistas:
             prov_vistas.add(m["cp"])
             ca_nom = ccaa_vistas.get(m["ca"], m["ca"])
-            prov_nom = PROV_NOMBRES.get(m["cp"], m["cp"])
+            prov_nom = normalizar_toponimo(PROV_NOMBRES.get(m["cp"], m["cp"]))
             out.append({
                 "codigo": "PR" + m["cp"], "codigo_ine": m["cp"], "nombre": prov_nom,
                 "tipo": "provincia", "nivel": 2, "padre_id": "CA" + m["ca"],
@@ -152,7 +164,7 @@ def construir_jerarquia(municipios: List[Dict[str, Any]]) -> List[Dict[str, Any]
 
     for m in municipios_norm:
         ca_nom = ccaa_vistas.get(m["ca"], m["ca"])
-        prov_nom = PROV_NOMBRES.get(m["cp"], m["cp"])
+        prov_nom = normalizar_toponimo(PROV_NOMBRES.get(m["cp"], m["cp"]))
         out.append({
             "codigo": "MU" + m["codigo_ine"], "codigo_ine": m["codigo_ine"],
             "nombre": m["nombre"], "tipo": "municipio", "nivel": 3,
