@@ -1,12 +1,19 @@
 <template>
-  <div class="space-y-0.5">
+  <div>
+    <ErrorAlert v-if="errorMsg" :message="errorMsg" class="mb-3" />
 
-    <div
-      v-for="item in arbolPlano"
-      :key="item.id"
-      class="group flex items-center gap-1 min-w-0 py-0.5 px-1 -mx-1 rounded-md hover:bg-slate-50"
-      :style="{ paddingLeft: item.depth * 20 + 'px' }"
-    >
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+      <!-- IZQUIERDA · editor de niveles -->
+      <div class="space-y-0.5">
+        <h4 class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1">Niveles</h4>
+
+        <div
+          v-for="item in arbolPlano"
+          :key="item.id"
+          class="group flex items-center gap-1 min-w-0 py-0.5 px-1 -mx-1 rounded-md hover:bg-slate-50"
+          :style="{ paddingLeft: item.depth * 20 + 'px' }"
+        >
       <span class="flex-shrink-0 w-4 text-center">
         <span v-if="item.depth === 0" class="text-purple-400 text-xs">●</span>
         <span v-else class="text-gray-300 text-sm">└</span>
@@ -96,29 +103,55 @@
           </div>
         </div>
       </template>
+        </div>
+
+        <div class="flex items-center pt-1.5 border-t border-slate-100 mt-1">
+          <button type="button" @click="añadirRaiz" :disabled="guardando"
+            class="inline-flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-800 disabled:opacity-40">
+            <span class="grid place-items-center w-5 h-5 rounded-full border border-purple-300 text-purple-500 font-mono leading-none">+</span>
+            Añadir nivel raíz
+          </button>
+        </div>
+
+        <p class="text-[11px] text-slate-400 leading-tight pt-1">
+          Al pasar el ratón por un nivel: <span class="font-mono">↑</span> subir ·
+          <span class="font-mono">↓</span> anidar · <span class="font-mono">⊕↑</span> insertar encima ·
+          <span class="font-mono">⊕↓</span> subnivel · <span class="font-mono">✎</span> editar ·
+          <span class="font-mono">×</span> borrar
+        </p>
+      </div>
+
+      <!-- DERECHA · vista previa del árbol en tiempo real -->
+      <div class="lg:border-l lg:border-slate-100 lg:pl-5">
+        <h4 class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1">Vista del árbol</h4>
+        <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-3 min-h-[7rem]">
+          <div v-if="arbolPreview.length">
+            <div v-for="node in arbolPreview" :key="node.id"
+              class="flex items-center leading-7 rounded transition-colors"
+              :class="node.editing ? 'bg-purple-100/70 ring-1 ring-purple-200' : ''">
+              <span v-for="(v, i) in node.vlines" :key="i"
+                class="inline-block w-5 flex-shrink-0 text-center font-mono text-slate-300 select-none">{{ v ? '│' : '' }}</span>
+              <span class="inline-block w-5 flex-shrink-0 text-center font-mono select-none"
+                :class="node.depth === 0 ? 'text-purple-400' : 'text-slate-300'">{{ node.depth === 0 ? '●' : (node.isLast ? '└' : '├') }}</span>
+              <span class="flex items-center gap-1.5 min-w-0 px-1">
+                <span class="truncate" :class="node.depth === 0 ? 'text-sm font-semibold text-slate-800' : 'text-sm text-slate-700'">{{ node.nombre || 'Sin nombre' }}</span>
+                <span v-if="node.ambitoNombre"
+                  class="flex-shrink-0 px-1.5 py-0.5 text-[10px] rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 leading-none">{{ node.ambitoNombre }}</span>
+                <span v-if="node.denominacionSingular"
+                  class="flex-shrink-0 text-xs text-slate-400 italic truncate">→ {{ node.denominacionSingular }}</span>
+              </span>
+            </div>
+          </div>
+          <p v-else class="text-sm text-slate-400 italic text-center py-6">Aún no hay niveles definidos.</p>
+        </div>
+
+        <p class="text-xs text-gray-400 pt-2">
+          <template v-if="arbolPlano.length <= 1">Organización simple (sin subniveles)</template>
+          <template v-else>Organización extendida · {{ arbolPlano.filter(n => n.depth > 0).map(n => n.nombre).join(' › ') }}</template>
+        </p>
+      </div>
+
     </div>
-
-    <div class="flex items-center justify-between gap-3 pt-1.5 border-t border-slate-100 mt-1">
-      <button type="button" @click="añadirRaiz" :disabled="guardando"
-        class="inline-flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-800 disabled:opacity-40">
-        <span class="grid place-items-center w-5 h-5 rounded-full border border-purple-300 text-purple-500 font-mono leading-none">+</span>
-        Añadir nivel raíz
-      </button>
-      <span class="hidden sm:block text-[11px] text-slate-400 text-right leading-tight">
-        Al pasar el ratón por un nivel: <span class="font-mono">↑</span> subir ·
-        <span class="font-mono">↓</span> anidar · <span class="font-mono">⊕↑</span> insertar encima ·
-        <span class="font-mono">⊕↓</span> subnivel · <span class="font-mono">✎</span> editar ·
-        <span class="font-mono">×</span> borrar
-      </span>
-    </div>
-
-    <ErrorAlert v-if="errorMsg" :message="errorMsg" />
-
-    <p class="text-xs text-gray-400 pt-0.5">
-      <template v-if="arbolPlano.length <= 1">Organización simple (sin subniveles)</template>
-      <template v-else>Organización extendida · {{ arbolPlano.filter(n => n.depth > 0).map(n => n.nombre).join(' › ') }}</template>
-    </p>
-
   </div>
 
   <!-- Modal confirmación de borrado -->
@@ -219,6 +252,33 @@ const arbolPlano = computed(() => {
   return lista
 })
 
+// Vista previa en tiempo real: refleja el árbol y superpone los valores del
+// formulario sobre el nodo que se está editando (sin esperar al guardado).
+const arbolPreview = computed(() => {
+  const out = []
+  const overlay = (nodo) => {
+    const editing = nodo.id === editandoId.value
+    return {
+      id: nodo.id,
+      editing,
+      nombre: editing ? formNombre.value : nodo.nombre,
+      denominacionSingular: editing ? formDenomSingular.value : nodo.denominacionSingular,
+      ambitoNombre: editing
+        ? (ambitos.value.find(a => a.id === formAmbitoId.value)?.nombre ?? null)
+        : (nodo.ambitoGeografico?.nombre ?? null),
+    }
+  }
+  // vlines: por cada nivel ancestro, si dibujar barra vertical (el ancestro tiene hermano siguiente)
+  const dfs = (nodo, depth, vlines, isLast) => {
+    out.push({ ...overlay(nodo), depth, isLast, vlines: [...vlines] })
+    const hijos = nodo.hijos || []
+    hijos.forEach((h, i) => dfs(h, depth + 1, [...vlines, !isLast], i === hijos.length - 1))
+  }
+  const rs = raices.value
+  rs.forEach((r, i) => dfs(r, 0, [], i === rs.length - 1))
+  return out
+})
+
 const idsDescendientes = (nodo) => {
   const ids = new Set([nodo.id])
   const dfs = (n) => n.hijos?.forEach(h => { ids.add(h.id); dfs(h) })
@@ -243,15 +303,23 @@ const iniciarEdicion = (tipo) => {
 
 const guardar = async (tipo) => {
   if (!formNombre.value.trim()) return
-  await actualizarTipo({
-    id: tipo.id,
-    nombre: formNombre.value.trim(),
-    ambitoGeograficoId: formAmbitoId.value || null,
-    denominacionSingular: formDenomSingular.value.trim() || null,
-    denominacionPlural: formDenomPlural.value.trim() || null,
-  })
-  editandoId.value = null
-  await recargarConfig()
+  guardando.value = true
+  errorMsg.value  = ''
+  try {
+    await actualizarTipo({
+      id: tipo.id,
+      nombre: formNombre.value.trim(),
+      ambitoGeograficoId: formAmbitoId.value || null,
+      denominacionSingular: formDenomSingular.value.trim() || null,
+      denominacionPlural: formDenomPlural.value.trim() || null,
+    })
+    editandoId.value = null
+    await recargarConfig()
+  } catch (e) {
+    errorMsg.value = e?.response?.errors?.[0]?.message ?? 'Error al guardar el nivel'
+  } finally {
+    guardando.value = false
+  }
 }
 
 // Sube el nodo un nivel (pasa a ser hermano de su padre)
