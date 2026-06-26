@@ -26,8 +26,8 @@ from app.modules.acceso.models.rol_transaccion import RolTransaccion
 
 
 _GESTION = ["SECRETARIO", "EXTENSION"]
-_LECTURA = ["SECRETARIO", "EXTENSION", "TESORERO", "COORDINADOR", "COORD_PROV",
-            "COORD_LOCAL", "COORDINADOR_CAMPANA", "PRESIDENTE", "VICEPRESIDENTE"]
+_LECTURA = ["SECRETARIO", "EXTENSION", "TESORERO", "COORDINADOR",
+            "COORDINADOR_CAMPANA", "PRESIDENTE", "VICEPRESIDENTE"]
 
 # transaccion_codigo -> roles que la reciben
 _REPARTO = {

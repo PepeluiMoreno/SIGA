@@ -35,8 +35,6 @@ REPARTO = {
     "PRESIDENTE":          _TRANS,
     "VICEPRESIDENTE":      _TRANS,
     "COORDINADOR":         _TRANS,
-    "COORD_PROV":          _TRANS,
-    "COORD_LOCAL":         _TRANS,
     "COORDINADOR_CAMPANA": _TRANS,
 }
 

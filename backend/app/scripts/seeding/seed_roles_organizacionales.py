@@ -62,22 +62,9 @@ ORGANIZACION_ROLES = [
         "es_territorial": True,
         "nivel_territorial": "AUTONOMICO",
     },
-    {
-        "codigo": "COORD_PROV",
-        "nombre": "Coordinador Provincial",
-        "descripcion": "Coordinador de agrupación provincial",
-        "nivel": 7,
-        "es_territorial": True,
-        "nivel_territorial": "PROVINCIAL",
-    },
-    {
-        "codigo": "COORD_LOCAL",
-        "nombre": "Coordinador Local",
-        "descripcion": "Coordinador de grupo local",
-        "nivel": 8,
-        "es_territorial": True,
-        "nivel_territorial": "LOCAL",
-    },
+    # COORD_PROV / COORD_LOCAL retirados (2026-06-26): el título del coordinador se
+    # compone dinámicamente con la denominación del nivel (ver tituloCargo en
+    # DetalleAgrupacion); existe un único rol territorial genérico COORDINADOR.
     {
         # Ámbito = su campaña (no territorial). Se asigna al nombrar coordinador de una campaña.
         "codigo": "COORDINADOR_CAMPANA",

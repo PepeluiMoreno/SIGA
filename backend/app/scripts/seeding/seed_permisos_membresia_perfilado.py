@@ -30,7 +30,7 @@ from app.modules.acceso.models.rol_transaccion import RolTransaccion
 
 _SECRETARIA = ["SECRETARIO"]
 _TESORERIA = ["TESORERO"]
-_COORDINACION = ["COORDINADOR", "COORD_PROV", "COORD_LOCAL", "COORDINADOR_CAMPANA"]
+_COORDINACION = ["COORDINADOR", "COORDINADOR_CAMPANA"]
 
 # transaccion_codigo -> roles que la reciben
 _REPARTO = {
