@@ -98,6 +98,29 @@ async def _ensure_cargos(session, roles: dict[str, Rol]) -> dict[str, tuple[Carg
     return cargos
 
 
+async def _normalizar_coord_legacy(session, roles: dict[str, Rol]) -> None:
+    """Idempotente: repunta los nombramientos que aún usan roles coordinador de
+    nombre fijo (COORD_PROV/COORD_LOCAL) al COORDINADOR genérico. El título del
+    cargo se compone dinámicamente con la denominación del nivel de la unidad
+    (ver DetalleAgrupacion.tituloCargo), así que no hace falta un rol por nivel.
+    """
+    coord = roles.get("COORDINADOR")
+    if coord is None:
+        return
+    legacy_ids = (await session.execute(
+        select(Rol.id).where(Rol.codigo.in_(["COORD_PROV", "COORD_LOCAL"]))
+    )).scalars().all()
+    if not legacy_ids:
+        return
+    nombramientos = (await session.execute(
+        select(HistorialNombramiento).where(HistorialNombramiento.rol_id.in_(legacy_ids))
+    )).scalars().all()
+    for nom in nombramientos:
+        nom.rol_id = coord.id
+    if nombramientos:
+        print(f"  [norm  ~] {len(nombramientos)} nombramiento(s) coordinador legacy → COORDINADOR")
+
+
 async def seed() -> None:
     print("=" * 60)
     print("SEED CARGOS + NOMBRAMIENTOS TERRITORIALES")
@@ -105,6 +128,7 @@ async def seed() -> None:
 
     async with async_session() as session:
         roles = await _ensure_roles(session)
+        await _normalizar_coord_legacy(session, roles)
         cargos = await _ensure_cargos(session, roles)
         await session.flush()
 
