@@ -4,7 +4,7 @@
     <div
       v-for="item in arbolPlano"
       :key="item.id"
-      class="flex items-center gap-1 min-w-0 py-0.5"
+      class="group flex items-center gap-1 min-w-0 py-0.5 px-1 -mx-1 rounded-md hover:bg-slate-50"
       :style="{ paddingLeft: item.depth * 20 + 'px' }"
     >
       <span class="flex-shrink-0 w-4 text-center">
@@ -33,62 +33,83 @@
           </span>
         </div>
 
-        <!-- ↑ Subir nivel (promover al nivel de su padre) -->
-        <button v-if="item.depth > 0" type="button" @click="promover(item)" :disabled="guardando"
-          title="Subir un nivel"
-          class="text-xs font-bold text-purple-400 hover:text-purple-700 px-1 py-0.5 rounded hover:bg-purple-50 disabled:opacity-40 flex-shrink-0">↑</button>
-        <span v-else class="w-4 flex-shrink-0" />
-
-        <!-- ↓ Bajar nivel (anidar en el hermano anterior) -->
-        <button v-if="prevSiblingOf(item)" type="button" @click="demover(item)" :disabled="guardando"
-          title="Bajar un nivel (anidar en el anterior)"
-          class="text-xs font-bold text-purple-400 hover:text-purple-700 px-1 py-0.5 rounded hover:bg-purple-50 disabled:opacity-40 flex-shrink-0">↓</button>
-        <span v-else class="w-4 flex-shrink-0" />
-
-        <!-- ⊕↑ Insertar nivel entre este y su padre -->
-        <button type="button" @click="añadirSuperior(item)" :disabled="guardando"
-          title="Insertar nivel superior"
-          class="text-xs font-bold text-purple-400 hover:text-purple-700 px-1 py-0.5 rounded hover:bg-purple-50 disabled:opacity-40 flex-shrink-0 font-mono">⊕↑</button>
-
-        <!-- ⊕↓ Añadir subnivel -->
-        <button type="button" @click="añadirHijo(item)" :disabled="guardando"
-          title="Añadir subnivel"
-          class="text-xs font-bold text-purple-400 hover:text-purple-700 px-1 py-0.5 rounded hover:bg-purple-50 disabled:opacity-40 flex-shrink-0 font-mono">⊕↓</button>
-
-        <!-- ✎ Editar nombre y ámbito -->
-        <button type="button" @click="iniciarEdicion(item)"
-          title="Editar"
-          class="text-xs font-bold text-purple-400 hover:text-purple-700 px-1 py-0.5 rounded hover:bg-purple-50 flex-shrink-0">✎</button>
-
-        <!-- × Eliminar: siempre en no-raíz; en raíz solo si hay más de una (permite borrar huérfanos) -->
-        <button v-if="item.depth > 0 || raices.length > 1" type="button" @click="iniciarEliminar(item)" :disabled="guardando"
-          title="Eliminar"
-          class="text-xs font-bold text-purple-400 hover:text-red-500 px-1 py-0.5 rounded hover:bg-red-50 disabled:opacity-40 flex-shrink-0">×</button>
-        <span v-else class="w-4 flex-shrink-0" />
+        <!-- Acciones: se revelan al pasar el ratón sobre la fila -->
+        <div class="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+          <button v-if="item.depth > 0" type="button" @click="promover(item)" :disabled="guardando"
+            title="Subir un nivel (promover)"
+            class="w-7 h-7 grid place-items-center text-sm text-slate-400 hover:text-purple-700 rounded hover:bg-purple-50 disabled:opacity-30">↑</button>
+          <button v-if="prevSiblingOf(item)" type="button" @click="demover(item)" :disabled="guardando"
+            title="Bajar un nivel (anidar en el anterior)"
+            class="w-7 h-7 grid place-items-center text-sm text-slate-400 hover:text-purple-700 rounded hover:bg-purple-50 disabled:opacity-30">↓</button>
+          <span class="w-px h-4 bg-slate-200 mx-0.5" />
+          <button type="button" @click="añadirSuperior(item)" :disabled="guardando"
+            title="Insertar un nivel por encima de este"
+            class="w-7 h-7 grid place-items-center text-xs font-mono text-slate-400 hover:text-purple-700 rounded hover:bg-purple-50 disabled:opacity-30">⊕↑</button>
+          <button type="button" @click="añadirHijo(item)" :disabled="guardando"
+            title="Añadir un subnivel (hijo)"
+            class="w-7 h-7 grid place-items-center text-xs font-mono text-slate-400 hover:text-purple-700 rounded hover:bg-purple-50 disabled:opacity-30">⊕↓</button>
+          <span class="w-px h-4 bg-slate-200 mx-0.5" />
+          <button type="button" @click="iniciarEdicion(item)"
+            title="Editar nombre, ámbito y denominación"
+            class="w-7 h-7 grid place-items-center text-sm text-slate-400 hover:text-purple-700 rounded hover:bg-purple-50">✎</button>
+          <button v-if="item.depth > 0 || raices.length > 1" type="button" @click="iniciarEliminar(item)" :disabled="guardando"
+            title="Eliminar nivel"
+            class="w-7 h-7 grid place-items-center text-sm text-slate-400 hover:text-red-500 rounded hover:bg-red-50 disabled:opacity-30">×</button>
+        </div>
       </template>
 
-      <!-- Edición inline: solo nombre + ámbito geográfico -->
+      <!-- Edición: mini-formulario con etiquetas -->
       <template v-else>
-        <input v-model="formNombre" type="text" autofocus
-          class="flex-1 min-w-0 max-w-[16rem] border border-purple-400 rounded px-2 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
-          @keydown.enter.prevent="guardar(item)"
-          @keydown.escape="editandoId = null" />
-        <select v-model="formAmbitoId"
-          class="flex-shrink-0 border border-indigo-300 rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white">
-          <option value="">sin ámbito</option>
-          <option v-for="a in ambitosOrdenados" :key="a.id" :value="a.id">{{ a.nombre }}</option>
-        </select>
-        <input v-model="formDenomSingular" type="text" placeholder="unidad (sing.)"
-          title="Denominación interna de la unidad en este ámbito (singular)"
-          class="flex-shrink-0 w-24 border border-slate-300 rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-        <input v-model="formDenomPlural" type="text" placeholder="unidades (pl.)"
-          title="Denominación interna de la unidad en este ámbito (plural)"
-          class="flex-shrink-0 w-24 border border-slate-300 rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-        <button type="button" @click="guardar(item)"
-          class="text-xs px-2 py-0.5 bg-purple-600 text-white rounded hover:bg-purple-700 flex-shrink-0">OK</button>
-        <button type="button" @click="editandoId = null"
-          class="text-xs px-1.5 py-0.5 text-gray-500 border border-gray-200 rounded hover:bg-gray-50 flex-shrink-0">✕</button>
+        <div class="flex-1 min-w-0 rounded-lg border border-purple-300 bg-purple-50/40 p-2.5 space-y-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2">
+            <label class="block">
+              <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Nombre del nivel</span>
+              <input v-model="formNombre" type="text" autofocus
+                class="w-full border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                @keydown.enter.prevent="guardar(item)"
+                @keydown.escape="editandoId = null" />
+            </label>
+            <label class="block">
+              <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Ámbito geográfico</span>
+              <select v-model="formAmbitoId"
+                class="w-full border border-slate-300 rounded px-2 py-1 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                <option value="">— sin ámbito —</option>
+                <option v-for="a in ambitosOrdenados" :key="a.id" :value="a.id">{{ a.nombre }}</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Denominación de la unidad (singular)</span>
+              <input v-model="formDenomSingular" type="text" placeholder="p.ej. Agrupación Provincial"
+                class="w-full border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+            </label>
+            <label class="block">
+              <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Denominación de la unidad (plural)</span>
+              <input v-model="formDenomPlural" type="text" placeholder="p.ej. Agrupaciones Provinciales"
+                class="w-full border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+            </label>
+          </div>
+          <div class="flex justify-end gap-2">
+            <button type="button" @click="editandoId = null"
+              class="text-xs px-2.5 py-1 text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Cancelar</button>
+            <button type="button" @click="guardar(item)"
+              class="text-xs px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700">Guardar</button>
+          </div>
+        </div>
       </template>
+    </div>
+
+    <div class="flex items-center justify-between gap-3 pt-1.5 border-t border-slate-100 mt-1">
+      <button type="button" @click="añadirRaiz" :disabled="guardando"
+        class="inline-flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-800 disabled:opacity-40">
+        <span class="grid place-items-center w-5 h-5 rounded-full border border-purple-300 text-purple-500 font-mono leading-none">+</span>
+        Añadir nivel raíz
+      </button>
+      <span class="hidden sm:block text-[11px] text-slate-400 text-right leading-tight">
+        Al pasar el ratón por un nivel: <span class="font-mono">↑</span> subir ·
+        <span class="font-mono">↓</span> anidar · <span class="font-mono">⊕↑</span> insertar encima ·
+        <span class="font-mono">⊕↓</span> subnivel · <span class="font-mono">✎</span> editar ·
+        <span class="font-mono">×</span> borrar
+      </span>
     </div>
 
     <ErrorAlert v-if="errorMsg" :message="errorMsg" />
@@ -301,6 +322,26 @@ const añadirHijo = async (padre) => {
     await recargarConfig()
   } catch (e) {
     errorMsg.value = e?.response?.errors?.[0]?.message ?? 'Error al crear subnivel'
+  } finally {
+    guardando.value = false
+  }
+}
+
+// Añade un nivel raíz (sin padre)
+const añadirRaiz = async () => {
+  guardando.value = true
+  errorMsg.value  = ''
+  try {
+    await crearTipo({
+      nombre: 'Nuevo nivel',
+      naturaleza: 'TERRITORIAL',
+      vinculo: 'INTERNA',
+      padreTipoId: null,
+      activo: true,
+    })
+    await recargarConfig()
+  } catch (e) {
+    errorMsg.value = e?.response?.errors?.[0]?.message ?? 'Error al crear nivel raíz'
   } finally {
     guardando.value = false
   }
