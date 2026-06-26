@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="Contactos" :subtitle="subtitulo">
+  <AppLayout title="Contactos" :subtitle="subtitulo" fluid>
     <template v-if="tienePermiso('CONTACTO_CREATE')" #actions>
       <router-link to="/contactos/nuevo"
         class="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
@@ -8,84 +8,76 @@
       </router-link>
     </template>
 
-    <div class="p-4 sm:p-6 max-w-7xl mx-auto">
-      <div class="flex items-center justify-end mb-4">
-        <span class="text-sm text-slate-500">{{ contactosFiltrados.length }} de {{ contactos.length }}</span>
+    <!-- Patrón general: filtro lateral colapsable (FilterRail) + resultados -->
+    <div class="flex flex-col lg:flex-row gap-4 items-start">
+      <FilterRail storage-key="contactos">
+        <FilterBar
+          vertical
+          v-model="filters"
+          v-model:search="searchQuery"
+          search-placeholder="Buscar por nombre, razón social, email o documento…"
+          :fields="filterFields"
+          @clear="limpiarFiltros" />
+      </FilterRail>
+
+      <!-- Columna de resultados -->
+      <div class="flex-1 min-w-0 w-full">
+        <div class="flex items-center justify-end mb-3">
+          <span class="text-sm text-slate-500">{{ contactosFiltrados.length }} de {{ contactos.length }}</span>
+        </div>
+
+        <!-- Estados -->
+        <div v-if="cargando" class="text-center py-12 text-slate-400 text-sm">Cargando contactos…</div>
+        <div v-else-if="error" class="rounded-md bg-red-50 border border-red-200 p-4 text-sm text-red-800">{{ error }}</div>
+        <div v-else-if="!contactosFiltrados.length" class="text-center py-12 text-slate-400 text-sm">
+          No hay contactos que coincidan con el filtro.
+        </div>
+
+        <!-- Tabla -->
+        <div v-else class="overflow-x-auto border border-slate-200 rounded-lg">
+          <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-slate-50">
+              <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                <th class="px-4 py-3">Tipo</th>
+                <th class="px-4 py-3">Nombre / Razón social</th>
+                <th class="px-4 py-3">Documento</th>
+                <th class="px-4 py-3">Contacto</th>
+                <th class="px-4 py-3">Vinculación actual</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr v-for="c in contactosFiltrados" :key="c.id"
+                class="hover:bg-purple-50 cursor-pointer"
+                @click="abrirFicha(c.id)">
+                <td class="px-4 py-3">
+                  <span
+                    class="inline-block px-2 py-0.5 rounded text-xs font-medium"
+                    :class="c.tipo === 'PERSONA_JURIDICA' ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800'"
+                  >{{ c.tipo === 'PERSONA_JURIDICA' ? 'PJ' : 'PF' }}</span>
+                </td>
+                <td class="px-4 py-3 font-medium text-purple-700">{{ nombreMostrado(c) }}</td>
+                <td class="px-4 py-3 text-slate-600">{{ c.numeroDocumento || c.cif || '—' }}</td>
+                <td class="px-4 py-3 text-slate-600">
+                  <div>{{ c.email || '—' }}</div>
+                  <div class="text-xs text-slate-400">{{ c.telefono || '' }}</div>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex flex-wrap gap-1">
+                    <span
+                      v-for="v in facetasVigentes(c)"
+                      :key="v.id"
+                      class="inline-block px-2 py-0.5 rounded text-xs font-medium"
+                      :class="colorFaceta(v.tipoVinculacion && v.tipoVinculacion.codigo)"
+                    >{{ v.tipoVinculacion ? v.tipoVinculacion.nombre : '—' }}</span>
+                    <span v-if="!facetasVigentes(c).length" class="text-xs text-slate-400">sin vinculación</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-
-    <!-- Filtros -->
-    <div class="flex flex-wrap gap-2 mb-4">
-      <input
-        v-model="busqueda"
-        type="text"
-        placeholder="Buscar por nombre, razón social, email o documento…"
-        class="flex-1 min-w-[14rem] px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-      />
-      <select v-model="filtroTipo" class="px-3 py-2 border border-slate-300 rounded-md text-sm bg-white">
-        <option value="TODOS">Todos los tipos</option>
-        <option value="PERSONA_FISICA">Personas físicas</option>
-        <option value="PERSONA_JURIDICA">Personas jurídicas</option>
-      </select>
-      <select v-model="filtroFaceta" class="px-3 py-2 border border-slate-300 rounded-md text-sm bg-white">
-        <option value="TODOS">Cualquier vinculación</option>
-        <option v-for="f in facetasDisponibles" :key="f.codigo" :value="f.codigo">{{ f.nombre }}</option>
-      </select>
     </div>
-
-    <!-- Estados -->
-    <div v-if="cargando" class="text-center py-12 text-slate-400 text-sm">Cargando contactos…</div>
-    <div v-else-if="error" class="rounded-md bg-red-50 border border-red-200 p-4 text-sm text-red-800">{{ error }}</div>
-    <div v-else-if="!contactosFiltrados.length" class="text-center py-12 text-slate-400 text-sm">
-      No hay contactos que coincidan con el filtro.
-    </div>
-
-    <!-- Tabla -->
-    <div v-else class="overflow-x-auto border border-slate-200 rounded-lg">
-      <table class="min-w-full divide-y divide-slate-200 text-sm">
-        <thead class="bg-slate-50">
-          <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
-            <th class="px-4 py-3">Tipo</th>
-            <th class="px-4 py-3">Nombre / Razón social</th>
-            <th class="px-4 py-3">Documento</th>
-            <th class="px-4 py-3">Contacto</th>
-            <th class="px-4 py-3">Vinculación actual</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          <tr v-for="c in contactosFiltrados" :key="c.id"
-            class="hover:bg-purple-50 cursor-pointer"
-            @click="abrirFicha(c.id)">
-            <td class="px-4 py-3">
-              <span
-                class="inline-block px-2 py-0.5 rounded text-xs font-medium"
-                :class="c.tipo === 'PERSONA_JURIDICA' ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800'"
-              >{{ c.tipo === 'PERSONA_JURIDICA' ? 'PJ' : 'PF' }}</span>
-            </td>
-            <td class="px-4 py-3 font-medium text-purple-700">
-              {{ nombreMostrado(c) }}
-            </td>
-            <td class="px-4 py-3 text-slate-600">{{ c.numeroDocumento || c.cif || '—' }}</td>
-            <td class="px-4 py-3 text-slate-600">
-              <div>{{ c.email || '—' }}</div>
-              <div class="text-xs text-slate-400">{{ c.telefono || '' }}</div>
-            </td>
-            <td class="px-4 py-3">
-              <div class="flex flex-wrap gap-1">
-                <span
-                  v-for="v in facetasVigentes(c)"
-                  :key="v.id"
-                  class="inline-block px-2 py-0.5 rounded text-xs font-medium"
-                  :class="colorFaceta(v.tipoVinculacion && v.tipoVinculacion.codigo)"
-                >{{ v.tipoVinculacion ? v.tipoVinculacion.nombre : '—' }}</span>
-                <span v-if="!facetasVigentes(c).length" class="text-xs text-slate-400">sin vinculación</span>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    </div>
-
   </AppLayout>
 </template>
 
@@ -93,6 +85,8 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
+import FilterRail from '@/components/common/FilterRail.vue'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { graphqlClient } from '@/graphql/client.js'
@@ -110,9 +104,9 @@ function abrirFicha(id) {
 const contactos = ref([])
 const cargando = ref(true)
 const error = ref('')
-const busqueda = ref('')
-const filtroTipo = ref('TODOS')
-const filtroFaceta = ref('TODOS')
+
+const searchQuery = ref('')
+const filters = ref({ tipos: [], facetas: [] })
 
 const _COLORES = {
   SOCIO: 'bg-emerald-100 text-emerald-800',
@@ -136,14 +130,12 @@ function facetasVigentes(c) {
   return (c.vinculaciones || []).filter((v) => !v.fechaFin)
 }
 
-// Catálogo de facetas presentes, RELACIONADO con el tipo de persona elegido:
-// solo se ofrecen las facetas que de hecho tienen contactos de ese tipo, de modo
-// que no aparezcan combinaciones sin sentido (p.ej. una faceta solo de PF cuando
-// se filtra por personas jurídicas).
+// Catálogo de vinculaciones presentes, RELACIONADO con los tipos de persona
+// elegidos: solo se ofrecen las que de hecho tienen contactos de ese tipo.
 const facetasDisponibles = computed(() => {
   const mapa = new Map()
   for (const c of contactos.value) {
-    if (filtroTipo.value !== 'TODOS' && c.tipo !== filtroTipo.value) continue
+    if (filters.value.tipos.length && !filters.value.tipos.includes(c.tipo)) continue
     for (const v of facetasVigentes(c)) {
       const tv = v.tipoVinculacion
       if (tv && !mapa.has(tv.codigo)) mapa.set(tv.codigo, { codigo: tv.codigo, nombre: tv.nombre })
@@ -152,20 +144,46 @@ const facetasDisponibles = computed(() => {
   return [...mapa.values()].sort((a, b) => a.nombre.localeCompare(b.nombre))
 })
 
-// Si al cambiar el tipo de persona la faceta elegida deja de tener sentido,
-// se reinicia a "Todas".
-watch(filtroTipo, () => {
-  if (filtroFaceta.value !== 'TODOS' && !facetasDisponibles.value.some((f) => f.codigo === filtroFaceta.value)) {
-    filtroFaceta.value = 'TODOS'
-  }
+const filterFields = computed(() => [
+  {
+    key: 'tipos',
+    label: 'Tipo de persona',
+    type: 'multiselect',
+    options: [
+      { value: 'PERSONA_FISICA', label: 'Personas físicas' },
+      { value: 'PERSONA_JURIDICA', label: 'Personas jurídicas' },
+    ],
+    allLabel: 'Todos los tipos',
+    width: 'w-56',
+  },
+  {
+    key: 'facetas',
+    label: 'Vinculación',
+    type: 'multiselect',
+    options: facetasDisponibles.value.map((f) => ({ value: f.codigo, label: f.nombre })),
+    allLabel: 'Cualquier vinculación',
+    width: 'w-56',
+  },
+])
+
+// Si al cambiar el tipo de persona alguna vinculación elegida deja de tener
+// sentido, se descarta.
+watch(() => filters.value.tipos.slice(), () => {
+  const validas = new Set(facetasDisponibles.value.map((f) => f.codigo))
+  filters.value.facetas = filters.value.facetas.filter((cod) => validas.has(cod))
 })
 
+function limpiarFiltros() {
+  filters.value = { tipos: [], facetas: [] }
+  searchQuery.value = ''
+}
+
 const contactosFiltrados = computed(() => {
-  const q = busqueda.value.trim().toLowerCase()
+  const q = searchQuery.value.trim().toLowerCase()
   return contactos.value.filter((c) => {
-    if (filtroTipo.value !== 'TODOS' && c.tipo !== filtroTipo.value) return false
-    if (filtroFaceta.value !== 'TODOS') {
-      const tiene = facetasVigentes(c).some((v) => v.tipoVinculacion && v.tipoVinculacion.codigo === filtroFaceta.value)
+    if (filters.value.tipos.length && !filters.value.tipos.includes(c.tipo)) return false
+    if (filters.value.facetas.length) {
+      const tiene = facetasVigentes(c).some((v) => v.tipoVinculacion && filters.value.facetas.includes(v.tipoVinculacion.codigo))
       if (!tiene) return false
     }
     if (q) {
