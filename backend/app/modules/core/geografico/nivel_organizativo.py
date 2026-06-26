@@ -73,6 +73,15 @@ class NivelOrganizativo(BaseModel):
     denominacion_singular: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     denominacion_plural: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
+    # Modelo de estructura para el subárbol que cuelga de este nivel:
+    #   False (por defecto) = CENTRALIZADA: la matriz define aquí toda la subestructura.
+    #   True               = DISTRIBUIDA: cada unidad de este nivel define su propia
+    #                        subestructura (su coordinador, en la edición de la agrupación).
+    # Es recursivo: cada nivel decide cómo se organiza lo que cuelga de él.
+    estructura_distribuida: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default='false', nullable=False
+    )
+
     ambito_geografico: Mapped[Optional[AmbitoGeografico]] = relationship(
         "AmbitoGeografico", back_populates="niveles_organizativos", lazy="selectin"
     )

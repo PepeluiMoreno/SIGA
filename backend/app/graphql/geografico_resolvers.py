@@ -23,6 +23,7 @@ class NivelOrganizativoCreateInput:
     ambito_geografico_id: Optional[uuid.UUID] = None
     denominacion_singular: Optional[str] = None
     denominacion_plural: Optional[str] = None
+    estructura_distribuida: bool = False
 
 
 @strawberry.input
@@ -37,10 +38,12 @@ class NivelOrganizativoUpdateInput:
     ambito_geografico_id: Optional[uuid.UUID] = strawberry.UNSET
     denominacion_singular: Optional[str] = strawberry.UNSET
     denominacion_plural: Optional[str] = strawberry.UNSET
+    estructura_distribuida: Optional[bool] = strawberry.UNSET
 
 
 _NV_FIELDS = ['nombre', 'naturaleza', 'vinculo', 'activo', 'nivel', 'padre_tipo_id',
-              'ambito_geografico_id', 'denominacion_singular', 'denominacion_plural']
+              'ambito_geografico_id', 'denominacion_singular', 'denominacion_plural',
+              'estructura_distribuida']
 
 
 async def _fetch_nivel(session, nivel_id: uuid.UUID) -> NivelOrganizativo:
