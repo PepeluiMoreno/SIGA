@@ -29,131 +29,76 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-      <!-- IZQUIERDA · grid de niveles (nivel · ámbito · denominación) -->
+      <!-- IZQUIERDA · operaciones sobre el árbol -->
       <div>
-        <table class="w-full text-sm border-collapse border border-slate-200">
-          <thead>
-            <tr class="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-              <th class="px-2 py-2 border-b border-slate-200 w-14 text-center">Nivel</th>
-              <th class="px-3 py-2 border-b border-slate-200">Nombre</th>
-              <th class="px-3 py-2 border-b border-slate-200 w-32">Ámbito</th>
-              <th class="px-3 py-2 border-b border-slate-200">Denominación</th>
-              <th class="px-1 py-2 border-b border-slate-200 w-px"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <template v-for="item in arbolPlano" :key="item.id">
-              <!-- Lectura -->
-              <tr v-if="editandoId !== item.id" class="group border-b border-slate-100 hover:bg-slate-50">
-                <td class="px-2 py-1.5 align-middle text-center text-slate-400 tabular-nums">{{ item.depth + 1 }}</td>
-                <td class="px-3 py-1.5 align-middle">
-                  <span class="block truncate" :class="item.depth === 0 ? 'font-medium text-slate-800' : 'text-slate-700'">{{ item.nombre }}</span>
-                </td>
-                <td class="px-3 py-1.5 align-middle text-slate-600">
-                  {{ item.ambitoGeografico?.nombre || '—' }}
-                </td>
-                <td class="px-3 py-1.5 align-middle text-slate-600">
-                  <span class="block truncate"
-                    :title="item.denominacionPlural ? `${item.denominacionSingular} / ${item.denominacionPlural}` : (item.denominacionSingular || '')">{{ item.denominacionSingular || '—' }}</span>
-                </td>
-                <td class="px-1 py-1 align-middle">
-                  <div class="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-                    <button v-if="puedeSubir(item)" type="button" @click="promover(item)" :disabled="guardando"
-                      title="Subir un nivel (promover)"
-                      class="w-7 h-7 grid place-items-center text-sm text-slate-400 hover:text-purple-700 rounded hover:bg-purple-50 disabled:opacity-30">↑</button>
-                    <button v-if="prevSiblingOf(item)" type="button" @click="demover(item)" :disabled="guardando"
-                      title="Bajar un nivel (anidar en el anterior)"
-                      class="w-7 h-7 grid place-items-center text-sm text-slate-400 hover:text-purple-700 rounded hover:bg-purple-50 disabled:opacity-30">↓</button>
-                    <span class="w-px h-4 bg-slate-200 mx-0.5" />
-                    <button v-if="puedeSuperior(item)" type="button" @click="añadirSuperior(item)" :disabled="guardando"
-                      title="Insertar un nivel por encima de este"
-                      class="w-7 h-7 grid place-items-center text-xs font-mono text-slate-400 hover:text-purple-700 rounded hover:bg-purple-50 disabled:opacity-30">⊕↑</button>
-                    <button type="button" @click="añadirHijo(item)" :disabled="guardando"
-                      title="Añadir un subnivel (hijo)"
-                      class="w-7 h-7 grid place-items-center text-xs font-mono text-slate-400 hover:text-purple-700 rounded hover:bg-purple-50 disabled:opacity-30">⊕↓</button>
-                    <span class="w-px h-4 bg-slate-200 mx-0.5" />
-                    <button type="button" @click="iniciarEdicion(item)"
-                      title="Editar nombre, ámbito y denominación"
-                      class="w-7 h-7 grid place-items-center text-sm text-slate-400 hover:text-purple-700 rounded hover:bg-purple-50">✎</button>
-                    <button v-if="puedeEliminar(item)" type="button" @click="iniciarEliminar(item)" :disabled="guardando"
-                      title="Eliminar nivel"
-                      class="w-7 h-7 grid place-items-center text-sm text-slate-400 hover:text-red-500 rounded hover:bg-red-50 disabled:opacity-30">×</button>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Edición: mini-formulario con etiquetas (ocupa toda la fila) -->
-              <tr v-else class="border-t border-purple-200">
-                <td colspan="5" class="py-2">
-                  <div class="rounded-lg border border-purple-300 bg-purple-50/40 p-2.5 space-y-2">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2">
-                      <label class="block">
-                        <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Nombre del nivel</span>
-                        <input v-model="formNombre" type="text" autofocus
-                          class="w-full border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
-                          @keydown.enter.prevent="guardar(item)"
-                          @keydown.escape="editandoId = null" />
-                      </label>
-                      <label class="block">
-                        <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Ámbito geográfico</span>
-                        <select v-model="formAmbitoId"
-                          class="w-full border border-slate-300 rounded px-2 py-1 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                          <option value="">— sin ámbito —</option>
-                          <option v-for="a in ambitosOrdenados" :key="a.id" :value="a.id">{{ a.nombre }}</option>
-                        </select>
-                      </label>
-                      <label class="block">
-                        <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Denominación de la unidad (singular)</span>
-                        <input v-model="formDenomSingular" type="text" placeholder="p.ej. Agrupación Provincial"
-                          class="w-full border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                      </label>
-                      <label class="block">
-                        <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Denominación de la unidad (plural)</span>
-                        <input v-model="formDenomPlural" type="text" placeholder="p.ej. Agrupaciones Provinciales"
-                          class="w-full border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                      </label>
-                    </div>
-                    <div class="flex justify-end gap-2">
-                      <button type="button" @click="editandoId = null"
-                        class="text-xs px-2.5 py-1 text-gray-600 border border-gray-300 rounded hover:bg-gray-50">Cancelar</button>
-                      <button type="button" @click="guardar(item)"
-                        class="text-xs px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700">Guardar</button>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
-
-        <div class="flex items-center pt-2 mt-1 border-t border-slate-100">
-          <button v-if="!scoped" type="button" @click="añadirRaiz" :disabled="guardando"
-            class="inline-flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-800 disabled:opacity-40">
-            <span class="grid place-items-center w-5 h-5 rounded-full border border-purple-300 text-purple-500 font-mono leading-none">+</span>
-            Añadir nivel raíz
-          </button>
-          <button v-else-if="nodoScope" type="button" @click="añadirHijo(nodoScope)" :disabled="guardando"
-            class="inline-flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-800 disabled:opacity-40">
-            <span class="grid place-items-center w-5 h-5 rounded-full border border-purple-300 text-purple-500 font-mono leading-none">+</span>
-            Añadir subnivel
-          </button>
+        <!-- Edición del nivel seleccionado -->
+        <div v-if="editandoId" class="rounded-xl border border-purple-300 bg-purple-50/40 p-3 space-y-2.5">
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-purple-500">Editar nivel</p>
+          <label class="block">
+            <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Nombre del nivel</span>
+            <input v-model="formNombre" type="text" autofocus
+              class="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+              @keydown.enter.prevent="guardar({ id: editandoId })" @keydown.escape="editandoId = null" />
+          </label>
+          <label class="block">
+            <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Ámbito geográfico</span>
+            <select v-model="formAmbitoId"
+              class="w-full border border-slate-300 rounded px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+              <option value="">— sin ámbito —</option>
+              <option v-for="a in ambitosOrdenados" :key="a.id" :value="a.id">{{ a.nombre }}</option>
+            </select>
+          </label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="block">
+              <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Denominación (singular)</span>
+              <input v-model="formDenomSingular" type="text" placeholder="p.ej. Agrupación Provincial"
+                class="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+            </label>
+            <label class="block">
+              <span class="block text-[11px] font-medium text-slate-500 mb-0.5">Denominación (plural)</span>
+              <input v-model="formDenomPlural" type="text" placeholder="p.ej. Agrupaciones Provinciales"
+                class="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+            </label>
+          </div>
+          <div class="flex justify-end gap-2 pt-1">
+            <button type="button" @click="editandoId = null"
+              class="text-sm px-3 py-1.5 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+            <button type="button" @click="guardar({ id: editandoId })" :disabled="guardando"
+              class="text-sm px-4 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-40">Guardar</button>
+          </div>
         </div>
 
-        <p class="text-[11px] text-slate-400 leading-tight pt-1.5">
-          Al pasar el ratón por un nivel: <span class="font-mono">↑</span> subir ·
-          <span class="font-mono">↓</span> anidar · <span class="font-mono">⊕↑</span> insertar encima ·
-          <span class="font-mono">⊕↓</span> subnivel · <span class="font-mono">✎</span> editar ·
-          <span class="font-mono">×</span> borrar
-        </p>
+        <!-- Operaciones -->
+        <div v-else class="space-y-3">
+          <button v-if="!scoped" type="button" @click="añadirRaiz" :disabled="guardando"
+            class="w-full text-sm font-medium px-3 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-40">
+            ＋ Añadir nivel raíz
+          </button>
+          <button v-else-if="nodoScope" type="button" @click="añadirHijo(nodoScope)" :disabled="guardando"
+            class="w-full text-sm font-medium px-3 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-40">
+            ＋ Añadir subnivel
+          </button>
+
+          <div v-if="nodoSel" class="rounded-xl border border-slate-200 p-3 space-y-2.5">
+            <div>
+              <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Nivel seleccionado</p>
+              <p class="text-sm font-medium text-slate-800 truncate">{{ nodoSel.nombre }}</p>
+            </div>
+            <VerticalToolbar :actions="accionesNivel" :disabled="guardando" @select="onAccionNivel" />
+          </div>
+          <p v-else class="text-sm text-slate-400 italic px-1 py-2">Selecciona un nivel en el árbol de la derecha para operar sobre él.</p>
+        </div>
       </div>
 
-      <!-- DERECHA · vista del árbol en tiempo real -->
+      <!-- DERECHA · árbol resultante (clic para seleccionar) -->
       <div class="lg:border-l lg:border-slate-100 lg:pl-6">
         <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 min-h-[7rem]">
           <div v-if="arbolPreview.length">
             <div v-for="node in arbolPreview" :key="node.id"
-              class="flex items-center leading-7 rounded transition-colors"
-              :class="node.editing ? 'bg-purple-100/70 ring-1 ring-purple-200' : ''">
+              @click="seleccionadoId = node.id"
+              class="flex items-center leading-7 rounded cursor-pointer transition-colors px-1"
+              :class="node.editing ? 'bg-purple-100/70 ring-1 ring-purple-200'
+                      : (node.id === seleccionadoId ? 'bg-indigo-50 ring-1 ring-indigo-200' : 'hover:bg-slate-100')">
               <span v-for="(v, i) in node.vlines" :key="i"
                 class="inline-block w-5 flex-shrink-0 text-center font-mono text-slate-300 select-none">{{ v ? '│' : '' }}</span>
               <span class="inline-block w-5 flex-shrink-0 text-center font-mono select-none"
@@ -212,6 +157,7 @@
 
 <script setup>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import VerticalToolbar from '@/components/common/VerticalToolbar.vue'
 import { ref, computed, onMounted } from 'vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { useUnidadesOrganizativas } from '@/composables/useUnidadesOrganizativas'
@@ -244,6 +190,7 @@ const formDenomPlural   = ref('')
 const guardando     = ref(false)
 const errorMsg      = ref('')
 const pendingDelete = ref(null)
+const seleccionadoId = ref(null)
 
 const ambitos = ref([])
 const ambitosOrdenados = computed(() =>
@@ -325,6 +272,7 @@ const esAncla       = (item) => scoped.value && item.id === props.nivelRaizId
 const puedeSubir    = (item) => item.depth > 0 && !(scoped.value && item.padreTipoId === props.nivelRaizId)
 const puedeSuperior = (item) => !esAncla(item)
 const puedeEliminar = (item) => !esAncla(item) && (item.depth > 0 || raices.value.length > 1)
+const puedeHermano  = (item) => !esAncla(item)
 
 const arbolPlano = computed(() => {
   const lista = []
@@ -335,6 +283,9 @@ const arbolPlano = computed(() => {
   raices.value.forEach(r => dfs(r, 0))
   return lista
 })
+
+// Nivel seleccionado en el árbol (objetivo de las operaciones del toolbar)
+const nodoSel = computed(() => arbolPlano.value.find(n => n.id === seleccionadoId.value) ?? null)
 
 // Vista previa en tiempo real: refleja el árbol y superpone los valores del
 // formulario sobre el nodo que se está editando (sin esperar al guardado).
@@ -378,11 +329,23 @@ const prevSiblingOf = (nodo) => {
 }
 
 const iniciarEdicion = (tipo) => {
+  seleccionadoId.value = tipo.id
   formNombre.value   = tipo.nombre
   formAmbitoId.value = tipo.ambitoGeograficoId ?? ''
   formDenomSingular.value = tipo.denominacionSingular ?? ''
   formDenomPlural.value   = tipo.denominacionPlural ?? ''
   editandoId.value   = tipo.id
+}
+
+// Selecciona un nivel recién creado y abre su edición (para nombrarlo enseguida)
+const seleccionarYEditar = (nuevo) => {
+  if (!nuevo) return
+  seleccionadoId.value    = nuevo.id
+  formNombre.value        = nuevo.nombre ?? ''
+  formAmbitoId.value      = ''
+  formDenomSingular.value = ''
+  formDenomPlural.value   = ''
+  editandoId.value        = nuevo.id
 }
 
 const guardar = async (tipo) => {
@@ -452,6 +415,7 @@ const añadirSuperior = async (nodo) => {
     })
     await actualizarTipo({ id: nodo.id, padreTipoId: nuevo.id })
     await recargarConfig()
+    seleccionarYEditar(nuevo)
   } catch (e) {
     errorMsg.value = e?.response?.errors?.[0]?.message ?? 'Error al insertar nivel superior'
   } finally {
@@ -459,12 +423,12 @@ const añadirSuperior = async (nodo) => {
   }
 }
 
-// Añade un hijo directo
+// Añade un nivel inferior (hijo directo)
 const añadirHijo = async (padre) => {
   guardando.value = true
   errorMsg.value  = ''
   try {
-    await crearTipo({
+    const nuevo = await crearTipo({
       nombre: 'Nuevo subnivel',
       naturaleza: 'TERRITORIAL',
       vinculo: 'INTERNA',
@@ -472,8 +436,30 @@ const añadirHijo = async (padre) => {
       activo: true,
     })
     await recargarConfig()
+    seleccionarYEditar(nuevo)
   } catch (e) {
     errorMsg.value = e?.response?.errors?.[0]?.message ?? 'Error al crear subnivel'
+  } finally {
+    guardando.value = false
+  }
+}
+
+// Añade un nivel al mismo nivel que el dado (mismo padre = hermano)
+const añadirHermano = async (nodo) => {
+  guardando.value = true
+  errorMsg.value  = ''
+  try {
+    const nuevo = await crearTipo({
+      nombre: 'Nuevo nivel',
+      naturaleza: 'TERRITORIAL',
+      vinculo: nodo.vinculo ?? 'INTERNA',
+      padreTipoId: nodo.padreTipoId || null,
+      activo: true,
+    })
+    await recargarConfig()
+    seleccionarYEditar(nuevo)
+  } catch (e) {
+    errorMsg.value = e?.response?.errors?.[0]?.message ?? 'Error al crear nivel'
   } finally {
     guardando.value = false
   }
@@ -484,7 +470,7 @@ const añadirRaiz = async () => {
   guardando.value = true
   errorMsg.value  = ''
   try {
-    await crearTipo({
+    const nuevo = await crearTipo({
       nombre: 'Nuevo nivel',
       naturaleza: 'TERRITORIAL',
       vinculo: 'INTERNA',
@@ -492,6 +478,7 @@ const añadirRaiz = async () => {
       activo: true,
     })
     await recargarConfig()
+    seleccionarYEditar(nuevo)
   } catch (e) {
     errorMsg.value = e?.response?.errors?.[0]?.message ?? 'Error al crear nivel raíz'
   } finally {
@@ -521,12 +508,40 @@ const confirmarEliminar = async () => {
     }
     await eliminarTipo(nodo.id)
     await recargarConfig()
+    if (seleccionadoId.value === nodo.id) seleccionadoId.value = null
     pendingDelete.value = null
   } catch (e) {
     errorMsg.value = e?.response?.errors?.[0]?.message ?? 'Error al eliminar'
   } finally {
     guardando.value = false
   }
+}
+
+// Acciones del VerticalToolbar para el nivel seleccionado
+const accionesNivel = computed(() => {
+  const n = nodoSel.value
+  if (!n) return []
+  return [
+    { key: 'editar',   label: 'Editar nombre, ámbito y denominación' },
+    { key: 'hijo',     label: 'Añadir nivel inferior' },
+    { key: 'hermano',  label: 'Añadir al mismo nivel',        hidden: !puedeHermano(n) },
+    { key: 'superior', label: 'Insertar nivel encima',        hidden: !puedeSuperior(n) },
+    { key: 'subir',    label: 'Subir un nivel',               hidden: !puedeSubir(n) },
+    { key: 'anidar',   label: 'Anidar en el nivel anterior',  hidden: !prevSiblingOf(n) },
+    { key: 'eliminar', label: 'Eliminar nivel', variant: 'danger', hidden: !puedeEliminar(n) },
+  ]
+})
+
+const onAccionNivel = (key) => {
+  const n = nodoSel.value
+  if (!n) return
+  if (key === 'editar')        iniciarEdicion(n)
+  else if (key === 'hijo')     añadirHijo(n)
+  else if (key === 'hermano')  añadirHermano(n)
+  else if (key === 'superior') añadirSuperior(n)
+  else if (key === 'subir')    promover(n)
+  else if (key === 'anidar')   demover(n)
+  else if (key === 'eliminar') iniciarEliminar(n)
 }
 
 const estructuraProtegida = computed(() => false)
