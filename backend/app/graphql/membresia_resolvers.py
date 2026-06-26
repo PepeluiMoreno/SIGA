@@ -591,7 +591,7 @@ class MembresiaResolverMutation:
         ))
 
         # Nombres de agrupación (Contacto solo guarda el id)
-        from app.modules.core.geografico.models import UnidadOrganizativa
+        from app.modules.core.geografico.direccion import UnidadOrganizativa
         agr_ids = {c.agrupacion_id for c in contactos if c.agrupacion_id}
         agr_nombres: dict = {}
         if agr_ids:
