@@ -330,7 +330,7 @@
               <tr v-for="c in composicionJunta" :key="c.id"
                 class="group border-b border-slate-50 last:border-0 hover:bg-amber-50/40 transition-colors">
                 <td class="py-2.5 pr-3">
-                  <span class="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full">{{ c.rol?.nombre || '—' }}</span>
+                  <span class="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full">{{ tituloCargo(c.rol) }}</span>
                 </td>
                 <td class="py-2.5 pr-3 text-sm font-medium text-slate-800">
                   {{ c.miembro?.apellido1 }}{{ c.miembro?.apellido2 ? ' ' + c.miembro.apellido2 : '' }}, {{ c.miembro?.nombre }}
@@ -437,7 +437,7 @@
             <label :class="lbl">Cargo <span class="text-red-400">*</span></label>
             <select v-model="modal.rolId" :class="inp">
               <option value="">— Seleccionar cargo —</option>
-              <option v-for="r in rolesTerritoriales" :key="r.id" :value="r.id">{{ r.nombre }}</option>
+              <option v-for="r in rolesElegibles" :key="r.id" :value="r.id">{{ tituloCargo(r) }}</option>
             </select>
           </div>
           <div v-else>
@@ -668,7 +668,7 @@ function verFicha(socioId) { router.push(`/miembros/${socioId}`) }
 function cargosDe(socioId) {
   return nombramientos.value
     .filter(n => n.miembro?.id === socioId && n.estado === 'ACTIVO')
-    .map(n => n.rol?.nombre)
+    .map(n => tituloCargo(n.rol))
     .filter(Boolean)
 }
 
@@ -847,14 +847,32 @@ const todosRegistros = computed(() => [
   ...nombramientosHijos.value.map(r => ({ ...r, _esHijo: true })),
 ])
 
-// Rol más probable para el selector: el que corresponde al nivel en la jerarquía
-const rolSugerido = computed(() => {
-  const nivel = agrupacion.value?.tipoUnidad?.nivel
-  if (nivel === 1) return rolesTerritoriales.value.find(r => r.codigo === 'COORDINADOR')
-  if (nivel === 2) return rolesTerritoriales.value.find(r => r.codigo === 'COORD_PROV')
-  if (nivel === 3) return rolesTerritoriales.value.find(r => r.codigo === 'COORD_LOCAL')
-  return rolesTerritoriales.value[0] ?? null
-})
+// Rol sugerido para el selector: el coordinador territorial (genérico). El título
+// concreto se compone con la denominación del nivel, no con roles fijos por nivel.
+const rolSugerido = computed(() =>
+  rolesTerritoriales.value.find(r => r.codigo === 'COORDINADOR') ??
+  rolesTerritoriales.value.find(r => r.esTerritorial) ??
+  rolesTerritoriales.value[0] ?? null
+)
+
+// Denominación interna del nivel de esta unidad (para componer títulos dinámicos)
+const denomNivel = computed(() => agrupacion.value?.tipoUnidad?.denominacionSingular || '')
+
+// Título del cargo. El coordinador territorial genérico (COORDINADOR) se titula con
+// la denominación del nivel (p.ej. "Coordinador de Concello"); si no hay denominación
+// configurada, queda "Coordinador". El resto de cargos conserva su nombre.
+// (COORD_LOCAL/COORD_PROV son roles legacy de nombre fijo; se muestran tal cual pero
+//  no se ofrecen al crear — ver rolesElegibles.)
+function tituloCargo(rol) {
+  if (!rol) return '—'
+  if (rol.codigo === 'COORDINADOR' && denomNivel.value) return `Coordinador de ${denomNivel.value}`
+  return rol.nombre
+}
+
+// Roles ofrecidos al crear un cargo: se excluyen los coordinadores legacy de nombre
+// fijo (COORD_LOCAL/COORD_PROV); el título territorial se compone dinámicamente.
+const rolesElegibles = computed(() =>
+  rolesTerritoriales.value.filter(r => !['COORD_LOCAL', 'COORD_PROV'].includes(r.codigo)))
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const fmtFecha = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('es-ES') : '—'
@@ -874,7 +892,7 @@ const Q_AGRUPACION = `
       tipoId agrupacionPadreId
       paisId provinciaId municipioId
       nif fechaConstitucion registroOficial
-      tipoUnidad { id nombre naturaleza nivel vinculo estructuraDistribuida }
+      tipoUnidad { id nombre naturaleza nivel vinculo estructuraDistribuida denominacionSingular }
     }
   }
 `
@@ -893,7 +911,7 @@ const Q_NOMBRAMIENTOS = `
     historialNombramientos(filter: { agrupacionId: { eq: $agrupacionId }, estado: { eq: "ACTIVO" } }) {
       id rolId estado fechaInicio fechaFin observaciones
       miembro { id nombre apellido1 apellido2 }
-      rol { id codigo nombre nivel }
+      rol { id codigo nombre nivel esTerritorial }
       agrupacion { id nombre }
     }
   }
