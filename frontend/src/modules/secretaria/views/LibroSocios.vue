@@ -46,6 +46,7 @@
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Histórico</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Motivo</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Generado</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PDF</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
@@ -62,6 +63,11 @@
               <td class="px-4 py-3 text-gray-500">{{ s.totalSociosHistorico }}</td>
               <td class="px-4 py-3 text-gray-500 text-xs">{{ s.motivo ?? '—' }}</td>
               <td class="px-4 py-3 text-gray-400 text-xs">{{ formatFechaHora(s.fechaGeneracion) }}</td>
+              <td class="px-4 py-3">
+                <button v-if="s.tienePdf" @click="descargarPdf(s)"
+                  class="text-purple-600 hover:text-purple-800 text-xs font-medium underline">Descargar</button>
+                <span v-else class="text-gray-300 text-xs">—</span>
+              </td>
             </tr>
           </tbody>
         </table></div>
@@ -120,11 +126,13 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import InfoCard from '@/components/common/InfoCard.vue'
 import { usePermisos } from '@/composables/usePermisos.js'
+import { useAuthStore } from '@/stores/auth.js'
 import { executeQuery, executeMutation } from '@/graphql/client'
 import { GET_LIBRO_SOCIOS_SNAPSHOTS, GENERAR_LIBRO_SOCIOS } from '@/graphql/queries/secretaria.js'
 import { BookOpenIcon, ArrowPathIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 
 const { tienePermiso } = usePermisos()
+const authStore = useAuthStore()
 const loading   = ref(false)
 const generando = ref(false)
 const snapshots = ref([])
@@ -164,6 +172,26 @@ const ejecutarGeneracion = async () => {
     errorModal.value = e.message ?? 'Error al generar el libro'
   } finally {
     generando.value = false
+  }
+}
+
+async function descargarPdf(s) {
+  try {
+    const resp = await fetch(`/api/secretaria/libro-socios/${s.id}/pdf`, {
+      headers: { Authorization: `Bearer ${authStore.token}` },
+    })
+    if (!resp.ok) throw new Error('No se pudo descargar el PDF.')
+    const blob = await resp.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `libro_socios_${s.fechaCorte}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error(e)
   }
 }
 

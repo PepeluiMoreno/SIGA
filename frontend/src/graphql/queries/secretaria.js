@@ -278,6 +278,7 @@ export const GET_LIBRO_SOCIOS_SNAPSHOTS = `
       totalSociosBaja
       totalSociosHistorico
       motivo
+      tienePdf
     }
   }
 `
