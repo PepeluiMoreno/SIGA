@@ -316,6 +316,26 @@ class VinculacionesMutation:
             select(Contacto).where(Contacto.id == contacto.id)
         )).scalar_one()
 
+    @strawberry.mutation(permission_classes=[RequireTransaction("CONTACTO_DELETE")])
+    async def eliminar_contacto(self, info: strawberry.Info, id: uuid.UUID) -> ContactoType:
+        """Baja lógica (soft delete) de un Contacto: lo retira del directorio.
+
+        No es purga física (eso compete al módulo RGPD). Queda con eliminado=True y
+        deja de aparecer en los listados (que filtran eliminado=false). Distinto de
+        'dar de baja' (activo=False), que solo marca el contacto como inactivo.
+        """
+        session = info.context.session
+        contacto = (await session.execute(
+            select(Contacto).where(Contacto.id == id)
+        )).scalar_one_or_none()
+        if contacto is None:
+            raise ValueError("Contacto no encontrado.")
+        contacto.soft_delete()
+        await session.commit()
+        return (await session.execute(
+            select(Contacto).where(Contacto.id == id)
+        )).scalar_one()
+
     @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_CREAR")])
     async def alta_vinculacion_socio(
         self, info: strawberry.Info, data: AltaVinculacionSocioInput,

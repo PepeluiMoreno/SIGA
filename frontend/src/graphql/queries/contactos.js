@@ -110,6 +110,13 @@ export const ACTUALIZAR_CONTACTO = `
   }
 `
 
+// Baja lógica (soft delete): retira el contacto del directorio (eliminado=true).
+export const ELIMINAR_CONTACTO = `
+  mutation EliminarContacto($id: UUID!) {
+    eliminarContacto(id: $id) { id }
+  }
+`
+
 // --- Mutaciones de facetas (alta/cierre de vinculación) ---
 export const ALTA_VINCULACION_SOCIO = `
   mutation AltaVinculacionSocio($data: AltaVinculacionSocioInput!) {

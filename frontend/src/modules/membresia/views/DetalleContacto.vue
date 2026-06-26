@@ -19,8 +19,12 @@
         </button>
         <button v-if="tienePermiso('CONTACTO_DELETE')" type="button" @click="toggleBaja"
           class="h-8 px-3 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50"
-          :class="contacto.activo ? 'text-red-600' : 'text-emerald-600'">
+          :class="contacto.activo ? 'text-amber-600' : 'text-emerald-600'">
           {{ contacto.activo ? 'Dar de baja' : 'Reactivar' }}
+        </button>
+        <button v-if="tienePermiso('CONTACTO_DELETE')" type="button" @click="eliminarContacto"
+          class="h-8 px-3 text-sm font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
+          Eliminar
         </button>
       </template>
     </template>
@@ -82,6 +86,11 @@
             <FieldText v-model="form.direccion" label="Dirección" :editing="editing" class="sm:col-span-2" />
             <FieldText v-model="form.codigoPostal" label="Código postal" :editing="editing" />
             <FieldText v-model="form.localidad" label="Localidad" :editing="editing" />
+            <FieldSelect v-model="form.provinciaId" label="Provincia" :editing="editing" :options="provinciaOptions" />
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">Comunidad autónoma</label>
+              <div class="py-1.5 text-sm text-slate-500 min-h-[34px]">{{ ccaaActual || '—' }}</div>
+            </div>
           </div>
         </div>
 
@@ -148,7 +157,8 @@ import { usePermisos } from '@/composables/usePermisos.js'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { graphqlClient } from '@/graphql/client.js'
-import { GET_CONTACTO, GET_CONTACTOS, CREAR_CONTACTO, ACTUALIZAR_CONTACTO } from '@/graphql/queries/contactos.js'
+import { GET_CONTACTO, GET_CONTACTOS, CREAR_CONTACTO, ACTUALIZAR_CONTACTO, ELIMINAR_CONTACTO } from '@/graphql/queries/contactos.js'
+import { GET_PROVINCIAS } from '@/graphql/queries/catalogos.js'
 import { useAuthStore } from '@/stores/auth.js'
 
 // ── Componentes de campo: input en edición, texto en vista ──────────────────
@@ -219,7 +229,26 @@ const form = reactive({
   tipoDocumento: '', numeroDocumento: '', sexo: '', fechaNacimiento: '', profesion: '',
   cif: '', actividadPrincipal: '', representanteLegalId: '',
   email: '', telefono: '', telefono2: '', direccion: '', codigoPostal: '', localidad: '',
+  provinciaId: '',
 })
+
+// Catálogo de provincias (para el select de ubicación; la CCAA se deriva de la provincia)
+const provincias = ref([])
+const provinciaOptions = computed(() =>
+  [...provincias.value]
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+    .map((p) => ({ value: p.id, label: p.nombre }))
+)
+const ccaaActual = computed(() =>
+  provincias.value.find((p) => p.id === form.provinciaId)?.comunidadAutonoma || ''
+)
+async function cargarProvincias() {
+  if (provincias.value.length) return
+  try {
+    const data = await graphqlClient.request(GET_PROVINCIAS)
+    provincias.value = data.provincias || []
+  } catch { /* el select quedará vacío */ }
+}
 
 // Alta de PJ: el representante legal se da de alta como PF junto con la entidad.
 const repForm = reactive({
@@ -405,6 +434,22 @@ async function toggleBaja() {
   }
 }
 
+async function eliminarContacto() {
+  const ok = await confirmar({
+    titulo: '¿Eliminar el contacto?',
+    mensaje: 'Se retirará del directorio (baja lógica). Podrá recuperarse en base de datos; la purga definitiva compete al módulo RGPD.',
+    variante: 'critica',
+  })
+  if (!ok) return
+  try {
+    await graphqlClient.request(ELIMINAR_CONTACTO, { id: route.params.id })
+    toast.success('Contacto eliminado.')
+    router.push('/contactos')
+  } catch (e) {
+    toast.error(e?.response?.errors?.[0]?.message || 'No se pudo eliminar el contacto.')
+  }
+}
+
 function verContacto(id) { router.push(`/contactos/${id}`) }
 
 // Al entrar en edición de una PJ existente, carga las PF para el selector de reasignación.
@@ -413,5 +458,5 @@ function entrarEdicion() {
   if (esPJ.value) cargarPFParaRepresentante()
 }
 
-onMounted(cargar)
+onMounted(() => { cargar(); cargarProvincias() })
 </script>
