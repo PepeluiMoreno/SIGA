@@ -1,7 +1,7 @@
 """Asigna las transacciones DON_* (flujo 6) a los roles. Idempotente.
 
 Reparto (D6.4):
-- TESORERO: DON_LIST, DON_CREATE, DON_CERT (matriz y agrupación).
+- TESORERO: ECO_DONACION_LISTAR, ECO_DONACION_REGISTRAR, ECO_DONACION_EMITIR_CERTIFICADO (matriz y agrupación).
 
 Uso:
   docker exec siga_dev_backend python -m app.scripts.seeding.seed_permisos_donaciones
@@ -19,7 +19,7 @@ from app.modules.acceso.models.rol_transaccion import RolTransaccion
 
 
 REPARTO = {
-    "TESORERO": ["DON_LIST", "DON_CREATE", "DON_CERT"],
+    "TESORERO": ["ECO_DONACION_LISTAR", "ECO_DONACION_REGISTRAR", "ECO_DONACION_EMITIR_CERTIFICADO"],
 }
 
 

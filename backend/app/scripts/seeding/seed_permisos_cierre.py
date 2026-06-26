@@ -1,7 +1,7 @@
 """Asigna las transacciones CIERRE_* (flujo 9) a los roles. Idempotente.
 
-D9.2: CIERRE_EJECUTAR solo TESORERO matriz.
-D9.1: CIERRE_CONSULTAR a TESORERO + cualquier rol AUDITOR si existiera.
+D9.2: ECO_CIERRE_EJECUTAR solo TESORERO matriz.
+D9.1: ECO_CIERRE_CONSULTAR a TESORERO + cualquier rol AUDITOR si existiera.
 
 Uso:
   docker exec siga_dev_backend python -m app.scripts.seeding.seed_permisos_cierre
@@ -19,8 +19,8 @@ from app.modules.acceso.models.rol_transaccion import RolTransaccion
 
 
 REPARTO = {
-    "TESORERO": ["CIERRE_EJECUTAR", "CIERRE_CONSULTAR"],
-    # Si en el futuro hay rol AUDITOR, se le asignará CIERRE_CONSULTAR aquí.
+    "TESORERO": ["ECO_CIERRE_EJECUTAR", "ECO_CIERRE_CONSULTAR"],
+    # Si en el futuro hay rol AUDITOR, se le asignará ECO_CIERRE_CONSULTAR aquí.
 }
 
 

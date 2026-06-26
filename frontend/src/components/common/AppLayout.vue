@@ -164,26 +164,26 @@
             <hr class="nav-sep" />
 
             <!-- Económico (sidebar minimalista: solo Tesorería + Contabilidad) -->
-            <div v-if="tieneAlguno('FIN_REPORTS','CUOT_GENERATE','REM_CREATE','DON_CREATE')" class="mb-1">
+            <div v-if="tieneAlguno('ECO_INFORME_FINANCIERO_VER','ECO_CUOTA_GENERAR','ECO_REMESA_CREAR','ECO_DONACION_REGISTRAR')" class="mb-1">
               <button @click="toggleSection('economico')" class="section-btn">
                 <span>Económico</span>
                 <ChevronDownIcon class="chevron" :class="openSections.economico ? '' : '-rotate-90'" />
               </button>
               <div class="accordion-wrap" :class="{ closed: !openSections.economico }">
                 <ul class="space-y-1 pb-1">
-                  <li v-if="tienePermiso('FIN_REPORTS')">
+                  <li v-if="tienePermiso('ECO_INFORME_FINANCIERO_VER')">
                     <router-link to="/economico/tesoreria" class="nav-item"
                       :class="$route.path.startsWith('/economico/tesoreria') ? 'active' : 'inactive'">
                       <BuildingLibraryIcon class="nav-icon" /><span>Tesorería</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('FIN_REPORTS') && orgConfigStore.usaPresupuesto">
+                  <li v-if="tienePermiso('ECO_INFORME_FINANCIERO_VER') && orgConfigStore.usaPresupuesto">
                     <router-link to="/economico/presupuesto" class="nav-item"
                       :class="$route.path.startsWith('/economico/presupuesto') ? 'active' : 'inactive'">
                       <ChartBarIcon class="nav-icon" /><span>Presupuestos</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('FIN_REPORTS')">
+                  <li v-if="tienePermiso('ECO_INFORME_FINANCIERO_VER')">
                     <router-link to="/economico/contabilidad" class="nav-item"
                       :class="$route.path.startsWith('/economico/contabilidad') ? 'active' : 'inactive'">
                       <CalculatorIcon class="nav-icon" /><span>Contabilidad</span>

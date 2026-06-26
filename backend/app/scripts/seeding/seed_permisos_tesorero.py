@@ -19,11 +19,11 @@ from app.modules.acceso.models.rol_transaccion import RolTransaccion
 
 TRANSACCIONES_TESORERO = [
     # Flujo 3 — Generación de remesa
-    "REM_LIST", "REM_PREVIEW", "REM_CREATE", "REM_XML", "REM_SEND", "REM_ANULAR",
+    "ECO_REMESA_LISTAR", "ECO_REMESA_PREVISUALIZAR", "ECO_REMESA_CREAR", "ECO_REMESA_GENERAR_XML", "ECO_REMESA_ENVIAR", "ECO_REMESA_ANULAR",
     # Flujo 4 — Liquidación de remesa
-    "REM_PROCESS", "REM_RESEND",
+    "ECO_REMESA_PROCESAR_RESPUESTA", "ECO_REMESA_REENVIAR",
     # Recibos asociados
-    "RCB_LIST", "RCB_FAIL_NOTIFY",
+    "ECO_RECIBO_LISTAR", "ECO_RECIBO_NOTIFICAR_FALLIDOS",
 ]
 
 

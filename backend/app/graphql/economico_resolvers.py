@@ -331,7 +331,7 @@ class EconomicoQuery:
         cuenta = await service.obtener_cuenta_por_codigo(codigo)
         return cuenta.id if cuenta else None
 
-    @strawberry.field(permission_classes=[RequireTransaction("JUST_PRESENTAR")])
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_JUSTIFICANTE_PRESENTAR")])
     async def miembros_elegibles_para_justificante(
         self, info: strawberry.Info, actividad_id: uuid.UUID,
     ) -> list[MiembroElegibleType]:
@@ -411,7 +411,7 @@ class EconomicoQuery:
 
     # ── Cierre contable PCESFL ──────────────────────────────────────────────
 
-    @strawberry.field(permission_classes=[RequireTransaction("CIERRE_CONSULTAR")])
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_CIERRE_CONSULTAR")])
     async def balance_pcesfl(
         self,
         info: strawberry.Info,
@@ -438,7 +438,7 @@ class EconomicoQuery:
             cuadra=abs(totales["diferencia"]) < Decimal("0.01"),
         )
 
-    @strawberry.field(permission_classes=[RequireTransaction("CIERRE_CONSULTAR")])
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_CIERRE_CONSULTAR")])
     async def cuenta_resultados(
         self,
         info: strawberry.Info,
@@ -464,7 +464,7 @@ class EconomicoQuery:
             excedente_ejercicio=float(r["excedente_ejercicio"]),
         )
 
-    @strawberry.field(permission_classes=[RequireTransaction("CIERRE_CONSULTAR")])
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_CIERRE_CONSULTAR")])
     async def estado_cierre(
         self,
         info: strawberry.Info,
@@ -532,7 +532,7 @@ class EconomicoQuery:
         saldos = await service.calcular_saldos_cuentas(ejercicio, fecha_fin)
         return [SaldoCuentaType(codigo=k, saldo=float(v)) for k, v in saldos.items()]
 
-    @strawberry.field(permission_classes=[RequireTransaction("CIERRE_CONSULTAR")])
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_CIERRE_CONSULTAR")])
     async def libro_diario_csv(
         self,
         info: strawberry.Info,
@@ -548,7 +548,7 @@ class EconomicoQuery:
 
     # ── Cuentas Anuales (Flujo 10) ──────────────────────────────────────────
 
-    @strawberry.field(permission_classes=[RequireTransaction("CCAA_LIST")])
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_CUENTAS_ANUALES_LISTAR")])
     async def cuentas_anuales(self, info: strawberry.Info) -> list[CuentasAnualesType]:
         """Listado de Cuentas Anuales (todas las que existen, cualquier estado)."""
         from app.modules.economico.services.cuentas_anuales_service import CuentasAnualesService
@@ -574,7 +574,7 @@ class EconomicoQuery:
 
     # ── Modelo 182 (Flujo 11) ───────────────────────────────────────────────
 
-    @strawberry.field(permission_classes=[RequireTransaction("M182_GENERAR")])
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_MODELO182_GENERAR")])
     async def agregado_modelo_182(
         self, info: strawberry.Info, ejercicio: int
     ) -> AgregadoModelo182Type:
@@ -606,7 +606,7 @@ class EconomicoQuery:
             ],
         )
 
-    @strawberry.field(permission_classes=[RequireTransaction("M182_LIST")])
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_MODELO182_LISTAR")])
     async def presentaciones_modelo_182(
         self, info: strawberry.Info
     ) -> list[Presentacion182Type]:
@@ -622,7 +622,7 @@ class EconomicoQuery:
             ) for p in items
         ]
 
-    @strawberry.field(permission_classes=[RequireTransaction("CCAA_LIST")])
+    @strawberry.field(permission_classes=[RequireTransaction("ECO_CUENTAS_ANUALES_LISTAR")])
     async def cuentas_anuales_por_ejercicio(
         self, info: strawberry.Info, ejercicio: int
     ) -> Optional[CuentasAnualesType]:
@@ -812,7 +812,7 @@ class EconomicoMutation:
 
     # ── Cierre contable PCESFL (Flujo 9) ────────────────────────────────────
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CIERRE_EJECUTAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CIERRE_EJECUTAR")])
     async def generar_asiento_regularizacion(
         self, info: strawberry.Info, ejercicio: int
     ) -> uuid.UUID:
@@ -823,7 +823,7 @@ class EconomicoMutation:
         asiento = await service.generar_asiento_regularizacion(ejercicio)
         return asiento.id
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CIERRE_EJECUTAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CIERRE_EJECUTAR")])
     async def generar_asiento_cierre(
         self, info: strawberry.Info, ejercicio: int
     ) -> uuid.UUID:
@@ -833,7 +833,7 @@ class EconomicoMutation:
         asiento = await service.generar_asiento_cierre(ejercicio)
         return asiento.id
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CIERRE_EJECUTAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CIERRE_EJECUTAR")])
     async def generar_asiento_apertura(
         self, info: strawberry.Info, ejercicio_nuevo: int
     ) -> uuid.UUID:
@@ -844,7 +844,7 @@ class EconomicoMutation:
 
     # ── Cuentas Anuales (Flujo 10) ──────────────────────────────────────────
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CCAA_GENERAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUENTAS_ANUALES_GENERAR")])
     async def generar_cuentas_anuales(
         self, info: strawberry.Info, ejercicio: int
     ) -> uuid.UUID:
@@ -855,7 +855,7 @@ class EconomicoMutation:
         ccaa = await service.generar(ejercicio)
         return ccaa.id
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CCAA_GENERAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUENTAS_ANUALES_GENERAR")])
     async def actualizar_memoria_ccaa(
         self, info: strawberry.Info, ccaa_id: uuid.UUID, apartado: str, texto: str
     ) -> bool:
@@ -865,7 +865,7 @@ class EconomicoMutation:
         await service.actualizar_memoria(ccaa_id, apartado, texto)
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CCAA_APROBAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUENTAS_ANUALES_APROBAR")])
     async def aprobar_cuentas_anuales(
         self,
         info: strawberry.Info,
@@ -880,7 +880,7 @@ class EconomicoMutation:
         await service.aprobar(ccaa_id, aprobado_por_id, acta_referencia, fecha_aprobacion)
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CCAA_DEPOSITAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUENTAS_ANUALES_DEPOSITAR")])
     async def marcar_ccaa_depositadas(
         self,
         info: strawberry.Info,
@@ -894,7 +894,7 @@ class EconomicoMutation:
         await service.marcar_depositadas(ccaa_id, fecha_deposito, archivo_acuse_recibo)
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CCAA_GENERAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUENTAS_ANUALES_GENERAR")])
     async def reabrir_cuentas_anuales(
         self, info: strawberry.Info, ccaa_id: uuid.UUID, motivo: str
     ) -> bool:
@@ -904,7 +904,7 @@ class EconomicoMutation:
         await service.reabrir(ccaa_id, motivo)
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CCAA_LIST")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUENTAS_ANUALES_LISTAR")])
     async def exportar_ccaa_pdf(
         self, info: strawberry.Info, ccaa_id: uuid.UUID,
         organizacion_nombre: str = "Organización",
@@ -923,7 +923,7 @@ class EconomicoMutation:
 
     # ── Modelo 182 (Flujo 11) ───────────────────────────────────────────────
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("M182_GENERAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_MODELO182_GENERAR")])
     async def descargar_fichero_aeat_182(
         self,
         info: strawberry.Info,
@@ -938,7 +938,7 @@ class EconomicoMutation:
         contenido = await service.generar_fichero_aeat(ejercicio, declarante_nif, declarante_nombre)
         return base64.b64encode(contenido).decode("ascii")
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("M182_GENERAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_MODELO182_GENERAR")])
     async def descargar_pdf_resumen_182(
         self,
         info: strawberry.Info,
@@ -952,7 +952,7 @@ class EconomicoMutation:
         pdf = await service.generar_pdf_resumen(ejercicio, organizacion_nombre)
         return base64.b64encode(pdf).decode("ascii")
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("M182_REGISTRAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_MODELO182_REGISTRAR")])
     async def registrar_presentacion_182(
         self,
         info: strawberry.Info,

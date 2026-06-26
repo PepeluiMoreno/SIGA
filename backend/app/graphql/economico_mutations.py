@@ -284,7 +284,7 @@ class EconomicoFlujosMutation:
 
         return str(apunte.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CON_CONCILIAR_APUNTE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CONCILIACION_CONCILIAR_APUNTE")])
     async def marcar_apunte_conciliado(
         self,
         info: strawberry.Info,
@@ -296,7 +296,7 @@ class EconomicoFlujosMutation:
         await service.marcar_apunte_conciliado(apunte_id, fecha_conciliacion)
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CON_CONCILIAR_APUNTE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CONCILIACION_CONCILIAR_APUNTE")])
     async def desmarcar_apunte_conciliado(
         self, info: strawberry.Info, apunte_id: UUID,
     ) -> bool:
@@ -369,7 +369,7 @@ class EconomicoFlujosMutation:
         contra = await service.anular_apunte(apunte_id, motivo)
         return str(contra.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CON_CONCILIAR_APUNTE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CONCILIACION_CONCILIAR_APUNTE")])
     async def conciliar_apunte_con_extracto(
         self,
         info: strawberry.Info,
@@ -388,7 +388,7 @@ class EconomicoFlujosMutation:
         )
         return str(conciliacion.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CON_CONFIRMAR_PERIODO")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CONCILIACION_CONFIRMAR_PERIODO")])
     async def confirmar_conciliacion_periodo(
         self, info: strawberry.Info, conciliacion_id: UUID
     ) -> bool:
@@ -397,7 +397,7 @@ class EconomicoFlujosMutation:
         await service.confirmar_conciliacion_periodo(conciliacion_id)
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CON_IMPORTAR_EXTRACTO")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CONCILIACION_IMPORTAR_EXTRACTO")])
     async def importar_extracto_norma43(
         self, info: strawberry.Info, cuenta_id: UUID, archivo_b64: str
     ) -> int:
@@ -412,7 +412,7 @@ class EconomicoFlujosMutation:
         extractos = await service.importar_extracto(cuenta_id=cuenta_id, lineas=lineas)
         return len(extractos)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CON_IMPORTAR_EXTRACTO")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CONCILIACION_IMPORTAR_EXTRACTO")])
     async def importar_extracto_csv(
         self,
         info: strawberry.Info,
@@ -434,7 +434,7 @@ class EconomicoFlujosMutation:
         extractos = await service.importar_extracto(cuenta_id=cuenta_id, lineas=lineas)
         return len(extractos)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CON_CONCILIAR_APUNTE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CONCILIACION_CONCILIAR_APUNTE")])
     async def romper_conciliacion(
         self, info: strawberry.Info, conciliacion_id: UUID
     ) -> bool:
@@ -467,7 +467,7 @@ class EconomicoFlujosMutation:
 
     # ─── Liquidación automática ────────────────────────────────────────────────
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("REM_PROCESS")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_REMESA_PROCESAR_RESPUESTA")])
     async def previsualizar_liquidacion_remesa(
         self,
         info: strawberry.Info,
@@ -510,7 +510,7 @@ class EconomicoFlujosMutation:
             totales=PreviewTotalesType(**preview["totales"]),
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("REM_PROCESS")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_REMESA_PROCESAR_RESPUESTA")])
     async def liquidar_remesa(
         self,
         info: strawberry.Info,
@@ -580,7 +580,7 @@ class EconomicoFlujosMutation:
 
     # ─── Generación de remesas SEPA ────────────────────────────────────────────
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("REM_CREATE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_REMESA_CREAR")])
     async def generar_remesa_sepa(
         self,
         info: strawberry.Info,
@@ -602,7 +602,7 @@ class EconomicoFlujosMutation:
         )
         return str(remesa.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("REM_SEND")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_REMESA_ENVIAR")])
     async def marcar_remesa_enviada(
         self,
         info: strawberry.Info,
@@ -614,7 +614,7 @@ class EconomicoFlujosMutation:
         await service.marcar_enviada(remesa_id)
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("REM_CREATE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_REMESA_CREAR")])
     async def generar_remesa_extraordinaria(
         self,
         info: strawberry.Info,
@@ -641,7 +641,7 @@ class EconomicoFlujosMutation:
         )
         return str(remesa.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("REM_RESEND")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_REMESA_REENVIAR")])
     async def generar_remesa_fallidos(
         self,
         info: strawberry.Info,
@@ -662,7 +662,7 @@ class EconomicoFlujosMutation:
 
     # ─── Flujo 3 — Previsualización / Anulación / XML ─────────────────────────
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("REM_PREVIEW")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_REMESA_PREVISUALIZAR")])
     async def previsualizar_remesa(
         self,
         info: strawberry.Info,
@@ -702,7 +702,7 @@ class EconomicoFlujosMutation:
             ),
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("REM_ANULAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_REMESA_ANULAR")])
     async def anular_remesa(
         self,
         info: strawberry.Info,
@@ -715,7 +715,7 @@ class EconomicoFlujosMutation:
         await service.anular_remesa(remesa_id=remesa_id)
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("REM_XML")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_REMESA_GENERAR_XML")])
     async def generar_xml_sepa(
         self,
         info: strawberry.Info,
@@ -730,7 +730,7 @@ class EconomicoFlujosMutation:
         xml_bytes = await service.generar_xml_sepa(remesa_id=remesa_id)
         return base64.b64encode(xml_bytes).decode("ascii")
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("RCB_FAIL_NOTIFY")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_RECIBO_NOTIFICAR_FALLIDOS")])
     async def comunicar_recibos_fallidos(
         self,
         info: strawberry.Info,
@@ -787,7 +787,7 @@ class EconomicoFlujosMutation:
 
     # ─── Recibos ──────────────────────────────────────────────────────────────
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("RCB_EMIT_LOTE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_RECIBO_EMITIR_LOTE")])
     async def emitir_recibos_lote(
         self,
         info: strawberry.Info,
@@ -812,7 +812,7 @@ class EconomicoFlujosMutation:
         )
         return len(recibos)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("RCB_EMIT_LOTE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_RECIBO_EMITIR_LOTE")])
     async def emitir_recibo_individual(
         self,
         info: strawberry.Info,
@@ -840,7 +840,7 @@ class EconomicoFlujosMutation:
         )
         return str(recibo.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("RCB_MARCAR_COBRADO")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_RECIBO_MARCAR_COBRADO")])
     async def marcar_recibo_cobrado(
         self,
         info: strawberry.Info,
@@ -884,7 +884,7 @@ class EconomicoFlujosMutation:
         await service.marcar_fallido(recibo_id, codigo_sepa, motivo)
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("RCB_ANULAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_RECIBO_ANULAR")])
     async def anular_recibo(
         self,
         info: strawberry.Info,
@@ -896,7 +896,7 @@ class EconomicoFlujosMutation:
         await service.anular_recibo(recibo_id, motivo)
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("RCB_DESCARGAR_PDF")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_RECIBO_DESCARGAR_PDF")])
     async def descargar_recibo_pdf(
         self,
         info: strawberry.Info,
@@ -954,7 +954,7 @@ class EconomicoFlujosMutation:
             )
             return base64.b64encode(placeholder.encode("utf-8")).decode("ascii")
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("RCB_ENVIAR_EMAIL")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_RECIBO_ENVIAR_EMAIL")])
     async def enviar_recibo_email(
         self,
         info: strawberry.Info,
@@ -987,7 +987,7 @@ class EconomicoFlujosMutation:
 
     # ─── Justificantes de Gasto (flujo 7) ──────────────────────────────────────
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("JUST_PRESENTAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_JUSTIFICANTE_PRESENTAR")])
     async def presentar_justificante_gasto(
         self,
         info: strawberry.Info,
@@ -1005,12 +1005,12 @@ class EconomicoFlujosMutation:
         - D7.2: el presentador NO indica cuenta contable. Se resuelve al pagar
           (cuenta_contable_default del tipo de actividad o decisión del tesorero).
         - D7.4: agrupación derivada de la actividad si no se pasa.
-        - D7.6: si el usuario tiene `JUST_APROBAR` y rellena `presentado_por_tesorero_id`,
+        - D7.6: si el usuario tiene `ECO_JUSTIFICANTE_APROBAR` y rellena `presentado_por_tesorero_id`,
           el justificante nace ACEPTADO.
         """
         session = info.context.session
         if presentado_por_tesorero_id is not None:
-            if not await info.context.check_permission("JUST_APROBAR"):
+            if not await info.context.check_permission("ECO_JUSTIFICANTE_APROBAR"):
                 raise PermissionError(
                     "Solo el tesorero puede presentar justificantes en nombre de otros socios."
                 )
@@ -1035,7 +1035,7 @@ class EconomicoFlujosMutation:
         )
         return str(j.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("JUST_ACEPTAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_JUSTIFICANTE_ACEPTAR")])
     async def aceptar_justificante_gasto(
         self,
         info: strawberry.Info,
@@ -1049,7 +1049,7 @@ class EconomicoFlujosMutation:
         await service.aceptar(justificante_id, aceptador_id)
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("JUST_APROBAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_JUSTIFICANTE_APROBAR")])
     async def aprobar_justificante_gasto(
         self,
         info: strawberry.Info,
@@ -1062,7 +1062,7 @@ class EconomicoFlujosMutation:
         await service.aprobar(justificante_id, aprobador_id)
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("JUST_APROBAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_JUSTIFICANTE_APROBAR")])
     async def rechazar_justificante_gasto(
         self,
         info: strawberry.Info,
@@ -1076,7 +1076,7 @@ class EconomicoFlujosMutation:
         await service.rechazar(justificante_id, aprobador_id, motivo)
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("JUST_PAGAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_JUSTIFICANTE_PAGAR")])
     async def pagar_justificante_gasto(
         self,
         info: strawberry.Info,
@@ -1105,7 +1105,7 @@ class EconomicoFlujosMutation:
         )
         return str(apunte.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("JUST_PRESENTAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_JUSTIFICANTE_PRESENTAR")])
     async def anular_justificante_gasto(
         self,
         info: strawberry.Info,
@@ -1158,7 +1158,7 @@ class EconomicoFlujosMutation:
         await session.commit()
         return str(sol.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CUOT_EXEMPT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUOTA_EXENTAR")])
     async def aprobar_solicitud_reduccion_cuota(
         self,
         info: strawberry.Info,
@@ -1211,7 +1211,7 @@ class EconomicoFlujosMutation:
         await session.commit()
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CUOT_EXEMPT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUOTA_EXENTAR")])
     async def rechazar_solicitud_reduccion_cuota(
         self,
         info: strawberry.Info,
@@ -1307,7 +1307,7 @@ class EconomicoFlujosMutation:
 
     # ─── Flujo 1: Establecimiento de cuotas del ejercicio ─────────────────────
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CUOT_EJERCICIO_CONFIG")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUOTA_CONFIGURAR")])
     async def configurar_cuota_ejercicio(
         self,
         info: strawberry.Info,
@@ -1331,7 +1331,7 @@ class EconomicoFlujosMutation:
         )
         return cfg.id
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CUOT_EJERCICIO_CONFIG")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUOTA_CONFIGURAR")])
     async def eliminar_cuota_ejercicio(
         self,
         info: strawberry.Info,
@@ -1343,7 +1343,7 @@ class EconomicoFlujosMutation:
         service = CuotaService(session)
         return await service.eliminar_cuota_ejercicio(ejercicio)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CUOT_GENERATE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUOTA_GENERAR")])
     async def previsualizar_generacion_cuotas(
         self,
         info: strawberry.Info,
@@ -1364,7 +1364,7 @@ class EconomicoFlujosMutation:
             total_esperado=p["total_esperado"],
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CUOT_GENERATE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUOTA_GENERAR")])
     async def generar_cuotas_individuales(
         self,
         info: strawberry.Info,
@@ -1378,7 +1378,7 @@ class EconomicoFlujosMutation:
         r = await service.generar_cuotas_individuales(ejercicio, fecha_vencimiento)
         return ResultadoGeneracionCuotasType(**r)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CUOT_GENERATE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUOTA_GENERAR")])
     async def recalcular_cuota(
         self,
         info: strawberry.Info,
@@ -1393,7 +1393,7 @@ class EconomicoFlujosMutation:
 
     # ─── Flujo 1 — Catálogo de motivos de reducción (D1.5 + D1.6) ─────────────
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CUOT_MOTIVO_REDUC_MGMT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUOTA_MOTIVO_REDUCCION_GESTIONAR")])
     async def crear_motivo_reduccion(
         self,
         info: strawberry.Info,
@@ -1425,7 +1425,7 @@ class EconomicoFlujosMutation:
         await session.refresh(motivo)
         return motivo.id
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("CUOT_MOTIVO_REDUC_MGMT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUOTA_MOTIVO_REDUCCION_GESTIONAR")])
     async def actualizar_motivo_reduccion(
         self,
         info: strawberry.Info,
@@ -1476,7 +1476,7 @@ class EconomicoFlujosMutation:
 
     # ─── Donaciones (flujo 6) ──────────────────────────────────────────────────
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("DON_CREATE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_DONACION_REGISTRAR")])
     async def registrar_donacion(
         self,
         info: strawberry.Info,
@@ -1530,7 +1530,7 @@ class EconomicoFlujosMutation:
         )
         return str(donacion.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("DON_CREATE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_DONACION_REGISTRAR")])
     async def marcar_donacion_cobrada(
         self,
         info: strawberry.Info,
@@ -1548,7 +1548,7 @@ class EconomicoFlujosMutation:
         )
         return str(donacion.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("DON_CREATE")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_DONACION_REGISTRAR")])
     async def anular_donacion(
         self,
         info: strawberry.Info,
@@ -1561,7 +1561,7 @@ class EconomicoFlujosMutation:
         donacion = await service.anular(donacion_id=donacion_id, motivo=motivo)
         return str(donacion.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("DON_CERT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_DONACION_EMITIR_CERTIFICADO")])
     async def emitir_certificado_donacion_anual(
         self,
         info: strawberry.Info,
@@ -1607,7 +1607,7 @@ class EconomicoFlujosMutation:
             pdf_base64=base64.b64encode(pdf_bytes).decode("ascii"),
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("DON_CERT")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_DONACION_EMITIR_CERTIFICADO")])
     async def listar_donaciones_certificables(
         self,
         info: strawberry.Info,

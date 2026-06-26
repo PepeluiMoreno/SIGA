@@ -300,7 +300,7 @@ class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionM
 
     # Flujo 1 — catálogo de motivos de reducción
     # Create/update se hacen vía resolvers manuales en economico_mutations.py
-    # (con guard CUOT_MOTIVO_REDUC_MGMT + validación D1.5 de inmutabilidad del %).
+    # (con guard ECO_CUOTA_MOTIVO_REDUCCION_GESTIONAR + validación D1.5 de inmutabilidad del %).
     eliminar_motivos_reduccion_cuota: list[MotivoReduccionCuotaType] = strawchemy.delete(MotivoReduccionCuotaFilter)
 
     crear_donacion_concepto: DonacionConceptoType = strawchemy.create(DonacionConceptoCreateInput)

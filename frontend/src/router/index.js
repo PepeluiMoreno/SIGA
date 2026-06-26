@@ -296,97 +296,97 @@ const routes = [
     path: '/economico/tesoreria',
     component: Tesoreria,
     name: 'Tesoreria',
-    meta: { requiresAuth: true, requiredPermission: 'FIN_REPORTS' }
+    meta: { requiresAuth: true, requiredPermission: 'ECO_INFORME_FINANCIERO_VER' }
   },
   {
     path: '/economico/contabilidad',
     component: Contabilidad,
     name: 'Contabilidad',
-    meta: { requiresAuth: true, requiredPermission: 'FIN_REPORTS' }
+    meta: { requiresAuth: true, requiredPermission: 'ECO_INFORME_FINANCIERO_VER' }
   },
   {
     path: '/economico/reglas-contables',
     component: ReglasContables,
     name: 'ReglasContables',
-    meta: { requiresAuth: true, requiredPermission: 'FIN_REPORTS' }
+    meta: { requiresAuth: true, requiredPermission: 'ECO_INFORME_FINANCIERO_VER' }
   },
   {
     path: '/economico/cuotas',
     component: Cuotas,
     name: 'Cuotas',
-    meta: { requiresAuth: true, requiredPermission: 'CUOT_GENERATE' }
+    meta: { requiresAuth: true, requiredPermission: 'ECO_CUOTA_GENERAR' }
   },
   {
     path: '/economico/remesas',
     component: Remesas,
     name: 'Remesas',
-    meta: { requiresAuth: true, requiredPermission: 'REM_CREATE' }
+    meta: { requiresAuth: true, requiredPermission: 'ECO_REMESA_CREAR' }
   },
   {
     path: '/economico/recibos',
     component: Recibos,
     name: 'Recibos',
-    meta: { requiresAuth: true, requiredPermission: 'RCB_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'ECO_RECIBO_LISTAR' }
   },
   {
     path: '/economico/conciliacion',
     component: Conciliacion,
     name: 'Conciliacion',
-    meta: { requiresAuth: true, requiredPermission: 'CON_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'ECO_CONCILIACION_LISTAR' }
   },
   {
     path: '/economico/cierre-ejercicio',
     component: Cierre,
     name: 'Cierre',
-    meta: { requiresAuth: true, requiredPermission: 'CIERRE_CONSULTAR' }
+    meta: { requiresAuth: true, requiredPermission: 'ECO_CIERRE_CONSULTAR' }
   },
   {
     path: '/economico/cuentas-anuales',
     component: CuentasAnuales,
     name: 'CuentasAnuales',
-    meta: { requiresAuth: true, requiredPermission: 'CCAA_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'ECO_CUENTAS_ANUALES_LISTAR' }
   },
   {
     path: '/economico/modelo-182',
     component: Modelo182,
     name: 'Modelo182',
-    meta: { requiresAuth: true, requiredPermission: 'M182_LIST' }
+    meta: { requiresAuth: true, requiredPermission: 'ECO_MODELO182_LISTAR' }
   },
   {
     path: '/economico/comunicacion-fallidos',
     component: ComunicacionFallidos,
     name: 'ComunicacionFallidos',
-    meta: { requiresAuth: true, requiredPermission: 'RCB_FAIL_NOTIFY' }
+    meta: { requiresAuth: true, requiredPermission: 'ECO_RECIBO_NOTIFICAR_FALLIDOS' }
   },
   {
     path: '/economico/cuotas-ejercicio',
     component: CuotasEjercicio,
     name: 'CuotasEjercicio',
-    meta: { requiresAuth: true, requiredPermission: 'CUOT_EJERCICIO_CONFIG' }
+    meta: { requiresAuth: true, requiredPermission: 'ECO_CUOTA_CONFIGURAR' }
   },
   {
     path: '/parametrizacion/motivos-reduccion-cuota',
     component: MotivosReduccionCuota,
     name: 'MotivosReduccionCuota',
-    meta: { requiresAuth: true, requiredPermission: 'CUOT_MOTIVO_REDUC_MGMT' }
+    meta: { requiresAuth: true, requiredPermission: 'ECO_CUOTA_MOTIVO_REDUCCION_GESTIONAR' }
   },
   {
     path: '/economico/presupuesto',
     component: Presupuesto,
     name: 'Presupuesto',
-    meta: { requiresAuth: true, requiredPermission: 'FIN_REPORTS', requiereFeature: 'usaPresupuesto' }
+    meta: { requiresAuth: true, requiredPermission: 'ECO_INFORME_FINANCIERO_VER', requiereFeature: 'usaPresupuesto' }
   },
   {
     path: '/economico/presupuesto-evolucion',
     component: () => import('@/modules/economico/views/EvolucionPresupuestaria.vue'),
     name: 'EvolucionPresupuestaria',
-    meta: { requiresAuth: true, requiredPermission: 'FIN_REPORTS', requiereFeature: 'usaPresupuesto' }
+    meta: { requiresAuth: true, requiredPermission: 'ECO_INFORME_FINANCIERO_VER', requiereFeature: 'usaPresupuesto' }
   },
   {
     path: '/economico/donaciones',
     component: Donaciones,
     name: 'Donaciones',
-    meta: { requiresAuth: true, requiredPermission: 'DON_CREATE' }
+    meta: { requiresAuth: true, requiredPermission: 'ECO_DONACION_REGISTRAR' }
   },
 
   // ─── PRESIDENCIA ──────────────────────────────────────────────────────────

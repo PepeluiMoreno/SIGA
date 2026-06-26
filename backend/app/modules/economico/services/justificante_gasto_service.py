@@ -203,7 +203,7 @@ class JustificanteGastoService:
         """D7.5: el responsable de la actividad acepta el justificante.
 
         Valida que `aceptador_id == actividad.responsable_id`. La gestión del
-        permiso `JUST_ACEPTAR` la hace la capa de mutation.
+        permiso `ECO_JUSTIFICANTE_ACEPTAR` la hace la capa de mutation.
         """
         from app.modules.actividades.models.actividad import Actividad
         justificante = await self.obtener(justificante_id)

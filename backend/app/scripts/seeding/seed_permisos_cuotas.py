@@ -21,10 +21,10 @@ from app.modules.acceso.models.rol_transaccion import RolTransaccion
 # Si en el futuro hay TESORERO_AGRUPACION, este rol seguirá sin acceso a estas operaciones.
 TRANSACCIONES_TESORERO_CUOTAS = [
     "CUOT_MOTIVO_LIST",
-    "CUOT_MOTIVO_REDUC_MGMT",
-    "CUOT_EJERCICIO_CONFIG",
-    "CUOT_GENERATE",
-    "CUOT_LIST",
+    "ECO_CUOTA_MOTIVO_REDUCCION_GESTIONAR",
+    "ECO_CUOTA_CONFIGURAR",
+    "ECO_CUOTA_GENERAR",
+    "ECO_CUOTA_LISTAR",
     "TM_MOTIVO_DEFAULT",
 ]
 

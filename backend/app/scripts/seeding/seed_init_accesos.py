@@ -92,7 +92,7 @@ _ROLES = [
             # Presupuesto: ciclo completo de planificación y control
             "ECO_PRESUPUESTO_CREAR", "ECO_PRESUPUESTO_APROBAR", "ECO_PRESUPUESTO_CONSULTAR",
             # Cuota del ejercicio: establecimiento y anulación (condición previa al presupuesto)
-            "CUOT_EJERCICIO_CONFIG", "CUOT_LIST", "CUOT_MOTIVO_LIST",
+            "ECO_CUOTA_CONFIGURAR", "ECO_CUOTA_LISTAR", "CUOT_MOTIVO_LIST",
             # Consulta financiera de apoyo al control
             "ECO_BALANCE_CONSULTAR", "ECO_ESTRUCTURA_CONTABLE_LISTAR",
         ],

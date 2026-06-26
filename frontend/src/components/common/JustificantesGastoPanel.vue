@@ -470,8 +470,8 @@ const onSeleccionArchivos = (ev) => {
   ev.target.value = ''
 }
 
-const esTesorero = computed(() => tienePermiso('JUST_APROBAR'))
-const puedePresentar = computed(() => tienePermiso('JUST_PRESENTAR'))
+const esTesorero = computed(() => tienePermiso('ECO_JUSTIFICANTE_APROBAR'))
+const puedePresentar = computed(() => tienePermiso('ECO_JUSTIFICANTE_PRESENTAR'))
 
 const formPagar = ref({
   cuentaBancariaId: null,
@@ -503,7 +503,7 @@ const camposFiltro = computed(() => [
     ],
     allLabel: 'Todos los estados',
   },
-  ...(tienePermiso('JUST_ACEPTAR') || tienePermiso('JUST_APROBAR') || tienePermiso('JUST_PAGAR')
+  ...(tienePermiso('ECO_JUSTIFICANTE_ACEPTAR') || tienePermiso('ECO_JUSTIFICANTE_APROBAR') || tienePermiso('ECO_JUSTIFICANTE_PAGAR')
     ? [{ key: 'soloPendientesMios', label: 'Pendientes de mi visto bueno', type: 'toggle' }]
     : []),
 ])
@@ -531,7 +531,7 @@ const justificantesFiltrados = computed(() => {
     if (filtros.value.estado?.length && !filtros.value.estado.includes(j.estado)) return false
     if (filtros.value.soloPendientesMios) {
       const esResp = j.estado === 'PRESENTADO' && j.actividad?.responsableId === miId
-      const esTes = j.estado === 'ACEPTADO' && tienePermiso('JUST_APROBAR')
+      const esTes = j.estado === 'ACEPTADO' && tienePermiso('ECO_JUSTIFICANTE_APROBAR')
       if (!esResp && !esTes) return false
     }
     if (q) {
@@ -555,22 +555,22 @@ const tienePermiso = (codigo) => {
 const puedeAceptar = (j) =>
   j.estado === 'PRESENTADO'
   && j.actividad?.responsableId === miembroIdLogueado.value
-  && tienePermiso('JUST_ACEPTAR')
+  && tienePermiso('ECO_JUSTIFICANTE_ACEPTAR')
 
 const puedeAprobar = (j) =>
-  j.estado === 'ACEPTADO' && tienePermiso('JUST_APROBAR')
+  j.estado === 'ACEPTADO' && tienePermiso('ECO_JUSTIFICANTE_APROBAR')
 
 const puedePagar = (j) =>
-  j.estado === 'APROBADO' && tienePermiso('JUST_PAGAR')
+  j.estado === 'APROBADO' && tienePermiso('ECO_JUSTIFICANTE_PAGAR')
 
 const puedeRechazar = (j) => {
-  if (j.estado === 'PRESENTADO' && j.actividad?.responsableId === miembroIdLogueado.value && tienePermiso('JUST_ACEPTAR')) return true
-  if (j.estado === 'ACEPTADO' && tienePermiso('JUST_APROBAR')) return true
+  if (j.estado === 'PRESENTADO' && j.actividad?.responsableId === miembroIdLogueado.value && tienePermiso('ECO_JUSTIFICANTE_ACEPTAR')) return true
+  if (j.estado === 'ACEPTADO' && tienePermiso('ECO_JUSTIFICANTE_APROBAR')) return true
   return false
 }
 
 const puedeAnular = (j) =>
-  j.estado === 'PRESENTADO' && j.miembro?.id === miembroIdLogueado.value && tienePermiso('JUST_PRESENTAR')
+  j.estado === 'PRESENTADO' && j.miembro?.id === miembroIdLogueado.value && tienePermiso('ECO_JUSTIFICANTE_PRESENTAR')
 
 // ── Carga ──────────────────────────────────────────────────────────────────
 const cargar = async () => {

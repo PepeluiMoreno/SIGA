@@ -672,9 +672,9 @@
                 <p class="help-subtitle">Permisos</p>
                 <p class="help-text">
                   El rol <strong>tesorero</strong> tiene los permisos
-                  <span class="font-mono">DON_LIST</span>,
-                  <span class="font-mono">DON_CREATE</span> y
-                  <span class="font-mono">DON_CERT</span>. La emisión de certificados es función exclusiva
+                  <span class="font-mono">ECO_DONACION_LISTAR</span>,
+                  <span class="font-mono">ECO_DONACION_REGISTRAR</span> y
+                  <span class="font-mono">ECO_DONACION_EMITIR_CERTIFICADO</span>. La emisión de certificados es función exclusiva
                   del tesorero (D6.4).
                 </p>
 

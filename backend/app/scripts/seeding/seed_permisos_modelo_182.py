@@ -15,7 +15,7 @@ from app.modules.acceso.models.transaccion import Transaccion
 from app.modules.acceso.models.rol_transaccion import RolTransaccion
 
 
-TRANSACCIONES = ["M182_GENERAR", "M182_REGISTRAR", "M182_LIST"]
+TRANSACCIONES = ["ECO_MODELO182_GENERAR", "ECO_MODELO182_REGISTRAR", "ECO_MODELO182_LISTAR"]
 
 
 async def seed():

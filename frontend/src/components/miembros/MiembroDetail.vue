@@ -1278,7 +1278,7 @@ const editAdmin = computed(() => (editMode.value && !props.modoPropio) || isCrea
 const tabActiva = ref('datos')
 const tabsDisponibles = computed(() => {
   const t = [{ id: 'datos', name: 'Datos personales', icon: '👤' }]
-  if (props.modoPropio || tienePermiso('CUOT_LIST') || tienePermiso('JUST_LIST')) {
+  if (props.modoPropio || tienePermiso('ECO_CUOTA_LISTAR') || tienePermiso('ECO_JUSTIFICANTE_LISTAR')) {
     t.push({ id: 'economicos', name: 'Datos económicos', icon: '💶' })
   }
   t.push({ id: 'membresia', name: 'Membresía y participación', icon: '🤝' })
@@ -1684,7 +1684,7 @@ const cuotaTotalConIncremento = computed(() => {
 
 // El socio puede aumentar su cuota desde /mis-datos; un gestor de cuotas también.
 const puedeModificarCuota = computed(() =>
-  (props.modoPropio || tienePermiso('CUOT_LIST')) && !isCreateMode.value
+  (props.modoPropio || tienePermiso('ECO_CUOTA_LISTAR')) && !isCreateMode.value
 )
 
 const MUTATION_MODIFICAR_INCREMENTO = gql`

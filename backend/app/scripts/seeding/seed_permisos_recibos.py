@@ -16,13 +16,13 @@ from app.modules.acceso.models.rol_transaccion import RolTransaccion
 
 
 TRANSACCIONES_TESORERO_RECIBOS = [
-    "RCB_LIST",            # ya existía
-    "RCB_EMIT_LOTE",
-    "RCB_MARCAR_COBRADO",
-    "RCB_ANULAR",
-    "RCB_DESCARGAR_PDF",
-    "RCB_ENVIAR_EMAIL",
-    "RCB_FAIL_NOTIFY",     # flujo 4 (comunicar fallidos)
+    "ECO_RECIBO_LISTAR",            # ya existía
+    "ECO_RECIBO_EMITIR_LOTE",
+    "ECO_RECIBO_MARCAR_COBRADO",
+    "ECO_RECIBO_ANULAR",
+    "ECO_RECIBO_DESCARGAR_PDF",
+    "ECO_RECIBO_ENVIAR_EMAIL",
+    "ECO_RECIBO_NOTIFICAR_FALLIDOS",     # flujo 4 (comunicar fallidos)
 ]
 
 
