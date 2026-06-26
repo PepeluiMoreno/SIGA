@@ -16,6 +16,7 @@ from sqlalchemy import or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
+from app.modules.core.geografico.nivel_organizativo import AmbitoGeografico
 from app.modules.configuracion.models.estados import (
     EstadoCuota, EstadoTarea, EstadoParticipante, EstadoOrdenCobro,
     EstadoRemesa, EstadoDonacion,
@@ -352,6 +353,17 @@ async def _ensure_by_codigo_o_nombre(session: AsyncSession, model, items: list[d
     return creados
 
 
+# Ámbitos geográficos (granularidad: 1 = más amplio … N = más fino).
+_AMBITOS_GEOGRAFICOS = [
+    {"nombre": "Internacional",     "descripcion": "Ámbito internacional / supranacional", "granularidad": 5,  "activo": True},
+    {"nombre": "Estatal",           "descripcion": "Ámbito nacional / estatal",            "granularidad": 10, "activo": True},
+    {"nombre": "Comunidad autónoma","descripcion": "Ámbito autonómico",                    "granularidad": 20, "activo": True},
+    {"nombre": "Provincia",         "descripcion": "Ámbito provincial",                    "granularidad": 30, "activo": True},
+    {"nombre": "Comarca",           "descripcion": "Ámbito comarcal",                      "granularidad": 40, "activo": True},
+    {"nombre": "Municipio",         "descripcion": "Ámbito municipal / local",             "granularidad": 50, "activo": True},
+]
+
+
 async def ensure_catalogos_base(session: AsyncSession) -> None:
     """Siembra todos los catálogos esenciales para un entorno greenfield.
 
@@ -441,6 +453,7 @@ async def ensure_catalogos_base(session: AsyncSession) -> None:
         (TipoReunion, _TIPOS_REUNION),
         (TipoConvenio, _TIPOS_CONVENIO),
         (TipoEntidadJuridica, _TIPOS_ORGANIZACION),
+        (AmbitoGeografico, _AMBITOS_GEOGRAFICOS),
     ):
         n = await _ensure_by_field(session, model, "nombre", items)
         if n:

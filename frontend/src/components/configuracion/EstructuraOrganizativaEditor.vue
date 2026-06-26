@@ -70,7 +70,7 @@
       <!-- Edición inline: solo nombre + ámbito geográfico -->
       <template v-else>
         <input v-model="formNombre" type="text" autofocus
-          class="flex-1 min-w-0 border border-purple-400 rounded px-2 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+          class="flex-1 min-w-0 max-w-[16rem] border border-purple-400 rounded px-2 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
           @keydown.enter.prevent="guardar(item)"
           @keydown.escape="editandoId = null" />
         <select v-model="formAmbitoId"
@@ -80,10 +80,10 @@
         </select>
         <input v-model="formDenomSingular" type="text" placeholder="unidad (sing.)"
           title="Denominación interna de la unidad en este ámbito (singular)"
-          class="flex-shrink-0 w-28 border border-slate-300 rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+          class="flex-shrink-0 w-24 border border-slate-300 rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
         <input v-model="formDenomPlural" type="text" placeholder="unidades (pl.)"
           title="Denominación interna de la unidad en este ámbito (plural)"
-          class="flex-shrink-0 w-28 border border-slate-300 rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+          class="flex-shrink-0 w-24 border border-slate-300 rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
         <button type="button" @click="guardar(item)"
           class="text-xs px-2 py-0.5 bg-purple-600 text-white rounded hover:bg-purple-700 flex-shrink-0">OK</button>
         <button type="button" @click="editandoId = null"
