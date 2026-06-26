@@ -5,14 +5,39 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
       <!-- IZQUIERDA · editor de niveles -->
-      <div class="space-y-0.5">
-        <h4 class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1">Organización Territorial</h4>
+      <div class="space-y-1.5">
+        <h4 class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Organización Territorial</h4>
+
+        <!-- Modelo de estructura (recursivo: gobierna el subárbol de este nivel) -->
+        <fieldset v-if="nodoRaizActual" class="rounded-xl border border-slate-200 bg-white px-3 pt-1.5 pb-3">
+          <legend class="px-1.5 text-[11px] font-medium text-slate-500">
+            Modelo de estructura de «{{ nodoRaizActual.nombre }}»
+          </legend>
+          <div class="flex flex-col sm:flex-row gap-2.5 mt-1">
+            <label class="flex-1 flex items-start gap-2.5 rounded-lg border p-3 cursor-pointer transition-colors"
+              :class="!distribuida ? 'border-indigo-400 bg-indigo-50/60 ring-1 ring-indigo-200' : 'border-slate-200 hover:bg-slate-50'">
+              <input type="radio" class="mt-0.5 accent-indigo-600" :checked="!distribuida" :disabled="guardando" @change="setDistribuida(false)" />
+              <span class="min-w-0">
+                <span class="block text-sm font-medium text-slate-800">Centralizada</span>
+                <span class="block text-xs text-slate-500 leading-snug mt-0.5">La estructura interna se define aquí, igual para todas las unidades.</span>
+              </span>
+            </label>
+            <label class="flex-1 flex items-start gap-2.5 rounded-lg border p-3 cursor-pointer transition-colors"
+              :class="distribuida ? 'border-indigo-400 bg-indigo-50/60 ring-1 ring-indigo-200' : 'border-slate-200 hover:bg-slate-50'">
+              <input type="radio" class="mt-0.5 accent-indigo-600" :checked="distribuida" :disabled="guardando" @change="setDistribuida(true)" />
+              <span class="min-w-0">
+                <span class="block text-sm font-medium text-slate-800">Distribuida</span>
+                <span class="block text-xs text-slate-500 leading-snug mt-0.5">Cada unidad de este nivel define su propia subestructura.</span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
 
         <div
           v-for="item in arbolPlano"
           :key="item.id"
-          class="group flex items-center gap-1 min-w-0 py-0.5 px-1 -mx-1 rounded-md hover:bg-slate-50"
-          :style="{ paddingLeft: item.depth * 20 + 'px' }"
+          class="group flex items-center gap-1.5 min-w-0 py-1 px-2 -mx-2 rounded-lg hover:bg-slate-50"
+          :style="{ paddingLeft: item.depth * 22 + 8 + 'px' }"
         >
       <span class="flex-shrink-0 w-4 text-center">
         <span v-if="item.depth === 0" class="text-purple-400 text-xs">●</span>
@@ -42,14 +67,14 @@
 
         <!-- Acciones: se revelan al pasar el ratón sobre la fila -->
         <div class="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-          <button v-if="item.depth > 0" type="button" @click="promover(item)" :disabled="guardando"
+          <button v-if="puedeSubir(item)" type="button" @click="promover(item)" :disabled="guardando"
             title="Subir un nivel (promover)"
             class="w-7 h-7 grid place-items-center text-sm text-slate-400 hover:text-purple-700 rounded hover:bg-purple-50 disabled:opacity-30">↑</button>
           <button v-if="prevSiblingOf(item)" type="button" @click="demover(item)" :disabled="guardando"
             title="Bajar un nivel (anidar en el anterior)"
             class="w-7 h-7 grid place-items-center text-sm text-slate-400 hover:text-purple-700 rounded hover:bg-purple-50 disabled:opacity-30">↓</button>
           <span class="w-px h-4 bg-slate-200 mx-0.5" />
-          <button type="button" @click="añadirSuperior(item)" :disabled="guardando"
+          <button v-if="puedeSuperior(item)" type="button" @click="añadirSuperior(item)" :disabled="guardando"
             title="Insertar un nivel por encima de este"
             class="w-7 h-7 grid place-items-center text-xs font-mono text-slate-400 hover:text-purple-700 rounded hover:bg-purple-50 disabled:opacity-30">⊕↑</button>
           <button type="button" @click="añadirHijo(item)" :disabled="guardando"
@@ -59,7 +84,7 @@
           <button type="button" @click="iniciarEdicion(item)"
             title="Editar nombre, ámbito y denominación"
             class="w-7 h-7 grid place-items-center text-sm text-slate-400 hover:text-purple-700 rounded hover:bg-purple-50">✎</button>
-          <button v-if="item.depth > 0 || raices.length > 1" type="button" @click="iniciarEliminar(item)" :disabled="guardando"
+          <button v-if="puedeEliminar(item)" type="button" @click="iniciarEliminar(item)" :disabled="guardando"
             title="Eliminar nivel"
             class="w-7 h-7 grid place-items-center text-sm text-slate-400 hover:text-red-500 rounded hover:bg-red-50 disabled:opacity-30">×</button>
         </div>
@@ -105,11 +130,16 @@
       </template>
         </div>
 
-        <div class="flex items-center pt-1.5 border-t border-slate-100 mt-1">
-          <button type="button" @click="añadirRaiz" :disabled="guardando"
+        <div class="flex items-center pt-2 border-t border-slate-100 mt-2">
+          <button v-if="!scoped" type="button" @click="añadirRaiz" :disabled="guardando"
             class="inline-flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-800 disabled:opacity-40">
             <span class="grid place-items-center w-5 h-5 rounded-full border border-purple-300 text-purple-500 font-mono leading-none">+</span>
             Añadir nivel raíz
+          </button>
+          <button v-else-if="nodoScope" type="button" @click="añadirHijo(nodoScope)" :disabled="guardando"
+            class="inline-flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-800 disabled:opacity-40">
+            <span class="grid place-items-center w-5 h-5 rounded-full border border-purple-300 text-purple-500 font-mono leading-none">+</span>
+            Añadir subnivel
           </button>
         </div>
 
@@ -122,8 +152,8 @@
       </div>
 
       <!-- DERECHA · vista previa del árbol en tiempo real -->
-      <div class="lg:border-l lg:border-slate-100 lg:pl-5">
-        <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-3 min-h-[7rem]">
+      <div class="lg:border-l lg:border-slate-100 lg:pl-6">
+        <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 min-h-[7rem]">
           <div v-if="arbolPreview.length">
             <div v-for="node in arbolPreview" :key="node.id"
               class="flex items-center leading-7 rounded transition-colors"
@@ -192,6 +222,13 @@ import { useUnidadesOrganizativas } from '@/composables/useUnidadesOrganizativas
 import { useOrgConfigStore } from '@/stores/orgConfig'
 import { GET_AMBITOS_GEOGRAFICOS } from '@/graphql/queries/catalogos.js'
 
+const props = defineProps({
+  // Ancla opcional. Si se indica, el editor solo muestra/edita el subárbol que
+  // cuelga de este nivel; reutilizable en la edición de cada agrupación, que
+  // arranca en su propio nivel geográfico. Sin prop = árbol completo (matriz).
+  nivelRaizId: { type: String, default: null },
+})
+
 const { tipos, unidades, cargarTipos, cargarArbol, crearTipo, actualizarTipo, actualizarUnidad, eliminarTipo } = useUnidadesOrganizativas()
 const orgConfig = useOrgConfigStore()
 
@@ -239,7 +276,56 @@ const buildTree = (lista) => {
   return raices
 }
 
-const raices = computed(() => buildTree(tiposTerritoriales.value))
+const raicesReales = computed(() => buildTree(tiposTerritoriales.value))
+
+const buscarNodo = (nodos, id) => {
+  for (const n of nodos) {
+    if (n.id === id) return n
+    const f = buscarNodo(n.hijos || [], id)
+    if (f) return f
+  }
+  return null
+}
+
+// Nodo ancla del scope (si se indicó nivelRaizId)
+const nodoScope = computed(() =>
+  props.nivelRaizId ? buscarNodo(raicesReales.value, props.nivelRaizId) : null
+)
+
+// Raíces efectivas: con scope, solo el nodo ancla; sin scope, las raíces reales
+const raices = computed(() =>
+  nodoScope.value ? [nodoScope.value] : raicesReales.value
+)
+
+const scoped = computed(() => !!props.nivelRaizId)
+
+// Nodo cuya bandera centralizada/distribuida gobierna este editor (recursivo:
+// cada nivel decide cómo se organiza el subárbol que cuelga de él)
+const nodoRaizActual = computed(() =>
+  nodoScope.value ?? (raicesReales.value.length ? raicesReales.value[0] : null)
+)
+const distribuida = computed(() => !!nodoRaizActual.value?.estructuraDistribuida)
+
+const setDistribuida = async (val) => {
+  const nodo = nodoRaizActual.value
+  if (!nodo || guardando.value || distribuida.value === val) return
+  guardando.value = true
+  errorMsg.value  = ''
+  try {
+    await actualizarTipo({ id: nodo.id, estructuraDistribuida: val })
+    await recargarConfig()
+  } catch (e) {
+    errorMsg.value = e?.response?.errors?.[0]?.message ?? 'Error al cambiar el modelo de estructura'
+  } finally {
+    guardando.value = false
+  }
+}
+
+// ── Guardas de límite del scope ───────────────────────────────────────────────
+const esAncla       = (item) => scoped.value && item.id === props.nivelRaizId
+const puedeSubir    = (item) => item.depth > 0 && !(scoped.value && item.padreTipoId === props.nivelRaizId)
+const puedeSuperior = (item) => !esAncla(item)
+const puedeEliminar = (item) => !esAncla(item) && (item.depth > 0 || raices.value.length > 1)
 
 const arbolPlano = computed(() => {
   const lista = []
@@ -449,7 +535,7 @@ defineExpose({ estructuraProtegida })
 
 onMounted(async () => {
   await Promise.all([cargarTipos(), cargarArbol(), cargarAmbitos()])
-  if (tiposTerritoriales.value.length === 0) {
+  if (!props.nivelRaizId && tiposTerritoriales.value.length === 0) {
     await crearTipo({
       nombre: 'Asociación',
       naturaleza: 'TERRITORIAL',

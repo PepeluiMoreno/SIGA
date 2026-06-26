@@ -830,6 +830,7 @@ export const GET_TIPOS_UNIDADES_ORGANIZATIVAS = `
       ambitoGeograficoId
       ambitoGeografico { id nombre granularidad }
       denominacionSingular denominacionPlural
+      estructuraDistribuida
       activo
     }
   }
@@ -847,6 +848,7 @@ export const UPDATE_TIPO_UNIDAD_ORGANIZATIVA = `
       id nombre naturaleza vinculo nivel padreTipoId ambitoGeograficoId
       ambitoGeografico { id nombre granularidad }
       denominacionSingular denominacionPlural
+      estructuraDistribuida
       activo
     }
   }
