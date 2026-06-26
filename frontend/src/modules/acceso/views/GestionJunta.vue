@@ -219,13 +219,13 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">{{ orgConfig.Miembro }} <span class="text-red-500">*</span></label>
           <select v-model="formCargo.miembroId"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
-            <option value="">Seleccionar socio activo…</option>
+            <option value="">Seleccionar {{ orgConfig.miembro }} activo…</option>
             <option v-for="m in miembros" :key="m.id" :value="m.id">
               {{ nombreCompleto(m) }}{{ m.email ? ` · ${m.email}` : '' }}
             </option>
           </select>
           <p v-if="!miembros.length" class="mt-1 text-xs text-gray-400">
-            No hay socios activos en esta agrupación.
+            No hay {{ orgConfig.miembros }} activos en esta agrupación.
           </p>
         </div>
         <div>

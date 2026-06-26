@@ -81,7 +81,7 @@
         <button type="button" @click="togglePanel('cargos')" :class="accordionBtn(open.cargos)">
           <span class="flex items-center gap-3">
             <span class="shrink-0 w-1.5 h-5 rounded-full bg-violet-500"></span>
-            <h2 :class="titleCls">Socios de la unidad</h2>
+            <h2 :class="titleCls">{{ orgConfig.Miembros }} de la unidad</h2>
             <span v-if="miembros.length"
               class="px-2 py-0.5 bg-violet-50 text-violet-700 border border-violet-200 text-xs font-semibold rounded-full tabular-nums">
               {{ miembros.length }}
@@ -106,7 +106,7 @@
           <div v-else class="overflow-x-auto -mx-1"><table class="w-full">
             <thead>
               <tr class="border-b border-slate-100">
-                <th class="pb-2 text-left text-xs font-semibold text-slate-400">Socio</th>
+                <th class="pb-2 text-left text-xs font-semibold text-slate-400">{{ orgConfig.Miembro }}</th>
                 <th class="pb-2 text-left text-xs font-semibold text-slate-400">Cargo</th>
                 <th class="pb-2 text-left text-xs font-semibold text-slate-400 hidden md:table-cell">Email</th>
                 <th class="w-12"></th>
@@ -130,7 +130,7 @@
                 <td class="py-2.5 text-right">
                   <button type="button" @click.stop="verFicha(s.id)"
                     class="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors opacity-0 group-hover:opacity-100"
-                    title="Ver ficha del socio">
+                    :title="`Ver ficha del ${orgConfig.miembro}`">
                     <EyeIcon class="w-4 h-4" />
                   </button>
                 </td>
@@ -169,12 +169,12 @@
           <div>
             <label :class="lbl">Titular <span class="text-red-400">*</span></label>
             <select v-model="modal.miembroId" :class="inp">
-              <option :value="null">— Seleccionar socio activo —</option>
+              <option :value="null">— Seleccionar {{ orgConfig.miembro }} activo —</option>
               <option v-for="m in miembros" :key="m.id" :value="m.id">
                 {{ [m.apellido1, m.apellido2].filter(Boolean).join(' ') }}, {{ m.nombre }}{{ m.email ? ` · ${m.email}` : '' }}
               </option>
             </select>
-            <p v-if="!miembros.length" class="mt-1 text-xs text-slate-400">No hay socios activos en esta unidad.</p>
+            <p v-if="!miembros.length" class="mt-1 text-xs text-slate-400">No hay {{ orgConfig.miembros }} activos en esta unidad.</p>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -222,9 +222,11 @@ import {
 } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { usePermisos } from '@/composables/usePermisos.js'
+import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
 const confirmDialog = useConfirm()
 const { tienePermiso } = usePermisos()
+const orgConfig = useOrgConfigStore()
 
 const route = useRoute()
 const router = useRouter()

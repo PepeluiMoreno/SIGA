@@ -195,7 +195,7 @@
                   </div>
                 </td>
                 <td class="px-4 py-3">
-                  <p class="text-xs text-gray-400 mb-1">Es socio desde</p>
+                  <p class="text-xs text-gray-400 mb-1">Es {{ orgConfig.miembro }} desde</p>
                   <p class="text-sm text-gray-600">{{ formatDate(fila.miembro.fechaAlta) }}</p>
                 </td>
                 <td class="px-4 py-3 text-right">
@@ -276,7 +276,7 @@ function ejecutarAccionMasiva(key) {
   if (!items.length) return
   if (key === 'exportar') return exportarSeleccionCsv(items)
   if (key === 'comunicacion') {
-    toast.success(`Selección de ${items.length} socios lista. El envío de comunicación interna llegará con el módulo de comunicación.`)
+    toast.success(`Selección de ${items.length} ${orgConfig.miembros} lista. El envío de comunicación interna llegará con el módulo de comunicación.`)
   }
 }
 function exportarSeleccionCsv(items) {
@@ -445,7 +445,7 @@ const descripcionBusqueda = computed(() => {
     .map(id => tiposMiembro.value.find(t => t.id === id)?.nombre)
     .filter(Boolean)
   if (tiposSeleccionados.length === 0 || tiposSeleccionados.length === tiposMiembro.value.length) {
-    tipoStr = 'socios'
+    tipoStr = orgConfig.miembros
   } else if (tiposSeleccionados.length === 1) {
     tipoStr = tiposSeleccionados[0]
   } else {
