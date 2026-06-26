@@ -6,7 +6,7 @@
 
       <!-- IZQUIERDA · editor de niveles -->
       <div class="space-y-0.5">
-        <h4 class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1">Niveles</h4>
+        <h4 class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1">Organización Territorial</h4>
 
         <div
           v-for="item in arbolPlano"
@@ -123,7 +123,6 @@
 
       <!-- DERECHA · vista previa del árbol en tiempo real -->
       <div class="lg:border-l lg:border-slate-100 lg:pl-5">
-        <h4 class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1">Vista del árbol</h4>
         <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-3 min-h-[7rem]">
           <div v-if="arbolPreview.length">
             <div v-for="node in arbolPreview" :key="node.id"
