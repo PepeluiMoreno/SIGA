@@ -98,6 +98,16 @@
           </div>
         </div>
 
+        <!-- Datos jurídicos (solo si el nivel elegido es FILIAL / FEDERADA) -->
+        <div v-if="tipoSelEsJuridica">
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">Datos jurídicos</p>
+          <div class="grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
+            <div class="col-span-6 sm:col-span-4"><p :class="lbl">NIF / CIF</p><input v-model="form.nif" type="text" :class="inp" /></div>
+            <div class="col-span-6 sm:col-span-4"><p :class="lbl">Fecha de constitución</p><input v-model="form.fechaConstitucion" type="date" :class="inp" /></div>
+            <div class="col-span-12 sm:col-span-4"><p :class="lbl">Registro oficial</p><input v-model="form.registroOficial" type="text" :class="inp" /></div>
+          </div>
+        </div>
+
         <ErrorAlert v-if="datosError" :message="datosError" />
 
         <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
@@ -235,8 +245,8 @@
         </button>
         <div v-show="open.config" class="px-5 py-4 space-y-5">
 
-          <!-- Datos jurídicos -->
-          <div>
+          <!-- Datos jurídicos (solo entidades FILIAL / FEDERADA con personalidad propia) -->
+          <div v-if="esEntidadJuridica">
             <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">Datos jurídicos</p>
             <div class="grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
               <div class="col-span-6 sm:col-span-4">
@@ -591,6 +601,9 @@ watch(tiposDisponibles, (lista) => {
   if (lista.length === 1) formTipoId.value = lista[0].id
   else if (!lista.find(t => t.id === formTipoId.value)) formTipoId.value = ''
 })
+// En el alta, mostrar jurídicos solo si el nivel elegido es FILIAL / FEDERADA
+const tipoSelEsJuridica = computed(() =>
+  ['FILIAL', 'FEDERADA'].includes(niveles.value.find(t => t.id === formTipoId.value)?.vinculo))
 
 async function iniciarAlta() {
   loading.value = true
@@ -757,6 +770,8 @@ const provinciaNombre = computed(() => provincias.value.find(p => p.id === agrup
 const municipioNombre = computed(() => municipios.value.find(m => m.id === agrupacion.value?.municipioId)?.nombre || '—')
 // ¿El nivel de esta unidad delega la subestructura en cada unidad? (distribuida)
 const esDistribuida = computed(() => !!agrupacion.value?.tipoUnidad?.estructuraDistribuida)
+// Datos jurídicos solo para entidades con personalidad propia (FILIAL / FEDERADA)
+const esEntidadJuridica = computed(() => ['FILIAL', 'FEDERADA'].includes(agrupacion.value?.tipoUnidad?.vinculo))
 // Composición del órgano de gobierno: cargos electos activos de esta unidad
 const composicionJunta = computed(() =>
   [...nombramientos.value].sort((a, b) =>
@@ -916,7 +931,7 @@ const Q_TODOS_SOCIOS = `
 const Q_NIVELES = `
   query Niveles {
     nivelesOrganizativos(filter: { activo: { eq: true } }) {
-      id nombre naturaleza padreTipoId
+      id nombre naturaleza padreTipoId vinculo
     }
   }
 `
