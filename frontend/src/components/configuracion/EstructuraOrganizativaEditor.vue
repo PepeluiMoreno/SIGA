@@ -2,6 +2,28 @@
   <div>
     <ErrorAlert v-if="errorMsg" :message="errorMsg" class="mb-3" />
 
+    <!-- Mutabilidad: estructura en uso ⇒ read-only hasta desbloquear -->
+    <div v-if="estructuraProtegida && !desbloqueado"
+      class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 flex items-start gap-3">
+      <span class="text-amber-600 text-lg leading-none flex-shrink-0">🔒</span>
+      <div class="min-w-0 flex-1">
+        <p class="text-sm font-medium text-amber-800">Estructura en uso</p>
+        <p class="text-xs text-amber-700 leading-snug mt-0.5">
+          Hay {{ nUnidadesUso }} unidad{{ nUnidadesUso === 1 ? '' : 'es' }}<template v-if="nSociosUso"> y {{ nSociosUso }} {{ orgConfig.miembros }}</template> creadas.
+          Cambiar los niveles puede reorganizar datos: al borrar un nivel, sus unidades pasan al nivel padre.
+        </p>
+      </div>
+      <button type="button" @click="desbloqueado = true"
+        class="flex-shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg border border-amber-300 text-amber-800 hover:bg-amber-100">
+        Modificar estructura
+      </button>
+    </div>
+    <div v-else-if="estructuraProtegida && desbloqueado"
+      class="mb-3 flex items-center gap-2 text-xs text-amber-700">
+      <span>✏️ Editando una estructura en uso — las operaciones con impacto piden confirmación.</span>
+      <button type="button" @click="desbloqueado = false" class="text-amber-800 underline hover:text-amber-900">Bloquear</button>
+    </div>
+
     <!-- Modelo de estructura (solo en uso embebido; en Parámetros lo pinta el padre arriba) -->
     <fieldset v-if="mostrarRadiogroup && nodoRaizActual" class="rounded-xl border border-slate-200 bg-white px-3 pt-1.5 pb-3 mb-4">
       <legend class="px-1.5 text-[11px] font-medium text-slate-500">
@@ -10,7 +32,7 @@
       <div class="flex flex-col sm:flex-row gap-2.5 mt-1">
         <label class="flex-1 flex items-start gap-2.5 rounded-lg border p-3 cursor-pointer transition-colors"
           :class="!distribuida ? 'border-indigo-400 bg-indigo-50/60 ring-1 ring-indigo-200' : 'border-slate-200 hover:bg-slate-50'">
-          <input type="radio" class="mt-0.5 accent-indigo-600" :checked="!distribuida" :disabled="guardando" @change="setDistribuida(false)" />
+          <input type="radio" class="mt-0.5 accent-indigo-600" :checked="!distribuida" :disabled="guardando || !editable" @change="setDistribuida(false)" />
           <span class="min-w-0">
             <span class="block text-sm font-medium text-slate-800">Centralizada</span>
             <span class="block text-xs text-slate-500 leading-snug mt-0.5">La estructura interna se define aquí, igual para todas las unidades.</span>
@@ -18,7 +40,7 @@
         </label>
         <label class="flex-1 flex items-start gap-2.5 rounded-lg border p-3 cursor-pointer transition-colors"
           :class="distribuida ? 'border-indigo-400 bg-indigo-50/60 ring-1 ring-indigo-200' : 'border-slate-200 hover:bg-slate-50'">
-          <input type="radio" class="mt-0.5 accent-indigo-600" :checked="distribuida" :disabled="guardando" @change="setDistribuida(true)" />
+          <input type="radio" class="mt-0.5 accent-indigo-600" :checked="distribuida" :disabled="guardando || !editable" @change="setDistribuida(true)" />
           <span class="min-w-0">
             <span class="block text-sm font-medium text-slate-800">Distribuida</span>
             <span class="block text-xs text-slate-500 leading-snug mt-0.5">Cada unidad de este nivel define su propia subestructura.</span>
@@ -31,7 +53,7 @@
 
       <!-- IZQUIERDA · toolbar vertical de operaciones (≈1/8) -->
       <div class="w-full lg:w-44 lg:flex-shrink-0">
-        <VerticalToolbar :actions="acciones" :disabled="guardando || !!editandoId" @select="onAccion" />
+        <VerticalToolbar :actions="acciones" :disabled="guardando || !!editandoId || !editable" @select="onAccion" />
         <p v-if="!nodoSel && !editandoId" class="text-[11px] text-slate-400 italic mt-2 leading-tight">
           Selecciona un nivel en el árbol para operar sobre él.
         </p>
@@ -188,7 +210,7 @@ const props = defineProps({
   unidadId: { type: String, default: null },
 })
 
-const { tipos, unidades, cargarTipos, cargarArbol, crearTipo, actualizarTipo, actualizarUnidad, eliminarTipo } = useUnidadesOrganizativas()
+const { tipos, unidades, miembros, cargarTipos, cargarArbol, crearTipo, actualizarTipo, actualizarUnidad, eliminarTipo } = useUnidadesOrganizativas()
 const orgConfig = useOrgConfigStore()
 
 async function recargarConfig() {
@@ -608,7 +630,14 @@ const onAccion = (key) => {
   else if (key === 'eliminar') iniciarEliminar(n)
 }
 
-const estructuraProtegida = computed(() => false)
+// Mutabilidad post-arranque: la estructura se "protege" cuando ya está en uso (hay
+// unidades instanciadas). El editor queda read-only hasta pulsar "Modificar estructura".
+// Las operaciones con impacto (borrar/anidar) ya confirman aparte con conteos reales.
+const nUnidadesUso = computed(() => unidades.value.length)
+const nSociosUso   = computed(() => miembros.value.length)
+const estructuraProtegida = computed(() => nUnidadesUso.value > 0)
+const desbloqueado = ref(false)
+const editable = computed(() => !estructuraProtegida.value || desbloqueado.value)
 defineExpose({ estructuraProtegida, distribuida, setDistribuida, nodoRaizActual })
 
 onMounted(async () => {

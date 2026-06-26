@@ -136,11 +136,6 @@
                 </div>
               </div>
             </fieldset>
-
-            <!-- Aviso protección -->
-            <div v-if="editorRef?.estructuraProtegida" class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-              🔒 Protegida — hay datos asociados. Solo se puede renombrar.
-            </div>
           </div>
           <div class="px-5 pb-4">
             <EstructuraOrganizativaEditor ref="editorRef" :mostrar-radiogroup="false" />
