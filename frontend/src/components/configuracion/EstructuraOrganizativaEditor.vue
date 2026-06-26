@@ -182,6 +182,10 @@ const props = defineProps({
   // Si es false, el editor no pinta su radiogroup centralizada/distribuida
   // (lo pinta el contenedor, p.ej. Parámetros Generales lo coloca arriba).
   mostrarRadiogroup: { type: Boolean, default: true },
+  // Cuando se edita la subestructura de una agrupación (estructura distribuida),
+  // su id: los niveles creados le pertenecen (unidad_id) y el editor solo muestra
+  // las plantillas globales (unidad_id NULL) + los niveles propios de esa unidad.
+  unidadId: { type: String, default: null },
 })
 
 const { tipos, unidades, cargarTipos, cargarArbol, crearTipo, actualizarTipo, actualizarUnidad, eliminarTipo } = useUnidadesOrganizativas()
@@ -216,7 +220,9 @@ async function cargarAmbitos() {
 }
 
 const tiposTerritoriales = computed(() =>
-  tipos.value.filter(t => t.naturaleza === 'TERRITORIAL')
+  tipos.value.filter(t => t.naturaleza === 'TERRITORIAL' &&
+    // plantillas globales (unidad_id NULL) + niveles propios de esta unidad (si scoped)
+    (t.unidadId == null || t.unidadId === props.unidadId))
 )
 
 const buildTree = (lista) => {
@@ -452,6 +458,7 @@ const añadirSuperior = async (nodo) => {
       vinculo: nodo.vinculo ?? 'INTERNA',
       padreTipoId: nodo.padreTipoId || null,
       activo: true,
+      unidadId: props.unidadId,
     })
     await actualizarTipo({ id: nodo.id, padreTipoId: nuevo.id })
     await recargarConfig()
@@ -474,6 +481,7 @@ const añadirHijo = async (padre) => {
       vinculo: 'INTERNA',
       padreTipoId: padre.id,
       activo: true,
+      unidadId: props.unidadId,
     })
     await recargarConfig()
     seleccionarYEditar(nuevo)
@@ -495,6 +503,7 @@ const añadirHermano = async (nodo) => {
       vinculo: nodo.vinculo ?? 'INTERNA',
       padreTipoId: nodo.padreTipoId || null,
       activo: true,
+      unidadId: props.unidadId,
     })
     await recargarConfig()
     seleccionarYEditar(nuevo)
@@ -516,6 +525,7 @@ const añadirRaiz = async () => {
       vinculo: 'INTERNA',
       padreTipoId: null,
       activo: true,
+      unidadId: props.unidadId,
     })
     await recargarConfig()
     seleccionarYEditar(nuevo)
@@ -607,6 +617,7 @@ onMounted(async () => {
       naturaleza: 'TERRITORIAL',
       vinculo: 'INTERNA',
       activo: true,
+      unidadId: props.unidadId,
     })
   }
 })

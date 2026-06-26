@@ -831,6 +831,7 @@ export const GET_TIPOS_UNIDADES_ORGANIZATIVAS = `
       ambitoGeografico { id nombre granularidad }
       denominacionSingular denominacionPlural
       estructuraDistribuida
+      unidadId
       activo
     }
   }
