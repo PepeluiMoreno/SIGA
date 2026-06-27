@@ -153,6 +153,28 @@ Se mantiene la convención del repo: `tipo(scope): descripción` en español.
 
 ---
 
+## 7.bis Dos formas de encarnar a los agentes (mismo protocolo)
+
+El reparto de roles, ownership (§2), zonas calientes (§3) y reglas duras (§6) es **idéntico**
+sea cual sea la ergonomía. Lo único que cambia es **quién encarna a cada agente de módulo**:
+
+- **Modo clásico (N ventanas):** el usuario abre una ventana/chat de VSCode por sala, cada una
+  en su worktree `../SIGA-wt/<modulo>`, y ejecuta `/inbox`. El integrador es otra ventana en
+  `master` que ejecuta `/integrar`. Cada chat sabe quién es por `.claude/AGENTE.local.md`.
+
+- **Modo 1-ventana (orquestación):** el usuario abre **una sola ventana** (la principal, en
+  `master`) y ejecuta `/orquestar`. Ese chat hace de integrador Y lanza **subagentes** (con la
+  herramienta Agent), uno por módulo con trabajo, cada uno apuntado a su worktree existente
+  `../SIGA-wt/<modulo>`. Los subagentes respetan exactamente las mismas reglas (solo su módulo,
+  no zonas calientes, no mergear, no migrar); al volver, el chat principal integra como siempre.
+
+Equivalencia: en modo 1-ventana, "agente de módulo" = subagente confinado a su worktree;
+"integrador" = el propio chat principal antes/después de lanzarlos. Las garantías de no-pisarse
+son las mismas porque cada subagente queda confinado a su worktree y a su ownership, y solo el
+chat principal toca zonas calientes y migra. Elige el modo que prefieras; no son excluyentes.
+
+---
+
 ## 8. Resumen de "qué puedo / qué no" por rol
 
 **Soy agente de módulo `X`:**

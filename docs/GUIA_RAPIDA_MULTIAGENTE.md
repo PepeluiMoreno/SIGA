@@ -5,8 +5,26 @@
 
 ## La idea en 3 frases
 - Tu proyecto se divide en **salas** (módulos: económico, miembros, actividades…).
-- Pones **un chat por sala**. Cada uno trabaja en lo suyo y no pisa a los demás.
+- Cada sala trabaja en lo suyo y no pisa a las demás.
 - Un **jefe** (el integrador) junta el trabajo de todos. Un **buzón** recoge tus quejas y las reparte.
+
+## Dos formas de hacerlo (elige la que te apetezca)
+
+**Opción A — 1 sola ventana (cómoda, recomendada).** No abres una ventana de VSCode por sala.
+Abres **un solo chat** en la carpeta de siempre (`/opt/docker/apps/SIGA`) y escribes:
+
+```
+/orquestar
+```
+
+Ese chat hace de jefe **y** reparte el trabajo: lanza por dentro un "operario" por cada sala que
+tenga tareas pendientes, todos a la vez, cada uno en su carril. Cuando acaban, ese mismo chat lo
+junta todo. Tú solo miras una ventana. (Las tareas las coge de las bandejas, igual que siempre;
+puedes llenarlas antes con el buzón.)
+
+**Opción B — una ventana por sala (la de toda la vida).** Si prefieres ver cada operario en su
+propia ventana, abres un chat por carpeta y le dices `/inbox`. Es lo que se explica en el resto
+de esta guía. Las dos opciones usan las mismas reglas y son intercambiables.
 
 ---
 
@@ -63,10 +81,11 @@ pidieron, y deja el proyecto actualizado. **Solo el jefe hace esto** (así nada 
 
 | Quiero… | Abro un chat en… | Y le digo… |
 |---|---|---|
+| **Que trabajen TODAS las salas sin abrir N ventanas** | `SIGA` (la de siempre) | **"/orquestar"** |
 | Soltar una queja/mejora | cualquier carpeta | "eres el buzón, /triaje, [tu queja]" |
-| Que trabajen el módulo económico | `SIGA-wt/economico` | "/inbox" |
-| Que trabajen miembros | `SIGA-wt/membresia` | "/inbox" |
-| Que trabajen actividades | `SIGA-wt/actividades` | "/inbox" |
+| Que trabajen el módulo económico (una ventana) | `SIGA-wt/economico` | "/inbox" |
+| Que trabajen miembros (una ventana) | `SIGA-wt/membresia` | "/inbox" |
+| Que trabajen actividades (una ventana) | `SIGA-wt/actividades` | "/inbox" |
 | Juntar todo el trabajo | `SIGA` (la de siempre) | "/integrar" |
 
 ## Tres cosas y ya
@@ -94,7 +113,15 @@ Nota: <aquí tu queja tal cual, p.ej. "el botón de exportar recibos no filtra p
 ```
 Puedes encadenar varias quejas seguidas; las reparte cada una a su sala.
 
-### B) Poner a trabajar a un módulo
+### B) Poner a trabajar a TODOS los módulos sin abrir más ventanas (recomendado)
+Abre **un solo chat** en la carpeta principal `SIGA` y escribe (comando):
+```
+/orquestar
+```
+Ese chat lanza por dentro un operario por cada sala con tareas, todos a la vez, y luego junta el
+trabajo él mismo. Una ventana, varios operarios. No tienes que abrir nada más.
+
+### B-bis) Poner a trabajar UN módulo en su propia ventana (modo clásico)
 Abre un chat **en la carpeta de ese módulo** y escribe (comando):
 ```
 /inbox
