@@ -11,7 +11,13 @@ services:
   backend:
     image: ${IMAGE_NAME_BACKEND:-ghcr.io/pepeluimoreno/siga-backend}:${IMAGE_TAG:-latest}
     pull_policy: always
+    # PRODUCCIÓN RÍGIDA: solo imagen, sin binds de código. El runtime y los seeds
+    # vienen 100% de la imagen (reproducible desde el SHA). NO se montan scripts
+    # de seeding aquí: en staging eso vive en docker-compose.staging.yml (override
+    # extra vía COMPOSE_EXTRA_FILE). SIGA_ENV=production activa el guard que impide
+    # sembrar datos de prueba (ver app/scripts/seeding/_guard.py).
     environment:
+      SIGA_ENV: production
       DB_PASSWORD_FILE: /run/secrets/db_password
       JWT_SECRET_FILE: /run/secrets/jwt_secret
       SMTP_PASSWORD_FILE: /run/secrets/smtp_password

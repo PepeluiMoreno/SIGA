@@ -116,6 +116,8 @@ async def _seed_cuotas_actuales(s: AsyncSession, importes) -> None:
 
 
 async def seed(session: AsyncSession | None = None) -> None:
+    from app.scripts.seeding._guard import abort_if_production
+    abort_if_production("seeding demo de cuotas")
     own = session is None
     if own:
         session = async_session()

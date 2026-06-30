@@ -1,0 +1,23 @@
+# Override SOLO para STAGING (VPS2). Se aplica ENCIMA de base + prod:
+#   -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.staging.yml
+#
+# Se activa porque el .env de staging define COMPOSE_EXTRA_FILE=docker-compose.staging.yml,
+# que deploy-remote-pull.sh añade como tercer `-f`. Producción NO define esa variable,
+# así que NUNCA aplica este fichero (producción queda pura-imagen).
+#
+# IMPORTANTE: este fichero debe ir EL ÚLTIMO en el orden de `-f` para que su
+# `SIGA_ENV: staging` gane al `SIGA_ENV: production` heredado de prod.yml.
+#
+# Qué aporta staging (comodidad): bind read-only de los scripts de seeding e
+# importación, para poder sembrar/actualizar seeds SIN reconstruir la imagen ni
+# depender del runner de deploy (git pull/rsync en el VPS + `docker compose exec`).
+# El runtime de la app sigue siendo el de la imagen (solo se montan los scripts):
+# así no se corre una mezcla imagen-vieja / código-nuevo. OJO: si un seed depende
+# de un cambio de modelo/esquema, ese cambio debe estar también en la imagen.
+services:
+  backend:
+    environment:
+      SIGA_ENV: staging
+    volumes:
+      - ./backend/app/scripts/seeding:/app/app/scripts/seeding:ro
+      - ./backend/app/scripts/importacion:/app/app/scripts/importacion:ro

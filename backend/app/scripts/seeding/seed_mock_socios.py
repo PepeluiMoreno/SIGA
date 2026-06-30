@@ -80,6 +80,8 @@ def gen_telefono() -> str:
 
 
 async def seed():
+    from app.scripts.seeding._guard import abort_if_production
+    abort_if_production("seeding mock de socios")
     async with async_session() as session:
         miembros = list((await session.execute(select(Miembro))).scalars().all())
 

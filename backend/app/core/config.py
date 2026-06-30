@@ -5,7 +5,16 @@ from functools import lru_cache
 from app.core.secrets import read_secret_file
 
 
+_ENTORNOS_VALIDOS = {"dev", "staging", "production"}
+
+
 class Settings(BaseSettings):
+    # Entorno de ejecución: dev | staging | production. Se inyecta por compose
+    # (SIGA_ENV). Default y fail-safe = "production": si no se define o llega un
+    # valor desconocido, se trata como producción (fail-closed) para que el guard
+    # de los seeds de prueba bloquee por defecto. Ver app/scripts/seeding/_guard.py.
+    siga_env: str = "production"
+
     # Supabase Pooler (Transaction mode)
     db_host: str
     db_port: int
@@ -58,6 +67,26 @@ class Settings(BaseSettings):
                 if valor is not None:
                     data[name] = valor
         return data
+
+    @model_validator(mode="after")
+    def _normalizar_entorno(self):
+        """Fail-safe: cualquier valor de siga_env fuera de {dev,staging,production}
+        se trata como 'production' (ante la duda, bloquear seeds de prueba)."""
+        if self.siga_env not in _ENTORNOS_VALIDOS:
+            object.__setattr__(self, "siga_env", "production")
+        return self
+
+    @property
+    def is_production(self) -> bool:
+        return self.siga_env == "production"
+
+    @property
+    def is_staging(self) -> bool:
+        return self.siga_env == "staging"
+
+    @property
+    def is_dev(self) -> bool:
+        return self.siga_env == "dev"
 
     @computed_field
     @property

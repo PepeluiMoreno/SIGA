@@ -305,6 +305,8 @@ async def _ensure_usuario(session, contacto_id, email) -> bool:
 
 
 async def main() -> None:
+    from app.scripts.seeding._guard import abort_if_production
+    abort_if_production("seeding de contactos fake")
     async with async_session() as session:
         nuevos_tipos = await _ensure_tipos(session)
         if nuevos_tipos:

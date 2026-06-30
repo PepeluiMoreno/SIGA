@@ -184,6 +184,8 @@ async def _asignar_contactos(s: AsyncSession, provinciales: list[UnidadOrganizat
 
 
 async def main() -> None:
+    from app.scripts.seeding._guard import abort_if_production
+    abort_if_production("seeding demo territorial")
     async with async_session() as s:
         try:
             pais = await _get_or_create_pais_espana(s)

@@ -84,6 +84,9 @@ jobs:
     needs: build-and-push
     if: github.ref == 'refs/heads/master' && !(github.event_name == 'workflow_dispatch' && inputs.deploy_production)
     runs-on: [self-hosted, siga-staging]
+    # Falla rápido y claro si el runner self-hosted no está disponible (en vez de
+    # quedar encolado hasta el timeout global). Cubre el caso "runner offline".
+    timeout-minutes: 20
     env:
       DEPLOY_DIR: /opt/docker/apps/SIGA
     steps:
@@ -96,11 +99,21 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$DEPLOY_DIR/scripts"
-          cp -f docker-compose.yml docker-compose.prod.yml "$DEPLOY_DIR"/
+          # STAGING (cómodo): además del base+prod, copia el override de staging y
+          # sincroniza los scripts de seeding/importación que ese override bind-monta
+          # (ro), para poder sembrar sin reconstruir la imagen. El override se activa
+          # vía COMPOSE_EXTRA_FILE, que debe venir definido en el .env de staging.
+          cp -f docker-compose.yml docker-compose.prod.yml docker-compose.staging.yml "$DEPLOY_DIR"/
           cp -f scripts/*.sh "$DEPLOY_DIR/scripts"/
+          mkdir -p "$DEPLOY_DIR/backend/app/scripts"
+          rsync -a --delete backend/app/scripts/seeding "$DEPLOY_DIR/backend/app/scripts/"
+          rsync -a --delete backend/app/scripts/importacion "$DEPLOY_DIR/backend/app/scripts/"
           cd "$DEPLOY_DIR"
           umask 077
           printf '%s\n' "$ENV_STAGING" > .env.production
+          # Salvaguarda: si el .env de staging no trae COMPOSE_EXTRA_FILE, lo fijamos
+          # aquí para garantizar que staging SIEMPRE aplica su override (binds + SIGA_ENV=staging).
+          grep -q '^COMPOSE_EXTRA_FILE=' .env.production || echo 'COMPOSE_EXTRA_FILE=docker-compose.staging.yml' >> .env.production
           export DEPLOY_IMAGE_TAG GHCR_PAT
           ./scripts/deploy-remote-pull.sh
 
@@ -120,6 +133,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$DEPLOY_DIR/scripts"
+          # PRODUCCIÓN RÍGIDA: solo base+prod, sin override de staging y SIN sincronizar
+          # scripts de seeding (no se bind-montan en prod). El runtime y los seeds vienen
+          # 100% de la imagen; sembrar datos de prueba está además bloqueado por el guard
+          # (SIGA_ENV=production). NO definir COMPOSE_EXTRA_FILE en el .env de producción.
           cp -f docker-compose.yml docker-compose.prod.yml "$DEPLOY_DIR"/
           cp -f scripts/*.sh "$DEPLOY_DIR/scripts"/
           cd "$DEPLOY_DIR"

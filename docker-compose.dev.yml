@@ -9,12 +9,14 @@ services:
       - ./backend/alembic:/app/alembic
       - ./backend/initial_data:/app/initial_data  # datos semilla actualizados
       - uploads_dev:/app/uploads         # documentos subidos (persistentes)
+      - ./01_europa_laica_com-2026_02_17.sql:/tmp/dump.sql:ro  # volcado MySQL (solo dev: seeds de cuotas/remesas/miembros)
     command: >
       sh -c "python -m app.scripts.wait_for_db &&
              alembic upgrade head &&
              python -m app.scripts.bootstrap &&
              exec uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     environment:
+      SIGA_ENV: ${SIGA_ENV:-dev}
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB}

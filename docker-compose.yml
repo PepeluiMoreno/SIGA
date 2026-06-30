@@ -17,7 +17,6 @@ services:
       SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-}
     volumes:
       - media_fotos:/app/media/fotos
-      - ./01_europa_laica_com-2026_02_17.sql:/tmp/dump.sql:ro
     networks:
       - internal
     security_opt:

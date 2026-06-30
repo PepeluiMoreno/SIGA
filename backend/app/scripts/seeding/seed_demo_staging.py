@@ -60,6 +60,8 @@ PASOS = [
 
 
 def main() -> int:
+    from app.scripts.seeding._guard import abort_if_production
+    abort_if_production("poblado demo para staging")
     print("=" * 64)
     print("POBLADO DEMO PARA STAGING")
     print("=" * 64)
