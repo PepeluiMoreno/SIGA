@@ -18,6 +18,7 @@ _TRANSACCIONES = [
     TransaccionDef("MEMBRESIA_MIEMBRO_LISTAR",       "Listar miembros",                   "CONSULTA"),
     TransaccionDef("MEMBRESIA_MIEMBRO_CREAR",        "Registrar miembro",                 "MUTACION"),
     TransaccionDef("MEMBRESIA_MIEMBRO_EDITAR",       "Editar datos de miembro",           "MUTACION"),
+    TransaccionDef("MEMBRESIA_MIS_DATOS_EDITAR",     "Editar mis propios datos",          "MUTACION"),
     TransaccionDef("MEMBRESIA_MIEMBRO_VALIDAR",      "Validar solicitud de miembro",      "APROBACION"),
     TransaccionDef("MEMBRESIA_MIEMBRO_SUSPENDER",    "Suspender miembro",                 "MUTACION"),
     TransaccionDef("MEMBRESIA_MIEMBRO_BAJA",         "Dar de baja a miembro",             "MUTACION"),
@@ -76,6 +77,21 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
         FuncionalidadTransaccionDef("MEMBRESIA_MIEMBRO_SUSPENDER", AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("MEMBRESIA_MIEMBRO_BAJA",      AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("MEMBRESIA_MIEMBRO_EXPORTAR",  AmbitoTransaccion.TERRITORIAL),
+    ],
+))
+
+ModuleCatalog.register_funcionalidad(FuncionalidadDef(
+    codigo="AUTOSERVICIO_MIS_DATOS",
+    nombre="Mis datos (autoservicio)",
+    modulo=MODULO,
+    descripcion=(
+        "Edición por el propio socio de sus datos personales (nombre, contacto, "
+        "dirección, foto…). Ámbito PROPIO: cada usuario solo opera sobre su perfil; "
+        "no alcanza a otros socios ni a datos económicos/territoriales (esos los "
+        "gestiona la organización)."
+    ),
+    transacciones=[
+        FuncionalidadTransaccionDef("MEMBRESIA_MIS_DATOS_EDITAR", AmbitoTransaccion.PROPIO),
     ],
 ))
 

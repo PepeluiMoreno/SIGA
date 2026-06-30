@@ -221,6 +221,20 @@ export const UPDATE_MIEMBRO = `
   }
 `
 
+// Autoservicio: el usuario logueado edita SUS PROPIOS datos personales. No exige el
+// permiso administrativo MEMBRESIA_MIEMBRO_EDITAR; opera siempre sobre el contacto del
+// usuario en sesión (el backend ignora cualquier id y solo aplica campos personales).
+export const UPDATE_MIS_DATOS = `
+  mutation ActualizarMisDatos($data: MiembroUpdateInput!) {
+    actualizarMisDatos(data: $data) {
+      id
+      nombre
+      apellido1
+      apellido2
+    }
+  }
+`
+
 // Query para obtener tipos de miembro
 export const GET_TIPOS_MIEMBRO = `
   query TiposMiembro {

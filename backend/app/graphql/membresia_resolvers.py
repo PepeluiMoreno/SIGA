@@ -189,6 +189,20 @@ _SOCIO_FIELDS = (
 _ECONOMIC_FIELDS = frozenset({
     'iban', 'swift_bic', 'referencia_pago', 'forma_pago_id', 'motivo_reduccion_id',
 })
+# Datos personales que el PROPIO socio puede editar sobre sí mismo, sin necesidad del
+# permiso administrativo MEMBRESIA_MIEMBRO_EDITAR (que es para editar a OTROS). Es el
+# subconjunto "de identidad personal" de _CONTACTO_FIELDS. Se EXCLUYEN a propósito los
+# campos que no son competencia del propio interesado: `agrupacion_id` (adscripción
+# territorial, la decide la organización), `activo` (alta/baja), y los campos RGPD
+# administrativos (`datos_anonimizados`, `fecha_limite_retencion`, `fecha_anonimizacion`,
+# `fecha_solicitud_supresion`). La foto se trata como dato personal propio.
+_AUTO_EDITABLE_FIELDS = frozenset({
+    'nombre', 'apellido1', 'apellido2', 'sexo', 'fecha_nacimiento', 'tipo_documento',
+    'numero_documento', 'pais_documento_id', 'pais_nacimiento_id', 'direccion',
+    'codigo_postal', 'localidad', 'provincia_id', 'pais_domicilio_id', 'telefono',
+    'telefono2', 'email', 'profesion', 'nivel_estudios_id', 'foto_url',
+    'solicita_supresion_datos',  # ejercer derecho RGPD propio (solicitar, no ejecutar)
+})
 _VOLUNTARIO_FIELDS = (
     'disponibilidad', 'horas_disponibles_semana', 'profesion', 'nivel_estudios_id',
     'experiencia_voluntariado', 'intereses', 'observaciones_voluntariado',
@@ -514,6 +528,54 @@ class MembresiaResolverMutation:
         # Notificar solo si la edición ha cambiado el conjunto de campos
         # faltantes y siguen quedando huecos. Si los huecos son los mismos
         # que antes, evitamos el spam por cada edición del coordinador.
+        faltantes_despues = _campos_perfil_faltantes(miembro)
+        if faltantes_despues and faltantes_despues != faltantes_antes:
+            await _publicar_perfil_incompleto(miembro)
+
+        return await _fetch_miembro(session, miembro.id)
+
+    @strawberry.mutation
+    async def actualizar_mis_datos(
+        self,
+        info: strawberry.Info,
+        data: MiembroUpdateInput,
+    ) -> 'ContactoType':
+        """Autoservicio: el usuario logueado edita SUS PROPIOS datos personales.
+
+        Distinta de `actualizar_miembro` (que es administrativa, sobre OTROS socios y
+        exige MEMBRESIA_MIEMBRO_EDITAR). Aquí:
+          - el sujeto es SIEMPRE el contacto del usuario logueado (se ignora `data.id`:
+            no se puede editar a nadie más, aunque se envíe otro id);
+          - solo se aplican los campos personales (`_AUTO_EDITABLE_FIELDS`); cualquier
+            otro campo (agrupación, alta/baja, datos económicos, RGPD administrativo) se
+            ignora en silencio, porque son competencia de la organización, no del propio
+            interesado.
+        Autorización de ámbito PROPIO: la transacción MEMBRESIA_MIS_DATOS_EDITAR existe en
+        el catálogo para documentar el acto, pero NO se reparte a roles ni se gatea con
+        RequireTransaction: el derecho es implícito al dueño. El guard es la PROPIEDAD —
+        basta estar autenticado y se opera siempre sobre el propio contacto. Así un socio
+        sin permisos administrativos (p. ej. el tesorero sobre su ficha) puede editarse.
+        """
+        session = info.context.session
+        user = info.context.user
+        if user is None:
+            raise PermissionError("Debes iniciar sesión para editar tus datos.")
+        if user.contacto_id is None:
+            raise ValueError("Tu cuenta no está vinculada a un contacto; no hay datos propios que editar.")
+
+        miembro = await _fetch_miembro(session, user.contacto_id)
+        if miembro is None:
+            raise ValueError("No se encontró tu ficha de socio.")
+        faltantes_antes = _campos_perfil_faltantes(miembro)
+
+        # Solo datos personales del propio interesado; el resto se ignora.
+        for field in _AUTO_EDITABLE_FIELDS:
+            val = getattr(data, field, None)
+            if val is not None:
+                setattr(miembro, field, val)
+
+        await session.commit()
+
         faltantes_despues = _campos_perfil_faltantes(miembro)
         if faltantes_despues and faltantes_despues != faltantes_antes:
             await _publicar_perfil_incompleto(miembro)
