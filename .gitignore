@@ -66,3 +66,8 @@ docs/etl_migracion_legacy.md
 .claude/AGENTE.local.md
 .claude/settings.local.json
 /SIGA-wt/
+
+# Dumps de la BD que crea el deploy server-side (deploy-remote-pull.sh) antes de
+# migrar. Son DATOS, no código: nunca van al repo (y son los que llenan el disco).
+backups/
+*.sql.gz
