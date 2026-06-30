@@ -57,6 +57,10 @@ async def lifespan(app: FastAPI):
             from app.modules.secretaria import catalog as _secretaria_catalog  # noqa: F401
         except ImportError:
             pass
+        try:
+            from app.modules.presidencia import catalog as _presidencia_catalog  # noqa: F401
+        except ImportError:
+            pass
 
         sync = CatalogSyncService(session)
         await sync.sync()
