@@ -17,8 +17,9 @@ class FranjaDisponibilidad(BaseModel):
     __tablename__ = 'franjas_disponibilidad'
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    miembro_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('contactos.id', ondelete='CASCADE'), nullable=False, index=True
+    # Cuelga de la extensión Voluntario (la disponibilidad es del vínculo de voluntario).
+    voluntario_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('voluntarios.id', ondelete='CASCADE'), nullable=False, index=True
     )
 
     dia_semana: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -30,4 +31,4 @@ class FranjaDisponibilidad(BaseModel):
     def __repr__(self) -> str:
         dias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
         dia = dias[self.dia_semana] if 0 <= self.dia_semana <= 6 else '?'
-        return f"<FranjaDisponibilidad(miembro={self.miembro_id}, {dia} {self.hora_inicio}-{self.hora_fin})>"
+        return f"<FranjaDisponibilidad(voluntario={self.voluntario_id}, {dia} {self.hora_inicio}-{self.hora_fin})>"

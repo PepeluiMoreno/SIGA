@@ -148,6 +148,15 @@ class Contacto(BaseModel):
         foreign_keys="FirmaCampania.contacto_id",
         lazy="select"
     )
+    # Cuenta de acceso ligada a este contacto (1:1). Solo lectura: la FK vive en
+    # Usuario.contacto_id; aquí es la inversa para poder derivar `tiene_acceso`.
+    usuario = relationship(
+        "Usuario",
+        foreign_keys="Usuario.contacto_id",
+        viewonly=True,
+        uselist=False,
+        lazy="select",
+    )
     # PENDIENTE (fuera de este bundle): reconducir RGPD a Contacto. Los modelos
     # de proteccion_datos (Consentimiento, SolicitudDerechoRGPD) aún cuelgan de
     # miembros.id; cuando se reconduzcan a contacto_id se añadirán aquí las
@@ -184,3 +193,13 @@ class Contacto(BaseModel):
             for v in self.vinculaciones_vigentes
             if v.tipo_vinculacion
         )
+
+    @property
+    def tiene_acceso(self) -> bool:
+        """True si este contacto tiene una cuenta de usuario ligada."""
+        return self.usuario is not None
+
+    @property
+    def es_voluntario(self) -> bool:
+        """True si tiene una vinculación vigente de tipo VOLUNTARIO."""
+        return self.tiene_vinculacion_tipo("VOLUNTARIO")

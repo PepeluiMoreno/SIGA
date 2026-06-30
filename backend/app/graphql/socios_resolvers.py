@@ -36,12 +36,8 @@ from app.graphql.types_auto import (
 from app.graphql.permissions import RequireTransaction
 
 
-# Mapa estado_socio -> color del badge (la situación ya no es un EstadoMiembro).
-_ESTADO_COLOR = {
-    "activo": "#28A745",
-    "suspendido": "#FFA500",
-    "baja": "#DC3545",
-}
+# El color del badge por situación es ahora property del satélite (Socio.estado_color),
+# fuente única. Aquí solo queda el namespace para el id estable del badge.
 
 # Namespace fijo para derivar un id ESTABLE de la situación (estado_socio). El
 # badge ya no cuelga de un catálogo EstadoMiembro, pero el frontend necesita un id
@@ -220,17 +216,25 @@ async def _construir_socios(
             select(MotivoBaja).where(MotivoBaja.id.in_(mb_ids))
         )).scalars().all()}
 
-    # 6) Habilidades y franjas de disponibilidad (clave miembro_id = contacto)
+    # 6) Habilidades y franjas de disponibilidad. Ahora cuelgan de la extensión
+    #    Voluntario (voluntario_id); se indexan por contacto vía Voluntario→Vinculacion.
+    from app.modules.membresia.models.vinculacion import Voluntario
     hab_por_contacto: dict = {}
-    for h in (await session.execute(
-        select(MiembroHabilidad).where(MiembroHabilidad.miembro_id.in_(contacto_ids))
-    )).scalars().all():
-        hab_por_contacto.setdefault(h.miembro_id, []).append(h)
+    for h, contacto_id in (await session.execute(
+        select(MiembroHabilidad, Vinculacion.contacto_id)
+        .join(Voluntario, Voluntario.id == MiembroHabilidad.voluntario_id)
+        .join(Vinculacion, Vinculacion.id == Voluntario.vinculacion_id)
+        .where(Vinculacion.contacto_id.in_(contacto_ids))
+    )).all():
+        hab_por_contacto.setdefault(contacto_id, []).append(h)
     franjas_por_contacto: dict = {}
-    for fr in (await session.execute(
-        select(FranjaDisponibilidad).where(FranjaDisponibilidad.miembro_id.in_(contacto_ids))
-    )).scalars().all():
-        franjas_por_contacto.setdefault(fr.miembro_id, []).append(fr)
+    for fr, contacto_id in (await session.execute(
+        select(FranjaDisponibilidad, Vinculacion.contacto_id)
+        .join(Voluntario, Voluntario.id == FranjaDisponibilidad.voluntario_id)
+        .join(Vinculacion, Vinculacion.id == Voluntario.vinculacion_id)
+        .where(Vinculacion.contacto_id.in_(contacto_ids))
+    )).all():
+        franjas_por_contacto.setdefault(contacto_id, []).append(fr)
 
     socios: List[SocioVistaType] = []
     for v in vincs:
@@ -241,7 +245,9 @@ async def _construir_socios(
         memb = membresia_por_contacto.get(c.id)
         vol = voluntario_por_contacto.get(c.id)
         usr = usuario_por_contacto.get(c.id)
-        estado_socio = (s.estado_socio if s else None) or ("baja" if v.fecha_fin else "activo")
+        # Situación efectiva: property del satélite Socio (deriva de estado_socio o de
+        # la vinculación). Sin socio, se deriva aquí del cierre de la vinculación.
+        estado_socio = s.estado_efectivo if s else ("baja" if v.fecha_fin else "activo")
 
         socios.append(SocioVistaType(
             id=c.id, nombre=c.nombre, apellido1=c.apellido1, apellido2=c.apellido2,
@@ -292,7 +298,7 @@ async def _construir_socios(
             estado=EstadoSocioBadge(
                 id=_estado_badge_id(estado_socio),
                 nombre=estado_socio.capitalize(),
-                color=_ESTADO_COLOR.get(estado_socio, "#6B7280"),
+                color=(s.estado_color if s else Socio._ESTADO_COLOR.get(estado_socio, "#6B7280")),
             ),
             habilidades=hab_por_contacto.get(c.id, []),
             franjas_disponibilidad=franjas_por_contacto.get(c.id, []),

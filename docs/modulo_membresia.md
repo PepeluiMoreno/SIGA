@@ -56,9 +56,33 @@ Y borrar el archivo `backend/app/modules/membresia/models/skill.py`.
 
 ---
 
+## Principio de diseño: datos en su tabla de extensión
+
+El modelo es Party-Role: la identidad común vive en `Contacto`; cada **condición**
+(socio, voluntario) es una `Vinculacion` tipada con su **tabla de extensión 1:1**
+(`Socio`, `Voluntario`, satélites de `Vinculacion`).
+
+Regla: **los binarios (ficheros/documentos) y los campos calculados (`@property`) que
+aplican a la condición de SOCIO o VOLUNTARIO viven en su tabla de extensión**, no en
+`Contacto` ni sueltos en los resolvers.
+
+- Datos económicos del socio (iban, cuota, forma de pago, motivos…) → `Socio`.
+- Situación efectiva del socio y su color → `Socio.estado_efectivo` / `Socio.estado_color`.
+- Documentos, competencias, formación, habilidades y disponibilidad del voluntario →
+  cuelgan de `Voluntario` (`voluntario_id` → `voluntarios.id`, ondelete CASCADE).
+- `Contacto` solo guarda lo de la persona (identidad, foto, RGPD) y las @property de
+  identidad (`tiene_acceso`, `es_voluntario`, `nombre_completo`).
+
 ## Cambios pendientes de migrar
 
-*(Ver punto 3 arriba)*
+- **⏳ Migración `vol1ext2anc3` (ancla datos de voluntario a la extensión Voluntario):**
+  ya APLICADA EN DEV. Cambia `miembro_id` → `voluntario_id` (FK a `voluntarios`) en
+  `documentos_miembro`, `miembros_competencia`, `formaciones_miembro`,
+  `miembros_habilidades`, `franjas_disponibilidad`. La migración hace backfill
+  (contacto → su Voluntario) y borra filas sin vinculación de voluntario. **NO aplicada
+  en staging/prod**: antes de aplicar allí, verificar conteos de esas tablas (en dev
+  estaban vacías → backfill no-op; en staging/prod podría haber datos importados).
+- *(Ver también punto 3 arriba: eliminar skill.py.)*
 
 ---
 

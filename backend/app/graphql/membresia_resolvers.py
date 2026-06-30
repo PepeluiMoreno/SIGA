@@ -371,9 +371,15 @@ class MembresiaResolverMutation:
         from app.modules.membresia.models.habilidad import MiembroHabilidad
         session = info.context.session
         await assert_miembro_en_ambito(session, info.context.user.id, miembro_id)
+        # Las habilidades cuelgan de la extensión Voluntario: traducir contacto → voluntario.
+        vinc = await _vinc_voluntario(session, miembro_id)
+        if not vinc or not vinc.voluntario:
+            raise ValueError("El contacto no tiene una vinculación de voluntario; "
+                             "las habilidades pertenecen al perfil de voluntario.")
+        voluntario_id = vinc.voluntario.id
         existente = (await session.execute(
             select(MiembroHabilidad).where(
-                MiembroHabilidad.miembro_id == miembro_id,
+                MiembroHabilidad.voluntario_id == voluntario_id,
                 MiembroHabilidad.habilidad_id == habilidad_id,
             )
         )).scalar_one_or_none()
@@ -381,7 +387,7 @@ class MembresiaResolverMutation:
             existente.nivel_id = nivel_id
         else:
             session.add(MiembroHabilidad(
-                miembro_id=miembro_id, habilidad_id=habilidad_id, nivel_id=nivel_id,
+                voluntario_id=voluntario_id, habilidad_id=habilidad_id, nivel_id=nivel_id,
             ))
         await session.commit()
         return True
@@ -398,9 +404,13 @@ class MembresiaResolverMutation:
         from app.modules.membresia.models.habilidad import MiembroHabilidad
         session = info.context.session
         await assert_miembro_en_ambito(session, info.context.user.id, miembro_id)
+        # Las habilidades cuelgan de la extensión Voluntario: traducir contacto → voluntario.
+        vinc = await _vinc_voluntario(session, miembro_id)
+        if not vinc or not vinc.voluntario:
+            return False
         existente = (await session.execute(
             select(MiembroHabilidad).where(
-                MiembroHabilidad.miembro_id == miembro_id,
+                MiembroHabilidad.voluntario_id == vinc.voluntario.id,
                 MiembroHabilidad.habilidad_id == habilidad_id,
             )
         )).scalar_one_or_none()

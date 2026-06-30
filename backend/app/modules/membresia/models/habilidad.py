@@ -42,12 +42,13 @@ class MiembroHabilidad(BaseModel):
     """Habilidad declarada o validada de un miembro."""
     __tablename__ = 'miembros_habilidades'
     __table_args__ = (
-        UniqueConstraint('miembro_id', 'habilidad_id', name='uq_miembro_habilidad'),
+        UniqueConstraint('voluntario_id', 'habilidad_id', name='uq_miembro_habilidad'),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    miembro_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey('contactos.id', ondelete='CASCADE'), nullable=False, index=True
+    # Cuelga de la extensión Voluntario (la habilidad es del vínculo de voluntario).
+    voluntario_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('voluntarios.id', ondelete='CASCADE'), nullable=False, index=True
     )
     habilidad_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey('habilidades.id', ondelete='CASCADE'), nullable=False, index=True
@@ -71,4 +72,4 @@ class MiembroHabilidad(BaseModel):
     )
 
     def __repr__(self) -> str:
-        return f"<MiembroHabilidad(miembro={self.miembro_id}, habilidad={self.habilidad_id})>"
+        return f"<MiembroHabilidad(voluntario={self.voluntario_id}, habilidad={self.habilidad_id})>"

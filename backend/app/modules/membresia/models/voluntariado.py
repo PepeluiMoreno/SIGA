@@ -65,7 +65,10 @@ class MiembroCompetencia(BaseModel):
     __tablename__ = 'miembros_competencia'
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)  # FK a Miembro
+    # Cuelga de la extensión Voluntario (vive y muere con el vínculo de voluntario).
+    voluntario_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('voluntarios.id', ondelete='CASCADE'), nullable=False, index=True
+    )
     competencia_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('competencias.id'), nullable=False, index=True)
     nivel_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('niveles_competencia.id'), nullable=False, index=True)
 
@@ -78,7 +81,7 @@ class MiembroCompetencia(BaseModel):
     nivel = relationship('NivelCompetencia', back_populates='miembros_competencia', lazy='selectin')
 
     def __repr__(self) -> str:
-        return f"<MiembroCompetencia(miembro_id='{self.miembro_id}', competencia_id='{self.competencia_id}')>"
+        return f"<MiembroCompetencia(voluntario_id='{self.voluntario_id}', competencia_id='{self.competencia_id}')>"
 
 
 class TipoDocumentoVoluntario(BaseModel):
@@ -103,7 +106,10 @@ class DocumentoMiembro(BaseModel):
     __tablename__ = 'documentos_miembro'
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)  # FK a Miembro
+    # Cuelga de la extensión Voluntario (el documento es del vínculo de voluntario).
+    voluntario_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('voluntarios.id', ondelete='CASCADE'), nullable=False, index=True
+    )
     tipo_documento_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('tipos_documento_voluntario.id'), nullable=False, index=True)
 
     nombre: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -123,10 +129,11 @@ class DocumentoMiembro(BaseModel):
     tipo_documento = relationship('TipoDocumentoVoluntario', back_populates='documentos', lazy='selectin')
 
     def __repr__(self) -> str:
-        return f"<DocumentoMiembro(nombre='{self.nombre}', miembro_id='{self.miembro_id}')>"
+        return f"<DocumentoMiembro(nombre='{self.nombre}', voluntario_id='{self.voluntario_id}')>"
 
+    @property
     def esta_caducado(self) -> bool:
-        """Verifica si el documento ha caducado."""
+        """True si el documento ha caducado (campo calculado del propio documento)."""
         if self.fecha_caducidad is None:
             return False
         return self.fecha_caducidad < date.today()
@@ -152,7 +159,10 @@ class FormacionMiembro(BaseModel):
     __tablename__ = 'formaciones_miembro'
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    miembro_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)  # FK a Miembro
+    # Cuelga de la extensión Voluntario (la formación es del vínculo de voluntario).
+    voluntario_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('voluntarios.id', ondelete='CASCADE'), nullable=False, index=True
+    )
     tipo_formacion_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('tipos_formacion.id'), nullable=False, index=True)
 
     titulo: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -171,4 +181,4 @@ class FormacionMiembro(BaseModel):
     tipo_formacion = relationship('TipoFormacion', back_populates='formaciones', lazy='selectin')
 
     def __repr__(self) -> str:
-        return f"<FormacionMiembro(titulo='{self.titulo}', miembro_id='{self.miembro_id}')>"
+        return f"<FormacionMiembro(titulo='{self.titulo}', voluntario_id='{self.voluntario_id}')>"

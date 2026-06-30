@@ -147,6 +147,26 @@ class Socio(BaseModel):
         "MotivoReduccionCuota", foreign_keys=[motivo_reduccion_id], lazy="selectin"
     )
 
+    # Color del badge por situación del socio (la situación ya no es un catálogo).
+    _ESTADO_COLOR = {
+        "activo": "#28A745",
+        "suspendido": "#FFA500",
+        "baja": "#DC3545",
+    }
+
+    @property
+    def estado_efectivo(self) -> str:
+        """Situación efectiva del socio: la explícita de `estado_socio`, o derivada de
+        la vinculación (si tiene `fecha_fin` está de baja; si no, activo)."""
+        if self.estado_socio:
+            return self.estado_socio
+        return "baja" if (self.vinculacion and self.vinculacion.fecha_fin) else "activo"
+
+    @property
+    def estado_color(self) -> str:
+        """Color del badge para la situación efectiva."""
+        return self._ESTADO_COLOR.get(self.estado_efectivo, "#6B7280")
+
     def __repr__(self) -> str:
         num = self.numero_socio or "?"
         return f"<Socio(numero={num}, estado={self.estado_socio})>"
