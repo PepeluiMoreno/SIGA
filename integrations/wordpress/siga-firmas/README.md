@@ -7,13 +7,16 @@ datos, consentimiento y verificación (doble opt-in).
 
 ## Cómo encaja con el backend
 
-El plugin consume el endpoint público que SIGA ya expone:
+El plugin consume los endpoints públicos que SIGA expone en
+`backend/app/api/publico/firmas.py`:
 
 ```
-POST /api/publico/firmas
+POST /api/publico/firmas              → registra una firma (doble opt-in)
+GET  /api/publico/firmas/campanias    → campañas de "Recogida de firmas" abiertas
+GET  /api/publico/firmas/contador/ID  → nº de firmas verificadas
 ```
 
-(definido en `backend/app/api/publico/firmas.py`). Ese endpoint:
+El alta (`POST /api/publico/firmas`):
 
 - Hace *upsert* del **Contacto** (persona física) por email y crea la
   **Participación** de tipo `FIRMA` con su satélite `FirmaCampania`.
@@ -53,7 +56,11 @@ server-side. Ventajas:
 3. Ve a **Ajustes → SIGA Firmas** y rellena:
    - **URL del backend de SIGA** — p. ej. `https://api.tu-dominio.org` (sin
      barra final).
-   - **ID de campaña por defecto** — el UUID de la campaña que admite firmas.
+   - **Campaña de firmas por defecto** — se elige en un **desplegable** que el
+     plugin rellena llamando a `GET /api/publico/firmas/campanias` (campañas de
+     tipo «Recogida de firmas» abiertas). No hay que pegar UUIDs a mano. El
+     botón *Actualizar campañas* refresca la lista (se cachea 5 minutos). Si el
+     backend no responde, el campo cae a texto libre para no bloquearte.
    - **Proveedor de captcha** — `turnstile`, `hcaptcha` o `none` (solo
      desarrollo). Debe coincidir con `CAPTCHA_PROVIDER` del backend.
    - **Clave pública (site key) del captcha** — la clave *pública* del widget.
