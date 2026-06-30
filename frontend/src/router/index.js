@@ -54,6 +54,24 @@ import Convenios from '@/modules/secretaria/views/Convenios.vue'
 
 // === Módulo: CONFIGURACION ===
 
+// Conjunto de permisos OPERATIVOS del módulo económico: tener CUALQUIERA de ellos
+// da acceso al panel de Tesorería y al índice económico (que son operativos, no
+// "ver informes"). Cada sub-pantalla concreta (cuotas, remesas…) sigue exigiendo
+// su permiso específico. `ECO_INFORME_FINANCIERO_VER` se incluye para que quien
+// solo consulta informes también entre.
+const ECO_OPERATIVO = [
+  'ECO_CUOTA_LISTAR',
+  'ECO_REMESA_LISTAR',
+  'ECO_RECIBO_LISTAR',
+  'ECO_DONACION_LISTAR',
+  'ECO_JUSTIFICANTE_LISTAR',
+  'ECO_CONCILIACION_LISTAR',
+  'ECO_CUENTAS_ANUALES_LISTAR',
+  'ECO_MODELO182_LISTAR',
+  'ECO_ESTRUCTURA_CONTABLE_LISTAR',
+  'ECO_INFORME_FINANCIERO_VER',
+]
+
 // Configuración de rutas
 const routes = [
   {
@@ -185,7 +203,7 @@ const routes = [
     path: '/agrupaciones/:id',
     component: () => import('@/modules/membresia/views/DetalleAgrupacion.vue'),
     name: 'DetalleAgrupacion',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_AGRUPACION_EDITAR' }
   },
   {
     path: '/agrupaciones/:id/junta',
@@ -290,25 +308,27 @@ const routes = [
     path: '/economico',
     name: 'Economico',
     component: ListaEconomico,
-    meta: { requiresAuth: true },
+    // Índice del módulo: abre con cualquier permiso económico de lectura/operación.
+    meta: { requiresAuth: true, requiredPermission: ECO_OPERATIVO },
   },
   {
     path: '/economico/tesoreria',
     component: Tesoreria,
     name: 'Tesoreria',
-    meta: { requiresAuth: true, requiredPermission: 'ECO_INFORME_FINANCIERO_VER' }
+    // Panel operativo de tesorería: abre con cualquier permiso operativo (no es solo informes).
+    meta: { requiresAuth: true, requiredPermission: ECO_OPERATIVO }
   },
   {
     path: '/economico/contabilidad',
     component: Contabilidad,
     name: 'Contabilidad',
-    meta: { requiresAuth: true, requiredPermission: 'ECO_INFORME_FINANCIERO_VER' }
+    meta: { requiresAuth: true, requiredPermission: ['ECO_ESTRUCTURA_CONTABLE_LISTAR', 'ECO_INFORME_FINANCIERO_VER'] }
   },
   {
     path: '/economico/reglas-contables',
     component: ReglasContables,
-    name: 'ReglasContables',
-    meta: { requiresAuth: true, requiredPermission: 'ECO_INFORME_FINANCIERO_VER' }
+    // Configuración de reglas contables: es gestión, no "ver informes".
+    meta: { requiresAuth: true, requiredPermission: 'ECO_ESTRUCTURA_CONTABLE_GESTIONAR' }
   },
   {
     path: '/economico/cuotas',
@@ -394,19 +414,19 @@ const routes = [
     path: '/presidencia',
     component: PresidenciaDashboard,
     name: 'PresidenciaDashboard',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'PRESIDENCIA_CUADRO_MANDO_VER' }
   },
   {
     path: '/presidencia/mandatos',
     component: PresidenciaMandatos,
     name: 'PresidenciaMandatos',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'PRESIDENCIA_MANDATO_LISTAR' }
   },
   {
     path: '/presidencia/acuerdos',
     component: PresidenciaSeguimiento,
     name: 'PresidenciaSeguimiento',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiredPermission: 'PRESIDENCIA_ACUERDO_SEGUIMIENTO_VER' }
   },
 
   // ─── SECRETARIA ───────────────────────────────────────────────────────────
@@ -452,7 +472,8 @@ const routes = [
     path: '/rgpd',
     component: () => import('@/modules/proteccion_datos/views/IndexRGPD.vue'),
     name: 'RGPDIndex',
-    meta: { requiresAuth: true },
+    // Índice RGPD: abre con cualquier permiso de lectura de protección de datos.
+    meta: { requiresAuth: true, requiredPermission: ['RGPD_RAT_LEER', 'RGPD_SOLICITUD_LEER', 'RGPD_CONSENTIMIENTO_LEER', 'RGPD_BRECHA_LEER', 'RGPD_AUDITORIA_LEER'] },
   },
   {
     path: '/rgpd/encargados',
@@ -599,6 +620,18 @@ const router = createRouter({
   routes
 })
 
+// Rutas autenticadas universales: accesibles por cualquier usuario logueado SIN
+// permiso específico (panel propio, datos propios, chat, ayuda, papelera). Son la
+// ÚNICA excepción al default-deny del guard; cualquier otra ruta autenticada debe
+// declarar `requiredPermission`.
+const RUTAS_UNIVERSALES = new Set([
+  '/',
+  '/mis-datos',
+  '/chat',
+  '/ayuda',
+  '/papelera',
+])
+
 // Guard de navegación
 router.beforeEach(async (to, from, next) => {
   // El token vive en localStorage (Recordarme) o en sessionStorage
@@ -654,13 +687,28 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  // Comprobación de permisos
-  if (to.meta.requiredPermission && isAuthenticated) {
+  // Comprobación de permisos — DEFAULT-DENY.
+  // Toda ruta autenticada debe declarar `requiredPermission` (string = un permiso,
+  // o array = se exige tener ALGUNO). Si una ruta autenticada NO declara permiso y
+  // NO está en la allowlist de rutas universales, se DENIEGA. Así un olvido futuro
+  // bloquea en vez de abrir un agujero (seguro por construcción).
+  if (to.meta.requiresAuth && isAuthenticated) {
     const permisos = usePermisos()
     if (!permisos.loaded.value) {
       await permisos.cargar()
     }
-    if (!permisos.tienePermiso(to.meta.requiredPermission)) {
+    const requerido = to.meta.requiredPermission
+    if (requerido) {
+      // string → un permiso; array → basta con tener alguno (OR).
+      const ok = Array.isArray(requerido)
+        ? permisos.tieneAlguno(...requerido)
+        : permisos.tienePermiso(requerido)
+      if (!ok) {
+        next('/')
+        return
+      }
+    } else if (!RUTAS_UNIVERSALES.has(to.path)) {
+      // Ruta autenticada sin permiso declarado y fuera de la allowlist → denegar.
       next('/')
       return
     }

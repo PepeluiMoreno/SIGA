@@ -399,6 +399,7 @@ import RowActions from '@/components/common/RowActions.vue'
 import ImputacionActividadPicker from '@/components/common/ImputacionActividadPicker.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import { useAuthStore } from '@/stores/auth'
+import { usePermisos } from '@/composables/usePermisos.js'
 import {
   GET_JUSTIFICANTES,
   GET_JUSTIFICANTES_DE_MIEMBRO,
@@ -425,6 +426,7 @@ const props = defineProps({
 
 const { query, mutation, loading } = useGraphQL()
 const authStore = useAuthStore()
+const { tienePermiso, tieneAlguno } = usePermisos()
 
 const justificantes = ref([])
 const actividades = ref([])
@@ -503,7 +505,7 @@ const camposFiltro = computed(() => [
     ],
     allLabel: 'Todos los estados',
   },
-  ...(tienePermiso('ECO_JUSTIFICANTE_ACEPTAR') || tienePermiso('ECO_JUSTIFICANTE_APROBAR') || tienePermiso('ECO_JUSTIFICANTE_PAGAR')
+  ...(tieneAlguno('ECO_JUSTIFICANTE_ACEPTAR', 'ECO_JUSTIFICANTE_APROBAR', 'ECO_JUSTIFICANTE_PAGAR')
     ? [{ key: 'soloPendientesMios', label: 'Pendientes de mi visto bueno', type: 'toggle' }]
     : []),
 ])
@@ -547,10 +549,7 @@ const justificantesFiltrados = computed(() => {
 const contar = (e) => justificantes.value.filter(j => j.estado === e).length
 
 // ── Permisos / posibles acciones ───────────────────────────────────────────
-const tienePermiso = (codigo) => {
-  const perms = authStore.user?.permisos || authStore.permisos || []
-  return Array.isArray(perms) ? perms.includes(codigo) : false
-}
+// (tienePermiso/tieneAlguno vienen del composable usePermisos — fuente única.)
 
 const puedeAceptar = (j) =>
   j.estado === 'PRESENTADO'

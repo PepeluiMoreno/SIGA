@@ -88,7 +88,7 @@
             <hr class="nav-sep" />
 
             <!-- Membresía -->
-            <div v-if="tieneAlguno('MEMBRESIA_MIEMBRO_LISTAR','MEMBRESIA_AGRUPACION_EDITAR','MEMBRESIA_CARGO_ASIGNAR','HAB_LIST')" class="mb-1">
+            <div v-if="tieneAlguno('CONTACTO_LISTAR','MEMBRESIA_MIEMBRO_LISTAR','MEMBRESIA_AGRUPACION_EDITAR','MEMBRESIA_VOLUNTARIO_LISTAR')" class="mb-1">
               <button @click="toggleSection('membresia')" class="section-btn">
                 <span>Membresía</span>
                 <ChevronDownIcon class="chevron" :class="openSections.membresia ? '' : '-rotate-90'" />
@@ -164,14 +164,14 @@
             <hr class="nav-sep" />
 
             <!-- Económico (sidebar minimalista: solo Tesorería + Contabilidad) -->
-            <div v-if="tieneAlguno('ECO_INFORME_FINANCIERO_VER','ECO_CUOTA_GENERAR','ECO_REMESA_CREAR','ECO_DONACION_REGISTRAR')" class="mb-1">
+            <div v-if="tieneAlguno(...ECO_OPERATIVO)" class="mb-1">
               <button @click="toggleSection('economico')" class="section-btn">
                 <span>Económico</span>
                 <ChevronDownIcon class="chevron" :class="openSections.economico ? '' : '-rotate-90'" />
               </button>
               <div class="accordion-wrap" :class="{ closed: !openSections.economico }">
                 <ul class="space-y-1 pb-1">
-                  <li v-if="tienePermiso('ECO_INFORME_FINANCIERO_VER')">
+                  <li v-if="tieneAlguno(...ECO_OPERATIVO)">
                     <router-link to="/economico/tesoreria" class="nav-item"
                       :class="$route.path.startsWith('/economico/tesoreria') ? 'active' : 'inactive'">
                       <BuildingLibraryIcon class="nav-icon" /><span>Tesorería</span>
@@ -183,7 +183,7 @@
                       <ChartBarIcon class="nav-icon" /><span>Presupuestos</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('ECO_INFORME_FINANCIERO_VER')">
+                  <li v-if="tieneAlguno('ECO_ESTRUCTURA_CONTABLE_LISTAR','ECO_INFORME_FINANCIERO_VER')">
                     <router-link to="/economico/contabilidad" class="nav-item"
                       :class="$route.path.startsWith('/economico/contabilidad') ? 'active' : 'inactive'">
                       <CalculatorIcon class="nav-icon" /><span>Contabilidad</span>
@@ -196,26 +196,26 @@
             <hr class="nav-sep" />
 
             <!-- Presidencia -->
-            <div class="mb-1">
+            <div v-if="tieneAlguno('PRESIDENCIA_CUADRO_MANDO_VER','PRESIDENCIA_ACUERDO_SEGUIMIENTO_VER','PRESIDENCIA_MANDATO_LISTAR')" class="mb-1">
               <button @click="toggleSection('presidencia')" class="section-btn">
                 <span>Presidencia</span>
                 <ChevronDownIcon class="chevron" :class="openSections.presidencia ? '' : '-rotate-90'" />
               </button>
               <div class="accordion-wrap" :class="{ closed: !openSections.presidencia }">
                 <ul class="space-y-1 pb-1">
-                  <li>
+                  <li v-if="tienePermiso('PRESIDENCIA_CUADRO_MANDO_VER')">
                     <router-link to="/presidencia" class="nav-item"
                       :class="$route.path === '/presidencia' ? 'active' : 'inactive'">
                       <HomeIcon class="nav-icon" /><span>Cuadro de mando</span>
                     </router-link>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('PRESIDENCIA_ACUERDO_SEGUIMIENTO_VER')">
                     <router-link to="/presidencia/acuerdos" class="nav-item"
                       :class="$route.path.startsWith('/presidencia/acuerdos') ? 'active' : 'inactive'">
                       <ClipboardDocumentCheckIcon class="nav-icon" /><span>Acuerdos</span>
                     </router-link>
                   </li>
-                  <li>
+                  <li v-if="tienePermiso('PRESIDENCIA_MANDATO_LISTAR')">
                     <router-link to="/presidencia/mandatos" class="nav-item"
                       :class="$route.path.startsWith('/presidencia/mandatos') ? 'active' : 'inactive'">
                       <UserGroupIcon class="nav-icon" /><span>Mandatos</span>
@@ -228,7 +228,7 @@
             <hr class="nav-sep" />
 
             <!-- Secretaría -->
-            <div v-if="tieneAlguno('SEC_REUNION_LISTAR','SEC_ACTA_LISTAR','SEC_LIBRO_SOCIOS_CONSULTAR','SEC_CONVENIO_LISTAR')" class="mb-1">
+            <div v-if="tieneAlguno('SEC_REUNION_LISTAR','SEC_ACUERDO_LISTAR','SEC_ACTA_LISTAR','SEC_LIBRO_SOCIOS_CONSULTAR','SEC_CONVENIO_LISTAR')" class="mb-1">
               <button @click="toggleSection('secretaria')" class="section-btn">
                 <span>Secretaría</span>
                 <ChevronDownIcon class="chevron" :class="openSections.secretaria ? '' : '-rotate-90'" />
@@ -272,7 +272,7 @@
             <hr class="nav-sep" />
 
             <!-- Protección de Datos (RGPD) -->
-            <div v-if="tieneAlguno('RGPD_RAT_LEER','RGPD_SOLICITUD_LEER','RGPD_CONSENTIMIENTO_LEER','RGPD_BRECHA_LEER','RGPD_AUDITORIA_LEER')" class="mb-1">
+            <div v-if="tieneAlguno('RGPD_RAT_LEER','RGPD_CLAUSULA_GESTIONAR','RGPD_SOLICITUD_LEER','RGPD_CONSENTIMIENTO_LEER','RGPD_BRECHA_LEER','RGPD_AUDITORIA_LEER')" class="mb-1">
               <button @click="toggleSection('rgpd')" class="section-btn">
                 <span>Protección de Datos</span>
                 <ChevronDownIcon class="chevron" :class="openSections.rgpd ? '' : '-rotate-90'" />
@@ -534,6 +534,22 @@ const route = useRoute()
 const authStore = useAuthStore()
 const orgConfigStore = useOrgConfigStore()
 const { tienePermiso, tieneAlguno } = usePermisos()
+
+// Permisos OPERATIVOS del módulo económico: tener cualquiera da acceso al panel de
+// Tesorería y al índice económico. Debe coincidir con el array del router (ECO_OPERATIVO
+// en router/index.js) para que menú y ruta gateen igual (invariante un-destino-un-permiso).
+const ECO_OPERATIVO = [
+  'ECO_CUOTA_LISTAR',
+  'ECO_REMESA_LISTAR',
+  'ECO_RECIBO_LISTAR',
+  'ECO_DONACION_LISTAR',
+  'ECO_JUSTIFICANTE_LISTAR',
+  'ECO_CONCILIACION_LISTAR',
+  'ECO_CUENTAS_ANUALES_LISTAR',
+  'ECO_MODELO182_LISTAR',
+  'ECO_ESTRUCTURA_CONTABLE_LISTAR',
+  'ECO_INFORME_FINANCIERO_VER',
+]
 
 // ── Sidebar mobile (v2) ───────────────────────────────────────────────────────
 const sidebarOpen = ref(false)

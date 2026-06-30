@@ -1213,7 +1213,7 @@ const props = defineProps({
 const route = useRoute()
 const router = useRouter()
 const orgConfig = useOrgConfigStore()
-const { tienePermiso } = usePermisos()
+const { tienePermiso, tieneAlguno } = usePermisos()
 const editMode = ref(false)
 const saveMessage = ref('')
 const crearCuenta = ref(false)
@@ -1278,7 +1278,7 @@ const editAdmin = computed(() => (editMode.value && !props.modoPropio) || isCrea
 const tabActiva = ref('datos')
 const tabsDisponibles = computed(() => {
   const t = [{ id: 'datos', name: 'Datos personales', icon: '👤' }]
-  if (props.modoPropio || tienePermiso('ECO_CUOTA_LISTAR') || tienePermiso('ECO_JUSTIFICANTE_LISTAR')) {
+  if (props.modoPropio || tieneAlguno('ECO_CUOTA_LISTAR', 'ECO_JUSTIFICANTE_LISTAR')) {
     t.push({ id: 'economicos', name: 'Datos económicos', icon: '💶' })
   }
   t.push({ id: 'membresia', name: 'Membresía y participación', icon: '🤝' })

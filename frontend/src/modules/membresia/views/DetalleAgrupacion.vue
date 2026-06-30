@@ -4,7 +4,7 @@
     :subtitle="subtituloVista">
 
     <!-- El registro de cargos es una acción de edición, no de consulta -->
-    <template v-if="!esNuevo && agrupacion && (tienePermiso('CFG_TERRITORIO_EDITAR') || tienePermiso('MEMBRESIA_CARGO_ASIGNAR'))" #actions>
+    <template v-if="!esNuevo && agrupacion && tieneAlguno('CFG_TERRITORIO_EDITAR','MEMBRESIA_CARGO_ASIGNAR')" #actions>
       <button type="button" @click="toggleEdicion"
         class="h-8 px-3 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
         :class="editMode ? 'text-slate-600' : 'text-indigo-600'">
@@ -548,7 +548,7 @@ import { usePermisos } from '@/composables/usePermisos.js'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
 const confirmDialog = useConfirm()
-const { tienePermiso } = usePermisos()
+const { tienePermiso, tieneAlguno } = usePermisos()
 const orgConfig = useOrgConfigStore()
 
 const route = useRoute()

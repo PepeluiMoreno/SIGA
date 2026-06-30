@@ -31,7 +31,7 @@
     <AccordionGroup v-else>
       <!-- ════════ CAJA Y BANCOS ════════ -->
       <AccordionPanel
-        v-if="permitido(['ECO_INFORME_FINANCIERO_VER'])"
+        v-if="tieneAlguno('ECO_INFORME_FINANCIERO_VER')"
         title="Caja y bancos"
         :count="kpi.numCuentas"
         :default-open="true"
@@ -67,7 +67,7 @@
 
       <!-- ════════ CUENTAS A COBRAR ════════ -->
       <AccordionPanel
-        v-if="permitido(['ECO_CUOTA_GENERAR','ECO_REMESA_CREAR','ECO_RECIBO_NOTIFICAR_FALLIDOS','ECO_DONACION_REGISTRAR','ECO_RECIBO_LISTAR'])"
+        v-if="tieneAlguno('ECO_CUOTA_GENERAR','ECO_REMESA_CREAR','ECO_RECIBO_NOTIFICAR_FALLIDOS','ECO_DONACION_REGISTRAR','ECO_RECIBO_LISTAR')"
         title="Cuentas a cobrar"
         :count="kpi.recibosFallidosSinNotificar + kpi.remesasEnviadasPendientes"
       >
@@ -80,21 +80,21 @@
 
         <div class="p-5 grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-3">
           <Bloque
-            v-if="permitido(['ECO_CUOTA_GENERAR'])"
+            v-if="tieneAlguno('ECO_CUOTA_GENERAR')"
             titulo="Cuotas pendientes"
             :resumen="`${kpi.cuotasPendientes} pendientes · ${fmt(kpi.cuotasPendientesImporte)}`"
             accion="Ver cuotas"
             @accion="abrirCuotas"
           />
           <Bloque
-            v-if="permitido(['ECO_CUOTA_GENERAR','ECO_RECIBO_LISTAR'])"
+            v-if="tieneAlguno('ECO_CUOTA_GENERAR','ECO_RECIBO_LISTAR')"
             titulo="Recibos"
             :resumen="`${kpi.recibosEmitidos} emitidos · ${kpi.recibosCobrados} cobrados · ${kpi.recibosFallidos} fallidos`"
             accion="Emitir lote desde Remesas"
             @accion="abrirRemesas"
           />
           <Bloque
-            v-if="permitido(['ECO_REMESA_CREAR'])"
+            v-if="tieneAlguno('ECO_REMESA_CREAR')"
             titulo="Remesas SEPA"
             :resumen="`${kpi.remesasTotal} remesas · ${kpi.remesasBorrador} borrador · ${kpi.remesasEnviadasPendientes} enviadas pendientes`"
             accion="Abrir Remesas"
@@ -103,7 +103,7 @@
             @secundario="abrirRemesas"
           />
           <Bloque
-            v-if="permitido(['ECO_REMESA_CREAR'])"
+            v-if="tieneAlguno('ECO_REMESA_CREAR')"
             titulo="Liquidación bancaria"
             :resumen="kpi.remesasEnviadasPendientes > 0
               ? `${kpi.remesasEnviadasPendientes} remesa(s) esperando respuesta del banco (pain.002/camt.054)`
@@ -112,14 +112,14 @@
             @accion="abrirRemesas"
           />
           <Bloque
-            v-if="permitido(['ECO_RECIBO_NOTIFICAR_FALLIDOS'])"
+            v-if="tieneAlguno('ECO_RECIBO_NOTIFICAR_FALLIDOS')"
             titulo="Comunicación de fallidos"
             :resumen="`${kpi.recibosFallidosSinNotificar} recibo(s) FALLIDO sin notificar al socio`"
             :accion="kpi.recibosFallidosSinNotificar > 0 ? 'Comunicar' : null"
             @accion="abrirComunicarFallidos"
           />
           <Bloque
-            v-if="permitido(['ECO_DONACION_REGISTRAR'])"
+            v-if="tieneAlguno('ECO_DONACION_REGISTRAR')"
             titulo="Donaciones"
             :resumen="`${kpi.donacionesEjercicio} donaciones en ${ejercicio} · certificados fiscales Modelo 182`"
             accion="Abrir Donaciones"
@@ -130,7 +130,7 @@
 
       <!-- ════════ CUENTAS A PAGAR ════════ -->
       <AccordionPanel
-        v-if="permitido(['ECO_INFORME_FINANCIERO_VER'])"
+        v-if="tieneAlguno('ECO_INFORME_FINANCIERO_VER')"
         title="Cuentas a pagar"
         :count="kpi.justificantesPresentados"
       >
@@ -165,7 +165,7 @@
 
       <!-- ════════ CONFIGURACIÓN ════════ -->
       <AccordionPanel
-        v-if="permitido(['ECO_CUOTA_CONFIGURAR','ECO_CUOTA_MOTIVO_REDUCCION_GESTIONAR','ECO_INFORME_FINANCIERO_VER'])"
+        v-if="tieneAlguno('ECO_CUOTA_CONFIGURAR','ECO_CUOTA_MOTIVO_REDUCCION_GESTIONAR','ECO_INFORME_FINANCIERO_VER')"
         title="Configuración"
       >
         <template #title>
@@ -177,7 +177,7 @@
 
         <div class="p-5 grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-3">
           <Bloque
-            v-if="permitido(['ECO_CUOTA_CONFIGURAR'])"
+            v-if="tieneAlguno('ECO_CUOTA_CONFIGURAR')"
             titulo="Cuotas del ejercicio"
             :resumen="kpi.cuotaBase
               ? `Cuota base ${fmt(kpi.cuotaBase)} · ${kpi.cuotasGeneradas} cuotas generadas`
@@ -186,7 +186,7 @@
             @accion="abrirCuotasEjercicio"
           />
           <Bloque
-            v-if="permitido(['ECO_CUOTA_MOTIVO_REDUCCION_GESTIONAR'])"
+            v-if="tieneAlguno('ECO_CUOTA_MOTIVO_REDUCCION_GESTIONAR')"
             titulo="Motivos de reducción de cuota"
             :resumen="`${kpi.numMotivosReduccion} motivo(s) activos en catálogo`"
             accion="Gestionar"
@@ -208,7 +208,7 @@
       </AccordionPanel>
 
       <!-- ════════ REDUCCIONES DE CUOTA ════════ -->
-      <AccordionPanel v-if="permitido(['ECO_CUOTA_EXENTAR'])" title="Reducciones de cuota">
+      <AccordionPanel v-if="tieneAlguno('ECO_CUOTA_EXENTAR')" title="Reducciones de cuota">
         <template #title>
           <div class="flex items-center gap-3">
             <span class="text-base">🧾</span>
@@ -220,7 +220,7 @@
 
       <!-- ════════ CUMPLIMIENTOS LEGALES ════════ -->
       <AccordionPanel
-        v-if="permitido(['ECO_INFORME_FINANCIERO_VER'])"
+        v-if="tieneAlguno('ECO_INFORME_FINANCIERO_VER')"
         title="Cumplimientos legales"
       >
         <template #title>
@@ -427,7 +427,7 @@ const BloquePlaceholder = {
 
 // ── Estado ──────────────────────────────────────────────────────────────────
 const router = useRouter()
-const { tienePermiso } = usePermisos()
+const { tienePermiso, tieneAlguno } = usePermisos()
 const { query } = useGraphQL()
 
 const {
@@ -574,8 +574,6 @@ const kpi = ref({
 // ── Helpers ─────────────────────────────────────────────────────────────────
 const fmt = (v) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(v || 0)
 const ibanFmt = (iban) => iban ? iban.slice(0, 4) + ' **** ' + iban.slice(-4) : ''
-
-const permitido = (codigos) => codigos.some(c => tienePermiso(c))
 
 // ── Carga de KPIs ──────────────────────────────────────────────────────────
 const cargarKpis = async () => {
