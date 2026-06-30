@@ -205,6 +205,36 @@ class FirmaPublicaService:
             redirect_url=redirect,
         )
 
+    # ------------------------------------------------------------ listado
+    async def listar_campanias_abiertas(self) -> list[Campania]:
+        """Campañas de tipo "Recogida de firmas" que admiten firmas ahora.
+
+        Para el desplegable del formulario externo (WordPress). Aplica el MISMO
+        criterio de apertura que `registrar_firma` (estado no cerrado), de modo
+        que toda campaña ofrecida en el desplegable sea efectivamente firmable.
+        """
+        from sqlalchemy import func
+
+        from app.modules.actividades.models.campana import TipoCampania
+
+        stmt = (
+            select(Campania)
+            .join(TipoCampania, Campania.tipo_campania_id == TipoCampania.id)
+            .where(
+                Campania.eliminado.is_(False),
+                func.lower(TipoCampania.nombre) == "recogida de firmas",
+            )
+            .order_by(Campania.nombre)
+        )
+        candidatas = (await self.session.scalars(stmt)).all()
+        # El estado va por relación selectin (ya cargada); filtramos en memoria
+        # con la misma regla que _campania_abierta.
+        return [
+            c
+            for c in candidatas
+            if not (c.estado is not None and c.estado.codigo in Campania.CODIGOS_ESTADO_CERRADO)
+        ]
+
     # ---------------------------------------------------------------- conteo
     async def contar_firmas_verificadas(self, campania_id: uuid.UUID) -> int:
         from sqlalchemy import func

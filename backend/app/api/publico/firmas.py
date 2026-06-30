@@ -125,6 +125,27 @@ async def verificar_firma(
     return HTMLResponse(content=html, status_code=200 if ok else 400)
 
 
+@router.get("/campanias", summary="Campañas de recogida de firmas abiertas (para el desplegable)")
+async def listar_campanias(
+    session: AsyncSession = Depends(get_db),
+):
+    """Lista pública (solo lectura) de campañas de tipo "Recogida de firmas"
+    que admiten firmas ahora mismo. La consume el formulario externo
+    (WordPress) para ofrecerlas en un desplegable y no tener que pegar el UUID
+    a mano. Solo expone id y nombre/lema, datos ya públicos del formulario."""
+    service = FirmaPublicaService(session)
+    campanias = await service.listar_campanias_abiertas()
+    return [
+        {
+            "id": str(c.id),
+            "nombre": c.nombre,
+            "lema": c.lema,
+            "descripcion": c.descripcion_corta,
+        }
+        for c in campanias
+    ]
+
+
 @router.get("/contador/{campania_id}", summary="Nº de firmas verificadas de una campaña")
 async def contador_firmas(
     campania_id: uuid.UUID,
