@@ -11,6 +11,7 @@ import {
   GET_FORMAS_PAGO,
   CREATE_MIEMBRO,
   UPDATE_MIEMBRO,
+  UPDATE_MIS_DATOS,
 } from '@/graphql/queries/miembros.js'
 import { GET_PAISES, GET_PROVINCIAS, GET_NIVELES_ESTUDIOS, GET_NIVELES_HABILIDAD } from '@/graphql/queries/catalogos.js'
 import { GET_MOTIVOS_REDUCCION } from '@/graphql/queries/economico.js'
@@ -98,7 +99,9 @@ export function useMiembro() {
     }
   }
 
-  const saveMiembro = async () => {
+  // modoPropio = autoservicio (/mis-datos): el usuario edita su propio perfil. Usa
+  // actualizarMisDatos (sin permiso administrativo) en vez de actualizarMiembro.
+  const saveMiembro = async (modoPropio = false) => {
     loading.value = true
     error.value = null
     try {
@@ -108,7 +111,7 @@ export function useMiembro() {
         return result?.crearMiembro
       } else {
         const data = buildUpdatePayload(miembro.value)
-        await mutation(UPDATE_MIEMBRO, { data })
+        await mutation(modoPropio ? UPDATE_MIS_DATOS : UPDATE_MIEMBRO, { data })
         if (lastLoadedId.value) {
           await fetchMiembro(lastLoadedId.value)
         }

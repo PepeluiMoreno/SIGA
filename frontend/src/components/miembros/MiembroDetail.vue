@@ -2133,7 +2133,7 @@ const handleSave = async () => {
         router.push(`/miembros/${created.id}`)
       }
     } else {
-      await saveMiembro()
+      await saveMiembro(props.modoPropio)
       saveMessage.value = 'Ficha de militancia actualizada correctamente.'
       // En modoPropio la ficha permanece editable tras guardar.
       if (!props.modoPropio) editMode.value = false

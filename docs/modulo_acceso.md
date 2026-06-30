@@ -16,8 +16,9 @@ acción si alguno de sus roles tiene la transacción correspondiente.
 - **Rol**: conjunto de transacciones. Hay roles de SISTEMA (SUPERADMIN), FUNCIONALES
   (PLANIFICADOR, GESTOR_MIEMBROS, INTERVENTOR) y de ORGANIZACIÓN/gobierno (PRESIDENTE,
   VICEPRESIDENTE, SECRETARIO, TESORERO, VOCAL, COORDINADOR…).
-- **Ámbito** (`AmbitoTransaccion`): `GLOBAL` (sobre cualquier entidad) o `TERRITORIAL`
-  (solo sobre entidades de la agrupación del usuario).
+- **Ámbito** (`AmbitoTransaccion`): `GLOBAL` (sobre cualquier entidad), `TERRITORIAL`
+  (solo sobre entidades de la agrupación del usuario) o `PROPIO` (solo sobre la propia
+  entidad del usuario — autoservicio; ver más abajo).
 
 ### Tablas
 
@@ -90,6 +91,38 @@ const { tienePermiso, tieneAlguno, tieneTodos } = usePermisos()
 No se definen helpers de permisos locales ni se encadena `tienePermiso() || tienePermiso()`
 a mano: para un OR se usa `tieneAlguno(...)`.
 
+## Autoservicio: editar lo propio (ámbito `PROPIO`)
+
+Hay acciones que un usuario ejerce **sobre sí mismo** y que **no** son permiso
+administrativo: editar sus datos personales, declarar sus habilidades, solicitar su
+traslado. Editar el propio perfil es un **derecho del interesado**, no una transacción
+que la organización reparte. Estas acciones usan el ámbito `PROPIO`.
+
+**Regla:** una acción de autoservicio **no se gatea con `RequireTransaction`** (que
+deniega si el rol no tiene el permiso), porque eso obligaría a repartir el permiso a
+todos los roles. En su lugar **el guard es la PROPIEDAD**: la mutación exige estar
+autenticado y opera **siempre sobre la entidad del usuario logueado**, ignorando
+cualquier id que llegue en el input. Así un socio sin permisos administrativos (p. ej.
+el tesorero sobre su propia ficha) puede editarse.
+
+La transacción de autoservicio **sí se declara en el catálogo** (con ámbito `PROPIO`),
+para documentar el acto y dejar constancia, pero **no se reparte a roles** ni se usa en
+`RequireTransaction`.
+
+**Caso de referencia — `actualizarMisDatos`** (módulo membresía):
+- Transacción `MEMBRESIA_MIS_DATOS_EDITAR` (ámbito `PROPIO`) en el catálogo, NO repartida.
+- La mutación `actualizar_mis_datos` (`membresia_resolvers.py`) **no** lleva
+  `RequireTransaction`: exige `info.context.user`, toma **siempre** `user.contacto_id`
+  como sujeto (ignora `data.id`) y aplica **solo** los campos personales
+  (`_AUTO_EDITABLE_FIELDS`: nombre, contacto, dirección, foto, profesión…). Los campos
+  que son competencia de la organización —agrupación, alta/baja, datos económicos
+  (IBAN/cuota) y RGPD administrativo— se **ignoran en silencio**.
+- Es la contraparte de `actualizar_miembro`, que sí es administrativa (sobre OTROS) y
+  exige `MEMBRESIA_MIEMBRO_EDITAR`. El frontend usa una u otra según `modoPropio`:
+  `/mis-datos` → `actualizarMisDatos`; la ficha administrativa → `actualizarMiembro`.
+- La ruta `/mis-datos` es **universal** (allowlist del router): cualquier usuario
+  autenticado entra a su propio perfil sin permiso de ruta.
+
 ## Asignación de permisos a roles
 
 Los enlaces rol↔transacción se siembran con `seed_permisos_*.py` (idempotentes). El juego
@@ -104,6 +137,11 @@ consistentes (vacía y re-cablea).
 4. Añadir el item al menú con `v-if="tienePermiso('X')"` e incluir `X` en el `tieneAlguno`
    del contenedor de su sección.
 5. Asignar la transacción a los roles que deban tenerla en el seed de permisos.
+
+Para una acción de **autoservicio** (el usuario sobre sí mismo) no se siguen los pasos 3-5
+con `RequireTransaction`: se declara la transacción con ámbito `PROPIO` (paso 1), la
+mutación opera sobre el propio usuario sin `RequireTransaction` (guard de propiedad), y la
+ruta va en la allowlist de universales. Ver «Autoservicio: editar lo propio».
 
 ## Regla de negocio: dotación de cuenta a un contacto
 
