@@ -1,0 +1,130 @@
+/* Estilos del formulario de recogida de firmas de SIGA.
+   Neutros y sobrios para integrarse con la mayoría de temas. */
+
+.siga-firmas-form {
+	max-width: 40rem;
+	margin: 1.5rem 0;
+	padding: 1.5rem;
+	border: 1px solid #e2e2e2;
+	border-radius: 10px;
+	background: #fff;
+}
+
+.siga-firmas-titulo {
+	margin: 0 0 1rem;
+	font-size: 1.25rem;
+	line-height: 1.3;
+}
+
+.siga-firmas-row {
+	display: flex;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.siga-firmas-row .siga-firmas-field {
+	flex: 1 1 12rem;
+}
+
+.siga-firmas-field {
+	display: block;
+	margin-bottom: 0.9rem;
+}
+
+.siga-firmas-field > span {
+	display: block;
+	margin-bottom: 0.3rem;
+	font-size: 0.9rem;
+	font-weight: 600;
+}
+
+.siga-firmas-field em {
+	color: #c0392b;
+	font-style: normal;
+}
+
+.siga-firmas-field input,
+.siga-firmas-field select {
+	width: 100%;
+	padding: 0.6rem 0.7rem;
+	border: 1px solid #c7c7c7;
+	border-radius: 7px;
+	font-size: 1rem;
+	box-sizing: border-box;
+}
+
+.siga-firmas-field--narrow {
+	max-width: 16rem;
+}
+
+.siga-firmas-check {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5rem;
+	margin-bottom: 0.8rem;
+	font-size: 0.9rem;
+	line-height: 1.4;
+}
+
+.siga-firmas-check input {
+	margin-top: 0.2rem;
+	flex: 0 0 auto;
+}
+
+.siga-firmas-captcha {
+	margin: 0.8rem 0;
+}
+
+.siga-firmas-submit {
+	display: inline-block;
+	margin-top: 0.5rem;
+	padding: 0.7rem 1.6rem;
+	border: 0;
+	border-radius: 7px;
+	background: #2563eb;
+	color: #fff;
+	font-size: 1rem;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.siga-firmas-submit:hover {
+	background: #1d4ed8;
+}
+
+.siga-firmas-submit:disabled {
+	opacity: 0.6;
+	cursor: progress;
+}
+
+.siga-firmas-msg {
+	margin: 0.9rem 0 0;
+	font-size: 0.95rem;
+	min-height: 1.2em;
+}
+
+.siga-firmas-msg.is-ok {
+	color: #15803d;
+}
+
+.siga-firmas-msg.is-error {
+	color: #b91c1c;
+}
+
+/* Honeypot: fuera de la vista de humanos, accesible a bots. */
+.siga-firmas-hp {
+	position: absolute;
+	left: -9999px;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+
+.siga-firmas-aviso {
+	padding: 0.8rem 1rem;
+	border: 1px dashed #d97706;
+	border-radius: 8px;
+	background: #fffbeb;
+	color: #92400e;
+	font-size: 0.9rem;
+}

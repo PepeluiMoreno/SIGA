@@ -1,0 +1,201 @@
+<?php
+/**
+ * Página de ajustes del plugin (Ajustes → SIGA Firmas).
+ *
+ * @package SIGA_Firmas
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Registra la página de opciones y los campos de configuración.
+ */
+class SIGA_Firmas_Settings {
+
+	const PAGE_SLUG  = 'siga-firmas';
+	const GROUP      = 'siga_firmas_group';
+
+	/**
+	 * Engancha los hooks de administración.
+	 */
+	public static function init() {
+		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );
+		add_action( 'admin_init', array( __CLASS__, 'register' ) );
+		add_filter(
+			'plugin_action_links_' . plugin_basename( SIGA_FIRMAS_FILE ),
+			array( __CLASS__, 'action_links' )
+		);
+	}
+
+	/**
+	 * Añade el enlace "Ajustes" en la lista de plugins.
+	 *
+	 * @param string[] $links Enlaces existentes.
+	 * @return string[]
+	 */
+	public static function action_links( $links ) {
+		$url = admin_url( 'options-general.php?page=' . self::PAGE_SLUG );
+		array_unshift(
+			$links,
+			'<a href="' . esc_url( $url ) . '">' . esc_html__( 'Ajustes', 'siga-firmas' ) . '</a>'
+		);
+		return $links;
+	}
+
+	/**
+	 * Registra la página bajo el menú Ajustes.
+	 */
+	public static function add_menu() {
+		add_options_page(
+			__( 'SIGA · Recogida de firmas', 'siga-firmas' ),
+			__( 'SIGA Firmas', 'siga-firmas' ),
+			'manage_options',
+			self::PAGE_SLUG,
+			array( __CLASS__, 'render_page' )
+		);
+	}
+
+	/**
+	 * Registra el grupo de opciones con su saneado.
+	 */
+	public static function register() {
+		register_setting(
+			self::GROUP,
+			SIGA_FIRMAS_OPTION,
+			array(
+				'type'              => 'array',
+				'sanitize_callback' => array( __CLASS__, 'sanitize' ),
+				'default'           => siga_firmas_default_settings(),
+			)
+		);
+	}
+
+	/**
+	 * Sanea cada campo antes de guardarlo.
+	 *
+	 * @param array<string,mixed> $input Valores enviados.
+	 * @return array<string,string>
+	 */
+	public static function sanitize( $input ) {
+		$input = is_array( $input ) ? $input : array();
+		$out   = siga_firmas_default_settings();
+
+		$out['api_url']          = isset( $input['api_url'] ) ? untrailingslashit( esc_url_raw( trim( $input['api_url'] ) ) ) : '';
+		$out['campania_id']      = isset( $input['campania_id'] ) ? sanitize_text_field( $input['campania_id'] ) : '';
+		$provider                = isset( $input['captcha_provider'] ) ? sanitize_text_field( $input['captcha_provider'] ) : 'turnstile';
+		$out['captcha_provider'] = in_array( $provider, array( 'turnstile', 'hcaptcha', 'none' ), true ) ? $provider : 'turnstile';
+		$out['captcha_site_key'] = isset( $input['captcha_site_key'] ) ? sanitize_text_field( $input['captcha_site_key'] ) : '';
+		$out['terminos_url']     = isset( $input['terminos_url'] ) ? esc_url_raw( trim( $input['terminos_url'] ) ) : '';
+		$out['mensaje_exito']    = isset( $input['mensaje_exito'] ) ? sanitize_text_field( $input['mensaje_exito'] ) : '';
+		$timeout                 = isset( $input['timeout'] ) ? absint( $input['timeout'] ) : 10;
+		$out['timeout']          = (string) min( 60, max( 3, $timeout ) );
+
+		if ( '' !== $out['campania_id'] && ! self::is_uuid( $out['campania_id'] ) ) {
+			add_settings_error(
+				SIGA_FIRMAS_OPTION,
+				'campania_id',
+				__( 'El ID de campaña no parece un UUID válido.', 'siga-firmas' ),
+				'warning'
+			);
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Comprueba si un valor tiene forma de UUID.
+	 *
+	 * @param string $value Cadena a comprobar.
+	 * @return bool
+	 */
+	public static function is_uuid( $value ) {
+		return (bool) preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $value );
+	}
+
+	/**
+	 * Pinta la página de ajustes.
+	 */
+	public static function render_page() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		$s = siga_firmas_get_settings();
+		?>
+		<div class="wrap">
+			<h1><?php esc_html_e( 'SIGA · Recogida de firmas', 'siga-firmas' ); ?></h1>
+			<p>
+				<?php esc_html_e( 'Conecta este sitio con el backend de SIGA. El formulario se inserta con el shortcode:', 'siga-firmas' ); ?>
+				<code>[siga_firmas]</code>
+				<?php esc_html_e( 'o, indicando otra campaña,', 'siga-firmas' ); ?>
+				<code>[siga_firmas campania="UUID"]</code>
+			</p>
+			<form action="options.php" method="post">
+				<?php settings_fields( self::GROUP ); ?>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="siga_api_url"><?php esc_html_e( 'URL del backend de SIGA', 'siga-firmas' ); ?></label></th>
+						<td>
+							<input name="<?php echo esc_attr( SIGA_FIRMAS_OPTION ); ?>[api_url]" id="siga_api_url" type="url"
+								class="regular-text" placeholder="https://api.tu-dominio.org"
+								value="<?php echo esc_attr( $s['api_url'] ); ?>" />
+							<p class="description"><?php esc_html_e( 'Base de la API (sin barra final). Se llamará a /api/publico/firmas.', 'siga-firmas' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="siga_campania_id"><?php esc_html_e( 'ID de campaña por defecto', 'siga-firmas' ); ?></label></th>
+						<td>
+							<input name="<?php echo esc_attr( SIGA_FIRMAS_OPTION ); ?>[campania_id]" id="siga_campania_id" type="text"
+								class="regular-text" placeholder="00000000-0000-0000-0000-000000000000"
+								value="<?php echo esc_attr( $s['campania_id'] ); ?>" />
+							<p class="description"><?php esc_html_e( 'UUID de la campaña. Se puede sobreescribir por shortcode con campania="...".', 'siga-firmas' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="siga_captcha_provider"><?php esc_html_e( 'Proveedor de captcha', 'siga-firmas' ); ?></label></th>
+						<td>
+							<select name="<?php echo esc_attr( SIGA_FIRMAS_OPTION ); ?>[captcha_provider]" id="siga_captcha_provider">
+								<option value="turnstile" <?php selected( $s['captcha_provider'], 'turnstile' ); ?>>Cloudflare Turnstile</option>
+								<option value="hcaptcha" <?php selected( $s['captcha_provider'], 'hcaptcha' ); ?>>hCaptcha</option>
+								<option value="none" <?php selected( $s['captcha_provider'], 'none' ); ?>><?php esc_html_e( 'Ninguno (solo desarrollo)', 'siga-firmas' ); ?></option>
+							</select>
+							<p class="description"><?php esc_html_e( 'Debe coincidir con CAPTCHA_PROVIDER del backend. El secreto se configura en SIGA, no aquí.', 'siga-firmas' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="siga_captcha_site_key"><?php esc_html_e( 'Clave pública (site key) del captcha', 'siga-firmas' ); ?></label></th>
+						<td>
+							<input name="<?php echo esc_attr( SIGA_FIRMAS_OPTION ); ?>[captcha_site_key]" id="siga_captcha_site_key" type="text"
+								class="regular-text" value="<?php echo esc_attr( $s['captcha_site_key'] ); ?>" />
+							<p class="description"><?php esc_html_e( 'Clave pública del widget. La clave secreta NO se guarda en WordPress.', 'siga-firmas' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="siga_terminos_url"><?php esc_html_e( 'URL de política de privacidad', 'siga-firmas' ); ?></label></th>
+						<td>
+							<input name="<?php echo esc_attr( SIGA_FIRMAS_OPTION ); ?>[terminos_url]" id="siga_terminos_url" type="url"
+								class="regular-text" value="<?php echo esc_attr( $s['terminos_url'] ); ?>" />
+							<p class="description"><?php esc_html_e( 'Se enlaza en la casilla de aceptación de términos.', 'siga-firmas' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="siga_mensaje_exito"><?php esc_html_e( 'Mensaje de éxito', 'siga-firmas' ); ?></label></th>
+						<td>
+							<input name="<?php echo esc_attr( SIGA_FIRMAS_OPTION ); ?>[mensaje_exito]" id="siga_mensaje_exito" type="text"
+								class="large-text" value="<?php echo esc_attr( $s['mensaje_exito'] ); ?>" />
+							<p class="description"><?php esc_html_e( 'Se muestra cuando SIGA acepta el envío. SIGA también devuelve su propio mensaje.', 'siga-firmas' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="siga_timeout"><?php esc_html_e( 'Timeout (segundos)', 'siga-firmas' ); ?></label></th>
+						<td>
+							<input name="<?php echo esc_attr( SIGA_FIRMAS_OPTION ); ?>[timeout]" id="siga_timeout" type="number" min="3" max="60"
+								value="<?php echo esc_attr( $s['timeout'] ); ?>" />
+						</td>
+					</tr>
+				</table>
+				<?php submit_button(); ?>
+			</form>
+		</div>
+		<?php
+	}
+}
