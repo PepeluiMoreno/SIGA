@@ -75,13 +75,13 @@ aplican a la condición de SOCIO o VOLUNTARIO viven en su tabla de extensión**,
 
 ## Cambios pendientes de migrar
 
-- **⏳ Migración `vol1ext2anc3` (ancla datos de voluntario a la extensión Voluntario):**
-  ya APLICADA EN DEV. Cambia `miembro_id` → `voluntario_id` (FK a `voluntarios`) en
+- **✅ Migración `vol1ext2anc3` (ancla datos de voluntario a la extensión Voluntario):**
+  APLICADA EN DEV Y EN STAGING (`alembic current` = `vol1ext2anc3 (head)`, 2026-06-30).
+  Cambia `miembro_id` → `voluntario_id` (FK a `voluntarios`) en
   `documentos_miembro`, `miembros_competencia`, `formaciones_miembro`,
   `miembros_habilidades`, `franjas_disponibilidad`. La migración hace backfill
-  (contacto → su Voluntario) y borra filas sin vinculación de voluntario. **NO aplicada
-  en staging/prod**: antes de aplicar allí, verificar conteos de esas tablas (en dev
-  estaban vacías → backfill no-op; en staging/prod podría haber datos importados).
+  (contacto → su Voluntario) y borra filas sin vinculación de voluntario; aplicó limpia
+  en staging (backend quedó `healthy` sin abortar). Pendiente solo prod.
 - *(Ver también punto 3 arriba: eliminar skill.py.)*
 
 ---
