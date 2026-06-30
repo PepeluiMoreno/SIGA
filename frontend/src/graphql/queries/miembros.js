@@ -64,6 +64,48 @@ export const GET_MIEMBROS = `
   }
 `
 
+// Cuentas de acceso (TODOS los usuarios) — para la vista de gestión de usuarios.
+// A diferencia de GET_MIEMBROS (que parte de `socios`), parte de `cuentasAcceso`,
+// que lista toda cuenta tenga o no vinculación de socio (incluida la de sistema sin
+// contacto). Misma forma de datos que GET_MIEMBROS para que la vista no cambie.
+export const GET_CUENTAS_ACCESO = `
+  query CuentasAcceso {
+    miembros: cuentasAcceso {
+      id
+      nombre
+      apellido1
+      apellido2
+      fotoUrl
+      email
+      telefono
+      usuario {
+        id
+        email
+        activo
+        ultimoAcceso
+        tipoVinculacionId
+        roles {
+          id
+          activo
+          agrupacionId
+          rol {
+            id
+            nombre
+            tipo
+          }
+        }
+      }
+      agrupacion {
+        id
+        nombre
+        tipoUnidad { id nombre naturaleza vinculo }
+      }
+      activo
+      tieneAcceso
+    }
+  }
+`
+
 // Nombramientos activos (coordinadores, presidentes...) — para badges en lista
 export const GET_NOMBRAMIENTOS_ACTIVOS = `
   query NombramientosActivos {

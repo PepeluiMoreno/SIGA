@@ -245,7 +245,7 @@ import { graphqlClient } from '@/graphql/client.js'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { useGraphQL } from '@/composables/useGraphQL.js'
 import { useToast } from '@/composables/useToast'
-import { GET_MIEMBROS, GET_AGRUPACIONES } from '@/graphql/queries/miembros.js'
+import { GET_CUENTAS_ACCESO, GET_AGRUPACIONES } from '@/graphql/queries/miembros.js'
 import { GET_ROLES, ASIGNAR_ROL_USUARIO, REVOCAR_ROL_USUARIO } from '@/graphql/queries/administracion.js'
 import { GET_TIPOS_VINCULACION, ELIMINAR_USUARIO, DESACTIVAR_USUARIO } from '@/graphql/queries/usuarios.js'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
@@ -522,12 +522,13 @@ async function eliminarUsuario(usuario, opts) {
 async function cargar() {
   try {
     const [miembrosData, agrupData, rolesData, vinculData] = await Promise.all([
-      query(GET_MIEMBROS),
+      query(GET_CUENTAS_ACCESO),
       query(GET_AGRUPACIONES),
       graphqlClient.request(GET_ROLES),
       graphqlClient.request(GET_TIPOS_VINCULACION),
     ])
-    // Solo miembros con usuario
+    // cuentasAcceso ya devuelve solo cuentas de acceso (todas tienen usuario); el
+    // filtro se mantiene como salvaguarda inocua.
     allMiembros.value      = (miembrosData?.miembros ?? []).filter(m => m.usuario != null)
     agrupaciones.value     = agrupData?.unidadesOrganizativas ?? []
     todosRoles.value       = rolesData?.roles ?? []

@@ -503,6 +503,70 @@ class SociosQuery:
             .where(TipoVinculacion.codigo == "SOCIO", Vinculacion.eliminado == False)  # noqa: E712
         )).scalar() or 0
 
+    @strawberry.field
+    async def cuentas_acceso(
+        self,
+        info: strawberry.Info,
+        activo: Optional[bool] = None,
+    ) -> List[SocioVistaType]:
+        """Listado de CUENTAS DE ACCESO (todos los usuarios), para la gestión de usuarios.
+
+        A diferencia de `socios` (que parte de la vinculación SOCIO), esto parte de la
+        tabla `usuarios`: incluye TODA cuenta, tenga o no contacto y sea cual sea su
+        vinculación (también la cuenta de sistema sin contacto, p. ej. `superadmin`).
+        Devuelve `SocioVistaType` por reutilizar la forma que la vista ya consume:
+        identidad tomada del `Contacto` ligado (vacía si la cuenta no tiene contacto).
+        """
+        session = info.context.session
+        q = select(Usuario).where(Usuario.eliminado == False)  # noqa: E712
+        if activo is not None:
+            q = q.where(Usuario.activo == activo)
+        usuarios = list((await session.execute(q)).scalars().all())
+        if not usuarios:
+            return []
+
+        # Agrupaciones referenciadas por los contactos de esas cuentas (para el filtro
+        # territorial de la vista), en un solo lote.
+        agr_ids = {u.contacto.agrupacion_id for u in usuarios
+                   if u.contacto and u.contacto.agrupacion_id}
+        agrupaciones = {}
+        if agr_ids:
+            agrupaciones = {a.id: a for a in (await session.execute(
+                select(UnidadOrganizativa).where(UnidadOrganizativa.id.in_(agr_ids))
+            )).scalars().all()}
+
+        filas: List[SocioVistaType] = []
+        for u in usuarios:
+            c = u.contacto
+            # id de fila: el del contacto si lo hay; si no (cuenta de sistema), el del
+            # usuario, para que la fila tenga clave estable. El panel de roles opera
+            # siempre sobre usuario.id, que está presente en ambos casos.
+            fila_id = c.id if c else u.id
+            filas.append(SocioVistaType(
+                id=fila_id,
+                nombre=(c.nombre if c else (u.username or u.email or "—")),
+                apellido1=(c.apellido1 if c else None),
+                apellido2=(c.apellido2 if c else None),
+                foto_url=(c.foto_url if c else None),
+                email=(c.email if c else u.email),
+                telefono=(c.telefono if c else None),
+                agrupacion_id=(c.agrupacion_id if c else None),
+                activo=(c.activo if c else u.activo),
+                tiene_acceso=True,
+                agrupacion=(agrupaciones.get(c.agrupacion_id) if c else None),
+                usuario=u,
+            ))
+
+        # Orden estable por apellidos / nombre / username.
+        return sorted(
+            filas,
+            key=lambda f: (
+                (f.apellido1 or f.nombre or "").lower(),
+                (f.apellido2 or "").lower(),
+                (f.nombre or "").lower(),
+            ),
+        )
+
     @strawberry.field(permission_classes=[RequireTransaction("ACCESO_USUARIO_CREAR")])
     async def contactos_dotables(
         self,
