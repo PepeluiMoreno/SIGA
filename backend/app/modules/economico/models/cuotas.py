@@ -128,7 +128,7 @@ class CuotaAnual(BaseModel):
     motivo_reduccion = relationship('MotivoReduccionCuota', foreign_keys=[motivo_reduccion_id], lazy='selectin')
 
     def __repr__(self) -> str:
-        return f"<CuotaAnual(miembro_id='{self.miembro_id}', ejercicio={self.ejercicio}, estado_id='{self.estado_id}')>"
+        return f"<CuotaAnual(vinculacion_socio_id='{self.vinculacion_socio_id}', ejercicio={self.ejercicio}, estado_id='{self.estado_id}')>"
 
     @property
     def esta_pagada(self) -> bool:

@@ -280,7 +280,9 @@ class EconomicoQuery:
 
         session = info.context.session
         user = info.context.user
-        if user is None or getattr(user, 'miembro_id', None) is None:
+        # La identidad del usuario vive en su Contacto (user.contacto_id); el
+        # NombramientoVigente.miembro_id es una FK a contactos (nombre histórico).
+        if user is None or user.contacto_id is None:
             return AmbitoTesoreriaType(ve_todas=False, agrupacion_ids=[])
 
         # Agrupaciones donde el usuario es tesorero vigente
@@ -289,7 +291,7 @@ class EconomicoQuery:
             .join(CargoRol, CargoRol.cargo_id == NombramientoVigente.cargo_id)
             .join(Rol, Rol.id == CargoRol.rol_id)
             .where(
-                NombramientoVigente.miembro_id == user.miembro_id,
+                NombramientoVigente.miembro_id == user.contacto_id,
                 Rol.codigo == 'TESORERO',
             )
         )
@@ -399,11 +401,18 @@ class EconomicoQuery:
         info: strawberry.Info,
         miembro_id: uuid.UUID,
     ) -> list[CuotaAnualType]:
-        """Devuelve el historial de cuotas de un miembro ordenadas por ejercicio descendente."""
+        """Devuelve el historial de cuotas de un miembro ordenadas por ejercicio descendente.
+
+        La cuota cuelga de la vinculación de socio (CuotaAnual.vinculacion_socio_id), no
+        del contacto directamente; `miembro_id` es el Contacto, así que se resuelve vía
+        sus vinculaciones.
+        """
+        from app.modules.membresia.models.vinculacion import Vinculacion
         session = info.context.session
         stmt = (
             select(CuotaAnual)
-            .where(CuotaAnual.miembro_id == miembro_id)
+            .join(Vinculacion, Vinculacion.id == CuotaAnual.vinculacion_socio_id)
+            .where(Vinculacion.contacto_id == miembro_id)
             .order_by(CuotaAnual.ejercicio.desc())
         )
         result = await session.execute(stmt)
