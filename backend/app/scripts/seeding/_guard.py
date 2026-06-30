@@ -35,3 +35,27 @@ def abort_if_production(operacion: str = "seeding de datos de prueba") -> None:
             file=sys.stderr,
         )
         sys.exit(2)
+
+
+def require(condicion: bool, que_falta: str, antes_ejecuta: str) -> None:
+    """Fail-fast de prerrequisitos: aborta (exit 3) si una dependencia dura no está.
+
+    Pensado para que un seed NO degrade en silencio cuando le falta un dato base
+    (p. ej. perfiles sin el TipoVinculacion 'SOCIO', o actividades sin sus
+    catálogos). Llamar al inicio del seed, tras leer el prerrequisito de BD:
+
+        require(tipo_socio is not None,
+                "el TipoVinculacion 'SOCIO'",
+                "seed_tipos_vinculacion")
+
+    El exit≠0 hace que el orquestador (seed_demo_staging) se detenga en ese paso,
+    en lugar de seguir y dejar la BD a medias. Distinto código (3) que el guard de
+    producción (2) para distinguir "falta prerrequisito" de "prohibido en prod".
+    """
+    if not condicion:
+        print(
+            f"ABORTADO: falta {que_falta}. Ejecuta antes «{antes_ejecuta}» "
+            "(o el orquestador seed_demo_staging, que respeta el orden).",
+            file=sys.stderr,
+        )
+        sys.exit(3)

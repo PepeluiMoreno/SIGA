@@ -73,14 +73,22 @@ async def seed(session: AsyncSession | None = None) -> None:
         session = async_session()
         await session.__aenter__()
     try:
+        from app.scripts.seeding._guard import require
         print("Seed perfiles staging…")
 
         roles = {r.codigo: r for r in (await session.execute(select(Rol))).scalars().all()}
         tipo_socio = (await session.execute(
             select(TipoVinculacion).where(TipoVinculacion.codigo == "SOCIO")
         )).scalar_one_or_none()
-        if tipo_socio is None:
-            print("  ⚠ no existe TipoVinculacion 'SOCIO'; ejecuta antes seed_tipos_vinculacion")
+
+        # Prerrequisitos duros: sin ellos los perfiles quedarían a medias (sin faceta
+        # de socio o sin rol). Fail-fast en vez de degradar en silencio.
+        require(tipo_socio is not None,
+                "el TipoVinculacion 'SOCIO'", "seed_tipos_vinculacion")
+        roles_necesarios = {p[4] for p in PERFILES if p[4]}
+        faltan_roles = roles_necesarios - set(roles)
+        require(not faltan_roles,
+                f"los roles de gobierno {sorted(faltan_roles)}", "seed_roles_organizacionales")
 
         # Una autonómica (hija directa de la raíz) para el ámbito territorial del coordinador.
         raiz_id = await session.scalar(
@@ -166,11 +174,9 @@ async def seed(session: AsyncSession | None = None) -> None:
                 usuario.activo = True
 
             # 4) Rol de gobierno (salvo socio normal), idempotente.
+            # El rol existe seguro: lo garantiza el require() de prerrequisitos.
             if rol_codigo:
-                rol = roles.get(rol_codigo)
-                if not rol:
-                    print(f"  ⚠ rol {rol_codigo} no existe; {email} queda sin rol")
-                    continue
+                rol = roles[rol_codigo]
                 agrup = autonomica_id if ambito == "TERRITORIAL" else None
                 ya_rol = await session.scalar(
                     select(UsuarioRol.id).where(

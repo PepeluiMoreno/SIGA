@@ -22,6 +22,8 @@ from sqlalchemy import select
 
 from app.core.database import async_session
 from app.modules.actividades.models.actividad import Actividad
+from app.modules.actividades.models.accion import TipoAccion
+from app.modules.configuracion.models.estados import EstadoAccion
 
 
 # Estado por defecto (En curso = activa, listo para imputar gastos).
@@ -61,7 +63,22 @@ PERMANENTES = [
 
 
 async def seed():
+    from app.scripts.seeding._guard import require
     async with async_session() as session:
+        # Prerrequisito duro: estas actividades referencian por UUID fijo el estado
+        # "En curso" y los tipos de acción que crea seed_catalogos_accion. Sin ellos,
+        # el INSERT reventaría por FK con un error críptico; fail-fast claro en su lugar.
+        estado_ok = await session.scalar(
+            select(EstadoAccion.id).where(EstadoAccion.id == ESTADO_EN_CURSO_ID)
+        )
+        tipos_ok = await session.scalar(
+            select(TipoAccion.id).where(TipoAccion.id.in_(
+                [TIPO_REUNION_ID, TIPO_TRABAJO_VOLUNTARIO_ID]
+            ))
+        )
+        require(estado_ok is not None and tipos_ok is not None,
+                "los catálogos de acción (EstadoAccion/TipoAccion)", "seed_catalogos_accion")
+
         creadas = 0
         omitidas = 0
         for nombre, descripcion, tipo_id in PERMANENTES:
