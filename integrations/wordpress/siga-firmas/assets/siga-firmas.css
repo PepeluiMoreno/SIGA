@@ -1,19 +1,31 @@
 /* Estilos del formulario de recogida de firmas de SIGA.
-   Neutros y sobrios para integrarse con la mayoría de temas. */
+   Paleta alineada con laicismo.org (teal #00a99d + verde #71bf49, tipografía Inter).
+   Las variables permiten reajustar la marca en un único sitio. */
 
 .siga-firmas-form {
+	--siga-brand: #00a99d;        /* teal principal (laicismo.org) */
+	--siga-brand-dark: #00897f;   /* teal oscuro para hover/foco */
+	--siga-accent: #71bf49;       /* verde de acento */
+	--siga-ok: #2f8f3e;           /* éxito (verde legible) */
+	--siga-error: #b91c1c;        /* error */
+	--siga-req: #c0392b;          /* asterisco de obligatorio */
+	--siga-border: #c7c7c7;
+
 	max-width: 40rem;
 	margin: 1.5rem 0;
 	padding: 1.5rem;
 	border: 1px solid #e2e2e2;
+	border-top: 4px solid var(--siga-brand);
 	border-radius: 10px;
 	background: #fff;
+	font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 .siga-firmas-titulo {
 	margin: 0 0 1rem;
 	font-size: 1.25rem;
 	line-height: 1.3;
+	color: var(--siga-brand-dark);
 }
 
 .siga-firmas-row {
@@ -39,7 +51,7 @@
 }
 
 .siga-firmas-field em {
-	color: #c0392b;
+	color: var(--siga-req);
 	font-style: normal;
 }
 
@@ -47,10 +59,18 @@
 .siga-firmas-field select {
 	width: 100%;
 	padding: 0.6rem 0.7rem;
-	border: 1px solid #c7c7c7;
+	border: 1px solid var(--siga-border);
 	border-radius: 7px;
 	font-size: 1rem;
+	font-family: inherit;
 	box-sizing: border-box;
+}
+
+.siga-firmas-field input:focus,
+.siga-firmas-field select:focus {
+	outline: none;
+	border-color: var(--siga-brand);
+	box-shadow: 0 0 0 3px rgba(0, 169, 157, 0.18);
 }
 
 .siga-firmas-field--narrow {
@@ -69,6 +89,11 @@
 .siga-firmas-check input {
 	margin-top: 0.2rem;
 	flex: 0 0 auto;
+	accent-color: var(--siga-brand);
+}
+
+.siga-firmas-check a {
+	color: var(--siga-brand-dark);
 }
 
 .siga-firmas-captcha {
@@ -81,15 +106,22 @@
 	padding: 0.7rem 1.6rem;
 	border: 0;
 	border-radius: 7px;
-	background: #2563eb;
+	background: var(--siga-brand);
 	color: #fff;
 	font-size: 1rem;
 	font-weight: 600;
+	font-family: inherit;
 	cursor: pointer;
+	transition: background 0.15s ease;
 }
 
 .siga-firmas-submit:hover {
-	background: #1d4ed8;
+	background: var(--siga-brand-dark);
+}
+
+.siga-firmas-submit:focus-visible {
+	outline: 3px solid rgba(0, 169, 157, 0.4);
+	outline-offset: 2px;
 }
 
 .siga-firmas-submit:disabled {
@@ -104,11 +136,11 @@
 }
 
 .siga-firmas-msg.is-ok {
-	color: #15803d;
+	color: var(--siga-ok);
 }
 
 .siga-firmas-msg.is-error {
-	color: #b91c1c;
+	color: var(--siga-error);
 }
 
 /* Honeypot: fuera de la vista de humanos, accesible a bots. */
