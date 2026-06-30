@@ -34,8 +34,8 @@ PASOS = [
     "seed_roles_organizacionales",
     # ── Estructura territorial + miembros + juntas + nombramientos (demo) ──
     "seed_demo_europalaica",
-    # ── Cuentas de acceso por perfil (demo) ──
-    "seed_demo_usuarios",
+    # ── Cuentas de acceso por perfil (demo) — un usuario por perfil, contraseña «x» ──
+    "seed_staging_perfiles",
     # ── Plan de cuotas + cuotas del ejercicio (demo) ──
     "seed_demo_cuotas",
     # ── Campañas y actividades (demo) ──
