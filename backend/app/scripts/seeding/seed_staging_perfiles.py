@@ -10,13 +10,16 @@ Cada usuario:
   - su faceta de socio (Vinculacion SOCIO + Socio) — todos son socios,
   - y, salvo el "socio normal", su rol de gobierno (UsuarioRol).
 
-Perfiles sembrados:
+Se entra SOLO con el nombre (el username, p. ej. «presidente») o con el email,
+indistintamente: el login acepta ambos. username = el rol en minúscula.
 
-  presidente@siga.test     PRESIDENTE   (ámbito general)
-  secretario@siga.test     SECRETARIO   (ámbito general)
-  tesorero@siga.test       TESORERO     (ámbito general)
-  coordinador@siga.test    COORDINADOR  (ámbito territorial: una autonómica)
-  socio@siga.test          —            (socio normal, sin rol de gobierno)
+Perfiles sembrados (username · email · rol):
+
+  presidente   presidente@siga.test     PRESIDENTE   (ámbito general)
+  secretario   secretario@siga.test     SECRETARIO   (ámbito general)
+  tesorero     tesorero@siga.test       TESORERO     (ámbito general)
+  coordinador  coordinador@siga.test    COORDINADOR  (ámbito territorial: una autonómica)
+  socio        socio@siga.test          —            (socio normal, sin rol de gobierno)
 
 Idempotente: identifica cada usuario por email y cada contacto por su
 numero_documento ("PERFIL-<ROL>"). Re-ejecutar no duplica.
@@ -49,18 +52,22 @@ from app.modules.core.geografico.direccion import UnidadOrganizativa
 # Contraseña común a todas las cuentas demo. Configurable por env, "x" por defecto.
 PASSWORD = os.getenv("SIGA_STAGING_PASSWORD", "x")
 
-# (email, nombre, apellido1, rol_codigo|None, ámbito): ámbito 'GLOBAL' → sin
-# agrupación; 'TERRITORIAL' → una autonómica. rol None = socio normal.
+# (username, email, nombre, apellido1, rol_codigo|None, ámbito): ámbito 'GLOBAL'
+# → sin agrupación; 'TERRITORIAL' → una autonómica. rol None = socio normal.
+# El username (el rol en minúscula) permite entrar SOLO con el nombre, p. ej.
+# «presidente» / «x» — el login acepta indistintamente email o username.
 PERFILES = [
-    ("presidente@siga.test",  "Presidenta",  "Demo", "PRESIDENTE",  "GLOBAL"),
-    ("secretario@siga.test",  "Secretario",  "Demo", "SECRETARIO",  "GLOBAL"),
-    ("tesorero@siga.test",    "Tesorero",    "Demo", "TESORERO",    "GLOBAL"),
-    ("coordinador@siga.test", "Coordinador", "Demo", "COORDINADOR", "TERRITORIAL"),
-    ("socio@siga.test",       "Socio",       "Demo", None,          "GLOBAL"),
+    ("presidente",  "presidente@siga.test",  "Presidenta",  "Demo", "PRESIDENTE",  "GLOBAL"),
+    ("secretario",  "secretario@siga.test",  "Secretario",  "Demo", "SECRETARIO",  "GLOBAL"),
+    ("tesorero",    "tesorero@siga.test",    "Tesorero",    "Demo", "TESORERO",    "GLOBAL"),
+    ("coordinador", "coordinador@siga.test", "Coordinador", "Demo", "COORDINADOR", "TERRITORIAL"),
+    ("socio",       "socio@siga.test",       "Socio",       "Demo", None,          "GLOBAL"),
 ]
 
 
 async def seed(session: AsyncSession | None = None) -> None:
+    from app.scripts.seeding._guard import abort_if_production
+    abort_if_production("seeding de perfiles de prueba")
     own = session is None
     if own:
         session = async_session()
@@ -90,7 +97,7 @@ async def seed(session: AsyncSession | None = None) -> None:
         creados_usr = 0
         creados_ctc = 0
         n_socio = 0
-        for email, nombre, apellido1, rol_codigo, ambito in PERFILES:
+        for username, email, nombre, apellido1, rol_codigo, ambito in PERFILES:
             doc = f"PERFIL-{(rol_codigo or 'SOCIO')}"
 
             # 1) Contacto (persona física), idempotente por numero_documento.
@@ -142,6 +149,7 @@ async def seed(session: AsyncSession | None = None) -> None:
             )).scalar_one_or_none()
             if usuario is None:
                 usuario = Usuario(
+                    username=username,
                     email=email,
                     password_hash=hash_password(PASSWORD),
                     activo=True,
@@ -151,7 +159,8 @@ async def seed(session: AsyncSession | None = None) -> None:
                 await session.flush()
                 creados_usr += 1
             else:
-                # Reafirma la contraseña y el vínculo en cada corrida (cómodo en demo).
+                # Reafirma username, contraseña y vínculo en cada corrida (cómodo en demo).
+                usuario.username = username
                 usuario.password_hash = hash_password(PASSWORD)
                 usuario.contacto_id = contacto.id
                 usuario.activo = True
@@ -178,7 +187,7 @@ async def seed(session: AsyncSession | None = None) -> None:
         await session.commit()
         print(f"  contactos: +{creados_ctc} · usuarios: +{creados_usr} · socios: +{n_socio}")
         print(f"  contraseña de todas las cuentas: «{PASSWORD}»")
-        print("  cuentas: " + ", ".join(p[0] for p in PERFILES))
+        print("  entra con el nombre (o el email): " + ", ".join(p[0] for p in PERFILES))
         print("Listo.")
     finally:
         if own:
