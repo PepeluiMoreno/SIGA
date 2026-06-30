@@ -45,6 +45,7 @@ PERMISOS = [
     "seed_permisos_plan_cuentas",
     "seed_permisos_export_socios",
     "seed_permisos_presidencia",
+    "seed_permisos_secretaria",
 ]
 
 
