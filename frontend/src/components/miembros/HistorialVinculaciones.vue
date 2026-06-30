@@ -17,7 +17,7 @@
 
 <script setup>
 // Componente reutilizable: muestra la trayectoria de vinculaciones de un contacto
-// (facetas vigentes + cerradas). Se usa en Mis datos (propio), en la ficha de admin
+// (vinculaciones vigentes + cerradas). Se usa en Mis datos (propio), en la ficha de admin
 // y en la consulta a la Junta Directiva.
 //
 // Dos modos:

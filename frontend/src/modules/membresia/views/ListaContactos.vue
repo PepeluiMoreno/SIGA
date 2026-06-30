@@ -64,12 +64,12 @@
                 <td class="px-4 py-3">
                   <div class="flex flex-wrap gap-1">
                     <span
-                      v-for="v in facetasVigentes(c)"
+                      v-for="v in vinculacionesVigentes(c)"
                       :key="v.id"
                       class="inline-block px-2 py-0.5 rounded text-xs font-medium"
-                      :class="colorFaceta(v.tipoVinculacion && v.tipoVinculacion.codigo)"
+                      :class="colorVinculacion(v.tipoVinculacion && v.tipoVinculacion.codigo)"
                     >{{ v.tipoVinculacion ? v.tipoVinculacion.nombre : '—' }}</span>
-                    <span v-if="!facetasVigentes(c).length" class="text-xs text-slate-400">sin vinculación</span>
+                    <span v-if="!vinculacionesVigentes(c).length" class="text-xs text-slate-400">sin vinculación</span>
                   </div>
                 </td>
               </tr>
@@ -106,7 +106,7 @@ const cargando = ref(true)
 const error = ref('')
 
 const searchQuery = ref('')
-const filters = ref({ tipos: [], facetas: [] })
+const filters = ref({ tipos: [], vinculaciones: [] })
 
 const _COLORES = {
   SOCIO: 'bg-emerald-100 text-emerald-800',
@@ -116,7 +116,7 @@ const _COLORES = {
   SIMPATIZANTE: 'bg-indigo-100 text-indigo-800',
   EMPLEADO: 'bg-orange-100 text-orange-800',
 }
-function colorFaceta(codigo) {
+function colorVinculacion(codigo) {
   return _COLORES[codigo] || 'bg-slate-100 text-slate-700'
 }
 
@@ -125,18 +125,18 @@ function nombreMostrado(c) {
   return [c.nombre, c.apellido1, c.apellido2].filter(Boolean).join(' ') || '—'
 }
 
-// Vinculaciones vigentes = sin fecha de fin (la faceta está abierta).
-function facetasVigentes(c) {
+// Vinculaciones vigentes = sin fecha de fin (la vinculación está abierta).
+function vinculacionesVigentes(c) {
   return (c.vinculaciones || []).filter((v) => !v.fechaFin)
 }
 
 // Catálogo de vinculaciones presentes, RELACIONADO con los tipos de persona
 // elegidos: solo se ofrecen las que de hecho tienen contactos de ese tipo.
-const facetasDisponibles = computed(() => {
+const vinculacionesDisponibles = computed(() => {
   const mapa = new Map()
   for (const c of contactos.value) {
     if (filters.value.tipos.length && !filters.value.tipos.includes(c.tipo)) continue
-    for (const v of facetasVigentes(c)) {
+    for (const v of vinculacionesVigentes(c)) {
       const tv = v.tipoVinculacion
       if (tv && !mapa.has(tv.codigo)) mapa.set(tv.codigo, { codigo: tv.codigo, nombre: tv.nombre })
     }
@@ -157,10 +157,10 @@ const filterFields = computed(() => [
     width: 'w-56',
   },
   {
-    key: 'facetas',
+    key: 'vinculaciones',
     label: 'Vinculación',
     type: 'multiselect',
-    options: facetasDisponibles.value.map((f) => ({ value: f.codigo, label: f.nombre })),
+    options: vinculacionesDisponibles.value.map((f) => ({ value: f.codigo, label: f.nombre })),
     allLabel: 'Cualquier vinculación',
     width: 'w-56',
   },
@@ -169,12 +169,12 @@ const filterFields = computed(() => [
 // Si al cambiar el tipo de persona alguna vinculación elegida deja de tener
 // sentido, se descarta.
 watch(() => filters.value.tipos.slice(), () => {
-  const validas = new Set(facetasDisponibles.value.map((f) => f.codigo))
-  filters.value.facetas = filters.value.facetas.filter((cod) => validas.has(cod))
+  const validas = new Set(vinculacionesDisponibles.value.map((f) => f.codigo))
+  filters.value.vinculaciones = filters.value.vinculaciones.filter((cod) => validas.has(cod))
 })
 
 function limpiarFiltros() {
-  filters.value = { tipos: [], facetas: [] }
+  filters.value = { tipos: [], vinculaciones: [] }
   searchQuery.value = ''
 }
 
@@ -182,8 +182,8 @@ const contactosFiltrados = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
   return contactos.value.filter((c) => {
     if (filters.value.tipos.length && !filters.value.tipos.includes(c.tipo)) return false
-    if (filters.value.facetas.length) {
-      const tiene = facetasVigentes(c).some((v) => v.tipoVinculacion && filters.value.facetas.includes(v.tipoVinculacion.codigo))
+    if (filters.value.vinculaciones.length) {
+      const tiene = vinculacionesVigentes(c).some((v) => v.tipoVinculacion && filters.value.vinculaciones.includes(v.tipoVinculacion.codigo))
       if (!tiene) return false
     }
     if (q) {

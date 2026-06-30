@@ -1,14 +1,14 @@
-"""Resolvers CRM de vinculaciones: las facetas tipadas de un Contacto.
+"""Resolvers CRM de vinculaciones: las vinculaciones tipadas de un Contacto.
 
 En el modelo contacto-céntrico, un mismo Contacto (persona física o jurídica)
-puede tener varias *facetas* simultáneas, cada una representada por una
+puede tener varias *vinculaciones* simultáneas, cada una representada por una
 `Vinculacion` tipada (SOCIO, VOLUNTARIO, …) con su satélite de datos.
 
 Este módulo expone:
-- Lectura:  `vinculacionesDeContacto(contactoId)` — todas las facetas del contacto.
+- Lectura:  `vinculacionesDeContacto(contactoId)` — todas las vinculaciones del contacto.
 - Escritura: `crearContacto` / `actualizarContacto` (identidad PF/PJ),
-             `altaVinculacionSocio` / `altaVinculacionVoluntario` (añadir faceta),
-             `cerrarVinculacion` (dar de baja una faceta).
+             `altaVinculacionSocio` / `altaVinculacionVoluntario` (añadir vinculación),
+             `cerrarVinculacion` (dar de baja una vinculación).
 
 Nota sobre permisos: el alta de socio "completa" (Contacto + Socio + Membresía +
 opcional Voluntario) sigue viviendo en `crearMiembro` (membresia_resolvers). Aquí
@@ -204,7 +204,7 @@ class VinculacionesQuery:
     async def vinculaciones_de_contacto(
         self, info: strawberry.Info, contacto_id: uuid.UUID,
     ) -> List[VinculacionType]:
-        """Todas las facetas (vinculaciones) de un contacto, vigentes o cerradas."""
+        """Todas las vinculaciones de un contacto, vigentes o cerradas."""
         session = info.context.session
         rows = list((await session.execute(
             select(Vinculacion)
@@ -214,11 +214,11 @@ class VinculacionesQuery:
             )
             .order_by(Vinculacion.fecha_inicio)
         )).scalars().all())
-        await _ocultar_iban_facetas(info, session, rows)
+        await _ocultar_iban_vinculaciones(info, session, rows)
         return rows
 
 
-async def _ocultar_iban_facetas(info, session, vincs):
+async def _ocultar_iban_vinculaciones(info, session, vincs):
     """Oculta los datos bancarios del satélite Socio salvo al tesorero del ámbito
     del contacto (o superior). Mismo criterio que el read-model `socios`.
 
@@ -357,7 +357,7 @@ class VinculacionesMutation:
     async def alta_vinculacion_socio(
         self, info: strawberry.Info, data: AltaVinculacionSocioInput,
     ) -> VinculacionType:
-        """Añade la faceta SOCIO a un contacto existente (Vinculacion + satélite)."""
+        """Añade la vinculación SOCIO a un contacto existente (Vinculacion + satélite)."""
         session = info.context.session
         contacto = (await session.execute(
             select(Contacto).where(Contacto.id == data.contacto_id)
@@ -394,7 +394,7 @@ class VinculacionesMutation:
     async def alta_vinculacion_voluntario(
         self, info: strawberry.Info, data: AltaVinculacionVoluntarioInput,
     ) -> VinculacionType:
-        """Añade la faceta VOLUNTARIO a un contacto existente (Vinculacion + satélite)."""
+        """Añade la vinculación VOLUNTARIO a un contacto existente (Vinculacion + satélite)."""
         session = info.context.session
         contacto = (await session.execute(
             select(Contacto).where(Contacto.id == data.contacto_id)
@@ -434,7 +434,7 @@ class VinculacionesMutation:
         self, info: strawberry.Info, vinculacion_id: uuid.UUID,
         fecha_cierre: Optional[date] = None,
     ) -> VinculacionType:
-        """Cierra una faceta (fecha_fin + estado='cerrada'). No la elimina."""
+        """Cierra una vinculación (fecha_fin + estado='cerrada'). No la elimina."""
         session = info.context.session
         vinc = await _fetch_vinculacion(session, vinculacion_id)
         vinc.fecha_fin = fecha_cierre or date.today()

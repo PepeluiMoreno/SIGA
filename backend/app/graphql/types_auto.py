@@ -488,9 +488,9 @@ class CoordinacionTerritorialType:
     agrupacion: Optional['UnidadOrganizativaType'] = None
 
 # El antiguo MiembroType se sustituye por ContactoType (la identidad viva es el
-# Contacto). Se exponen las columnas escalares y `vinculaciones` (facetas del
+# Contacto). Se exponen las columnas escalares y `vinculaciones` (vinculaciones del
 # contacto, ahora que VinculacionType existe) para que el directorio saque los
-# badges de faceta en una sola query. Las participaciones/firmas se siguen
+# badges de vinculación en una sola query. Las participaciones/firmas se siguen
 # consultando vía resolvers dedicados (y se excluyen aquí para no colisionar con
 # ParticipacionType = AsistenciaActividad).
 @strawchemy.type(
@@ -505,10 +505,10 @@ class ContactoType:
     pass
 
 
-# === VINCULACIONES (facetas CRM de un Contacto) ===
-# Una Vinculacion es la faceta tipada de un Contacto (SOCIO, VOLUNTARIO, …) con
+# === VINCULACIONES (vinculaciones CRM de un Contacto) ===
+# Una Vinculacion es la vinculación tipada de un Contacto (SOCIO, VOLUNTARIO, …) con
 # su satélite de datos. Se exponen ahora como tipos GraphQL para poder navegar
-# las facetas de un contacto (resolver `vinculacionesDeContacto`).
+# las vinculaciones de un contacto (resolver `vinculacionesDeContacto`).
 from ..modules.membresia.models import Vinculacion, Socio, Voluntario
 
 @strawchemy.type(Socio, include="all", exclude=["vinculacion"], override=True)
@@ -523,7 +523,7 @@ class VoluntarioType:
 
 @strawchemy.type(Vinculacion, include="all", override=True)
 class VinculacionType:
-    """Faceta tipada de un Contacto (socio, voluntario, …) con su satélite."""
+    """Vinculación tipada de un Contacto (socio, voluntario, …) con su satélite."""
     contacto: Optional['ContactoType'] = None
     tipo_vinculacion: Optional['TipoVinculacionType'] = None
     socio: Optional['SocioType'] = None

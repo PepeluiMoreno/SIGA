@@ -18,9 +18,9 @@ Cuando se estabilice el frontend contacto-céntrico, documentar (doc de
 arquitectura + procedimiento) las decisiones tomadas:
 
 - **Identidad = `Contacto`** (PF/PJ, STI). "Socio/voluntario" no son entidades:
-  son **facetas** = `Vinculacion` tipada (+ satélite Socio/Voluntario).
+  son **vinculaciones** = `Vinculacion` tipada (+ satélite Socio/Voluntario).
 - **Vector de situación**: el conjunto de vinculaciones vigentes de un contacto
-  es lo que lo incluye/excluye de cada vista (filtro por faceta vigente).
+  es lo que lo incluye/excluye de cada vista (filtro por vinculación vigente).
 - **Capa de compatibilidad**: read-models planos (`socios`→`SocioVista`,
   `voluntariosEnAmbito`→`VoluntarioAmbito`) que reconstruyen el viejo "Miembro"
   para que el frontend antiguo siga funcionando.
@@ -39,8 +39,8 @@ arquitectura + procedimiento) las decisiones tomadas:
   `VinculacionType`/`SocioType`/`VoluntarioType`, `vinculacionesDeContacto`,
   `crearContacto`/`actualizarContacto`, `altaVinculacionSocio/Voluntario`,
   `cerrarVinculacion`.
-- **Rotulación UI / propiedad por faceta**: ver `TipoVinculacion.area_responsable`
-  (cada faceta declara su área RBAC responsable).
+- **Rotulación UI / propiedad por vinculación**: ver `TipoVinculacion.area_responsable`
+  (cada vinculación declara su área RBAC responsable).
 
 ## Documentos: anonimización y actas (gobernanza)
 - **Proceso de anonimización de documentos**; las **actas** son uno de los casos.

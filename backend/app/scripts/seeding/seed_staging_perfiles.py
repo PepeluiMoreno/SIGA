@@ -7,7 +7,7 @@ Cada usuario:
   - tiene un Contacto (persona física) con nombre reconocible ("Presidenta
     Demo", "Tesorero Demo", …) para identificarlo en el directorio,
   - una cuenta Usuario ligada a ese contacto (login por email),
-  - su faceta de socio (Vinculacion SOCIO + Socio) — todos son socios,
+  - su vinculación de socio (Vinculacion SOCIO + Socio) — todos son socios,
   - y, salvo el "socio normal", su rol de gobierno (UsuarioRol).
 
 Se entra SOLO con el nombre (el username, p. ej. «presidente») o con el email,
@@ -81,7 +81,7 @@ async def seed(session: AsyncSession | None = None) -> None:
             select(TipoVinculacion).where(TipoVinculacion.codigo == "SOCIO")
         )).scalar_one_or_none()
 
-        # Prerrequisitos duros: sin ellos los perfiles quedarían a medias (sin faceta
+        # Prerrequisitos duros: sin ellos los perfiles quedarían a medias (sin vinculación
         # de socio o sin rol). Fail-fast en vez de degradar en silencio.
         require(tipo_socio is not None,
                 "el TipoVinculacion 'SOCIO'", "seed_tipos_vinculacion")
@@ -126,7 +126,7 @@ async def seed(session: AsyncSession | None = None) -> None:
                 await session.flush()
                 creados_ctc += 1
 
-            # 2) Faceta de socio (todos son socios), idempotente.
+            # 2) Vinculación de socio (todos son socios), idempotente.
             if tipo_socio is not None:
                 tiene_socio = await session.scalar(
                     select(Vinculacion.id).where(

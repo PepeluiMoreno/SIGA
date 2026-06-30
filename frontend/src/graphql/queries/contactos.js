@@ -1,9 +1,9 @@
 // Queries GraphQL del directorio de Contactos (modelo CRM contacto-céntrico).
-// Un Contacto es la identidad (PERSONA_FISICA | PERSONA_JURIDICA). Sus facetas
+// Un Contacto es la identidad (PERSONA_FISICA | PERSONA_JURIDICA). Sus vinculaciones
 // (socio, voluntario, …) son `vinculaciones`. Strawberry expone camelCase.
 
-// Listado del directorio. Trae identidad + facetas (para badges) en una query.
-// `filter` admite icontains (búsqueda), tipo, y filtrado por faceta vía
+// Listado del directorio. Trae identidad + vinculaciones (para badges) en una query.
+// `filter` admite icontains (búsqueda), tipo, y filtrado por vinculación vía
 // `vinculaciones: { tipoVinculacion: { codigo: { eq } }, fechaFin: { isNull } }`.
 export const GET_CONTACTOS = `
   query Contactos($filter: ContactoFilter) {
@@ -67,7 +67,7 @@ export const GET_CONTACTO = `
   }
 `
 
-// Facetas de un contacto con el detalle de su satélite (para la ficha).
+// Vinculaciones de un contacto con el detalle de su satélite (para la ficha).
 export const VINCULACIONES_DE_CONTACTO = `
   query VinculacionesDeContacto($contactoId: UUID!) {
     vinculacionesDeContacto(contactoId: $contactoId) {
@@ -118,7 +118,7 @@ export const ELIMINAR_CONTACTO = `
   }
 `
 
-// --- Mutaciones de facetas (alta/cierre de vinculación) ---
+// --- Mutaciones de vinculaciones (alta/cierre de vinculación) ---
 export const ALTA_VINCULACION_SOCIO = `
   mutation AltaVinculacionSocio($data: AltaVinculacionSocioInput!) {
     altaVinculacionSocio(data: $data) {

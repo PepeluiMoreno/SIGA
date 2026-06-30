@@ -8,7 +8,7 @@ idempotente (re-ejecutar no duplica). Siembra lo justo y en el orden correcto:
   3) permisos por rol (cablea las transacciones a cada rol; sin esto el usuario
      tiene el rol pero no puede hacer nada)
   4) los 5 perfiles de prueba: login por nombre (presidente, tesorero, …),
-     contraseña «x», cada uno con su rol y su faceta de socio.
+     contraseña «x», cada uno con su rol y su vinculación de socio.
 
 Solo dev/staging: abortado en producción por el guard.
 

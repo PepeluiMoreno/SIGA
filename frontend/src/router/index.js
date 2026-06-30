@@ -169,7 +169,7 @@ const routes = [
     meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_MIEMBRO_LISTAR' }
   },
   {
-    // Directorio CRM contacto-céntrico (PF+PJ, facetas). MVP: gateado con
+    // Directorio CRM contacto-céntrico (PF+PJ, vinculaciones). MVP: gateado con
     path: '/contactos',
     component: () => import('@/modules/membresia/views/ListaContactos.vue'),
     name: 'Contactos',
