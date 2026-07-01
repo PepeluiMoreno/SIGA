@@ -1,7 +1,7 @@
 <template>
   <div :class="widthClass">
     <label v-if="label" class="block text-xs font-medium text-slate-600 mb-1">{{ label }}</label>
-    <input v-if="editMode" :type="type" :value="modelValue ?? ''" :placeholder="placeholder"
+    <input v-if="editando" :type="type" :value="modelValue ?? ''" :placeholder="placeholder"
       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
       @input="$emit('update:modelValue', $event.target.value)" />
     <div v-else class="py-1.5 text-sm text-slate-900 min-h-[34px]">{{ display }}</div>
@@ -30,10 +30,12 @@ const props = defineProps({
   type:       { type: String, default: 'text' },
   placeholder:{ type: String, default: '' },
   editMode:   { type: Boolean, default: false },
+  editing:    { type: Boolean, default: false },  // alias de editMode
   width:      { type: String, default: 'full' },
 })
 defineEmits(['update:modelValue'])
 
+const editando = computed(() => props.editMode || props.editing)
 const WIDTHS = {
   xs: 'w-24', sm: 'w-40', md: 'w-64', lg: 'w-96', full: 'w-full',
 }

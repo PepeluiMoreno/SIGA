@@ -2,16 +2,11 @@
   <AppLayout :title="tituloPagina" :subtitle="esPJ ? 'Persona jurídica' : 'Persona física'">
     <!-- Acciones en el topbar -->
     <template #actions>
-      <template v-if="editing">
-        <button type="button" @click="cancelar"
-          class="h-8 px-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
-          Cancelar
-        </button>
-        <button type="button" @click="guardar" :disabled="guardando || !formValido"
-          class="h-8 px-4 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50">
-          {{ isCreate ? 'Crear contacto' : 'Guardar cambios' }}
-        </button>
-      </template>
+      <FormActions v-if="editing"
+        :submit-text="isCreate ? 'Crear contacto' : 'Guardar cambios'"
+        :variant="isCreate ? 'green' : 'indigo'"
+        :loading="guardando" :disabled="!formValido"
+        @cancel="cancelar" @submit="guardar" />
       <template v-else-if="contacto">
         <button v-if="tienePermiso('CONTACTO_EDITAR')" type="button" @click="entrarEdicion"
           class="h-8 px-3 text-sm font-medium text-indigo-600 border border-slate-300 rounded-lg hover:bg-slate-50">
@@ -180,7 +175,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, h, defineComponent } from 'vue'
+import { ref, reactive, computed, onMounted, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { EyeIcon } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
@@ -192,10 +187,12 @@ import { useConfirm } from '@/composables/useConfirm'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_CONTACTO, GET_CONTACTOS, CREAR_CONTACTO, ACTUALIZAR_CONTACTO, ELIMINAR_CONTACTO, GET_CONDICIONES_CONTACTO } from '@/graphql/queries/contactos.js'
 import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
+import FormActions from '@/components/common/FormActions.vue'
+import FieldText from '@/components/common/form/FieldText.vue'
+import FieldSelect from '@/components/common/form/FieldSelect.vue'
 import { useAuthStore } from '@/stores/auth.js'
 
 // ── Componentes de campo: input en edición, texto en vista ──────────────────
-const INP = 'w-full h-10 rounded-lg border border-slate-300 px-3 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30'
 const fmtCampo = (v) => (v === null || v === undefined || v === '' ? '—' : String(v))
 
 const Campo = (props) => h('div', {}, [
@@ -203,36 +200,6 @@ const Campo = (props) => h('div', {}, [
   h('dd', { class: 'text-slate-800' }, fmtCampo(props.valor)),
 ])
 Campo.props = ['label', 'valor']
-
-const FieldText = defineComponent({
-  props: { modelValue: { default: '' }, label: { type: String, default: '' }, type: { type: String, default: 'text' }, editing: { type: Boolean, default: false } },
-  emits: ['update:modelValue'],
-  setup(props, { emit }) {
-    return () => h('div', [
-      h('label', { class: 'block text-xs font-medium text-slate-500 mb-1' }, props.label),
-      props.editing
-        ? h('input', { class: INP, type: props.type, value: props.modelValue ?? '', onInput: (e) => emit('update:modelValue', e.target.value) })
-        : h('div', { class: 'py-1.5 text-sm text-slate-800 min-h-[34px]' }, fmtCampo(props.modelValue)),
-    ])
-  },
-})
-
-const FieldSelect = defineComponent({
-  props: { modelValue: { default: '' }, label: { type: String, default: '' }, options: { type: Array, default: () => [] }, editing: { type: Boolean, default: false } },
-  emits: ['update:modelValue'],
-  setup(props, { emit }) {
-    const labelOf = (v) => props.options.find((o) => o.value === v)?.label
-    return () => h('div', [
-      h('label', { class: 'block text-xs font-medium text-slate-500 mb-1' }, props.label),
-      props.editing
-        ? h('select', { class: INP, value: props.modelValue ?? '', onChange: (e) => emit('update:modelValue', e.target.value) }, [
-            h('option', { value: '' }, '—'),
-            ...props.options.map((o) => h('option', { value: o.value }, o.label)),
-          ])
-        : h('div', { class: 'py-1.5 text-sm text-slate-800 min-h-[34px]' }, fmtCampo(labelOf(props.modelValue))),
-    ])
-  },
-})
 
 const route = useRoute()
 const router = useRouter()
