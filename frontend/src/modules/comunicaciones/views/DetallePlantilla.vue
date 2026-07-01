@@ -61,44 +61,10 @@
               <h2 class="text-sm font-semibold text-slate-800">Metas predefinidas</h2>
               <span v-if="metas.length" class="px-2 py-0.5 bg-violet-50 text-violet-700 border border-violet-200 text-xs font-semibold rounded-full">{{ metas.length }}</span>
             </template>
-            <div class="px-5 py-4 space-y-3">
-              <div v-if="metas.length" class="rounded-lg border border-slate-200 overflow-hidden">
-                <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  <span class="col-span-4">Tipo de meta</span>
-                  <span class="col-span-2">Unidad</span>
-                  <span class="col-span-2">Valor sugerido</span>
-                  <span class="col-span-3">Notas</span>
-                  <span class="col-span-1"></span>
-                </div>
-                <div v-for="(m, i) in metas" :key="m.id ?? i"
-                  class="grid grid-cols-12 gap-2 px-4 py-2 items-center border-b border-slate-100 last:border-0"
-                  :class="i % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'">
-                  <div class="col-span-4">
-                    <select v-model="m.tipoMetaId" :class="inpSm" @change="guardarTodasMetas">
-                      <option value="">— Tipo —</option>
-                      <option v-for="t in tiposMeta" :key="t.id" :value="t.id">{{ t.nombre }}</option>
-                    </select>
-                  </div>
-                  <div class="col-span-2 text-xs text-slate-500">{{ unidadMeta(m.tipoMetaId) }}</div>
-                  <div class="col-span-2">
-                    <input v-model.number="m.valorSugerido" type="number" min="0" step="1" :class="inpSm"
-                      placeholder="—" @blur="guardarTodasMetas" />
-                  </div>
-                  <div class="col-span-3">
-                    <input v-model="m.notas" type="text" :class="inpSm" placeholder="Notas…" @blur="guardarTodasMetas" />
-                  </div>
-                  <div class="col-span-1 flex justify-end">
-                    <button @click="eliminarMeta(i)" title="Eliminar meta"
-                      class="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">
-                      <TrashIcon class="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <button @click="agregarMeta"
-                class="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
-                <PlusIcon class="w-3.5 h-3.5" /> Añadir meta
-              </button>
+            <div class="px-5 py-4">
+              <MetasEditor v-model="metas" :tipos-meta="tiposMeta"
+                field-tipo="tipoMetaId" field-valor="valorSugerido"
+                @persist="guardarTodasMetas" />
             </div>
           </AccordionPanel>
 
@@ -240,6 +206,7 @@ import { PlusIcon, ChevronRightIcon, XMarkIcon, TrashIcon } from '@heroicons/vue
 import AppLayout from '@/components/common/AppLayout.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
+import MetasEditor from '@/components/common/editors/MetasEditor.vue'
 import { graphqlClient } from '@/graphql/client'
 import {
   GET_PLANTILLA, GET_TIPOS_META, GET_HABILIDADES, GET_NIVELES_HABILIDAD,
@@ -282,10 +249,6 @@ const partidas   = ref([])
 const actividades = ref([])
 
 const titulo = computed(() => form.nombre?.trim() || plantilla.value?.nombre || 'Plantilla')
-
-function unidadMeta(tipoMetaId) {
-  return tiposMeta.value.find(t => t.id === tipoMetaId)?.unidadMedida || ''
-}
 
 // ── Carga ─────────────────────────────────────────────────────────────────────
 async function cargar() {
@@ -352,13 +315,7 @@ async function guardarCabecera() {
 }
 
 // ── Metas ─────────────────────────────────────────────────────────────────────
-function agregarMeta() {
-  metas.value.push({ id: null, tipoMetaId: '', valorSugerido: null, notas: '', orden: metas.value.length + 1 })
-}
-function eliminarMeta(i) {
-  metas.value.splice(i, 1)
-  guardarTodasMetas()
-}
+// El alta/borrado/edición de filas lo gestiona MetasEditor; aquí solo persistimos.
 
 async function guardarTodasMetas() {
   try {
