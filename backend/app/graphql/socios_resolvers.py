@@ -75,6 +75,7 @@ class SocioVistaType:
     direccion: Optional[str] = None
     localidad: Optional[str] = None
     codigo_postal: Optional[str] = None
+    entidad_geografica_id: Optional[uuid.UUID] = None
     agrupacion_id: Optional[uuid.UUID] = None
     provincia_id: Optional[uuid.UUID] = None
     pais_documento_id: Optional[uuid.UUID] = None
@@ -255,6 +256,7 @@ async def _construir_socios(
             telefono2=c.telefono2, fecha_nacimiento=c.fecha_nacimiento,
             tipo_documento=c.tipo_documento, numero_documento=c.numero_documento,
             direccion=c.direccion, localidad=c.localidad, codigo_postal=c.codigo_postal,
+            entidad_geografica_id=c.entidad_geografica_id,
             agrupacion_id=c.agrupacion_id, provincia_id=c.provincia_id,
             pais_documento_id=c.pais_documento_id, pais_domicilio_id=c.pais_domicilio_id,
             pais_nacimiento_id=c.pais_nacimiento_id, profesion=c.profesion,
