@@ -42,55 +42,49 @@
           </div>
         </div>
 
-        <!-- Datos personales -->
-        <div class="bg-white border border-slate-200 rounded-xl p-5">
-          <h2 class="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
-            <span class="w-1.5 h-5 rounded-full bg-indigo-500"></span>
-            Datos personales
-            <span v-if="!isCreate && contacto && !contacto.activo" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">inactivo</span>
-          </h2>
+        <!-- Persona jurídica: identificación propia (razón social/CIF) -->
+        <FormSection v-if="esPJ" title="Identificación" acento="purple">
+          <template #badge>
+            <span v-if="!isCreate && contacto && !contacto.activo" class="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">inactivo</span>
+          </template>
+          <div class="flex flex-col sm:flex-row gap-5">
+            <div class="shrink-0 flex flex-col items-center gap-2 sm:w-40">
+              <AvatarImg :src="fotoActual" :nombre="form.razonSocial" size="2xl" shape="carnet" />
+              <label v-if="editing" class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg cursor-pointer hover:bg-indigo-100 transition-colors">
+                Cambiar foto
+                <input type="file" accept="image/*" class="hidden" @change="onFotoChange" />
+              </label>
+            </div>
+            <div class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FieldText v-model="form.razonSocial" label="Razón social *" :editing="editing" />
+              <FieldText v-model="form.cif" label="CIF" :editing="editing" />
+              <FieldText class="sm:col-span-2" v-model="form.actividadPrincipal" label="Actividad principal" :editing="editing" />
+            </div>
+          </div>
+        </FormSection>
 
-          <div class="flex items-center gap-4 mb-4">
-            <AvatarImg :src="fotoActual" :nombre="form.nombre || form.razonSocial" :apellido="form.apellido1" size="2xl" :shape="esPJ ? 'carnet' : 'round'" />
+        <!-- Persona física: identificación estándar (idéntica a la ficha de socio) -->
+        <SeccionIdentificacion v-else :model-value="form" :edit-mode="editing"
+          :paises="paises" :sexo-options="sexoOptions" :tipo-documento-options="tipoDocumentoOptions">
+          <template #foto>
+            <AvatarImg :src="fotoActual" :nombre="form.nombre" :apellido="form.apellido1" size="2xl" shape="carnet" />
             <label v-if="editing" class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg cursor-pointer hover:bg-indigo-100 transition-colors">
               Cambiar foto
               <input type="file" accept="image/*" class="hidden" @change="onFotoChange" />
             </label>
-          </div>
+          </template>
+        </SeccionIdentificacion>
 
-          <!-- Condiciones DERIVADAS (no vinculaciones): se calculan de los registros -->
-          <div v-if="!isCreate && condiciones && (condiciones.esParticipante || condiciones.esDonante)" class="flex flex-wrap gap-2 mb-4">
-            <span v-if="condiciones.esParticipante" class="px-2 py-0.5 text-xs font-medium rounded-full bg-sky-100 text-sky-700" :title="`${condiciones.nParticipaciones} participación(es)`">Participante</span>
-            <span v-if="condiciones.esFirmante" class="px-2 py-0.5 text-xs font-medium rounded-full bg-teal-100 text-teal-700" :title="`${condiciones.nFirmas} firma(s)`">Firmante</span>
-            <span v-if="condiciones.esDonante" class="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-700" :title="`${condiciones.nDonaciones} donación(es)`">Donante</span>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-            <template v-if="esPJ">
-              <FieldText v-model="form.razonSocial" label="Razón social *" :editing="editing" />
-              <FieldText v-model="form.cif" label="CIF" :editing="editing" />
-              <FieldText v-model="form.actividadPrincipal" label="Actividad principal" :editing="editing" class="sm:col-span-2" />
-            </template>
-            <template v-else>
-              <FieldText v-model="form.nombre" label="Nombre *" :editing="editing" />
-              <FieldText v-model="form.apellido1" label="Primer apellido" :editing="editing" />
-              <FieldText v-model="form.apellido2" label="Segundo apellido" :editing="editing" />
-              <FieldSelect v-model="form.sexo" label="Sexo" :editing="editing" :options="sexoOptions" />
-              <FieldText v-model="form.fechaNacimiento" label="Fecha de nacimiento" type="date" :editing="editing" />
-              <FieldText v-model="form.profesion" label="Profesión" :editing="editing" />
-              <FieldSelect v-model="form.tipoDocumento" label="Tipo de documento" :editing="editing" :options="tipoDocumentoOptions" />
-              <FieldText v-model="form.numeroDocumento" label="Nº documento" :editing="editing" />
-            </template>
-
-            <FieldText v-model="form.email" label="Email" type="email" :editing="editing" />
-            <FieldText v-model="form.telefono" label="Teléfono" :editing="editing" />
-            <FieldText v-model="form.telefono2" label="Tel. alternativo" :editing="editing" />
-            <FieldText v-model="form.direccion" label="Dirección" :editing="editing" class="sm:col-span-2" />
-            <FieldText v-model="form.codigoPostal" label="Código postal" :editing="editing" />
-            <EntidadGeograficaSelect v-model="form.entidadGeograficaId" label="Ubicación (municipio / provincia)"
-              :editing="editing" :niveles="[2, 3]" class="sm:col-span-2" />
-          </div>
+        <!-- Condiciones derivadas (badges) -->
+        <div v-if="!isCreate && condiciones && (condiciones.esParticipante || condiciones.esDonante || condiciones.esFirmante)"
+          class="flex flex-wrap gap-2">
+          <span v-if="condiciones.esParticipante" class="px-2 py-0.5 text-xs font-medium rounded-full bg-sky-100 text-sky-700">Participante</span>
+          <span v-if="condiciones.esFirmante" class="px-2 py-0.5 text-xs font-medium rounded-full bg-teal-100 text-teal-700">Firmante</span>
+          <span v-if="condiciones.esDonante" class="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-700">Donante</span>
         </div>
+
+        <!-- Contacto: idéntico a la ficha de socio -->
+        <SeccionContacto :model-value="form" :edit-mode="editing" />
 
         <!-- Representante legal (solo persona jurídica) -->
         <div v-if="esPJ" class="bg-white border border-slate-200 rounded-xl p-5 mt-3">
@@ -188,8 +182,12 @@ import { graphqlClient } from '@/graphql/client.js'
 import { GET_CONTACTO, GET_CONTACTOS, CREAR_CONTACTO, ACTUALIZAR_CONTACTO, ELIMINAR_CONTACTO, GET_CONDICIONES_CONTACTO } from '@/graphql/queries/contactos.js'
 import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
 import FormActions from '@/components/common/FormActions.vue'
+import FormSection from '@/components/common/FormSection.vue'
 import FieldText from '@/components/common/form/FieldText.vue'
 import FieldSelect from '@/components/common/form/FieldSelect.vue'
+import SeccionIdentificacion from '@/components/miembros/secciones/SeccionIdentificacion.vue'
+import SeccionContacto from '@/components/miembros/secciones/SeccionContacto.vue'
+import { GET_PAISES } from '@/graphql/queries/catalogos.js'
 import { useAuthStore } from '@/stores/auth.js'
 
 // ── Componentes de campo: input en edición, texto en vista ──────────────────
@@ -228,10 +226,14 @@ const form = reactive({
   tipo: 'PERSONA_FISICA',
   nombre: '', apellido1: '', apellido2: '', razonSocial: '',
   tipoDocumento: '', numeroDocumento: '', sexo: '', fechaNacimiento: '', profesion: '',
+  paisNacimientoId: '', paisDocumentoId: '',
   cif: '', actividadPrincipal: '', representanteLegalId: '',
   email: '', telefono: '', telefono2: '', direccion: '', codigoPostal: '', localidad: '',
   provinciaId: '', entidadGeograficaId: null,
 })
+
+// Países para los selects de nacimiento/expedición de la sección de identificación.
+const paises = ref([])
 
 // La ubicación se captura con EntidadGeograficaSelect (municipio/provincia
 // unificados); ya no hace falta cargar el catálogo de provincias por separado.
@@ -454,5 +456,8 @@ function entrarEdicion() {
   if (esPJ.value) cargarPFParaRepresentante()
 }
 
-onMounted(() => { cargar() })
+onMounted(() => {
+  cargar()
+  graphqlClient.request(GET_PAISES).then(d => { paises.value = d.paises || [] }).catch(() => {})
+})
 </script>

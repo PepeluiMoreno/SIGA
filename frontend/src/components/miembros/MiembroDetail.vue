@@ -121,89 +121,22 @@
         <div v-show="tabActiva === 'datos'">
           <div class="space-y-3">
 
-            <section class="rounded-xl border border-slate-200 bg-white">
-              <header class="flex items-center gap-2 px-5 py-3 border-b border-slate-200">
-                <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
-                <h3 class="text-sm font-semibold text-slate-800">Identificación</h3>
-              </header>
-              <div class="p-5">
-                <!-- Foto (panel izquierdo) + fieldset de identificación (panel derecho) -->
-                <div class="flex flex-col sm:flex-row gap-5">
-
-                  <!-- Panel de la foto -->
-                  <div class="shrink-0 flex flex-col items-center gap-2 sm:w-40">
-                    <AvatarImg
-                      :src="miembro.fotoUrl"
-                      :nombre="miembro.nombre"
-                      :apellido="miembro.apellido1"
-                      size="2xl"
-                      shape="carnet"
-                    />
-                    <div v-if="puedeEditarFoto" class="flex flex-col items-center gap-1">
-                      <label class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg cursor-pointer hover:bg-indigo-100 transition-colors">
-                        <ArrowUpTrayIcon class="w-3.5 h-3.5" />
-                        Cambiar foto
-                        <input type="file" accept="image/*" class="hidden" @change="subirFoto" />
-                      </label>
-                      <p class="text-xs text-slate-400 text-center">JPG, PNG, WebP · máx. 5 MB</p>
-                    </div>
-                  </div>
-
-                  <!-- Panel del fieldset de identificación -->
-                  <div class="flex-1 min-w-0 space-y-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <FieldText v-model="miembro.nombre" label="Nombre *" :edit-mode="editMode || isCreateMode" />
-                      <FieldText v-model="miembro.apellido1" label="Primer apellido *" :edit-mode="editMode || isCreateMode" />
-                      <FieldText v-model="miembro.apellido2" label="Segundo apellido" :edit-mode="editMode || isCreateMode" />
-                      <FieldSelect v-model="miembro.sexo" label="Sexo" :edit-mode="editMode || isCreateMode" :options="sexoOptions" />
-                      <FieldText v-model="miembro.fechaNacimiento" label="Fecha de nacimiento" type="date" :edit-mode="editMode || isCreateMode" />
-                      <FieldSelect v-model="miembro.paisNacimientoId" label="País de nacimiento" :edit-mode="editMode || isCreateMode"
-                        :options="catalogos.paises" option-label="nombre" option-value="id" empty-label="Sin especificar" />
-                    </div>
-                    <div class="grid grid-cols-12 gap-4">
-                      <div class="col-span-3">
-                        <FieldSelect v-model="miembro.tipoDocumento" label="Tipo doc." :edit-mode="editMode || isCreateMode" :options="tipoDocumentoOptions" />
-                      </div>
-                      <div class="col-span-4">
-                        <FieldText v-model="miembro.numeroDocumento" label="Número" :edit-mode="editMode || isCreateMode" />
-                      </div>
-                      <div class="col-span-5">
-                        <FieldSelect v-model="miembro.paisDocumentoId" label="País expedición" :edit-mode="editMode || isCreateMode"
-                          :options="catalogos.paises" option-label="nombre" option-value="id" empty-label="Sin especificar" />
-                      </div>
-                    </div>
-                  </div>
-
+            <SeccionIdentificacion :model-value="miembro" :edit-mode="editMode || isCreateMode"
+              :paises="catalogos.paises" :sexo-options="sexoOptions" :tipo-documento-options="tipoDocumentoOptions">
+              <template #foto>
+                <AvatarImg :src="miembro.fotoUrl" :nombre="miembro.nombre" :apellido="miembro.apellido1" size="2xl" shape="carnet" />
+                <div v-if="puedeEditarFoto" class="flex flex-col items-center gap-1">
+                  <label class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg cursor-pointer hover:bg-indigo-100 transition-colors">
+                    <ArrowUpTrayIcon class="w-3.5 h-3.5" />
+                    Cambiar foto
+                    <input type="file" accept="image/*" class="hidden" @change="subirFoto" />
+                  </label>
+                  <p class="text-xs text-slate-400 text-center">JPG, PNG, WebP · máx. 5 MB</p>
                 </div>
-              </div>
-            </section>
+              </template>
+            </SeccionIdentificacion>
 
-            <section class="rounded-xl border border-slate-200 bg-white">
-              <header class="flex items-center gap-2 px-5 py-3 border-b border-slate-200">
-                <span class="w-2 h-2 rounded-full bg-sky-500 shrink-0"></span>
-                <h3 class="text-sm font-semibold text-slate-800">Contacto</h3>
-              </header>
-              <div class="p-5 space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <FieldText v-model="miembro.email" label="Email" type="email" :edit-mode="editMode || isCreateMode" />
-                  <FieldText v-model="miembro.telefono" label="Teléfono" :edit-mode="editMode || isCreateMode" />
-                  <FieldText v-model="miembro.telefono2" label="Tel. alternativo" :edit-mode="editMode || isCreateMode" />
-                </div>
-                <div class="grid grid-cols-12 gap-4">
-                  <div class="col-span-12 sm:col-span-8">
-                    <FieldText v-model="miembro.direccion" label="Dirección" :edit-mode="editMode || isCreateMode" />
-                  </div>
-                  <div class="col-span-6 sm:col-span-2">
-                    <FieldText v-model="miembro.codigoPostal" label="CP" :edit-mode="editMode || isCreateMode" />
-                  </div>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Ubicación (municipio / provincia)</label>
-                  <EntidadGeograficaSelect v-model="miembro.entidadGeograficaId"
-                    :editing="editMode || isCreateMode" :niveles="[2, 3]" />
-                </div>
-              </div>
-            </section>
+            <SeccionContacto :model-value="miembro" :edit-mode="editMode || isCreateMode" />
 
             <section class="rounded-xl border border-slate-200 bg-white">
               <header class="flex items-center gap-2 px-5 py-3 border-b border-slate-200">
@@ -1107,6 +1040,8 @@ import FieldTextarea from '@/components/common/form/FieldTextarea.vue'
 import FieldSelect from '@/components/common/form/FieldSelect.vue'
 import FieldCheckbox from '@/components/common/form/FieldCheckbox.vue'
 import FranjasDisponibilidad from '@/components/miembros/FranjasDisponibilidad.vue'
+import SeccionContacto from '@/components/miembros/secciones/SeccionContacto.vue'
+import SeccionIdentificacion from '@/components/miembros/secciones/SeccionIdentificacion.vue'
 import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
 import JustificantesGastoPanel from '@/components/common/JustificantesGastoPanel.vue'
 import { gql } from 'graphql-request'
