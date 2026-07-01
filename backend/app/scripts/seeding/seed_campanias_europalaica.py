@@ -27,7 +27,7 @@ CAMPANIAS = [
     # ── Recogida de firmas ──────────────────────────────────────────────────
     (
         "Por una escuela pública, laica y gratuita",
-        "Recogida de firmas", "En Curso",
+        "Recogida de firmas", "En curso",
         date(2019, 9, 1), None,
         "La escuela pública es de todos y todas",
         "Petición para que la asignatura de Religión sea retirada del currículo escolar obligatorio "
@@ -39,7 +39,7 @@ CAMPANIAS = [
     ),
     (
         "Retirada de los crucifijos de los espacios públicos",
-        "Recogida de firmas", "En Curso",
+        "Recogida de firmas", "En curso",
         date(2018, 3, 1), None,
         "Los juzgados, comisarías y hospitales son de todos",
         "Petición para que se retiren los símbolos religiosos de edificios públicos: "
@@ -51,7 +51,7 @@ CAMPANIAS = [
     ),
     (
         "Denuncia del Concordato entre España y la Santa Sede",
-        "Recogida de firmas", "En Curso",
+        "Recogida de firmas", "En curso",
         date(2017, 1, 15), None,
         "Un Estado laico no puede tener Concordato",
         "El Concordato de 1979 otorga privilegios y exenciones a la Iglesia Católica "
@@ -63,7 +63,7 @@ CAMPANIAS = [
     ),
     (
         "Fin a las exenciones fiscales de la Iglesia Católica",
-        "Recogida de firmas", "En Curso",
+        "Recogida de firmas", "En curso",
         date(2020, 2, 1), None,
         "Que cada entidad tribute según la ley",
         "La Iglesia Católica disfruta de exenciones fiscales en IBI, IVA e IRPF que suponen "
@@ -75,7 +75,7 @@ CAMPANIAS = [
     ),
     (
         "Recuperación de bienes inmatriculados por la Iglesia",
-        "Recogida de firmas", "En Curso",
+        "Recogida de firmas", "En curso",
         date(2021, 6, 1), None,
         "Lo que es del pueblo, al pueblo",
         "La Iglesia Católica inmatriculó más de 34.000 bienes entre 1998 y 2015 "
@@ -100,7 +100,7 @@ CAMPANIAS = [
     # ── Acción legal/institucional ───────────────────────────────────────────
     (
         "Ley Orgánica de Libertad de Conciencia",
-        "Acción legal/institucional", "En Curso",
+        "Acción legal/institucional", "En curso",
         date(2016, 11, 1), None,
         "Un marco legal para el siglo XXI",
         "España carece de una ley integral de libertad de conciencia. Impulsamos una propuesta "
@@ -125,7 +125,7 @@ CAMPANIAS = [
     ),
     (
         "Neutralidad religiosa en los actos del Estado",
-        "Acción legal/institucional", "En Curso",
+        "Acción legal/institucional", "En curso",
         date(2019, 5, 1), None,
         "El Estado no tiene religión",
         "Denuncia de la participación institucional de miembros del Gobierno y Jefatura del Estado "
@@ -139,7 +139,7 @@ CAMPANIAS = [
     # ── Sensibilización ─────────────────────────────────────────────────────
     (
         "Por la separación efectiva Iglesia-Estado",
-        "Sensibilización", "En Curso",
+        "Sensibilización", "En curso",
         date(2015, 9, 1), None,
         "Laicidad: libertad para todas las personas",
         "Campaña de concienciación sobre la necesidad de completar la separación entre "
@@ -151,7 +151,7 @@ CAMPANIAS = [
     ),
     (
         "Laicidad en los medios de comunicación públicos",
-        "Sensibilización", "En Curso",
+        "Sensibilización", "En curso",
         date(2020, 9, 1), None,
         "RTVE es de todos, no solo de los creyentes",
         "RTVE emite programación religiosa con fondos públicos en horarios de máxima audiencia. "
@@ -163,7 +163,7 @@ CAMPANIAS = [
     ),
     (
         "Educación laica para una ciudadanía libre",
-        "Sensibilización", "En Curso",
+        "Sensibilización", "En curso",
         date(2017, 9, 1), None,
         "Educar en libertad, no en dogmas",
         "Campaña divulgativa sobre la importancia de la educación laica y el pensamiento crítico "
@@ -215,7 +215,7 @@ CAMPANIAS = [
     # ── Campaña formativa ───────────────────────────────────────────────────
     (
         "Curso: Laicismo y derechos fundamentales",
-        "Campaña formativa", "En Curso",
+        "Campaña formativa", "En curso",
         date(2023, 1, 1), None,
         "Conoce tus derechos, defiende la laicidad",
         "Itinerario formativo online sobre el marco jurídico de la libertad de conciencia "
@@ -241,7 +241,7 @@ CAMPANIAS = [
     # ── Captación de socios ─────────────────────────────────────────────────
     (
         "Hazte socia/o de Europa Laica",
-        "Captación de socios", "En Curso",
+        "Captación de socios", "En curso",
         date(2015, 1, 1), None,
         "Tu cuota hace posible la laicidad",
         "Campaña permanente de captación de nuevas personas socias para financiar "
@@ -267,7 +267,7 @@ CAMPANIAS = [
     ),
     (
         "Redes sociales por la laicidad",
-        "Comunicación mediática", "En Curso",
+        "Comunicación mediática", "En curso",
         date(2019, 3, 1), None,
         "#LaicidadYa en todas las redes",
         "Estrategia de presencia y comunicación de Europa Laica en redes sociales: "
@@ -336,12 +336,14 @@ async def seed(session: AsyncSession):
                     id, nombre, lema, descripcion_corta, objetivo_principal,
                     tipo_campania_id, estado_id,
                     fecha_inicio_plan, fecha_fin_plan,
-                    url_externa, agrupacion_id
+                    url_externa, agrupacion_id,
+                    notificacion_enviada, es_recurrente
                 ) VALUES (
                     :id, :nombre, :lema, :descripcion_corta, :objetivo_principal,
                     :tipo_id, :estado_id,
                     :fecha_inicio, :fecha_fin,
-                    :url_externa, :agrupacion_id
+                    :url_externa, :agrupacion_id,
+                    false, false
                 )
             """),
             {

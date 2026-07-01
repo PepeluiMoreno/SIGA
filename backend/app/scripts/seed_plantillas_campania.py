@@ -1,5 +1,12 @@
 """Seeding de plantillas de campaña realistas para los 7 tipos de campaña.
 
+⚠️ INCOMPLETO: la lista PLANTILLAS usa TIPOS/METAS/HAB/NIV a nivel de MÓDULO, que se
+evalúan al importar (antes de resolver los UUIDs por nombre en seed()), por lo que
+peta con KeyError. Para arreglarlo hay que construir PLANTILLAS DENTRO de seed(), tras
+llamar a _resolver_catalogos(session). Los catálogos ya se resuelven por nombre (no por
+UUID fijo) — solo falta mover la construcción de datos. Mientras tanto, las plantillas
+se crean por UI (diseñándolas o vía "guardar campaña como plantilla").
+
 Ejecutar con:
     docker exec siga_dev_backend python -m app.scripts.seed_plantillas_campania
 """
@@ -18,56 +25,59 @@ from app.modules.actividades.models.campana import (
 
 # ── UUIDs de catálogos (de la BD) ─────────────────────────────────────────────
 
-TIPOS = {
-    'captacion_socios':       uuid.UUID('1cc7db93-a0aa-42ed-9821-117f1fbbb1e2'),
-    'recogida_firmas':        uuid.UUID('5ead1968-7c4a-466e-bb27-9df806200738'),
-    'formativa':              uuid.UUID('621cebb1-29be-492f-b9e3-711ce8e1ee2e'),
-    'sensibilizacion':        uuid.UUID('7453a376-72ae-4fd8-9bfa-ff0bd8d47722'),
-    'comunicacion_mediatica': uuid.UUID('b003b47f-7902-4fa0-9c35-055ec79f04db'),
-    'movilizacion':           uuid.UUID('b45c344b-305d-4abe-b488-07f9e56b803e'),
-    'accion_legal':           uuid.UUID('ede8802e-4b24-4811-9504-293dd75e58c5'),
+# Resolución de catálogos POR NOMBRE (no por UUID fijo). Cada clave del seed se mapea
+# al nombre real del catálogo; los UUIDs se resuelven de la BD al ejecutar. Así el seed
+# no depende de UUIDs concretos (que cambian entre siembras). Se rellenan en seed().
+TIPOS: dict = {}
+METAS: dict = {}
+HAB: dict = {}
+NIV: dict = {}
+
+# clave del seed → nombre exacto del catálogo en BD.
+_TIPOS_NOMBRE = {
+    'captacion_socios': 'Captación de socios', 'recogida_firmas': 'Recogida de firmas',
+    'formativa': 'Campaña formativa', 'sensibilizacion': 'Sensibilización',
+    'comunicacion_mediatica': 'Comunicación mediática', 'movilizacion': 'Movilización',
+    'accion_legal': 'Acción legal/institucional',
+}
+_METAS_NOMBRE = {
+    'recaudacion': 'Recaudación', 'participantes': 'Participantes', 'firmas': 'Firmas',
+    'visitas': 'Visitas', 'menciones': 'Menciones',
+}
+_HAB_NOMBRE = {
+    'firmas_presencial': 'Recogida de firmas presencial', 'rrss': 'Redes sociales / Community mgmt',
+    'prensa': 'Relaciones con medios de prensa', 'fotovideo': 'Fotografía y vídeo',
+    'dinamizacion': 'Dinamización de grupos', 'relac_institucional': 'Relaciones institucionales',
+    'docencia': 'Docencia y formación', 'web': 'Desarrollo web', 'seo': 'SEO y marketing digital',
+    'derecho_admin': 'Derecho administrativo', 'materiales_didact': 'Elaboración de materiales didácticos',
+    'redaccion': 'Redacción y comunicación escrita', 'soporte_inf': 'Soporte informático',
+    'gestion_proyectos': 'Gestión de proyectos', 'fundraising': 'Fundraising / captación de fondos',
+    'diseno': 'Diseño gráfico y maquetación', 'oratoria': 'Oratoria y presentaciones en público',
+    'atencion_publico': 'Atención al público', 'difusion': 'Difusión de materiales',
+    'coord_voluntarios': 'Coordinación de voluntarios', 'eventos': 'Organización de eventos',
+    'adm': 'Gestión administrativa', 'derecho': 'Derecho general',
+}
+_NIV_NOMBRE = {
+    'principiante': 'Principiante', 'suficiente': 'Suficiente', 'bueno': 'Bueno', 'experto': 'Experto/a',
 }
 
-METAS = {
-    'recaudacion':   uuid.UUID('755d32a4-f30a-4f80-a2cf-93bcfe73b519'),
-    'participantes': uuid.UUID('50d830d2-6dbe-498f-931e-831ef6b506ac'),
-    'firmas':        uuid.UUID('446e2cf9-4cf1-48cf-b468-4657525d8ef2'),
-    'visitas':       uuid.UUID('2238b8bc-4a15-4f3e-bb3b-c21eaee58a3e'),
-    'menciones':     uuid.UUID('1e2b4a98-00e7-4b74-a49f-d07b8043721b'),
-}
 
-HAB = {
-    'firmas_presencial':   uuid.UUID('09b00aa9-cb13-451e-94d3-4164ffe9a885'),
-    'rrss':                uuid.UUID('0cacf7e9-3cba-4c82-8e5a-24b49e2e727a'),
-    'prensa':              uuid.UUID('1cab2683-11f8-44ca-898c-ebb780990e0c'),
-    'fotovideo':           uuid.UUID('31cf2b18-33a1-4f99-8374-69e22826f82b'),
-    'dinamizacion':        uuid.UUID('335cb6b2-d99c-4d22-a3f8-faf304823c14'),
-    'relac_institucional': uuid.UUID('550bc5b9-e421-4a29-9d32-76bf17ff3f5d'),
-    'docencia':            uuid.UUID('556fd73e-2032-4f9e-947d-3f79dfe438eb'),
-    'web':                 uuid.UUID('55a42e2d-f478-4fe0-a5ef-235af455db07'),
-    'seo':                 uuid.UUID('792264e0-25be-4412-91f7-62fde8887c87'),
-    'derecho_admin':       uuid.UUID('848df897-4047-4dd8-b630-aa5ee45efa41'),
-    'materiales_didact':   uuid.UUID('8ecf09ee-98c1-4104-9c85-21495876d9e1'),
-    'redaccion':           uuid.UUID('98b9dc74-baf4-4f6c-9faa-2441860916d7'),
-    'soporte_inf':         uuid.UUID('a08d22b6-2d89-4a76-9383-9f71e3557534'),
-    'gestion_proyectos':   uuid.UUID('a1b0a5da-f42a-431a-83c6-5dcc33532fde'),
-    'fundraising':         uuid.UUID('afbb2742-7a93-4c60-bdbe-47dfef0bc0c2'),
-    'diseno':              uuid.UUID('bbafeebc-ef16-4851-aaa7-f656d9740926'),
-    'oratoria':            uuid.UUID('c49fe5e5-f111-40b6-a993-26ec71a20223'),
-    'atencion_publico':    uuid.UUID('e79243be-e54f-4c6f-b44d-b802ffcf9e91'),
-    'difusion':            uuid.UUID('f5f19b0b-3906-4d67-811e-5769c65c8041'),
-    'coord_voluntarios':   uuid.UUID('6eab10db-d10a-413d-b13a-fc009e4a49b3'),
-    'eventos':             uuid.UUID('75fe33ed-0733-474d-aa1b-ce9905aa6067'),
-    'adm':                 uuid.UUID('65562471-e369-4026-b90e-11cf3ce84551'),
-    'derecho':             uuid.UUID('606ec9a5-46db-4626-8ec0-0fc23bfa68d5'),
-}
-
-NIV = {
-    'principiante': uuid.UUID('cb45919d-70f6-45a5-8cc9-59fde540d18c'),
-    'suficiente':   uuid.UUID('0446448d-0820-4cb1-add2-62bd90971597'),
-    'bueno':        uuid.UUID('5fc60eb8-1043-447b-89a1-e2ac1bbc0a69'),
-    'experto':      uuid.UUID('64053c46-ff37-46c3-8564-b50cc0806759'),
-}
+async def _resolver_catalogos(session):
+    """Rellena TIPOS/METAS/HAB/NIV resolviendo cada nombre a su UUID en la BD."""
+    from sqlalchemy import text
+    async def _map(tabla, claves_nombre):
+        rows = dict((n, i) for (i, n) in (await session.execute(text(f"SELECT id, nombre FROM {tabla}"))).all())
+        out = {}
+        for clave, nombre in claves_nombre.items():
+            if nombre in rows:
+                out[clave] = rows[nombre]
+            else:
+                print(f"  ⚠ {tabla}: no existe '{nombre}' (clave {clave}); se omitirá")
+        return out
+    TIPOS.update(await _map('tipos_campania', _TIPOS_NOMBRE))
+    METAS.update(await _map('tipos_meta_campania', _METAS_NOMBRE))
+    HAB.update(await _map('habilidades', _HAB_NOMBRE))
+    NIV.update(await _map('niveles_habilidad', _NIV_NOMBRE))
 
 
 PLANTILLAS = [
