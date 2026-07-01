@@ -43,9 +43,10 @@ class FirmaPublicaIn(BaseModel):
     email: str = Field(min_length=3, max_length=200)
     codigo_postal: Optional[str] = Field(default=None, max_length=20)
     pais_id: Optional[uuid.UUID] = None
-    # NIF (DNI/NIE) OBLIGATORIO: es la identidad por la que se desduplica el
-    # firmante. Se valida la letra de control server-side.
-    documento: str = Field(min_length=1, max_length=255)
+    # NIF (DNI/NIE): identidad fuerte por la que se desduplica el firmante. Es
+    # opcional para admitir firmantes extranjeros sin NIF (dedup blanda por
+    # nombre). Si se aporta, se valida la letra de control server-side.
+    documento: Optional[str] = Field(default=None, max_length=255)
     tipo_documento: Optional[str] = Field(default="DNI", max_length=20)
     acepta_terminos: bool = False
     acepta_comunicaciones: bool = False
@@ -82,8 +83,8 @@ async def registrar_firma(
         raise HTTPException(status_code=422, detail="Debes aceptar los términos para firmar.")
     if datos.actividad_id is None and datos.campania_id is None:
         raise HTTPException(status_code=422, detail="Falta la actividad de recogida de firmas.")
-    # NIF válido (DNI/NIE): identidad por la que se desduplica el firmante.
-    if not validar_nif(datos.documento):
+    # Si aporta NIF, debe ser válido (DNI/NIE). Sin NIF se admite (extranjero).
+    if datos.documento and datos.documento.strip() and not validar_nif(datos.documento):
         raise HTTPException(status_code=422, detail="El NIF (DNI/NIE) no es válido.")
 
     # 3. Rate-limit (segunda barrera tras el captcha).

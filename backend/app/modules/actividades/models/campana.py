@@ -82,6 +82,28 @@ class MetaCampania(BaseModel):
         return f"<MetaCampania(tipo='{self.tipo_meta_id}', plan={self.valor_planificado})>"
 
 
+class MetaActividad(BaseModel):
+    """Meta concreta de una actividad (espejo de MetaCampania, reutiliza TipoMeta).
+
+    Permite que una actividad tenga objetivos cuantitativos propios (p. ej. una
+    recogida de firmas web con meta en nº de firmas)."""
+    __tablename__ = 'metas_actividad'
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    actividad_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('actividades.id', ondelete='CASCADE'), nullable=False, index=True)
+    tipo_meta_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('tipos_meta_campania.id'), nullable=False, index=True)
+    valor_planificado: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 2), nullable=True)
+    valor_real: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 2), nullable=True)
+    notas: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    orden: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    actividad = relationship('Actividad', back_populates='metas', lazy='selectin')
+    tipo_meta = relationship('TipoMeta', lazy='selectin')
+
+    def __repr__(self) -> str:
+        return f"<MetaActividad(tipo='{self.tipo_meta_id}', plan={self.valor_planificado})>"
+
+
 class CanalDifusionCampania(BaseModel):
     """Canal de difusión elegido para una campaña."""
     __tablename__ = 'canales_difusion_campania'
@@ -311,7 +333,12 @@ class FirmaCampania(BaseModel):
         Uuid, ForeignKey('participaciones.id', ondelete='CASCADE'),
         nullable=False, unique=True, index=True
     )
-    campania_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('campanias.id'), nullable=False, index=True)
+    # La recogida es una ACTIVIDAD (online). La firma se ancla a ella; la
+    # campaña queda denormalizada (nullable) desde `actividad.campania_id`.
+    actividad_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('actividades.id'), nullable=True, index=True
+    )
+    campania_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('campanias.id'), nullable=True, index=True)
     contacto_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('contactos.id'), nullable=False, index=True)
 
     fecha_firma: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False, index=True)
@@ -321,6 +348,7 @@ class FirmaCampania(BaseModel):
     fecha_verificacion: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     ip_origen: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
 
+    actividad = relationship('Actividad', foreign_keys=[actividad_id], lazy='selectin')
     campania = relationship('Campania', back_populates='firmas', lazy='selectin')
     contacto = relationship('Contacto', back_populates='firmas_campania', foreign_keys=[contacto_id], lazy='selectin')
     participacion = relationship('Participacion', back_populates='firma_campania', foreign_keys=[participacion_id], lazy='selectin')

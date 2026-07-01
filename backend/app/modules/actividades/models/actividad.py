@@ -175,6 +175,7 @@ class Actividad(BaseModel):
         foreign_keys='Tarea.actividad_id', lazy='selectin',
     )
     asistencias = relationship('AsistenciaActividad', back_populates='actividad', lazy='selectin')
+    metas = relationship('MetaActividad', back_populates='actividad', lazy='selectin', cascade='all, delete-orphan')
     partidas = relationship('PartidaPresupuestoActividad', back_populates='actividad', lazy='selectin', cascade='all, delete-orphan')
     registros_trabajo = relationship('RegistroTrabajoActividad', back_populates='actividad', lazy='selectin', cascade='all, delete-orphan')
     documentos = relationship('DocumentoActividad', back_populates='actividad', lazy='selectin', cascade='all, delete-orphan')

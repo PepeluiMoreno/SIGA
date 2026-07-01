@@ -109,10 +109,10 @@ class FirmaPublicaService:
     ) -> ResultadoRegistro:
         email = email.strip().lower()
 
-        # La firma se pide sobre una ACTIVIDAD de recogida de firmas. De momento
-        # el satélite sigue anclado a la campaña de esa actividad (interim, sin
-        # migración; ver docs/REDISENO_FIRMAS_ACTIVIDAD.md). Se mantiene el
-        # anclaje directo por campania_id por compatibilidad.
+        # La firma se pide sobre una ACTIVIDAD de recogida de firmas online y se
+        # ancla a ella. La campaña queda como contexto denormalizado (nullable).
+        # Se admite el anclaje directo por campania_id (compatibilidad).
+        actividad = None
         if actividad_id is not None:
             actividad = await self._actividad_firmas_activa(actividad_id)
             if actividad is None:
@@ -122,17 +122,13 @@ class FirmaPublicaService:
                 )
             campania_id = actividad.campania_id
 
-        if campania_id is None:
+        campania = await self._campania_abierta(campania_id) if campania_id is not None else None
+
+        # Debe haber un ancla válido: actividad activa o campaña abierta.
+        if actividad is None and campania is None:
             return ResultadoRegistro(
                 EstadoRegistro.CAMPANIA_NO_DISPONIBLE,
                 "No se ha indicado una actividad de firmas válida.",
-            )
-
-        campania = await self._campania_abierta(campania_id)
-        if campania is None:
-            return ResultadoRegistro(
-                EstadoRegistro.CAMPANIA_NO_DISPONIBLE,
-                "La campaña no existe o ya no admite firmas.",
             )
 
         contacto = await self._upsert_contacto(
@@ -146,28 +142,38 @@ class FirmaPublicaService:
             acepta_comunicaciones=acepta_comunicaciones,
         )
 
-        # Todo firmante es un Contacto con la vinculación FIRMANTE (idempotente).
-        # Commit aquí para que contacto + vinculación persistan en TODAS las rutas
+        # Firmar NO crea vinculación: "firmante/participante" es una condición
+        # DERIVADA de tener firmas (Participacion FIRMA). El consentimiento de
+        # comunicaciones, si lo dio, es de la persona → se registra en
+        # proteccion_datos (modelo Consentimiento), no como satélite ni vínculo.
+        if acepta_comunicaciones:
+            await self._registrar_consentimiento_comunicaciones(contacto, ip_origen)
+        # Commit para que contacto (+ consentimiento) persistan en TODAS las rutas
         # (incluidas las de "ya firmada", que retornan sin el commit final).
-        await self._asegurar_vinculacion_firmante(contacto)
         await self.session.commit()
 
-        firma = await self._firma_existente(campania.id, contacto.id)
+        titulo = actividad.nombre if actividad is not None else campania.nombre
+
+        firma = await self._firma_existente(
+            actividad.id if actividad is not None else None,
+            campania.id if campania is not None else None,
+            contacto.id,
+        )
         if firma is not None:
             if firma.verificado:
                 return ResultadoRegistro(
                     EstadoRegistro.YA_VERIFICADA,
-                    "Esta dirección ya ha firmado y verificado esta campaña.",
+                    "Esta dirección ya ha firmado y verificado esta recogida.",
                 )
             # Reenviamos el correo de verificación de la firma pendiente.
-            await self._enviar_email_verificacion(contacto, campania, firma)
+            await self._enviar_email_verificacion(contacto, titulo, firma)
             return ResultadoRegistro(
                 EstadoRegistro.YA_FIRMADA_PENDIENTE,
                 "Ya había una firma pendiente. Te hemos reenviado el correo de confirmación.",
             )
 
-        # Modelo CRM: la firma es el satélite de una Participacion (tipo FIRMA)
-        # del Contacto que firma.
+        # La firma es el satélite de una Participacion (tipo FIRMA). "Firmante"
+        # es una condición derivada de tener firmas; no se crea vinculación.
         participacion = Participacion(
             contacto_id=contacto.id, tipo="FIRMA", estado="registrada",
         )
@@ -176,7 +182,8 @@ class FirmaPublicaService:
 
         firma = FirmaCampania(
             participacion_id=participacion.id,
-            campania_id=campania.id,
+            actividad_id=actividad.id if actividad is not None else None,
+            campania_id=campania.id if campania is not None else campania_id,
             contacto_id=contacto.id,
             acepta_terminos=True,
             verificado=False,
@@ -185,7 +192,7 @@ class FirmaPublicaService:
         self.session.add(firma)
         await self.session.flush()  # obtener firma.id antes de firmar el token
 
-        await self._enviar_email_verificacion(contacto, campania, firma)
+        await self._enviar_email_verificacion(contacto, titulo, firma)
         await self.session.commit()
 
         return ResultadoRegistro(
@@ -247,21 +254,18 @@ class FirmaPublicaService:
     async def listar_actividades_firmas_activas(self) -> list:
         """Actividades de recogida de firmas web activas, para el desplegable.
 
-        Criterio (interim, sin migración): la actividad es ONLINE, está iniciada
-        y no cerrada, y su campaña incluye en su métrica la recogida de firmas
-        (una MetaCampania cuyo TipoMeta.unidad_medida == "firmas"). Cuando la
-        meta se mueva a la actividad (Fase 1), solo cambia el join.
-        """
+        Criterio: la actividad es ONLINE, está iniciada y no cerrada, y tiene una
+        META propia en firmas (una MetaActividad cuyo TipoMeta.unidad_medida ==
+        "firmas"). La meta vive ya en la actividad (Fase 1)."""
         from sqlalchemy import func
 
         from app.modules.actividades.models.actividad import Actividad
-        from app.modules.actividades.models.campana import MetaCampania, TipoMeta
+        from app.modules.actividades.models.campana import MetaActividad, TipoMeta
 
         stmt = (
             select(Actividad)
-            .join(Campania, Actividad.campania_id == Campania.id)
-            .join(MetaCampania, MetaCampania.campania_id == Campania.id)
-            .join(TipoMeta, MetaCampania.tipo_meta_id == TipoMeta.id)
+            .join(MetaActividad, MetaActividad.actividad_id == Actividad.id)
+            .join(TipoMeta, MetaActividad.tipo_meta_id == TipoMeta.id)
             .where(
                 Actividad.eliminado.is_(False),
                 Actividad.es_online.is_(True),
@@ -329,28 +333,33 @@ class FirmaPublicaService:
     ) -> Contacto:
         """Crea o actualiza el Contacto (persona física) que firma.
 
-        En el modelo CRM, un firmante es un Contacto PF identificado por su
-        **NIF** (DNI/NIE). La desduplicación es por NIF normalizado: si el
-        contacto ya existe (por firmas previas o por ser socio/voluntario), se
-        reutiliza y solo se corrigen datos básicos. Así una misma persona no se
-        duplica aunque firme con emails distintos.
+        Desduplicación por identidad:
+        - **Con NIF (DNI/NIE)**: clave fuerte → se busca por `numero_documento`
+          normalizado. Una misma persona no se duplica aunque firme con emails
+          distintos, y si ya existe (p. ej. socio) se reutiliza.
+        - **Sin NIF (extranjero)**: clave blanda por **nombre+apellidos
+          normalizados**; si no hay coincidencia clara, NO se fusiona (se crea
+          aparte) para no unir por error a dos personas distintas.
 
-        NOTA (pendiente RGPD): `acepta_comunicaciones` no tiene aún campo en
-        Contacto; el consentimiento de comunicaciones debe registrarse en el
-        módulo proteccion_datos cuando se reconduzca a Contacto. De momento no
-        se persiste aquí para no inventar esquema.
+        El consentimiento de comunicaciones NO se persiste aquí: es de la persona
+        y se registra en proteccion_datos (ver `_registrar_consentimiento_*`).
         """
         from app.core.documento import normalizar_documento
 
         nif = normalizar_documento(documento)
 
-        existente = await self.session.scalar(
-            select(Contacto).where(
-                Contacto.numero_documento == nif,
-                Contacto.tipo == "PERSONA_FISICA",
-                Contacto.eliminado.is_(False),
+        if nif:
+            existente = await self.session.scalar(
+                select(Contacto).where(
+                    Contacto.numero_documento == nif,
+                    Contacto.tipo == "PERSONA_FISICA",
+                    Contacto.eliminado.is_(False),
+                )
             )
-        )
+        else:
+            # Extranjero sin NIF: dedup blanda por nombre+apellidos normalizados.
+            existente = await self._buscar_por_nombre(nombre, apellidos)
+
         if existente is not None:
             # Actualizamos datos básicos (corrección de erratas). El NIF es la
             # identidad, no se toca; el email se refresca al último usado.
@@ -374,74 +383,121 @@ class FirmaPublicaService:
             email=email,
             codigo_postal=codigo_postal.strip() if codigo_postal else None,
             pais_domicilio_id=pais_id,
-            numero_documento=nif,
-            tipo_documento=tipo_documento,
+            numero_documento=nif or None,
+            tipo_documento=tipo_documento if nif else None,
         )
         self.session.add(contacto)
         await self.session.flush()
         return contacto
 
-    async def _asegurar_vinculacion_firmante(self, contacto: Contacto) -> None:
-        """Garantiza que el Contacto tenga una vinculación FIRMANTE activa.
+    async def _buscar_por_nombre(self, nombre: str, apellidos: str) -> Optional[Contacto]:
+        """Dedup blanda para firmantes SIN NIF (extranjeros): coincidencia exacta
+        de nombre+apellidos (normalizado a minúsculas) entre contactos PF que
+        tampoco tienen NIF. No fusiona con contactos que sí tienen NIF."""
+        from sqlalchemy import func
 
-        Idempotente: si ya existe (activa) no crea otra. El tipo FIRMANTE no
-        lleva satélite (requiere_satelite=False). El historial de qué firmó
-        cada firmante son sus FirmaCampania (una por campaña firmada).
-        """
-        from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
-        from app.modules.membresia.models.vinculacion import Vinculacion
-
-        tipo_id = await self.session.scalar(
-            select(TipoVinculacion.id).where(TipoVinculacion.codigo == "FIRMANTE")
+        n = (nombre or "").strip().lower()
+        a = (apellidos or "").strip().lower()
+        if not n or not a:
+            return None
+        return await self.session.scalar(
+            select(Contacto)
+            .where(
+                func.lower(Contacto.nombre) == n,
+                func.lower(Contacto.apellido1) == a,
+                Contacto.tipo == "PERSONA_FISICA",
+                Contacto.numero_documento.is_(None),
+                Contacto.eliminado.is_(False),
+            )
+            .limit(1)
         )
-        if tipo_id is None:
-            logger.error("No existe TipoVinculacion FIRMANTE; ejecuta el seed de vinculaciones.")
+
+    async def _registrar_consentimiento_comunicaciones(
+        self, contacto: Contacto, ip_origen: Optional[str]
+    ) -> None:
+        """Registra el consentimiento de comunicaciones del firmante (art. 7 RGPD).
+
+        Reutiliza el modelo `Consentimiento` de proteccion_datos, enlazado a la
+        cláusula vigente `COMUNICACIONES_INFORMATIVAS`. El consentimiento es de la
+        PERSONA (no del rol). Si no hay cláusula vigente, no rompe el alta: deja
+        aviso en log (la firma se registra igual).
+        """
+        from app.modules.proteccion_datos.models.clausula import ClausulaInformativa
+        from app.modules.proteccion_datos.models.consentimiento import Consentimiento
+
+        clausula_id = await self.session.scalar(
+            select(ClausulaInformativa.id).where(
+                ClausulaInformativa.codigo == "COMUNICACIONES_INFORMATIVAS",
+                ClausulaInformativa.vigente.is_(True),
+                ClausulaInformativa.eliminado.is_(False),
+            )
+        )
+        if clausula_id is None:
+            logger.warning(
+                "Sin cláusula COMUNICACIONES_INFORMATIVAS vigente; no se registra "
+                "el consentimiento de comunicaciones del firmante %s.", contacto.id
+            )
             return
 
+        # Idempotencia razonable: si ya hay un consentimiento OTORGADO de esa
+        # cláusula para el contacto, no duplicamos.
         ya = await self.session.scalar(
-            select(Vinculacion.id).where(
-                Vinculacion.contacto_id == contacto.id,
-                Vinculacion.tipo_vinculacion_id == tipo_id,
-                Vinculacion.estado == "activa",
-                Vinculacion.eliminado.is_(False),
+            select(Consentimiento.id).where(
+                Consentimiento.miembro_id == contacto.id,
+                Consentimiento.clausula_id == clausula_id,
+                Consentimiento.estado == "OTORGADO",
+                Consentimiento.eliminado.is_(False),
             )
         )
         if ya is not None:
             return
 
         self.session.add(
-            Vinculacion(
-                contacto_id=contacto.id,
-                tipo_vinculacion_id=tipo_id,
-                fecha_inicio=datetime.now(timezone.utc).date(),
-                estado="activa",
+            Consentimiento(
+                miembro_id=contacto.id,
+                clausula_id=clausula_id,
+                estado="OTORGADO",
+                fecha_otorgamiento=datetime.now(timezone.utc).replace(tzinfo=None),
+                canal="WEB",
+                prueba=(f"ip={ip_origen}" if ip_origen else None),
             )
         )
         await self.session.flush()
 
     async def _firma_existente(
-        self, campania_id: uuid.UUID, contacto_id: uuid.UUID
+        self,
+        actividad_id: Optional[uuid.UUID],
+        campania_id: Optional[uuid.UUID],
+        contacto_id: uuid.UUID,
     ) -> Optional[FirmaCampania]:
+        """Dedup de firma por (ancla, contacto): por actividad si la hay, si no
+        por campaña. Evita firmas duplicadas de la misma persona a la misma
+        recogida."""
+        cond = (
+            FirmaCampania.actividad_id == actividad_id
+            if actividad_id is not None
+            else FirmaCampania.campania_id == campania_id
+        )
         return await self.session.scalar(
             select(FirmaCampania).where(
-                FirmaCampania.campania_id == campania_id,
+                cond,
                 FirmaCampania.contacto_id == contacto_id,
                 FirmaCampania.eliminado.is_(False),
             )
         )
 
     async def _enviar_email_verificacion(
-        self, contacto: Contacto, campania: Campania, firma: FirmaCampania
+        self, contacto: Contacto, titulo: str, firma: FirmaCampania
     ) -> None:
         settings = get_settings()
         base_api = (settings.siga_api_url or settings.app_url or "").rstrip("/")
         token = _firmar_token(firma.id)
         enlace = f"{base_api}/api/publico/firmas/verificar?token={token}"
 
-        asunto = f"Confirma tu firma — {campania.nombre}"
+        asunto = f"Confirma tu firma — {titulo}"
         cuerpo_html = (
             f"<p>Hola {contacto.nombre},</p>"
-            f"<p>Has firmado la campaña <strong>{campania.nombre}</strong>. "
+            f"<p>Has firmado <strong>{titulo}</strong>. "
             f"Para que tu firma cuente, confírmala pulsando aquí:</p>"
             f'<p><a href="{enlace}">Confirmar mi firma</a></p>'
             f"<p>Si no has sido tú, ignora este mensaje y no se registrará nada.</p>"
@@ -449,7 +505,7 @@ class FirmaPublicaService:
         )
         cuerpo_texto = (
             f"Hola {contacto.nombre},\n\n"
-            f"Has firmado la campaña \"{campania.nombre}\". Confirma tu firma abriendo este enlace:\n"
+            f"Has firmado \"{titulo}\". Confirma tu firma abriendo este enlace:\n"
             f"{enlace}\n\n"
             f"Si no has sido tú, ignora este mensaje. El enlace caduca en {_TOKEN_HORAS_VALIDEZ} horas."
         )
