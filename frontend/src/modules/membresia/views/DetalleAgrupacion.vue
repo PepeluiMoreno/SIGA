@@ -34,18 +34,34 @@
     <!-- ══ ALTA DE NUEVA UNIDAD ══════════════════════════════════════════════ -->
     <section v-else-if="esNuevo" :class="cardCls">
       <div class="px-5 py-4 space-y-5">
-        <!-- Depende de (la agrupación superior determina el nivel de la nueva) -->
-        <div>
-          <p :class="lbl">Depende de</p>
-          <SelectorAgrupacion v-model="padreSel" :agrupaciones="todasUnidades"
-            placeholder="(agrupación raíz — sin superior)" />
-          <p class="mt-1 text-[11px] text-slate-400">Deja vacío para crear una agrupación raíz. La agrupación superior determina el nivel de la nueva.</p>
-          <!-- Nivel derivado automáticamente del padre (o raíz si no hay). -->
-          <div v-if="nivelDerivado" class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 border border-indigo-200 px-2.5 py-1 text-xs text-indigo-700">
-            <span>Nivel:</span> <span class="font-medium">{{ nivelDerivado.denominacionSingular || nivelDerivado.nombre }}</span>
+        <!-- Depende de + Ubicación arriba, a media anchura cada uno: así el desplegable
+             de resultados de ambos buscadores se despliega en la parte alta de la tarjeta
+             y no queda oculto bajo el borde inferior del panel. -->
+        <div class="grid grid-cols-12 gap-x-4 gap-y-3">
+          <!-- Depende de (la agrupación superior determina el nivel de la nueva) -->
+          <div class="col-span-12 sm:col-span-6">
+            <p :class="lbl">Depende de</p>
+            <SelectorAgrupacion v-model="padreSel" :agrupaciones="todasUnidades"
+              placeholder="(agrupación raíz — sin superior)" />
+            <p class="mt-1 text-[11px] text-slate-400">Deja vacío para crear una agrupación raíz. La agrupación superior determina el nivel de la nueva.</p>
+            <!-- Nivel derivado automáticamente del padre (o raíz si no hay). -->
+            <div v-if="nivelDerivado" class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 border border-indigo-200 px-2.5 py-1 text-xs text-indigo-700">
+              <span>Nivel:</span> <span class="font-medium">{{ nivelDerivado.denominacionSingular || nivelDerivado.nombre }}</span>
+            </div>
+            <div v-else-if="padreSel" class="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs text-amber-700">
+              La agrupación elegida no admite subniveles en la estructura actual.
+            </div>
           </div>
-          <div v-else-if="padreSel" class="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs text-amber-700">
-            La agrupación elegida no admite subniveles en la estructura actual.
+
+          <!-- Ubicación (municipio / provincia). Enganchada al buscador "Depende de":
+               la búsqueda arranca dentro del ámbito geográfico de la agrupación superior. -->
+          <div class="col-span-12 sm:col-span-6">
+            <p :class="lbl">Ubicación (municipio / provincia)</p>
+            <EntidadGeograficaSelect v-model="form.entidadGeograficaId" :editing="true"
+              :niveles="[2, 3]" :raiz-id="raizGeoId" />
+            <p class="mt-1 text-[11px] text-slate-400">
+              {{ raizGeoId ? 'Dentro del ámbito de la agrupación superior.' : 'Municipio o provincia donde la agrupación tiene presencia.' }}
+            </p>
           </div>
         </div>
 
@@ -72,15 +88,6 @@
             <div class="col-span-12 sm:col-span-5"><p :class="lbl">Email</p><input v-model="form.email" type="email" :class="inp" /></div>
             <div class="col-span-6 sm:col-span-3"><p :class="lbl">Teléfono</p><input v-model="form.telefono" type="text" :class="inp" /></div>
             <div class="col-span-6 sm:col-span-4"><p :class="lbl">Web</p><input v-model="form.web" type="url" :class="inp" /></div>
-          </div>
-        </div>
-
-        <!-- Ubicación -->
-        <div>
-          <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">Ubicación</p>
-          <div>
-            <p :class="lbl">Ubicación (municipio / provincia)</p>
-            <EntidadGeograficaSelect v-model="form.entidadGeograficaId" :editing="true" :niveles="[2, 3]" />
           </div>
         </div>
 
@@ -132,7 +139,7 @@
             </div>
             <div class="col-span-12 sm:col-span-2">
               <p :class="lbl">Depende de</p>
-              <p :class="ro">{{ agrupacion.agrupacionPadreId ? '—' : '(raíz)' }}</p>
+              <p :class="ro">{{ agrupacion.agrupacionPadreId ? (nombrePadreActual || '…') : '(raíz)' }}</p>
             </div>
             <div class="col-span-12">
               <p :class="lbl">Descripción</p>
@@ -548,6 +555,17 @@ const subtituloVista = computed(() =>
                 : (agrupacion.value?.tipoUnidad?.nombre || ''))
 
 const padreUnidad = computed(() => todasUnidades.value.find(u => u.id === padreSel.value) || null)
+// Ámbito geográfico raíz para el buscador de Ubicación: la ubicación de la agrupación
+// superior. Al elegir "Cádiz Laica" (prov. Cádiz), buscar ubicación solo devuelve
+// municipios de Cádiz. Sin padre (agrupación raíz) → búsqueda sin acotar.
+const raizGeoId = computed(() => padreUnidad.value?.entidadGeograficaId || null)
+// Nombre de la agrupación superior en la VISTA DE DETALLE (modo lectura). La agrupación
+// mostrada trae `agrupacionPadreId`; resolvemos su nombre contra la lista cargada.
+const nombrePadreActual = computed(() => {
+  const pid = agrupacion.value?.agrupacionPadreId
+  if (!pid) return ''
+  return todasUnidades.value.find(u => u.id === pid)?.nombre || ''
+})
 // Niveles disponibles según el padre (raíz si no hay padre; hijos del nivel del
 // padre en otro caso). El nivel se DERIVA automáticamente, no lo elige el usuario.
 const tiposDisponibles = computed(() => {
@@ -897,7 +915,7 @@ const Q_MIEMBROS = `
 const Q_TODAS_UNIDADES = `
   query TodasUnidades {
     unidadesOrganizativas(filter: { activo: { eq: true } }) {
-      id nombre tipoId agrupacionPadreId
+      id nombre tipoId agrupacionPadreId entidadGeograficaId
       tipoUnidad { id nombre nivel denominacionSingular }
     }
   }
@@ -919,13 +937,20 @@ const Q_NIVELES = `
 `
 
 // ── Carga ────────────────────────────────────────────────────────────────────
-onMounted(() => {
+function arrancar() {
   if (esNuevo.value) iniciarAlta()
   else {
     cargar()
     if (route.query.edit) editMode.value = true   // llegada desde "Editar" del árbol
   }
-})
+}
+onMounted(arrancar)
+
+// La misma vista sirve el alta (/agrupaciones/nuevo) y la ficha (/agrupaciones/:id):
+// al pasar de una a otra (p.ej. tras crear, redirigimos a la ficha) Vue Router REUTILIZA
+// el componente y onMounted NO se vuelve a ejecutar → sin esto la ficha quedaba en
+// "Agrupación no encontrada". Reaccionamos a cambios de ruta re-arrancando la carga.
+watch(() => [route.name, route.params.id], () => { arrancar() })
 
 async function cargar() {
   loading.value = true

@@ -83,6 +83,14 @@ aplican a la condición de SOCIO o VOLUNTARIO viven en su tabla de extensión**,
   (contacto → su Voluntario) y borra filas sin vinculación de voluntario; aplicó limpia
   en staging (backend quedó `healthy` sin abortar). Pendiente solo prod.
 - *(Ver también punto 3 arriba: eliminar skill.py.)*
+- **`unidades_organizativas.pais_id` → NULLABLE (2026-07-01):** APLICADO EN DEV a mano
+  (`ALTER TABLE unidades_organizativas ALTER COLUMN pais_id DROP NOT NULL`). El alta moderna
+  de agrupación territorial captura la ubicación solo con `entidad_geografica_id` (jerarquía
+  única recursiva); las columnas legacy `pais_id`/`provincia_id`/`municipio_id` ya no se rellenan.
+  `pais_id` era el único NOT NULL de las tres → un alta sin país reventaba con
+  `NotNullViolationError`. Modelo (`direccion.py`, clase UnidadOrganizativa) ya marcado
+  `nullable=True`. **SQL pendiente para staging/prod** (acumular con el lote):
+  `ALTER TABLE unidades_organizativas ALTER COLUMN pais_id DROP NOT NULL;`
 
 ---
 

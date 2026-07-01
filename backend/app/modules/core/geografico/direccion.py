@@ -213,8 +213,11 @@ class UnidadOrganizativa(BaseModel):
         index=True
     )
 
-    # Ubicación geográfica
-    pais_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey('paises.id'), nullable=False, index=True)
+    # Ubicación geográfica (LEGACY). pais_id/provincia_id/municipio_id son de la era
+    # pre-jerarquía-única; la ubicación canónica es ahora entidad_geografica_id. Se dejan
+    # NULLABLE porque el alta moderna solo captura entidad_geografica_id; se retirarán al
+    # migrar los últimos consumidores.
+    pais_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('paises.id'), nullable=True, index=True)
     provincia_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('provincias.id'), nullable=True, index=True)
     municipio_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey('municipios.id'), nullable=True, index=True)
     # Nueva geografía unificada (jerarquía única recursiva). Transitorio: convive con

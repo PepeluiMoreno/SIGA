@@ -36,44 +36,12 @@
     <div v-if="abierto"
       class="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
       <div class="max-h-72 overflow-y-auto py-1">
-        <!-- Modo árbol (sin búsqueda): acceso rápido a las raíces + árbol completo -->
-        <template v-if="!busqueda">
-          <!-- Raíces destacadas: elegir el ámbito de la organización de un clic -->
-          <div v-if="raices.length" class="px-2 pb-1 mb-1 border-b border-slate-100">
-            <p class="px-1 pt-1 pb-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Ámbito general</p>
-            <button
-              v-for="root in raices"
-              :key="`root-${root.id}`"
-              type="button"
-              @click="elegir(root)"
-              class="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-lg transition-colors text-left"
-              :class="root.id === modelValue ? 'bg-indigo-100 text-indigo-800 font-semibold' : 'bg-indigo-50/60 text-indigo-700 hover:bg-indigo-100 font-medium'"
-            >
-              <MapPinIcon class="w-4 h-4 flex-shrink-0" />
-              <span class="truncate">{{ root.nombre }}</span>
-              <span v-if="nivelNombre(root)" class="flex-shrink-0 px-1.5 py-0.5 text-[10px] rounded-full bg-white text-indigo-600 border border-indigo-200 leading-none">
-                {{ nivelNombre(root) }}
-              </span>
-            </button>
-          </div>
-          <button
-            v-for="node in arbolPlano"
-            :key="node.id"
-            type="button"
-            @click="elegir(node)"
-            class="w-full flex items-center gap-1.5 pr-3 py-1.5 text-sm transition-colors text-left"
-            :style="{ paddingLeft: `${0.75 + node.depth * 1.15}rem` }"
-            :class="node.id === modelValue ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700 hover:bg-slate-50'"
-          >
-            <span class="font-mono text-slate-300 select-none flex-shrink-0">{{ node.depth === 0 ? '●' : '└' }}</span>
-            <span class="truncate">{{ node.nombre }}</span>
-            <span v-if="nivelNombre(node)" class="flex-shrink-0 px-1.5 py-0.5 text-[10px] rounded-full bg-slate-100 text-slate-500 leading-none">
-              {{ nivelNombre(node) }}
-            </span>
-          </button>
-        </template>
-
-        <!-- Modo búsqueda: lista aplanada con ruta (raíz primero, luego alfabético) -->
+        <!-- BUSCADOR PURO — sin jerarquías (regla tajante del usuario "nada de jerarquías,
+             el buscador"). Sin texto: solo invitación a teclear. Con texto: lista plana de
+             coincidencias por nombre, cada una con su ruta como contexto. -->
+        <p v-if="!busqueda" class="px-3 py-3 text-[12px] text-slate-400 text-center">
+          Escribe para buscar una agrupación (p. ej. «Sevilla», «Europa Laica»)…
+        </p>
         <template v-else>
           <button
             v-for="node in resultadosBusqueda"
@@ -91,12 +59,10 @@
             </span>
             <span v-if="node.ruta" class="text-[11px] text-slate-400 truncate w-full">{{ node.ruta }}</span>
           </button>
+          <p v-if="resultadosBusqueda.length === 0" class="px-3 py-3 text-xs text-slate-400 text-center">
+            {{ agrupaciones.length ? 'Sin resultados' : 'No hay agrupaciones' }}
+          </p>
         </template>
-
-        <p v-if="(busqueda ? resultadosBusqueda.length : arbolPlano.length) === 0"
-          class="px-3 py-3 text-xs text-slate-400 text-center">
-          {{ agrupaciones.length ? 'Sin resultados' : 'No hay agrupaciones' }}
-        </p>
       </div>
     </div>
   </div>
