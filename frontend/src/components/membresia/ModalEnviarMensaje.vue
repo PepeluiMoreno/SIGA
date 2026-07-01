@@ -11,12 +11,25 @@
         </div>
 
         <div class="flex-1 overflow-y-auto">
-          <!-- Plantilla pre-redactada -->
-          <div class="flex items-center gap-2 px-5 py-2 border-b border-slate-100">
-            <span class="text-xs text-slate-500 w-16 shrink-0">Plantilla</span>
-            <select v-model="plantillaSel" @change="aplicarPlantilla"
-              class="flex-1 h-8 px-2 text-sm border border-slate-200 rounded bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400">
-              <option value="">Redactar mensaje nuevo…</option>
+          <!-- Origen del mensaje: texto libre o plantilla pre-redactada -->
+          <div class="flex items-center gap-3 px-5 py-2.5 border-b border-slate-100">
+            <span class="text-xs text-slate-500 w-16 shrink-0">Mensaje</span>
+            <div class="flex items-center gap-2">
+              <label class="inline-flex items-center gap-1.5 text-sm cursor-pointer"
+                :class="modo === 'libre' ? 'text-indigo-700 font-medium' : 'text-slate-600'">
+                <input type="radio" value="libre" v-model="modo" class="accent-indigo-600" />
+                Texto libre
+              </label>
+              <label class="inline-flex items-center gap-1.5 text-sm cursor-pointer"
+                :class="modo === 'plantilla' ? 'text-indigo-700 font-medium' : 'text-slate-600'">
+                <input type="radio" value="plantilla" v-model="modo" class="accent-indigo-600" />
+                Plantilla
+              </label>
+            </div>
+            <select v-if="modo === 'plantilla'" v-model="plantillaSel" @change="aplicarPlantilla"
+              :disabled="!plantillas.length"
+              class="flex-1 h-8 px-2 text-sm border border-slate-200 rounded bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400 disabled:bg-slate-50 disabled:text-slate-400">
+              <option value="">{{ plantillas.length ? 'Elige una plantilla…' : 'No hay plantillas disponibles' }}</option>
               <option v-for="p in plantillas" :key="p.id" :value="p.id">{{ p.nombre }}</option>
             </select>
           </div>
@@ -136,6 +149,7 @@ const ccTexto = ref('')
 const ccoTexto = ref('')
 const parseEmails = (t) => t.split(',').map((e) => e.trim()).filter(Boolean)
 
+const modo = ref('libre')    // 'libre' | 'plantilla'
 const plantillas = ref([])   // catálogo por rol post-MVP; de momento vacío
 const plantillaSel = ref('')
 const asunto = ref('')
