@@ -95,12 +95,14 @@
                   <div class="text-xs text-slate-400">{{ c.telefono || '' }}</div>
                 </td>
                 <td class="px-4 py-3">
-                  <RowActions show-view
-                    :show-edit="tienePermiso('CONTACTO_EDITAR')"
-                    :show-delete="tienePermiso('CONTACTO_ELIMINAR')"
-                    @view="abrirFicha(c.id)"
-                    @edit="abrirFicha(c.id)"
-                    @delete="eliminarContacto(c)" />
+                  <div class="flex justify-end">
+                    <RowActions show-view
+                      :show-edit="tienePermiso('CONTACTO_EDITAR')"
+                      :show-delete="tienePermiso('CONTACTO_ELIMINAR')"
+                      @view="abrirFicha(c.id)"
+                      @edit="abrirFicha(c.id)"
+                      @delete="eliminarContacto(c)" />
+                  </div>
                 </td>
               </tr>
             </tbody>
