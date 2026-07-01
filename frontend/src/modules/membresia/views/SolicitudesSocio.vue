@@ -1,6 +1,6 @@
 <template>
   <AppLayout title="Solicitudes de admisión" subtitle="Solicitudes de socio pendientes de aprobación o rechazo">
-    <div class="w-3/4 mx-auto">
+    <div class="w-full">
       <div v-if="cargando" class="text-center py-12 text-slate-400 text-sm">Cargando solicitudes…</div>
       <div v-else-if="error" class="rounded-md bg-red-50 border border-red-200 p-4 text-sm text-red-800">{{ error }}</div>
       <div v-else-if="!solicitudes.length" class="text-center py-16 text-slate-400 text-sm">

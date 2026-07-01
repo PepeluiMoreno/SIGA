@@ -6,7 +6,7 @@
         @cancel="$router.push('/grupos')" @submit="guardar" />
     </template>
 
-    <div class="w-3/4 mx-auto">
+    <div class="w-full">
       <div class="bg-white rounded-lg shadow p-6 space-y-5">
 
         <div>

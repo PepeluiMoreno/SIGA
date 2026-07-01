@@ -10,7 +10,7 @@
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
     </div>
 
-    <form v-else @submit.prevent="handleSubmit" class="w-3/4 mx-auto space-y-3">
+    <form v-else @submit.prevent="handleSubmit" class="w-full space-y-3">
 
       <!-- ══ 1. Destinatario de la cuenta ════════════════════════════════════ -->
       <section class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">

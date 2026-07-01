@@ -489,9 +489,10 @@
       <main class="flex-1 min-w-0 overflow-hidden lg:h-[calc(100vh-64px)]" style="background-color: var(--t-page-bg)">
         <div class="h-full flex flex-col w-full px-4 sm:px-6 lg:px-6">
           <div ref="mainRef" class="flex-1 min-h-0 overflow-y-auto pt-5" :class="$slots.footer ? 'pb-2' : 'pb-4'" @scroll="onMainScroll">
-            <!-- fluid: ancho completo (vistas con FilterRail). Por defecto, el contenido se
-                 limita al ancho del cuerpo de una vista con filtro y se centra en el espacio. -->
-            <div :class="fluid ? 'w-full' : 'w-full lg:max-w-[calc(100%-19rem)] lg:mx-auto'">
+            <!-- fluid: ancho completo (listados con FilterRail). Por defecto TODAS las
+                 vistas (fichas, altas, paneles) usan el ancho estándar w-3/4 mx-auto
+                 (1/8 por lado) para uniformidad. Ver feedback_ancho_vistas_alta. -->
+            <div :class="fluid ? 'w-full' : 'w-full lg:w-3/4 lg:mx-auto'">
               <slot />
             </div>
           </div>

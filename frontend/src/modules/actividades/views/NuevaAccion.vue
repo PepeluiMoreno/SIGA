@@ -4,7 +4,7 @@
       <FormActions submit-text="Crear actividad" :loading="saving"
         @cancel="$router.back()" @submit="guardar" />
     </template>
-    <div class="w-3/4 mx-auto">
+    <div class="w-full">
 
     <!-- Contexto campaña -->
     <div v-if="campaniaId" class="mb-4 flex items-center gap-2 text-xs text-slate-500">
