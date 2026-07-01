@@ -509,7 +509,7 @@ class ContactoType:
 # Una Vinculacion es la vinculación tipada de un Contacto (SOCIO, VOLUNTARIO, …) con
 # su satélite de datos. Se exponen ahora como tipos GraphQL para poder navegar
 # las vinculaciones de un contacto (resolver `vinculacionesDeContacto`).
-from ..modules.membresia.models import Vinculacion, Socio, Voluntario
+from ..modules.membresia.models import Vinculacion, Socio, Voluntario, Contratado
 
 @strawchemy.type(Socio, include="all", exclude=["vinculacion"], override=True)
 class SocioType:
@@ -521,6 +521,11 @@ class VoluntarioType:
     """Satélite de una vinculación de tipo VOLUNTARIO."""
     pass
 
+@strawchemy.type(Contratado, include="all", exclude=["vinculacion"], override=True)
+class ContratadoType:
+    """Satélite de una vinculación de tipo EMPLEADO (contrato laboral/mercantil)."""
+    pass
+
 @strawchemy.type(Vinculacion, include="all", override=True)
 class VinculacionType:
     """Vinculación tipada de un Contacto (socio, voluntario, …) con su satélite."""
@@ -528,6 +533,37 @@ class VinculacionType:
     tipo_vinculacion: Optional['TipoVinculacionType'] = None
     socio: Optional['SocioType'] = None
     voluntario: Optional['VoluntarioType'] = None
+    contratado: Optional['ContratadoType'] = None
+
+
+# === RELACIONES (contacto ↔ contacto, modelo tipo CiviCRM Relationship) ===
+from ..modules.membresia.models import TipoRelacion, Relacion
+
+@strawchemy.type(TipoRelacion, include="all", override=True)
+class TipoRelacionType:
+    """Tipo de relación direccional (nombre_directo A→B / nombre_inverso B→A)."""
+    pass
+
+@strawchemy.type(Relacion, include="all", override=True)
+class RelacionType:
+    """Vínculo dirigido entre dos contactos (A es tipo.nombre_directo de B)."""
+    contacto_a: Optional['ContactoType'] = None
+    contacto_b: Optional['ContactoType'] = None
+    tipo_relacion: Optional['TipoRelacionType'] = None
+
+
+# === ETIQUETAS (tags libres de contacto, tipo CiviCRM Tag) ===
+from ..modules.membresia.models import Etiqueta, ContactoEtiqueta
+
+@strawchemy.type(Etiqueta, include="all", override=True)
+class EtiquetaType:
+    """Etiqueta libre para segmentar contactos."""
+    pass
+
+@strawchemy.type(ContactoEtiqueta, include="all", override=True)
+class ContactoEtiquetaType:
+    """Asignación de una etiqueta a un contacto."""
+    etiqueta: Optional['EtiquetaType'] = None
 
 
 # === MILITANCIA ===

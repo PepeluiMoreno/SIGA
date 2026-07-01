@@ -120,7 +120,20 @@ class DonacionService:
             donante_email=donante_email, donante_telefono=donante_telefono, anonima=anonima,
         )
 
+        # La donación es un ACTO: si hay donante identificado, se crea su
+        # Participacion(DONACION) y se enlaza. "Donante" es condición derivada de
+        # tener donaciones. Donación anónima (sin contacto) → sin Participacion.
+        participacion_id = None
+        if contacto_id is not None:
+            from app.modules.membresia.models.participacion import Participacion
+
+            participacion = Participacion(contacto_id=contacto_id, tipo="DONACION")
+            self.session.add(participacion)
+            await self.session.flush()
+            participacion_id = participacion.id
+
         donacion = Donacion(
+            participacion_id=participacion_id,
             contacto_id=contacto_id,
             concepto_id=concepto_id,
             campania_id=campania_id,

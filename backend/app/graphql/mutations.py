@@ -264,6 +264,23 @@ class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionM
     actualizar_tipo_grupo: TipoGrupoType = strawchemy.update_by_ids(TipoGrupoUpdateInput)
     eliminar_tipos_grupo: list[TipoGrupoType] = strawchemy.delete(TipoGrupoFilter)
 
+    # Relaciones contacto↔contacto (modelo tipo CiviCRM Relationship)
+    crear_tipo_relacion: TipoRelacionType = strawchemy.create(TipoRelacionCreateInput)
+    actualizar_tipo_relacion: TipoRelacionType = strawchemy.update_by_ids(TipoRelacionUpdateInput)
+    eliminar_tipos_relacion: list[TipoRelacionType] = strawchemy.delete(TipoRelacionFilter)
+
+    crear_relacion: RelacionType = strawchemy.create(RelacionCreateInput)
+    actualizar_relacion: RelacionType = strawchemy.update_by_ids(RelacionUpdateInput)
+    eliminar_relaciones: list[RelacionType] = strawchemy.delete(RelacionFilter)
+
+    # Etiquetas (tags de contacto)
+    crear_etiqueta: EtiquetaType = strawchemy.create(EtiquetaCreateInput)
+    actualizar_etiqueta: EtiquetaType = strawchemy.update_by_ids(EtiquetaUpdateInput)
+    eliminar_etiquetas: list[EtiquetaType] = strawchemy.delete(EtiquetaFilter)
+
+    etiquetar_contacto: ContactoEtiquetaType = strawchemy.create(ContactoEtiquetaCreateInput)
+    desetiquetar_contactos: list[ContactoEtiquetaType] = strawchemy.delete(ContactoEtiquetaFilter)
+
     crear_rol_grupo: RolGrupoType = strawchemy.create(RolGrupoCreateInput)
     actualizar_rol_grupo: RolGrupoType = strawchemy.update_by_ids(RolGrupoUpdateInput)
     eliminar_roles_grupo: list[RolGrupoType] = strawchemy.delete(RolGrupoFilter)

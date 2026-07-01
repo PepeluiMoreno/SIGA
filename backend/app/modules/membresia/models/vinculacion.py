@@ -80,6 +80,13 @@ class Vinculacion(BaseModel):
         lazy="selectin",
         foreign_keys="Voluntario.vinculacion_id"
     )
+    contratado: Mapped[Optional["Contratado"]] = relationship(
+        back_populates="vinculacion",
+        uselist=False,
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        foreign_keys="Contratado.vinculacion_id"
+    )
 
     def __repr__(self) -> str:
         tipo = self.tipo_vinculacion.codigo if self.tipo_vinculacion else "?"
@@ -216,3 +223,41 @@ class Voluntario(BaseModel):
     def __repr__(self) -> str:
         horas = self.horas_disponibles_semana or "?"
         return f"<Voluntario(horas_semana={horas})>"
+
+
+class Contratado(BaseModel):
+    """Satélite de Vinculacion(EMPLEADO): datos del contrato con la organización.
+
+    Cubre tanto a personas físicas (contrato LABORAL) como a personas jurídicas
+    proveedoras (contrato MERCANTIL); `tipo_contrato` distingue ambos casos.
+    """
+
+    __tablename__ = "contratados"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+
+    # FK a Vinculacion (1:1)
+    vinculacion_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vinculaciones.id", ondelete="CASCADE"), nullable=False, unique=True, index=True
+    )
+
+    numero_empleado: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    # LABORAL (PF) | MERCANTIL (PJ / proveedor)
+    tipo_contrato: Mapped[str] = mapped_column(String(20), default="LABORAL", nullable=False)
+    jornada: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # COMPLETA | PARCIAL
+    categoria: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)  # puesto / categoría
+
+    fecha_alta_contrato: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    fecha_baja_contrato: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+
+    numero_seguridad_social: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
+    salario_bruto_anual: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), nullable=True)
+    observaciones: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    vinculacion: Mapped[Vinculacion] = relationship(
+        back_populates="contratado",
+        lazy="selectin"
+    )
+
+    def __repr__(self) -> str:
+        return f"<Contratado(tipo='{self.tipo_contrato}', num='{self.numero_empleado}')>"

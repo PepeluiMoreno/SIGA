@@ -1743,3 +1743,66 @@ class PlataformaTelematicaUpdateInput:
 @strawchemy.filter(PlataformaTelematica, include="all")
 class PlataformaTelematicaFilter:
     pass
+
+
+# === RELACIONES (contacto ↔ contacto) ===
+from ..modules.membresia.models import TipoRelacion, Relacion
+
+
+@strawchemy.input(TipoRelacion, mode="create_input", include="all", exclude=get_exclude_fields(TipoRelacion))
+class TipoRelacionCreateInput:
+    pass
+
+
+@strawchemy.input(TipoRelacion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TipoRelacion))
+class TipoRelacionUpdateInput:
+    pass
+
+
+@strawchemy.filter(TipoRelacion, include="all")
+class TipoRelacionFilter:
+    pass
+
+
+@strawchemy.input(Relacion, mode="create_input", include="all", exclude=get_exclude_fields(Relacion))
+class RelacionCreateInput:
+    pass
+
+
+@strawchemy.input(Relacion, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Relacion))
+class RelacionUpdateInput:
+    pass
+
+
+@strawchemy.filter(Relacion, include="all")
+class RelacionFilter:
+    pass
+
+
+# === ETIQUETAS (tags de contacto) ===
+from ..modules.membresia.models import Etiqueta, ContactoEtiqueta
+
+
+@strawchemy.input(Etiqueta, mode="create_input", include="all", exclude=get_exclude_fields(Etiqueta))
+class EtiquetaCreateInput:
+    pass
+
+
+@strawchemy.input(Etiqueta, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Etiqueta))
+class EtiquetaUpdateInput:
+    pass
+
+
+@strawchemy.filter(Etiqueta, include="all")
+class EtiquetaFilter:
+    pass
+
+
+@strawchemy.input(ContactoEtiqueta, mode="create_input", include="all", exclude=get_exclude_fields(ContactoEtiqueta))
+class ContactoEtiquetaCreateInput:
+    pass
+
+
+@strawchemy.filter(ContactoEtiqueta, include="all")
+class ContactoEtiquetaFilter:
+    pass

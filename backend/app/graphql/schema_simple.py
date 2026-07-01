@@ -160,6 +160,14 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
     tiposCanalDifusion: list[TipoCanalDifusionType] = strawchemy.field(filter_input=TipoCanalDifusionFilter)
     plantillasCampania: list[PlantillaCampaniaType] = strawchemy.field(filter_input=PlantillaCampaniaFilter)
 
+    # === RELACIONES (contacto ↔ contacto) ===
+    tiposRelacion: list[TipoRelacionType] = strawchemy.field(filter_input=TipoRelacionFilter)
+    relaciones: list[RelacionType] = strawchemy.field(filter_input=RelacionFilter)
+
+    # === ETIQUETAS (tags de contacto) ===
+    etiquetas: list[EtiquetaType] = strawchemy.field(filter_input=EtiquetaFilter)
+    contactosEtiquetas: list[ContactoEtiquetaType] = strawchemy.field(filter_input=ContactoEtiquetaFilter)
+
     # === ACTIVIDADES ===
     tiposActividad: list[TipoActividadType] = strawchemy.field(filter_input=TipoActividadFilter)
     actividades: list[ActividadType] = strawchemy.field(filter_input=ActividadFilter)
