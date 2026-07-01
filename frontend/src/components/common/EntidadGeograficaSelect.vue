@@ -2,13 +2,16 @@
   <div class="relative" ref="raiz">
     <label v-if="label" class="block text-sm font-medium text-slate-700 mb-1.5">{{ label }}</label>
 
-    <!-- Lectura / no editable: texto plano bajo el label, igual que FieldText (sin caja
-         ni borde) para que la sección de datos se vea uniforme en modo lectura. -->
-    <div v-if="!editing" class="py-1.5 text-sm text-slate-900 min-h-[34px]">
-      <span v-if="seleccion">
-        {{ seleccion.nombre }}<span class="text-slate-400 text-xs"> · {{ seleccion.ruta }}</span>
-      </span>
-      <span v-else class="text-slate-400">—</span>
+    <!-- Lectura / no editable: en vez del breadcrumb "· España > Cataluña > …", campos
+         display-only País / Comunidad / Provincia / Municipio derivados de la ruta. -->
+    <div v-if="!editing">
+      <div v-if="seleccion" class="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2">
+        <div v-for="parte in partesUbicacion" :key="parte.label">
+          <p class="text-xs text-slate-500">{{ parte.label }}</p>
+          <p class="text-sm text-slate-900">{{ parte.valor || '—' }}</p>
+        </div>
+      </div>
+      <p v-else class="py-1.5 text-sm text-slate-400 min-h-[34px]">—</p>
     </div>
 
     <!-- Edición -->
@@ -57,7 +60,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { graphqlClient } from '@/graphql/client.js'
 
 const props = defineProps({
@@ -88,6 +91,24 @@ const cargando = ref(false)
 const errorBusqueda = ref('')
 const raizRuta = ref('')   // ruta de la entidad raíz (para acotar por prefijo)
 let timer = null
+
+// Descompone la ruta ("España > Cataluña > Tarragona > Savallà del Comtat") en campos
+// display-only País / Comunidad / Provincia / Municipio para el modo lectura. La ruta
+// sigue el orden jerárquico país › CCAA › provincia › municipio (nivel 0..3+).
+const partesUbicacion = computed(() => {
+  const tramos = (seleccion.value?.ruta || '').split('>').map(s => s.trim()).filter(Boolean)
+  // Si la ruta no incluye el propio nombre al final, lo añadimos como último tramo.
+  if (seleccion.value?.nombre && tramos[tramos.length - 1] !== seleccion.value.nombre) {
+    tramos.push(seleccion.value.nombre)
+  }
+  const [pais, comunidad, provincia, municipio] = tramos
+  return [
+    { label: 'País', valor: pais },
+    { label: 'Comunidad', valor: comunidad },
+    { label: 'Provincia', valor: provincia },
+    { label: 'Municipio', valor: municipio },
+  ]
+})
 
 function _filtro(extra) {
   const f = { ...extra }
