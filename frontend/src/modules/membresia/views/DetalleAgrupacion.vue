@@ -486,7 +486,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ChevronDownIcon, ChevronLeftIcon,
-  PencilIcon, PlusIcon, XMarkIcon, EyeIcon, ArrowsRightLeftIcon,
+  PlusIcon, EyeIcon,
 } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import EstructuraOrganizativaEditor from '@/components/configuracion/EstructuraOrganizativaEditor.vue'
