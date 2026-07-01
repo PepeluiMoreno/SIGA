@@ -1,43 +1,40 @@
 <template>
   <div ref="rootRef" class="relative">
-    <!-- Disparador -->
-    <button
-      type="button"
-      :disabled="disabled"
-      @click.stop="toggle"
-      class="w-full h-10 px-3 flex items-center gap-2 text-sm text-left border rounded-lg bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-      :class="abierto ? 'border-indigo-400 ring-2 ring-indigo-500' : 'border-slate-300 hover:border-slate-400'"
-    >
+    <!-- Selección hecha: chip con la agrupación elegida + limpiar -->
+    <div v-if="seleccionada && !abierto"
+      class="w-full h-10 px-3 flex items-center gap-2 text-sm border rounded-lg bg-white border-slate-300"
+      :class="disabled ? 'opacity-50' : ''">
       <MapPinIcon class="w-4 h-4 text-slate-400 flex-shrink-0" />
-      <span v-if="seleccionada" class="flex items-center gap-1.5 min-w-0 flex-1">
-        <span class="truncate font-medium text-slate-800">{{ seleccionada.nombre }}</span>
-        <span v-if="nivelNombre(seleccionada)" class="flex-shrink-0 px-1.5 py-0.5 text-[10px] rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 leading-none">
-          {{ nivelNombre(seleccionada) }}
-        </span>
+      <span class="truncate font-medium text-slate-800">{{ seleccionada.nombre }}</span>
+      <span v-if="nivelNombre(seleccionada)" class="flex-shrink-0 px-1.5 py-0.5 text-[10px] rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 leading-none">
+        {{ nivelNombre(seleccionada) }}
       </span>
-      <span v-else class="flex-1 text-slate-400 truncate">{{ placeholder }}</span>
-      <XMarkIcon v-if="seleccionada && !disabled" @click.stop="elegir(null)"
-        class="w-4 h-4 text-slate-300 hover:text-red-500 flex-shrink-0 transition-colors" />
-      <ChevronDownIcon class="w-4 h-4 text-slate-400 flex-shrink-0 transition-transform" :class="abierto ? 'rotate-180' : ''" />
-    </button>
+      <button v-if="!disabled" type="button" @click="elegir(null)"
+        class="ml-auto text-slate-300 hover:text-red-500 flex-shrink-0 transition-colors" title="Quitar">
+        <XMarkIcon class="w-4 h-4" />
+      </button>
+    </div>
 
-    <!-- Panel desplegable: buscador + árbol -->
+    <!-- Buscador: se teclea "Sevilla" y salen las agrupaciones que coinciden -->
+    <div v-else class="relative">
+      <MagnifyingGlassIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+      <input
+        ref="inputRef"
+        v-model="busqueda"
+        type="text"
+        :disabled="disabled"
+        :placeholder="placeholder"
+        class="w-full h-10 pl-9 pr-8 text-sm border rounded-lg bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+        :class="abierto ? 'border-indigo-400 ring-2 ring-indigo-500' : 'border-slate-300 hover:border-slate-400'"
+        @focus="abierto = true"
+        @input="abierto = true"
+      />
+      <ChevronDownIcon class="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none transition-transform" :class="abierto ? 'rotate-180' : ''" />
+    </div>
+
+    <!-- Resultados -->
     <div v-if="abierto"
       class="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
-      <div class="p-2 border-b border-slate-100">
-        <div class="relative">
-          <MagnifyingGlassIcon class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            ref="inputRef"
-            v-model="busqueda"
-            type="text"
-            placeholder="Buscar agrupación…"
-            class="w-full h-9 pl-8 pr-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            @click.stop
-          />
-        </div>
-      </div>
-
       <div class="max-h-72 overflow-y-auto py-1">
         <!-- Modo árbol (sin búsqueda): jerárquico, raíz primero -->
         <template v-if="!busqueda">
@@ -95,7 +92,7 @@ const props = defineProps({
   // Lista de agrupaciones con { id, nombre, agrupacionPadreId, tipoUnidad? }
   agrupaciones: { type: Array, default: () => [] },
   modelValue:   { type: String, default: null },
-  placeholder:  { type: String, default: 'Seleccionar agrupación…' },
+  placeholder:  { type: String, default: 'Escribe para buscar (p. ej. Sevilla)…' },
   disabled:     { type: Boolean, default: false },
 })
 const emit = defineEmits(['update:modelValue'])
@@ -146,19 +143,12 @@ const resultadosBusqueda = computed(() => {
     .map(n => ({ ...n, ruta: rutaDe(n.id) }))
 })
 
-function toggle() {
-  if (props.disabled) return
-  abierto.value = !abierto.value
-  if (abierto.value) {
-    busqueda.value = ''
-    nextTick(() => inputRef.value?.focus())
-  }
-}
-
 function elegir(node) {
   emit('update:modelValue', node ? node.id : null)
   abierto.value = false
   busqueda.value = ''
+  // Al quitar la selección, devolvemos el foco al buscador para elegir otra.
+  if (!node) nextTick(() => inputRef.value?.focus())
 }
 
 function onClickOutside(e) {
