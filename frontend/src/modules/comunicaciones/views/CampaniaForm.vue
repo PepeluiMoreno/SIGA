@@ -3,18 +3,9 @@
     :title="campania.nombre || (isEdit ? 'Editar campaña' : 'Nueva campaña')"
     :subtitle="isEdit ? 'Editando campaña' : 'Rellena los datos para registrar la nueva campaña'">
     <template #actions>
-      <span v-if="error" class="flex items-center gap-1.5 text-xs text-red-600 mr-1">
-        <ExclamationCircleIcon class="w-4 h-4 shrink-0" /> {{ error }}
-      </span>
-      <router-link to="/campanias"
-        class="h-8 px-3 flex items-center text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
-        Cancelar
-      </router-link>
-      <button type="button" :disabled="submitting" @click="handleSubmit"
-        class="inline-flex items-center gap-2 h-8 px-4 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 shadow-sm transition-colors">
-        <span v-if="submitting" class="animate-spin rounded-full h-3.5 w-3.5 border-[2px] border-white border-t-transparent"></span>
-        {{ isEdit ? 'Actualizar campaña' : 'Crear campaña' }}
-      </button>
+      <FormActions :submit-text="isEdit ? 'Actualizar campaña' : 'Crear campaña'"
+        :loading="submitting" :error="error"
+        @cancel="$router.push('/campanias')" @submit="handleSubmit" />
     </template>
 
     <div v-if="loading" class="flex items-center justify-center py-20">
@@ -527,11 +518,12 @@ import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  ChevronLeftIcon, CheckIcon,
-  ExclamationCircleIcon, ExclamationTriangleIcon, PlusIcon, XMarkIcon, LinkIcon,
+  CheckIcon,
+  ExclamationTriangleIcon, PlusIcon, XMarkIcon, LinkIcon,
   DocumentPlusIcon, DocumentTextIcon, DocumentDuplicateIcon,
 } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
+import FormActions from '@/components/common/FormActions.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
 import ActividadPlantillaCard from '@/components/campanias/ActividadPlantillaCard.vue'

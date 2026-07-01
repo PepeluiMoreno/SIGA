@@ -4,21 +4,11 @@
     :subtitle="esEdicion && rolOriginal ? `${rolOriginal.codigo} · ${rolOriginal.tipo} · Nivel ${rolOriginal.nivel}` : 'Definición de atributos y permisos'"
   >
     <template #actions>
-      <span v-if="errorGuardado" class="flex items-center gap-1.5 text-xs text-red-600 mr-1">
-        <ExclamationTriangleIcon class="w-4 h-4 shrink-0" /> {{ errorGuardado }}
-      </span>
-      <span v-else-if="guardadoOk" class="flex items-center gap-1.5 text-xs text-green-600 mr-1">
-        <CheckIcon class="w-4 h-4" /> Guardado
-      </span>
-      <button type="button" @click="window.history.state?.back ? router.back() : router.push('/roles')"
-        class="h-8 px-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
-        Volver
-      </button>
-      <button type="button" @click="guardar" :disabled="guardando"
-        class="inline-flex items-center gap-2 h-8 px-4 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 shadow-sm transition-colors">
-        <span v-if="guardando" class="animate-spin rounded-full h-3.5 w-3.5 border-[2px] border-white border-t-transparent"></span>
-        {{ esEdicion ? 'Guardar cambios' : 'Crear rol' }}
-      </button>
+      <FormActions :submit-text="esEdicion ? 'Guardar cambios' : 'Crear rol'"
+        cancel-text="Volver" :loading="guardando"
+        :error="errorGuardado" :ok="guardadoOk"
+        @cancel="window.history.state?.back ? router.back() : router.push('/roles')"
+        @submit="guardar" />
     </template>
     <DetailHeader fallback="/roles" />
 
@@ -274,7 +264,8 @@ import DetailHeader from '@/components/common/DetailHeader.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_ROLES, CREAR_ROL, ACTUALIZAR_ROL, GET_FUNCIONALIDADES_TODAS } from '@/graphql/queries/administracion.js'
 // GET_AGRUPACIONES_TERRITORIALES ya no se usa para niveles — los derivamos del config org
-import { CheckIcon, MagnifyingGlassIcon, ChevronDownIcon, ChevronRightIcon, InformationCircleIcon, ExclamationTriangleIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline'
+import { MagnifyingGlassIcon, ChevronDownIcon, ChevronRightIcon, InformationCircleIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
+import FormActions from '@/components/common/FormActions.vue'
 const toast = useToast()
 
 const route  = useRoute()

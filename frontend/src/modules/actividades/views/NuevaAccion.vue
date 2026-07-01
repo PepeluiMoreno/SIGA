@@ -1,14 +1,8 @@
 <template>
   <AppLayout title="Nueva actividad" :subtitle="campaniaNombre ? `Campaña: ${campaniaNombre}` : 'Crear una nueva actividad'">
     <template #actions>
-      <button type="button" @click="$router.back()"
-        class="h-8 px-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
-        Cancelar
-      </button>
-      <button type="submit" form="nueva-actividad-form" :disabled="saving"
-        class="h-8 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
-        {{ saving ? 'Guardando…' : 'Crear actividad' }}
-      </button>
+      <FormActions submit-text="Crear actividad" :loading="saving"
+        @cancel="$router.back()" @submit="guardar" />
     </template>
     <div class="w-3/4 mx-auto">
 
@@ -186,6 +180,7 @@ import PlataformaTelematicaSelector from '@/components/common/PlataformaTelemati
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
+import FormActions from '@/components/common/FormActions.vue'
 import { graphqlClient } from '@/graphql/client'
 import { GET_TIPOS_ACCION, GET_ESTADOS_ACCION, CREAR_ACCION } from '../graphql/queries.js'
 
