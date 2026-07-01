@@ -73,14 +73,8 @@
       </div>
 
       <!-- Tabs -->
-      <div class="border-b border-slate-100 px-4">
-        <nav class="-mb-px flex space-x-4">
-          <button v-for="t in pestanas" :key="t.id" @click="tabActiva = t.id"
-            :class="[tabActiva === t.id ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700',
-                    'py-2 px-1 border-b-2 text-xs font-medium']">
-            {{ t.label }}
-          </button>
-        </nav>
+      <div class="px-4">
+        <TabsNavigation :tabs="pestanas" :active-tab="tabActiva" @tab-change="tabActiva = $event" />
       </div>
 
       <!-- Tab Resumen -->
@@ -214,6 +208,7 @@ import { usePrompt } from '@/composables/useConfirm'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
+import TabsNavigation from '@/components/common/TabsNavigation.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import {
   GET_CUENTAS_ANUALES,
@@ -251,10 +246,10 @@ const anosDisponibles = computed(() => {
 })
 
 const pestanas = [
-  { id: 'resumen',    label: 'Resumen' },
-  { id: 'balance',    label: 'Balance PCESFL' },
-  { id: 'resultados', label: 'Cuenta de Resultados' },
-  { id: 'memoria',    label: 'Memoria (12 apartados)' },
+  { id: 'resumen',    name: 'Resumen' },
+  { id: 'balance',    name: 'Balance PCESFL' },
+  { id: 'resultados', name: 'Cuenta de Resultados' },
+  { id: 'memoria',    name: 'Memoria (12 apartados)' },
 ]
 
 const apartadosMemoria = [

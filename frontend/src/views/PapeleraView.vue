@@ -2,19 +2,8 @@
   <AppLayout title="Papelera" subtitle="Elementos enviados a la papelera — puedes restaurarlos o eliminarlos definitivamente">
 
     <!-- Tabs por tipo -->
-    <div class="flex gap-2 mb-6 flex-wrap">
-      <button
-        v-for="tab in tabs"
-        :key="tab.key"
-        @click="tabActivo = tab.key"
-        class="h-9 px-4 text-sm font-medium rounded-lg border transition-colors"
-        :class="tabActivo === tab.key
-          ? 'bg-indigo-600 text-white border-indigo-600'
-          : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'"
-      >
-        {{ tab.label }}
-        <span v-if="counts[tab.key]" class="ml-1.5 text-xs opacity-75">({{ counts[tab.key] }})</span>
-      </button>
+    <div class="mb-6">
+      <TabsNavigation :tabs="tabsNav" :active-tab="tabActivo" @tab-change="tabActivo = $event" />
     </div>
 
     <div v-if="loading" class="py-12 text-center text-sm text-slate-400">Cargando…</div>
@@ -78,6 +67,7 @@ import { useToast } from '@/composables/useToast'
 import { ref, computed, onMounted, watch } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import TabsNavigation from '@/components/common/TabsNavigation.vue'
 import { graphqlClient } from '@/graphql/client'
 const toast = useToast()
 
@@ -101,6 +91,11 @@ const counts = computed(() => {
   }
   return r
 })
+
+// Adaptación al tabsheet canónico: { id, name, count }
+const tabsNav = computed(() =>
+  tabs.map(t => ({ id: t.key, name: t.label, count: counts.value[t.key] }))
+)
 
 const itemsActivos = computed(() => items.value[tabActivo.value] || [])
 

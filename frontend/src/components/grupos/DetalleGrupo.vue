@@ -12,19 +12,9 @@
           <span v-if="!grupo.activo" class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-red-100 text-red-700">Inactivo</span>
         </div>
         <!-- Tabs -->
-        <nav class="flex gap-1 mt-3 -mb-px">
-          <button v-for="tab in tabs" :key="tab.id" @click="activeTab = tab.id"
-            :class="['px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
-              activeTab === tab.id
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300']">
-            {{ tab.name }}
-            <span v-if="tab.count != null"
-              class="ml-1.5 text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full">
-              {{ tab.count }}
-            </span>
-          </button>
-        </nav>
+        <div class="mt-3">
+          <TabsNavigation :tabs="tabs" :active-tab="activeTab" @tab-change="activeTab = $event" />
+        </div>
       </div>
     </div>
 
@@ -481,6 +471,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import DetailHeader from '@/components/common/DetailHeader.vue'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import TabsNavigation from '@/components/common/TabsNavigation.vue'
 import { hoyISO } from '@/utils/fecha.js'
 import { graphqlClient } from '@/graphql/client.js'
 

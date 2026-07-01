@@ -31,18 +31,8 @@
       <!-- Junta activa -->
       <template v-else-if="junta">
         <!-- Tabs -->
-        <div class="border-b border-gray-200 mb-6">
-          <nav class="-mb-px flex gap-6">
-            <button v-for="tab in tabs" :key="tab.id" @click="activeTab = tab.id"
-              class="pb-3 text-sm font-medium border-b-2 transition-colors"
-              :class="activeTab === tab.id ? 'border-purple-600 text-purple-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
-              {{ tab.label }}
-              <span v-if="tab.count !== undefined" class="ml-2 px-2 py-0.5 rounded-full text-xs"
-                :class="activeTab === tab.id ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'">
-                {{ tab.count }}
-              </span>
-            </button>
-          </nav>
+        <div class="mb-6">
+          <TabsNavigation :tabs="tabs" :active-tab="activeTab" @tab-change="activeTab = $event" />
         </div>
 
         <!-- Tab: Composición actual -->
@@ -262,6 +252,7 @@ import EstadoCarga    from '@/components/common/EstadoCarga.vue'
 import ErrorAlert     from '@/components/common/ErrorAlert.vue'
 import AppDrawer      from '@/components/common/AppDrawer.vue'
 import ConfirmPopover from '@/components/common/ConfirmPopover.vue'
+import TabsNavigation from '@/components/common/TabsNavigation.vue'
 import { hoyISO }     from '@/utils/fecha.js'
 import { useToast }   from '@/composables/useToast'
 import { graphqlClient } from '@/graphql/client.js'
@@ -304,8 +295,8 @@ const miembroSeleccionadoNombre = ref('')
 
 // ─── Computed ─────────────────────────────────────────────────────────────────
 const tabs = computed(() => [
-  { id: 'composicion', label: 'Composición actual', count: cargosActivos.value.length },
-  { id: 'historial',   label: 'Historial' },
+  { id: 'composicion', name: 'Composición actual', count: cargosActivos.value.length },
+  { id: 'historial',   name: 'Historial' },
 ])
 const cargosActivos  = computed(() => (junta.value?.cargos || []).filter(c => c.activo))
 const cargosOrdenados = computed(() =>

@@ -4,15 +4,10 @@
     : 'Contabilidad simplificada: categorías fiscales y libro de ingresos y gastos'">
 
     <!-- Tabs -->
-    <div class="border-b border-gray-200 mb-6 flex items-center justify-between">
-      <nav class="-mb-px flex space-x-6">
-        <button v-for="tab in tabs" :key="tab.id"
-          @click="activeTab = tab.id"
-          :class="[activeTab === tab.id ? 'border-purple-500 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700', 'py-3 px-1 border-b-2 font-medium text-sm']"
-        >{{ tab.name }}</button>
-      </nav>
+    <div class="mb-6 flex items-center justify-between gap-4">
+      <TabsNavigation :tabs="tabs" :active-tab="activeTab" @tab-change="activeTab = $event" class="flex-1" />
       <router-link to="/economico/cierre-ejercicio"
-        class="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700">
+        class="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 whitespace-nowrap">
         Cierre del ejercicio →
       </router-link>
     </div>
@@ -587,6 +582,7 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { ref, reactive, computed, onMounted, provide, watch } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
+import TabsNavigation from '@/components/common/TabsNavigation.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import ImputacionActividadPicker from '@/components/common/ImputacionActividadPicker.vue'

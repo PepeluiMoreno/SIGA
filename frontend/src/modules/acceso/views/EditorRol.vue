@@ -13,21 +13,8 @@
     </div>
 
     <!-- Tabs: Funcionalidades / Transacciones directas -->
-    <div class="mb-4 border-b border-gray-200 flex gap-0">
-      <button
-        v-for="tab in tabs"
-        :key="tab.id"
-        @click="activeTab = tab.id"
-        class="px-5 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px"
-        :class="activeTab === tab.id
-          ? 'border-purple-600 text-purple-700'
-          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-      >
-        {{ tab.label }}
-        <span class="ml-1.5 text-xs" :class="activeTab === tab.id ? 'text-purple-400' : 'text-gray-400'">
-          {{ tab.count.value }}
-        </span>
-      </button>
+    <div class="mb-4">
+      <TabsNavigation :tabs="tabs" :active-tab="activeTab" @tab-change="activeTab = $event" />
     </div>
 
     <!-- Carga inicial -->
@@ -301,6 +288,7 @@ import { useToast } from '@/composables/useToast'
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
+import TabsNavigation from '@/components/common/TabsNavigation.vue'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
 import {
   GET_ROL_CON_FUNCIONALIDADES,
@@ -346,10 +334,10 @@ const expandedFuncRight = reactive({})
 
 const activeTab = ref('funcionalidades')
 
-const tabs = [
-  { id: 'funcionalidades', label: 'Funcionalidades',  count: computed(() => assignedFuncIds.value.length) },
-  { id: 'transacciones',   label: 'Transacciones directas', count: computed(() => rol.value?.transacciones?.length ?? 0) },
-]
+const tabs = computed(() => [
+  { id: 'funcionalidades', name: 'Funcionalidades',           count: assignedFuncIds.value.length },
+  { id: 'transacciones',   name: 'Transacciones directas',    count: rol.value?.transacciones?.length ?? 0 },
+])
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 

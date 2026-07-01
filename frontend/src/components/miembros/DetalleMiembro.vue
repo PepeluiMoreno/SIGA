@@ -110,9 +110,11 @@
         </div>
       </div>
 
-      <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <TabsNavigation :tabs="tabsDisponibles" :active-tab="tabActiva" @tab-change="tabActiva = $event" />
-        <div class="px-3 py-4 bg-indigo-50">
+      <div>
+        <div class="mb-4">
+          <TabsNavigation :tabs="tabsDisponibles" :active-tab="tabActiva" @tab-change="tabActiva = $event" />
+        </div>
+        <div>
 
         <!-- ── 1. DATOS PERSONALES ── -->
         <div v-show="tabActiva === 'datos'">
