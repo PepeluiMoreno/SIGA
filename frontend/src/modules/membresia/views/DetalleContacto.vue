@@ -29,7 +29,7 @@
       </template>
     </template>
 
-    <div class="p-4 sm:p-6 max-w-4xl mx-auto">
+    <div class="p-4 sm:p-6 w-3/4 mx-auto">
       <div v-if="cargando" class="text-center py-12 text-slate-400 text-sm">Cargando ficha…</div>
       <div v-else-if="error" class="rounded-md bg-red-50 border border-red-200 p-4 text-sm text-red-800">{{ error }}</div>
       <div v-else-if="!isCreate && !contacto" class="text-center py-12 text-slate-400 text-sm">Contacto no encontrado.</div>
