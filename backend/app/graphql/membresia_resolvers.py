@@ -859,20 +859,39 @@ class MembresiaQuery:
 
     @strawberry.field(permission_classes=[RequireTransaction("GRUPO_EDITAR")])
     async def candidatos_grupo(
-        self, info: strawberry.Info, colectivo: Optional[str] = None,
+        self, info: strawberry.Info,
+        colectivo: Optional[str] = None,
+        agrupacion_id: Optional[uuid.UUID] = None,
     ) -> List[CandidatoGrupoType]:
         """Candidatos para integrar un grupo de trabajo, de los tres colectivos:
         voluntarios, contratados y coordinadores de campaña. Filtrable por `colectivo`
         (VOLUNTARIO | CONTRATADO | COORDINADOR); sin filtro devuelve los tres.
-        Un contacto puede aparecer con varios colectivos si acumula condiciones."""
+        Un contacto puede aparecer con varios colectivos si acumula condiciones.
+
+        `agrupacion_id` acota los candidatos al ÁMBITO territorial de esa agrupación
+        (la unidad + su subárbol): en un grupo de una agrupación local no puede entrar
+        alguien adscrito a otra provincia. Los contactos sin agrupación asignada quedan
+        fuera cuando se filtra por ámbito. Sin `agrupacion_id`, no se aplica scoping."""
         session = info.context.session
         quiere = (colectivo or "").upper() or None
+
+        # Ámbito territorial: agrupación del grupo + descendientes. Los candidatos deben
+        # tener su Contacto.agrupacion_id dentro de ese subárbol.
+        ambito_ids: Optional[set[uuid.UUID]] = None
+        if agrupacion_id is not None:
+            from app.modules.acceso.services.ambito_territorial import _subarbol
+            ambito_ids = await _subarbol(session, {agrupacion_id})
 
         def _cand(c, col):
             return CandidatoGrupoType(
                 id=c.id, nombre=c.nombre, apellido1=c.apellido1,
                 apellido2=c.apellido2, email=c.email, colectivo=col,
             )
+
+        def _en_ambito(c) -> bool:
+            if ambito_ids is None:
+                return True
+            return c.agrupacion_id is not None and c.agrupacion_id in ambito_ids
 
         resultado: list[CandidatoGrupoType] = []
 
@@ -897,7 +916,7 @@ class MembresiaQuery:
                 )
                 .distinct()
             )).scalars().all()
-            resultado.extend(_cand(c, col) for c in contactos)
+            resultado.extend(_cand(c, col) for c in contactos if _en_ambito(c))
 
         # Coordinadores de campaña: usuarios con rol COORDINADOR_CAMPANA, vía su contacto.
         if not quiere or quiere == "COORDINADOR":
@@ -915,7 +934,7 @@ class MembresiaQuery:
                 )
                 .distinct()
             )).scalars().all()
-            resultado.extend(_cand(c, "COORDINADOR") for c in coords)
+            resultado.extend(_cand(c, "COORDINADOR") for c in coords if _en_ambito(c))
 
         return resultado
 

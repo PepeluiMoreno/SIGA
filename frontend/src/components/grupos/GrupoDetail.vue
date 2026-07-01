@@ -43,9 +43,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
               <p class="text-xs text-slate-500 mb-0.5">Coordinador</p>
-              <p class="font-medium text-slate-900">
-                {{ grupo.coordinador ? `${grupo.coordinador.nombre} ${grupo.coordinador.apellido1}` : '—' }}
-              </p>
+              <p class="font-medium text-slate-900">{{ coordinadorNombre }}</p>
             </div>
             <div>
               <p class="text-xs text-slate-500 mb-0.5">Agrupación</p>
@@ -499,6 +497,16 @@ const tabs = computed(() => [
 
 const miembrosActivos = computed(() => (grupo.value?.miembros || []).filter(m => m.activo))
 
+// El coordinador del grupo es el miembro con rol de coordinador (se le adjudica a
+// uno de sus integrantes). Fallback al campo coordinador de cabecera si aún no se
+// ha designado ninguno por rol.
+const coordinadorNombre = computed(() => {
+  const mg = miembrosActivos.value.find(m => m.rolGrupo?.esCoordinador)
+  if (mg?.miembro) return `${mg.miembro.nombre} ${mg.miembro.apellido1 || ''}`.trim()
+  const c = grupo.value?.coordinador
+  return c ? `${c.nombre} ${c.apellido1 || ''}`.trim() : '—'
+})
+
 // ── GraphQL ───────────────────────────────────────────────────────────────────
 const GQL_GRUPO = `
   query GrupoDetalle($id: UUID!) {
@@ -584,8 +592,8 @@ const MUTATION_ELIMINAR_APORTACION = `
 `
 
 const GQL_VOLUNTARIOS = `
-  query CandidatosParaGrupo($colectivo: String) {
-    candidatos: candidatosGrupo(colectivo: $colectivo) {
+  query CandidatosParaGrupo($colectivo: String, $agrupacionId: UUID) {
+    candidatos: candidatosGrupo(colectivo: $colectivo, agrupacionId: $agrupacionId) {
       id nombre apellido1 apellido2 email colectivo
     }
   }
@@ -657,6 +665,7 @@ async function buscarVoluntarios() {
   try {
     const data = await graphqlClient.request(GQL_VOLUNTARIOS, {
       colectivo: filtroColectivo.value || null,
+      agrupacionId: grupo.value?.agrupacion?.id || null,
     })
     let cands = data.candidatos || []
     const q = busqVoluntario.value.toLowerCase()

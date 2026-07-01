@@ -1,11 +1,9 @@
-"""Servicio del módulo Campañas (parte 1/2).
+"""Servicio del módulo Campañas.
 
 Concentra la lógica de negocio que antes vivía en campania_resolvers.py:
 renderizado de plantillas de email, envío de notificaciones, cierre,
-clónación (con recursión) y propagación a subcampañas.
-
-Para ensamblar el servicio completo en local:
-  cat campania_service_p1.py campania_service_p2.py > campania_service.py
+clonación (con recursión), propagación a subcampañas y disolución de los
+grupos efímeros al cerrar la campaña.
 """
 from __future__ import annotations
 
@@ -14,7 +12,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import select, delete as sa_delete
+from sqlalchemy import select, update as sa_update, delete as sa_delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.campana import (
@@ -58,11 +56,43 @@ class CampaniaService:
         await self.session.commit()
         return await self._get(campania_id)
 
+    # Estados que dan por concluida la campaña: al entrar en cualquiera de ellos
+    # se disuelven sus grupos de trabajo efímeros (conservando la historia).
+    ESTADOS_TERMINALES = ('FINALIZADA', 'CERRADA', 'CANCELADA')
+
+    async def _codigo_estado(self, estado_id: uuid.UUID) -> Optional[str]:
+        from app.modules.configuracion.models.estados import EstadoCampania
+        r = await self.session.execute(
+            select(EstadoCampania.codigo).where(EstadoCampania.id == estado_id)
+        )
+        return r.scalar_one_or_none()
+
+    async def _disolver_grupos_efimeros(self, campania_id: uuid.UUID) -> int:
+        """Da de baja (activo=False, fecha_fin=hoy) los grupos efímeros ligados a la
+        campaña, conservando su composición e historia (MiembroGrupo, tareas, horas
+        y reuniones NO se tocan). Idempotente: no reabre nada ni pisa fechas ya puestas.
+        Devuelve cuántos grupos se disolvieron."""
+        from ..models.grupo import GrupoTrabajo
+        grupos = (await self.session.execute(
+            select(GrupoTrabajo).where(
+                GrupoTrabajo.campania_id == campania_id,
+                GrupoTrabajo.activo.is_(True),
+            )
+        )).scalars().all()
+        hoy = date.today()
+        for g in grupos:
+            g.activo = False
+            if g.fecha_fin is None:
+                g.fecha_fin = hoy
+        return len(grupos)
+
     async def transicionar_estado(self, campania_id, estado_id, notas=None) -> Campania:
         campania = await self._get(campania_id)
         campania.estado_id = estado_id
         if notas:
             campania.notas_aprobacion = notas
+        if (await self._codigo_estado(estado_id)) in self.ESTADOS_TERMINALES:
+            await self._disolver_grupos_efimeros(campania_id)
         await self.session.commit()
         return await self._get(campania_id)
 
@@ -122,6 +152,9 @@ class CampaniaService:
                 select(PartidaPresupuestoCampania).where(PartidaPresupuestoCampania.id == r["partida_id"])
             )).scalar_one()
             partida.importe_real = r["importe_real"]
+        # Al cerrar formalmente, los grupos efímeros de la campaña se disuelven
+        # (conservando su composición e historia).
+        await self._disolver_grupos_efimeros(campania_id)
         await self.session.commit()
         return await self._get(campania_id)
 

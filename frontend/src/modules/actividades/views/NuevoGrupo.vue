@@ -19,6 +19,16 @@
         </div>
 
         <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Agrupación territorial <span class="text-red-500">*</span></label>
+          <select v-model="form.agrupacionId"
+            class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="">Seleccionar agrupación…</option>
+            <option v-for="a in agrupaciones" :key="a.id" :value="a.id">{{ a.nombre }}</option>
+          </select>
+          <p class="mt-1 text-xs text-slate-400">Fija el ámbito del que se eligen los integrantes: no podrá entrar quien pertenezca a otra agrupación.</p>
+        </div>
+
+        <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Descripción</label>
           <textarea v-model="form.descripcion" rows="3"
             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
@@ -50,7 +60,7 @@
             class="px-4 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50">
             Cancelar
           </router-link>
-          <button @click="guardar" :disabled="guardando || !form.nombre || !form.tipoGrupoId"
+          <button @click="guardar" :disabled="guardando || !form.nombre || !form.tipoGrupoId || !form.agrupacionId"
             class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
             {{ guardando ? 'Guardando…' : 'Crear grupo' }}
           </button>
@@ -74,6 +84,7 @@ const GQL_CREAR_GRUPO = `
   mutation CrearGrupoTrabajoSeguro(
     $nombre: String!
     $tipoGrupoId: UUID
+    $agrupacionId: UUID
     $descripcion: String
     $objetivo: String
     $fechaInicio: Date
@@ -82,6 +93,7 @@ const GQL_CREAR_GRUPO = `
     crearGrupoTrabajoSeguro(
       nombre: $nombre
       tipoGrupoId: $tipoGrupoId
+      agrupacionId: $agrupacionId
       descripcion: $descripcion
       objetivo: $objetivo
       fechaInicio: $fechaInicio
@@ -93,14 +105,22 @@ const GQL_CREAR_GRUPO = `
   }
 `
 
+const GQL_AGRUPACIONES = `
+  query AgrupacionesParaGrupo {
+    unidadesOrganizativas { id nombre activo }
+  }
+`
+
 const router = useRouter()
 const tipos = ref([])
+const agrupaciones = ref([])
 const guardando = ref(false)
 const error = ref('')
 
 const form = ref({
   nombre: '',
   tipoGrupoId: '',
+  agrupacionId: '',
   descripcion: '',
   objetivo: '',
   fechaInicio: '',
@@ -108,8 +128,12 @@ const form = ref({
 })
 
 onMounted(async () => {
-  const data = await graphqlClient.request(GET_TIPOS_GRUPO)
-  tipos.value = (data.tiposGrupo ?? []).filter(t => t.activo)
+  const [dataTipos, dataAgr] = await Promise.all([
+    graphqlClient.request(GET_TIPOS_GRUPO),
+    graphqlClient.request(GQL_AGRUPACIONES),
+  ])
+  tipos.value = (dataTipos.tiposGrupo ?? []).filter(t => t.activo)
+  agrupaciones.value = (dataAgr.unidadesOrganizativas ?? []).filter(a => a.activo !== false)
 })
 
 async function guardar() {
@@ -119,6 +143,7 @@ async function guardar() {
     const vars = {
       nombre: form.value.nombre,
       tipoGrupoId: form.value.tipoGrupoId || null,
+      agrupacionId: form.value.agrupacionId || null,
       descripcion: form.value.descripcion || null,
       objetivo: form.value.objetivo || null,
       fechaInicio: form.value.fechaInicio || null,

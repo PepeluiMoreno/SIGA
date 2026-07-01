@@ -288,9 +288,18 @@ class ActividadService:
         objetivo=None, fecha_inicio=None, fecha_fin=None,
         coordinador_id=None, agrupacion_id=None, campania_id=None,
     ) -> GrupoTrabajo:
-        """Crea un GrupoTrabajo resolviendo el tipo por defecto si no se indica."""
+        """Crea un GrupoTrabajo resolviendo el tipo por defecto si no se indica.
+
+        La agrupación territorial es obligatoria: fija el ámbito del que se nutren
+        los integrantes (no puede entrar alguien de otra agrupación fuera de ese
+        subárbol). Ver `candidatos_grupo(agrupacion_id=…)`."""
         if not nombre or not nombre.strip():
             raise ValueError("El nombre del grupo es obligatorio.")
+        if agrupacion_id is None:
+            raise ValueError(
+                "La agrupación territorial del grupo es obligatoria: define el ámbito "
+                "del que se eligen sus integrantes."
+            )
         if tipo_grupo_id is None:
             r = await self.session.execute(
                 select(TipoGrupo).where(TipoGrupo.activo == True).order_by(TipoGrupo.nombre)
