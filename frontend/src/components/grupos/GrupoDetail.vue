@@ -169,6 +169,11 @@
               </div>
               <span v-if="mg.rolGrupo?.esCoordinador"
                 class="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Coordinador</span>
+              <button v-else-if="rolCoordinador" @click="hacerCoordinador(mg)" :disabled="asignandoCoord === mg.id"
+                title="Designar coordinador del grupo"
+                class="text-xs font-medium px-2 py-1 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 disabled:opacity-50 transition-colors">
+                Hacer coordinador
+              </button>
               <button @click="pendingQuitarMgId = mg.id; showConfirmQuitarMiembro = true" title="Quitar del grupo"
                 class="p-1 text-slate-300 hover:text-red-500 transition-colors rounded">
                 <XMarkIcon class="w-4 h-4" />
@@ -506,6 +511,42 @@ const coordinadorNombre = computed(() => {
   const c = grupo.value?.coordinador
   return c ? `${c.nombre} ${c.apellido1 || ''}`.trim() : '—'
 })
+
+// Rol de grupo marcado como coordinador (para poder designar coordinador entre
+// los miembros). Si el catálogo no tiene ninguno, el botón no se ofrece.
+const rolCoordinador = computed(() => rolesGrupo.value.find(r => r.esCoordinador) || null)
+const asignandoCoord = ref(null)
+
+const MUTATION_ACTUALIZAR_ROL_MIEMBRO = `
+  mutation ActualizarRolMiembroGrupo($id: UUID!, $rolGrupoId: UUID!) {
+    actualizarMiembroGrupo(data: { id: $id, rolGrupoId: $rolGrupoId }) {
+      id rolGrupo { id nombre esCoordinador }
+    }
+  }
+`
+
+// Designa a un miembro como coordinador: le pone el rol coordinador y, si había
+// otro coordinador, lo devuelve a un rol de participante (solo uno a la vez).
+async function hacerCoordinador(mg) {
+  if (!rolCoordinador.value) return
+  asignandoCoord.value = mg.id
+  errorAnadir.value = ''
+  try {
+    const anterior = miembrosActivos.value.find(m => m.rolGrupo?.esCoordinador && m.id !== mg.id)
+    if (anterior) {
+      const rolParticipante = rolesGrupo.value.find(r => !r.esCoordinador)
+      if (rolParticipante) {
+        await graphqlClient.request(MUTATION_ACTUALIZAR_ROL_MIEMBRO, { id: anterior.id, rolGrupoId: rolParticipante.id })
+      }
+    }
+    await graphqlClient.request(MUTATION_ACTUALIZAR_ROL_MIEMBRO, { id: mg.id, rolGrupoId: rolCoordinador.value.id })
+    await cargar()
+  } catch (e) {
+    errorAnadir.value = e?.response?.errors?.[0]?.message || 'No se pudo designar coordinador'
+  } finally {
+    asignandoCoord.value = null
+  }
+}
 
 // ── GraphQL ───────────────────────────────────────────────────────────────────
 const GQL_GRUPO = `

@@ -63,6 +63,11 @@ async def main() -> None:
     # 2) Roles de gobierno (abre su propia sesión y commitea).
     await seed_roles_organizacionales.seed()
 
+    # 2b) Roles de grupo de trabajo (Coordinador/Colaborador/Especialista). Sin
+    #     ellos no se pueden componer grupos ni designar coordinador.
+    from app.scripts.seeding import seed_roles_grupo
+    await seed_roles_grupo.seed()
+
     # 3) Permisos por rol. Algunos de estos seeds no son idempotentes (insertan sin
     #    comprobar, o traen repetidos en su lista) y chocan con uq_rol_transaccion al
     #    re-ejecutar. Para que el fixture SÍ sea idempotente, vaciamos los permisos de
