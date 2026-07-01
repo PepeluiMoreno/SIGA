@@ -34,6 +34,14 @@
           <span class="text-sm text-slate-500">{{ contactosFiltrados.length }} de {{ contactos.length }}</span>
         </div>
 
+        <!-- Barra de acciones masivas (aparece con selección) -->
+        <BulkActionsBar :count="seleccionados.size" :total="contactosFiltrados.length"
+          :todo-seleccionado="todoSeleccionado"
+          :acciones="accionesMasivas"
+          @seleccionar-todos="seleccionarTodos"
+          @limpiar="seleccionados = new Set()"
+          @ejecutar="ejecutarAccionMasiva" />
+
         <!-- Estados -->
         <div v-if="cargando" class="text-center py-12 text-slate-400 text-sm">Cargando contactos…</div>
         <div v-else-if="error" class="rounded-md bg-red-50 border border-red-200 p-4 text-sm text-red-800">{{ error }}</div>
@@ -46,6 +54,10 @@
           <table class="min-w-full divide-y divide-slate-200 text-sm">
             <thead class="bg-slate-50">
               <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                <th class="px-3 py-3 w-8">
+                  <input type="checkbox" :checked="todoSeleccionado" @change="toggleTodos"
+                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                </th>
                 <th class="px-4 py-3">Nombre / Razón social</th>
                 <th class="px-4 py-3">Ubicación</th>
                 <th class="px-4 py-3">Contacto</th>
@@ -56,6 +68,10 @@
               <tr v-for="c in contactosFiltrados" :key="c.id"
                 class="hover:bg-purple-50 cursor-pointer"
                 @click="abrirFicha(c.id)">
+                <td class="px-3 py-3" @click.stop>
+                  <input type="checkbox" :checked="seleccionados.has(c.id)" @change="toggleSel(c.id)"
+                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                </td>
                 <td class="px-4 py-3">
                   <div class="flex flex-wrap items-center gap-1.5">
                     <span class="font-medium text-purple-700">{{ nombreMostrado(c) }}</span>
@@ -92,6 +108,10 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal de redacción de mensaje (acción masiva "Enviar mensaje") -->
+    <ModalEnviarMensaje v-if="modalMensaje" :destinatarios="destinatariosMensaje"
+      @close="modalMensaje = false" @enviado="onMensajeEnviado" />
   </AppLayout>
 </template>
 
@@ -103,6 +123,8 @@ import FilterBar from '@/components/common/FilterBar.vue'
 import FilterRail from '@/components/common/FilterRail.vue'
 import RowActions from '@/components/common/RowActions.vue'
 import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
+import BulkActionsBar from '@/components/common/BulkActionsBar.vue'
+import ModalEnviarMensaje from '@/components/membresia/ModalEnviarMensaje.vue'
 import { useToast } from '@/composables/useToast'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { usePermisos } from '@/composables/usePermisos.js'
@@ -165,6 +187,49 @@ async function eliminarContacto(c) {
 const contactos = ref([])
 const cargando = ref(true)
 const error = ref('')
+
+// ── Selección múltiple + acciones masivas ──────────────────────────────────────
+const seleccionados = ref(new Set())
+const todoSeleccionado = computed(() =>
+  contactosFiltrados.value.length > 0 && contactosFiltrados.value.every((c) => seleccionados.value.has(c.id))
+)
+function toggleSel(id) {
+  const s = new Set(seleccionados.value)
+  s.has(id) ? s.delete(id) : s.add(id)
+  seleccionados.value = s
+}
+function toggleTodos() {
+  seleccionados.value = todoSeleccionado.value ? new Set() : new Set(contactosFiltrados.value.map((c) => c.id))
+}
+function seleccionarTodos() {
+  seleccionados.value = new Set(contactosFiltrados.value.map((c) => c.id))
+}
+const accionesMasivas = [
+  { key: 'mensaje', label: 'Enviar mensaje', permiso: 'CONTACTO_LISTAR' },
+]
+function ejecutarAccionMasiva(key) {
+  if (key === 'mensaje') abrirModalMensaje()
+}
+
+// ── Enviar mensaje (modal de redacción) ────────────────────────────────────────
+const modalMensaje = ref(false)
+// Destinatarios seleccionados con email (los sin email se avisan).
+const destinatariosMensaje = computed(() =>
+  contactos.value.filter((c) => seleccionados.value.has(c.id))
+)
+function abrirModalMensaje() {
+  if (!seleccionados.value.size) return
+  modalMensaje.value = true
+}
+function onMensajeEnviado(res) {
+  modalMensaje.value = false
+  seleccionados.value = new Set()
+  if (res?.enviados != null) {
+    let msg = `Mensaje enviado a ${res.enviados} de ${res.total}.`
+    if (res.sinEmail) msg += ` ${res.sinEmail} sin email.`
+    toast.success(msg)
+  }
+}
 
 const searchQuery = ref('')
 const filters = ref({ tipos: [], vinculaciones: [] })

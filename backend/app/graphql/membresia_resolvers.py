@@ -339,6 +339,15 @@ class FranjaDisponibilidadOut:
     hora_fin: str
 
 
+@strawberry.type(name="EnvioMensajeResultado")
+class EnvioMensajeResultado:
+    """Resultado del envío masivo de un mensaje a contactos."""
+    enviados: int
+    total: int
+    sin_email: int
+    errores: list[str]
+
+
 @strawberry.type
 class MembresiaResolverMutation:
 
@@ -790,6 +799,45 @@ class MembresiaResolverMutation:
         vinc.fecha_fin = date.today()
         await session.commit()
         return await _fetch_miembro(session, contacto_id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("CONTACTO_LISTAR")])
+    async def enviar_mensaje_contactos(
+        self, info: strawberry.Info,
+        contacto_ids: list[uuid.UUID],
+        asunto: str,
+        cuerpo_html: str,
+    ) -> 'EnvioMensajeResultado':
+        """Envía un mensaje por email a los contactos indicados usando el SMTP de
+        Parámetros Generales. Devuelve el nº de envíos y los errores. Si SMTP no está
+        configurado, lanza un error con el detalle (para mostrarlo en la UI)."""
+        from app.core.email_service import EmailService
+        session = info.context.session
+
+        contactos = (await session.execute(
+            select(Contacto).where(Contacto.id.in_(contacto_ids))
+        )).scalars().all()
+        destinatarios = [(c.nombre, c.email) for c in contactos if c.email]
+        if not destinatarios:
+            raise ValueError("Ninguno de los contactos seleccionados tiene email.")
+
+        email = EmailService(session)
+        enviados = 0
+        errores: list[str] = []
+        for nombre, direccion in destinatarios:
+            try:
+                await email.enviar(destinatario=direccion, asunto=asunto, cuerpo_html=cuerpo_html)
+                enviados += 1
+            except ValueError:
+                # SMTP no configurado: es un fallo global, se propaga para avisar en la UI.
+                raise
+            except Exception as exc:  # noqa: BLE001
+                errores.append(f"{nombre or direccion}: {exc}")
+        return EnvioMensajeResultado(
+            enviados=enviados,
+            total=len(destinatarios),
+            sin_email=len(contactos) - len(destinatarios),
+            errores=errores,
+        )
 
     @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_VOLUNTARIO_GESTIONAR")])
     async def guardar_franjas_disponibilidad(
