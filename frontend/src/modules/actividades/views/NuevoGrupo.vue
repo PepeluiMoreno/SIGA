@@ -1,5 +1,11 @@
 <template>
   <AppLayout title="Nuevo grupo de trabajo" subtitle="Crear un nuevo equipo">
+    <template #actions>
+      <FormActions submit-text="Crear grupo" :loading="guardando"
+        :disabled="!form.nombre || !form.tipoGrupoId || !form.agrupacionId"
+        @cancel="$router.push('/grupos')" @submit="guardar" />
+    </template>
+
     <div class="w-3/4 mx-auto">
       <div class="bg-white rounded-lg shadow p-6 space-y-5">
 
@@ -22,6 +28,24 @@
           <label class="block text-sm font-medium text-slate-700 mb-1">Agrupación territorial <span class="text-red-500">*</span></label>
           <SelectorAgrupacion v-model="form.agrupacionId" :agrupaciones="agrupaciones" />
           <p class="mt-1 text-xs text-slate-400">Fija el ámbito del que se eligen los integrantes: no podrá entrar quien pertenezca a otra agrupación.</p>
+          <!-- Aviso: la agrupación elegida no tiene coordinador/cargo nombrado -->
+          <div v-if="form.agrupacionId && !agrupacionTieneCoordinador"
+            class="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            <ExclamationTriangleIcon class="w-4 h-4 mt-0.5 shrink-0" />
+            <span>Esta agrupación territorial no tiene coordinador nombrado. Puedes crear el grupo igualmente y designar su coordinador entre los integrantes.</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Coordinador del grupo</label>
+          <select v-model="form.coordinadorId" :disabled="!form.agrupacionId"
+            class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-400">
+            <option value="">{{ form.agrupacionId ? (candidatos.length ? 'Sin designar de momento' : 'No hay candidatos en este ámbito') : 'Elige antes la agrupación' }}</option>
+            <option v-for="c in candidatos" :key="c.id" :value="c.id">
+              {{ c.nombre }} {{ c.apellido1 || '' }} — {{ colectivoLabel(c.colectivo) }}
+            </option>
+          </select>
+          <p class="mt-1 text-xs text-slate-400">Se elige entre los candidatos del ámbito de la agrupación. También podrás designarlo después entre los miembros.</p>
         </div>
 
         <div>
@@ -51,17 +75,6 @@
 
         <ErrorAlert v-if="error" :message="error" />
 
-        <div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
-          <router-link to="/grupos"
-            class="px-4 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50">
-            Cancelar
-          </router-link>
-          <button @click="guardar" :disabled="guardando || !form.nombre || !form.tipoGrupoId || !form.agrupacionId"
-            class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-            {{ guardando ? 'Guardando…' : 'Crear grupo' }}
-          </button>
-        </div>
-
       </div>
     </div>
   </AppLayout>
@@ -69,9 +82,11 @@
 
 <script setup>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import { ref, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
+import FormActions from '@/components/common/FormActions.vue'
 import SelectorAgrupacion from '@/components/common/SelectorAgrupacion.vue'
 import { graphqlClient } from '@/graphql/client'
 import { GET_TIPOS_GRUPO } from '@/modules/actividades/graphql/grupos.js'
@@ -82,6 +97,7 @@ const GQL_CREAR_GRUPO = `
     $nombre: String!
     $tipoGrupoId: UUID
     $agrupacionId: UUID
+    $coordinadorId: UUID
     $descripcion: String
     $objetivo: String
     $fechaInicio: Date
@@ -91,6 +107,7 @@ const GQL_CREAR_GRUPO = `
       nombre: $nombre
       tipoGrupoId: $tipoGrupoId
       agrupacionId: $agrupacionId
+      coordinadorId: $coordinadorId
       descripcion: $descripcion
       objetivo: $objetivo
       fechaInicio: $fechaInicio
@@ -108,12 +125,25 @@ const GQL_AGRUPACIONES = `
       id nombre activo agrupacionPadreId
       tipoUnidad { id nombre }
     }
+    coordinacionesTerritoriales {
+      agrupacionId
+    }
+  }
+`
+
+const GQL_CANDIDATOS = `
+  query CandidatosParaGrupoAlta($agrupacionId: UUID) {
+    candidatosGrupo(agrupacionId: $agrupacionId) {
+      id nombre apellido1 colectivo
+    }
   }
 `
 
 const router = useRouter()
 const tipos = ref([])
 const agrupaciones = ref([])
+const coordinaciones = ref([])   // agrupaciones con coordinador nombrado
+const candidatos = ref([])
 const guardando = ref(false)
 const error = ref('')
 
@@ -121,10 +151,31 @@ const form = ref({
   nombre: '',
   tipoGrupoId: '',
   agrupacionId: null,
+  coordinadorId: '',
   descripcion: '',
   objetivo: '',
   fechaInicio: '',
   fechaFin: '',
+})
+
+// ¿La agrupación elegida tiene coordinador/cargo territorial nombrado?
+const agrupacionTieneCoordinador = computed(() =>
+  !!form.value.agrupacionId &&
+  coordinaciones.value.some(c => c.agrupacionId === form.value.agrupacionId)
+)
+
+const COLECTIVO_LABEL = { VOLUNTARIO: 'Voluntario', CONTRATADO: 'Contratado', COORDINADOR: 'Coord. de campaña' }
+const colectivoLabel = (c) => COLECTIVO_LABEL[c] || c
+
+// Al cambiar la agrupación, recargar candidatos del ámbito y limpiar el coordinador.
+watch(() => form.value.agrupacionId, async (agrId) => {
+  form.value.coordinadorId = ''
+  candidatos.value = []
+  if (!agrId) return
+  try {
+    const data = await graphqlClient.request(GQL_CANDIDATOS, { agrupacionId: agrId })
+    candidatos.value = data.candidatosGrupo ?? []
+  } catch { candidatos.value = [] }
 })
 
 onMounted(async () => {
@@ -134,6 +185,7 @@ onMounted(async () => {
   ])
   tipos.value = (dataTipos.tiposGrupo ?? []).filter(t => t.activo)
   agrupaciones.value = (dataAgr.unidadesOrganizativas ?? []).filter(a => a.activo !== false)
+  coordinaciones.value = dataAgr.coordinacionesTerritoriales ?? []
 })
 
 async function guardar() {
@@ -144,6 +196,7 @@ async function guardar() {
       nombre: form.value.nombre,
       tipoGrupoId: form.value.tipoGrupoId || null,
       agrupacionId: form.value.agrupacionId || null,
+      coordinadorId: form.value.coordinadorId || null,
       descripcion: form.value.descripcion || null,
       objetivo: form.value.objetivo || null,
       fechaInicio: form.value.fechaInicio || null,
