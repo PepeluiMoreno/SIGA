@@ -3,9 +3,14 @@
     :title="tituloVista"
     :subtitle="subtituloVista">
 
-    <!-- El registro de cargos es una acción de edición, no de consulta -->
-    <template v-if="!esNuevo && agrupacion && tieneAlguno('CFG_TERRITORIO_EDITAR','MEMBRESIA_CARGO_ASIGNAR')" #actions>
-      <button type="button" @click="toggleEdicion"
+    <template #actions>
+      <!-- Alta: acciones estándar arriba a la derecha -->
+      <FormActions v-if="esNuevo" submit-text="Crear unidad"
+        :loading="creando" :disabled="!form.nombre.trim() || !formTipoId" :error="datosError"
+        @cancel="$router.push('/agrupaciones')" @submit="guardarNuevo" />
+      <!-- Detalle: alternar edición (el registro de cargos es acción de edición) -->
+      <button v-else-if="agrupacion && tieneAlguno('CFG_TERRITORIO_EDITAR','MEMBRESIA_CARGO_ASIGNAR')"
+        type="button" @click="toggleEdicion"
         class="h-8 px-3 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
         :class="editMode ? 'text-slate-600' : 'text-indigo-600'">
         {{ editMode ? 'Hecho' : 'Editar' }}
@@ -91,17 +96,6 @@
           </div>
         </div>
 
-        <ErrorAlert v-if="datosError" :message="datosError" />
-
-        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-          <router-link to="/agrupaciones"
-            class="px-4 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50">Cancelar</router-link>
-          <button type="button" @click="guardarNuevo" :disabled="creando || !form.nombre.trim() || !formTipoId"
-            class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50">
-            <span v-if="creando" class="animate-spin inline-block h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
-            Crear unidad
-          </button>
-        </div>
       </div>
     </section>
 
@@ -498,6 +492,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import EstructuraOrganizativaEditor from '@/components/configuracion/EstructuraOrganizativaEditor.vue'
 import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
 import SelectorAgrupacion from '@/components/common/SelectorAgrupacion.vue'
+import FormActions from '@/components/common/FormActions.vue'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
