@@ -48,24 +48,16 @@
           </div>
         </div>
 
-        <!-- Persona jurídica: identificación propia (razón social/CIF) -->
+        <!-- Persona jurídica: identificación propia (razón social/NIF) -->
+        <!-- Persona jurídica: sin foto/avatar (no aplica a una entidad). -->
         <FormSection v-if="esPJ" title="Identificación" acento="purple">
           <template #badge>
             <span v-if="!isCreate && contacto && !contacto.activo" class="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">inactivo</span>
           </template>
-          <div class="flex flex-col sm:flex-row gap-5">
-            <div class="shrink-0 flex flex-col items-center gap-2 sm:w-40">
-              <AvatarImg :src="fotoActual" :nombre="form.razonSocial" size="2xl" shape="carnet" />
-              <label v-if="editing" class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg cursor-pointer hover:bg-indigo-100 transition-colors">
-                Cambiar foto
-                <input type="file" accept="image/*" class="hidden" @change="onFotoChange" />
-              </label>
-            </div>
-            <div class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FieldText v-model="form.razonSocial" label="Razón social *" :editing="editing" />
-              <FieldText v-model="form.cif" label="CIF" :editing="editing" />
-              <FieldText class="sm:col-span-2" v-model="form.actividadPrincipal" label="Actividad principal" :editing="editing" />
-            </div>
+          <div class="grid grid-cols-12 gap-4">
+            <FieldText class="col-span-12 sm:col-span-7" v-model="form.razonSocial" label="Razón social *" :editing="editing" />
+            <FieldText class="col-span-6 sm:col-span-3" v-model="form.cif" label="NIF" :editing="editing" width="sm" />
+            <FieldText class="col-span-12" v-model="form.actividadPrincipal" label="Actividad principal" :editing="editing" />
           </div>
         </FormSection>
 
@@ -99,28 +91,23 @@
             Representante legal
           </h2>
 
-          <!-- Alta: el representante se da de alta como PF junto con la PJ -->
-          <div v-if="isCreate" class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+          <!-- Alta y edición: el representante es una persona física cuyos datos se
+               dan de alta / editan AQUÍ (no se escoge de una lista: al crear la empresa
+               su representante todavía no está en la base de datos). En edición, si la PJ
+               ya tenía representante se editan sus datos; si no, se da de alta al guardar. -->
+          <div v-if="isCreate || editMode" class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
             <p class="sm:col-span-2 -mt-1 text-xs text-slate-400">
-              Al crear la persona jurídica se da de alta también a su representante como persona física.
+              {{ isCreate || !representante
+                ? 'Se dará de alta al representante como persona física al guardar.'
+                : 'Datos personales y de contacto del representante legal (persona física).' }}
             </p>
             <FieldText v-model="repForm.nombre" label="Nombre del representante *" editing />
-            <FieldText v-model="repForm.apellido1" label="Primer apellido" editing />
+            <FieldText v-model="repForm.apellido1" label="Primer apellido *" editing />
             <FieldText v-model="repForm.apellido2" label="Segundo apellido" editing />
             <FieldSelect v-model="repForm.tipoDocumento" label="Tipo de documento" :options="tipoDocumentoOptions" editing />
             <FieldText v-model="repForm.numeroDocumento" label="Nº documento" editing />
             <FieldText v-model="repForm.email" label="Email" type="email" editing />
             <FieldText v-model="repForm.telefono" label="Teléfono" editing />
-          </div>
-
-          <!-- Edición: reasignar a otra persona física existente -->
-          <div v-else-if="editMode">
-            <label class="block text-xs font-medium text-slate-500 mb-1">Representante (persona física)</label>
-            <select v-model="form.representanteLegalId"
-              class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
-              <option value="">— Sin representante —</option>
-              <option v-for="c in pfContactos" :key="c.id" :value="c.id">{{ nombrePF(c) }}</option>
-            </select>
           </div>
 
           <!-- Vista: datos del representante + ojo a su ficha -->
@@ -290,8 +277,10 @@ const pfContactos = computed(() =>
 const formValido = computed(() => {
   if (esPJ.value) {
     if (!form.razonSocial.trim()) return false
-    // En alta, el representante (PF) se crea junto con la PJ: requiere al menos su nombre.
-    if (isCreate.value && !repForm.nombre.trim()) return false
+    // El representante (PF) exige nombre Y primer apellido. En alta siempre; en edición,
+    // si se ha empezado a rellenar el representante (hay nombre), también.
+    const exigeRep = isCreate.value || repForm.nombre.trim()
+    if (exigeRep && (!repForm.nombre.trim() || !repForm.apellido1.trim())) return false
     return true
   }
   return !!form.nombre.trim()
@@ -308,6 +297,14 @@ function poblarForm(c) {
     if (c[k] != null) form[k] = c[k]
   }
   fotoUrl.value = c.fotoUrl || ''
+}
+
+// Vuelca los datos del representante (PF ya existente) en repForm para poder editarlos.
+function poblarRepForm(r) {
+  if (!r) return
+  for (const k of Object.keys(repForm)) {
+    repForm[k] = r[k] != null ? r[k] : ''
+  }
 }
 
 async function subirFotoAlServidor(id, file) {
@@ -352,6 +349,7 @@ async function cargar() {
       if (contacto.value.representanteLegalId) {
         const rd = await graphqlClient.request(GET_CONTACTO, { id: contacto.value.representanteLegalId })
         representante.value = (rd.contactos || [])[0] || null
+        poblarRepForm(representante.value)
       }
     }
   } catch (e) {
@@ -415,7 +413,19 @@ async function guardar() {
       toast.success(esPJ.value ? 'Persona jurídica y su representante creados.' : 'Contacto creado.')
       router.push(`/contactos/${r.crearContacto.id}`)
     } else {
-      await graphqlClient.request(ACTUALIZAR_CONTACTO, { data: { id: route.params.id, ...payload() } })
+      const data = { id: route.params.id, ...payload() }
+      // Representante de una PJ: se EDITA aquí (no se escoge de una lista). Si ya existía,
+      // se actualizan sus datos personales/contacto; si no y se ha rellenado el nombre,
+      // se da de alta como PF y se vincula a la PJ.
+      if (esPJ.value && repForm.nombre.trim()) {
+        if (representante.value?.id) {
+          await graphqlClient.request(ACTUALIZAR_CONTACTO, { data: { id: representante.value.id, ...repPayload() } })
+        } else {
+          const rep = await graphqlClient.request(CREAR_CONTACTO, { data: { tipo: 'PERSONA_FISICA', ...repPayload() } })
+          data.representanteLegalId = rep.crearContacto.id
+        }
+      }
+      await graphqlClient.request(ACTUALIZAR_CONTACTO, { data })
       toast.success('Contacto actualizado.')
       editMode.value = false
       representante.value = null
