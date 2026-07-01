@@ -674,6 +674,7 @@ class FirmaCampaniaType:
 from ..modules.actividades.models import (
     TipoActividad, TipoAccion, Actividad, Accion, Tarea, AsistenciaActividad,
     PartidaPresupuestoActividad, RegistroTrabajoActividad, DocumentoActividad, DocumentoPartida,
+    PublicacionWeb,
 )
 
 
@@ -690,9 +691,16 @@ class ActividadType:
     estado: Optional['EstadoAccionType'] = None
     campania: Optional['CampaniaType'] = None
     responsable: Optional['ContactoType'] = None
+    # 1:1 opcional (uselist=False): una actividad puede NO tener publicación web.
+    publicacion_web: Optional['PublicacionWebType'] = None
 
 # Alias de compatibilidad
 AccionType = ActividadType
+
+@strawchemy.type(PublicacionWeb, include="all", exclude=["actividad"], override=True)
+class PublicacionWebType:
+    """Contenido de la página pública de una recogida de firmas (satélite de Actividad)."""
+    pass
 
 @strawchemy.type(Tarea, include="all", override=True)
 class TareaType:

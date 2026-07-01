@@ -240,6 +240,11 @@ class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionM
     # crear_actividad / actualizar_actividad → ActividadResolverMutation (custom, FK IDs)
     eliminar_actividades: list[ActividadType] = strawchemy.delete(ActividadFilter)
 
+    # Publicación web (página pública de una recogida de firmas)
+    crear_publicacion_web: PublicacionWebType = strawchemy.create(PublicacionWebCreateInput)
+    actualizar_publicacion_web: PublicacionWebType = strawchemy.update_by_ids(PublicacionWebUpdateInput)
+    eliminar_publicaciones_web: list[PublicacionWebType] = strawchemy.delete(PublicacionWebFilter)
+
     # crear_tarea / actualizar_tarea → ActividadResolverMutation (custom, FK IDs)
     eliminar_tareas: list[TareaType] = strawchemy.delete(TareaFilter)
 

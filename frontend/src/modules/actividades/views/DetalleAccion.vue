@@ -647,6 +647,94 @@
         </div>
       </AccordionPanel>
 
+      <!-- Panel 6: Publicación web (solo actividades online, p. ej. recogida de firmas) -->
+      <AccordionPanel v-if="accion.esOnline" title="Publicación web">
+        <div class="px-5 py-4 space-y-4">
+          <p class="text-xs text-slate-500">
+            Contenido de la página pública de esta recogida de firmas. Los campos que dejes
+            vacíos se heredan de la campaña. La foto y los textos los usa la web (plugin de
+            WordPress) para montar la página con el formulario de firma.
+          </p>
+
+          <!-- Foto de cabecera -->
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Foto de cabecera</label>
+            <div v-if="formWeb.imagenUrl" class="mb-2">
+              <img :src="formWeb.imagenUrl" alt="Foto de cabecera"
+                class="max-h-40 rounded-lg border border-slate-200" />
+            </div>
+            <UploadFile
+              :endpoint="`/api/upload/actividades/${accion.id}/foto-publicacion`"
+              accept=".jpg,.jpeg,.png,.webp,.gif"
+              :max-size-m-b="10"
+              @upload="onFotoPublicacionSubida"
+              @error="onFotoPublicacionError" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Título</label>
+              <input v-model="formWeb.titulo" type="text" placeholder="Si se deja vacío, se hereda de la campaña"
+                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Lema</label>
+              <input v-model="formWeb.lema" type="text" placeholder="Si se deja vacío, se hereda de la campaña"
+                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Descripción</label>
+            <textarea v-model="formWeb.descripcion" rows="3" placeholder="Si se deja vacío, se hereda de la campaña"
+              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Manifiesto (lo que se firma)</label>
+            <textarea v-model="formWeb.manifiesto" rows="6"
+              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Destinatario</label>
+              <input v-model="formWeb.destinatario" type="text"
+                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">PDF de hoja de firmas (URL)</label>
+              <input v-model="formWeb.hojaFirmasUrl" type="url"
+                class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Aviso legal y protección de datos</label>
+            <textarea v-model="formWeb.avisoRgpd" rows="3"
+              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Texto para compartir</label>
+            <input v-model="formWeb.comparteTexto" type="text"
+              class="h-10 w-full px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" v-model="formWeb.publicar" class="rounded border-slate-300 text-indigo-600" />
+            <span>Marcar como publicable</span>
+          </label>
+
+          <div class="flex justify-end">
+            <button type="button" @click="guardarPublicacionWeb" :disabled="guardandoWeb"
+              class="h-9 px-4 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50">
+              {{ guardandoWeb ? 'Guardando…' : 'Guardar publicación web' }}
+            </button>
+          </div>
+        </div>
+      </AccordionPanel>
+
       </AccordionGroup>
 
     </div>
@@ -749,8 +837,10 @@ import {
   CREAR_TAREA, ACTUALIZAR_TAREA, ELIMINAR_TAREA,
   TRANSICIONAR_ACTIVIDAD, APROBAR_ACTIVIDAD, CERRAR_ACTIVIDAD,
   ELIMINAR_DOCUMENTOS_ACTIVIDAD,
+  CREAR_PUBLICACION_WEB, ACTUALIZAR_PUBLICACION_WEB,
 } from '../graphql/queries.js'
 import DocumentosPanel from '@/components/common/DocumentosPanel.vue'
+import UploadFile from '@/components/common/UploadFile.vue'
 
 const TIPOS_DOC_ACTIVIDAD = [
   { value: 'acta',     label: 'Acta' },
@@ -1245,6 +1335,63 @@ async function registrarParticipacion() {
   }
 }
 
+// ── Publicación web (página pública de la recogida de firmas) ──────────────
+const guardandoWeb = ref(false)
+function formWebVacio() {
+  return {
+    titulo: '', lema: '', descripcion: '', imagenUrl: '',
+    destinatario: '', manifiesto: '', avisoRgpd: '',
+    hojaFirmasUrl: '', comparteTexto: '', publicar: false,
+  }
+}
+const formWeb = ref(formWebVacio())
+
+// Sincroniza el formulario con lo cargado. Solo se llama al montar (no en
+// recargarAccion) para no pisar ediciones en curso al subir la foto.
+function sincronizarFormWeb() {
+  const w = accion.value?.publicacionWeb
+  formWeb.value = w
+    ? {
+        titulo: w.titulo || '', lema: w.lema || '', descripcion: w.descripcion || '',
+        imagenUrl: w.imagenUrl || '', destinatario: w.destinatario || '',
+        manifiesto: w.manifiesto || '', avisoRgpd: w.avisoRgpd || '',
+        hojaFirmasUrl: w.hojaFirmasUrl || '', comparteTexto: w.comparteTexto || '',
+        publicar: !!w.publicar,
+      }
+    : formWebVacio()
+}
+
+async function onFotoPublicacionSubida({ response }) {
+  // El endpoint hace upsert de la PublicacionWeb y devuelve la URL ya persistida.
+  formWeb.value.imagenUrl = response?.fotoUrl || formWeb.value.imagenUrl
+  // Recargamos para capturar el id de la PublicacionWeb recién creada (sin
+  // resincronizar el formulario, para no perder textos sin guardar).
+  await recargarAccion()
+  toast.success('Foto actualizada')
+}
+function onFotoPublicacionError(msg) {
+  toast.error(typeof msg === 'string' ? msg : 'No se pudo subir la foto')
+}
+
+async function guardarPublicacionWeb() {
+  guardandoWeb.value = true
+  try {
+    const campos = { ...formWeb.value }
+    const id = accion.value?.publicacionWeb?.id
+    if (id) {
+      await graphqlClient.request(ACTUALIZAR_PUBLICACION_WEB, { data: { id, ...campos } })
+    } else {
+      await graphqlClient.request(CREAR_PUBLICACION_WEB, { data: { actividadId: accion.value.id, ...campos } })
+    }
+    await recargarAccion()
+    toast.success('Publicación web guardada')
+  } catch (e) {
+    toast.error(e?.response?.errors?.[0]?.message || 'Error al guardar la publicación web')
+  } finally {
+    guardandoWeb.value = false
+  }
+}
+
 async function recargarAccion() {
   const res = await graphqlClient.request(GET_ACCION_BY_ID, { id: route.params.id })
   accion.value = res.actividades?.[0] || null
@@ -1257,6 +1404,7 @@ onMounted(async () => {
       graphqlClient.request(GET_CATALOGOS),
     ])
     accion.value = resAccion.actividades?.[0] || null
+    sincronizarFormWeb()
     // Solo socios activos (estado "Alta") para participación y asignación de tareas.
     miembros.value = (resCat.miembros || []).filter(m => m.estado?.nombre === 'Alta')
     estadosTarea.value = resCat.estadosTarea || []

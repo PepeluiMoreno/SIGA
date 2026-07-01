@@ -160,6 +160,23 @@ async def listar_actividades(
     ]
 
 
+@router.get("/pagina/{actividad_id}", summary="Contenido de la página pública de una recogida de firmas")
+async def contenido_pagina(
+    actividad_id: uuid.UUID,
+    session: AsyncSession = Depends(get_db),
+):
+    """Contenido (público) para fabricar la página de la recogida en WordPress:
+    título, lema, imagen, descripción, manifiesto, destinatario, aviso RGPD, PDF
+    y texto para compartir. El plugin lo usa para generar la landing con el
+    formulario `[siga_firmas]`. Los textos/imagen salen de la publicación web de
+    la actividad y, si faltan, se heredan de su campaña."""
+    service = FirmaPublicaService(session)
+    contenido = await service.contenido_pagina(actividad_id)
+    if contenido is None:
+        raise HTTPException(status_code=404, detail="Recogida de firmas no disponible.")
+    return contenido
+
+
 @router.get("/contador/{campania_id}", summary="Nº de firmas verificadas de una campaña")
 async def contador_firmas(
     campania_id: uuid.UUID,

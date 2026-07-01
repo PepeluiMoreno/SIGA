@@ -91,6 +91,31 @@ Ejemplo con actividad concreta y pidiendo documento:
 [siga_firmas actividad="3f6a2c10-1b2c-4d5e-8f90-0a1b2c3d4e5f" pedir_documento="1" titulo="Firma por la laicidad"]
 ```
 
+## Generar la página de campaña automáticamente
+
+Desde **Ajustes → SIGA Firmas · Páginas** tienes un listado de las actividades
+de recogida de firmas activas de SIGA. Por cada una, el botón **«Crear página»**
+(o **«Actualizar página»** si ya existe) fabrica una página de WordPress con la
+página pública de la recogida ya montada:
+
+- imagen de cabecera, lema y descripción,
+- manifiesto y destinatario,
+- el formulario `[siga_firmas actividad="…"]` incrustado,
+- enlace al PDF de hoja de firmas en papel (si lo hay),
+- aviso legal / RGPD.
+
+Todo el contenido se toma de SIGA (fuente única) a través del endpoint público
+`GET /api/publico/firmas/pagina/{actividad_id}`; WordPress solo materializa la
+página. Se crea como **borrador** para que la revises y la publiques tú. La
+operación es idempotente: la primera vez crea la página y las siguientes
+actualizan la misma (se guarda el mapa `actividad_id → post_id`), así que no se
+duplican páginas.
+
+Los textos y la foto de esa página se editan en SIGA, en la ficha de la
+actividad (panel **«Publicación web»**), y viven en la satélite `PublicacionWeb`
+de la actividad. Los campos de título/lema/descripción/imagen que dejes vacíos
+se heredan de la campaña.
+
 ## Campos del formulario → payload de SIGA
 
 | Campo del formulario      | Campo en `FirmaPublicaIn` | Obligatorio |

@@ -171,6 +171,7 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
     # === ACTIVIDADES ===
     tiposActividad: list[TipoActividadType] = strawchemy.field(filter_input=TipoActividadFilter)
     actividades: list[ActividadType] = strawchemy.field(filter_input=ActividadFilter)
+    publicacionesWeb: list[PublicacionWebType] = strawchemy.field(filter_input=PublicacionWebFilter)
     tareas: list[TareaType] = strawchemy.field(filter_input=TareaFilter)
     participaciones: list[ParticipacionType] = strawchemy.field(filter_input=ParticipacionFilter)
 

@@ -297,6 +297,64 @@ async def upload_foto_campania(
         return {"fotoUrl": foto_url}
 
 
+@app.post("/upload/actividades/{actividad_id}/foto-publicacion")
+async def upload_foto_publicacion(
+    actividad_id: str,
+    file: UploadFile = File(...),
+    authorization: Optional[str] = Header(None),
+):
+    """Sube o reemplaza la foto de cabecera de la página pública (PublicacionWeb)
+    de una actividad de recogida de firmas. Hace upsert de la PublicacionWeb: la
+    crea si la actividad aún no tenía publicación web."""
+    from app.core.security import extract_bearer_token, load_user_from_token
+    from app.core.database import async_session
+    from sqlalchemy import select
+    from app.modules.actividades.models.actividad import Actividad, PublicacionWeb
+
+    token = extract_bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="No autenticado")
+
+    async with async_session() as session:
+        user = await load_user_from_token(session, token)
+        if not user:
+            raise HTTPException(status_code=401, detail="Token inválido")
+
+        if not file.content_type or not file.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="Solo se permiten imágenes")
+
+        ext = Path(file.filename or "foto.jpg").suffix.lower()
+        if ext not in (".jpg", ".jpeg", ".png", ".webp", ".gif"):
+            raise HTTPException(status_code=400, detail="Formato no soportado")
+
+        content = await file.read()
+        if len(content) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="El archivo no puede superar 10 MB")
+
+        act_uuid = uuid_lib.UUID(actividad_id)
+        actividad = await session.get(Actividad, act_uuid)
+        if actividad is None:
+            raise HTTPException(status_code=404, detail="Actividad no encontrada")
+
+        pub_dir = Path("media/publicaciones")
+        pub_dir.mkdir(parents=True, exist_ok=True)
+        filename = f"{actividad_id}{ext}"
+        (pub_dir / filename).write_bytes(content)
+        foto_url = f"/api/media/publicaciones/{filename}"
+
+        web = (await session.execute(
+            select(PublicacionWeb).where(PublicacionWeb.actividad_id == act_uuid)
+        )).scalar_one_or_none()
+        if web is None:
+            web = PublicacionWeb(actividad_id=act_uuid, imagen_url=foto_url)
+            session.add(web)
+        else:
+            web.imagen_url = foto_url
+        await session.commit()
+
+        return {"fotoUrl": foto_url}
+
+
 UPLOADS_DIR = Path("uploads")
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

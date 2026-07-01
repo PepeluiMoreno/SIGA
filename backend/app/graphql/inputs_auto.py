@@ -872,7 +872,23 @@ class PlantillaTareaUpdateInput:
 from ..modules.actividades.models import (
     TipoActividad, TipoAccion, Actividad, Accion, Tarea, AsistenciaActividad,
     PartidaPresupuestoActividad, RegistroTrabajoActividad, DocumentoActividad, DocumentoPartida,
+    PublicacionWeb,
 )
+
+
+@strawchemy.input(PublicacionWeb, mode="create_input", include="all", exclude=get_exclude_fields(PublicacionWeb))
+class PublicacionWebCreateInput:
+    pass
+
+
+@strawchemy.input(PublicacionWeb, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(PublicacionWeb))
+class PublicacionWebUpdateInput:
+    pass
+
+
+@strawchemy.filter(PublicacionWeb, include="all")
+class PublicacionWebFilter:
+    pass
 
 
 @strawchemy.input(TipoActividad, mode="create_input", include="all", exclude=get_exclude_fields(TipoActividad))

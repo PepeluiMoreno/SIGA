@@ -296,6 +296,44 @@ class FirmaPublicaService:
             return None
         return actividad
 
+    # ------------------------------------------------------------ contenido
+    async def contenido_pagina(self, actividad_id: uuid.UUID) -> Optional[dict]:
+        """Contenido de la página pública de una recogida de firmas.
+
+        Lo consume el plugin de WordPress para fabricar la landing. El
+        título/lema/descripción/imagen salen de la `PublicacionWeb` de la
+        actividad si están rellenos y, si no, se heredan de la campaña. El resto
+        (manifiesto, destinatario, aviso RGPD, PDF, texto para compartir) es
+        propio de la publicación. Devuelve None si la actividad no es una
+        recogida de firmas activa."""
+        actividad = await self._actividad_firmas_activa(actividad_id)
+        if actividad is None:
+            return None
+
+        web = actividad.publicacion_web  # lazy='selectin'
+        campania = actividad.campania    # lazy='selectin'
+
+        def _web(attr):
+            return getattr(web, attr, None) if web is not None else None
+
+        def _camp(attr):
+            return getattr(campania, attr, None) if campania is not None else None
+
+        return {
+            "actividad_id": str(actividad.id),
+            # Overrides con fallback a la campaña.
+            "titulo": _web("titulo") or _camp("nombre") or actividad.nombre,
+            "lema": _web("lema") or _camp("lema"),
+            "descripcion": _web("descripcion") or _camp("descripcion_larga"),
+            "imagen_url": _web("imagen_url") or _camp("foto_url"),
+            # Propios de la publicación.
+            "destinatario": _web("destinatario"),
+            "manifiesto": _web("manifiesto"),
+            "aviso_rgpd": _web("aviso_rgpd"),
+            "hoja_firmas_url": _web("hoja_firmas_url"),
+            "comparte_texto": _web("comparte_texto"),
+        }
+
     # ---------------------------------------------------------------- conteo
     async def contar_firmas_verificadas(self, campania_id: uuid.UUID) -> int:
         from sqlalchemy import func

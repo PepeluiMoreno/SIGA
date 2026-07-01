@@ -158,7 +158,32 @@ export const GET_ACCION_BY_ID = `
         tipoDoc
         creadoEn
       }
+      publicacionWeb {
+        id
+        titulo
+        lema
+        descripcion
+        imagenUrl
+        destinatario
+        manifiesto
+        avisoRgpd
+        hojaFirmasUrl
+        comparteTexto
+        publicar
+      }
     }
+  }
+`
+
+export const CREAR_PUBLICACION_WEB = `
+  mutation CrearPublicacionWeb($data: PublicacionWebCreateInput!) {
+    crearPublicacionWeb(data: $data) { id }
+  }
+`
+
+export const ACTUALIZAR_PUBLICACION_WEB = `
+  mutation ActualizarPublicacionWeb($data: PublicacionWebUpdateInput!) {
+    actualizarPublicacionWeb(data: $data) { id }
   }
 `
 

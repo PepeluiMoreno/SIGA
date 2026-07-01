@@ -3,7 +3,7 @@
  * Plugin Name:       SIGA · Recogida de firmas
  * Plugin URI:        https://github.com/PepeluiMoreno/SIGA
  * Description:        Muestra un formulario para recoger los datos de contacto de simpatizantes que firman una campaña y los reenvía al backend de SIGA (endpoint público /api/publico/firmas, doble opt-in). WordPress solo presenta el formulario; SIGA es la fuente única de datos y consentimiento.
- * Version:           1.4.0
+ * Version:           1.5.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            SIGA
@@ -17,7 +17,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SIGA_FIRMAS_VERSION', '1.4.0' );
+define( 'SIGA_FIRMAS_VERSION', '1.5.0' );
 define( 'SIGA_FIRMAS_FILE', __FILE__ );
 define( 'SIGA_FIRMAS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SIGA_FIRMAS_URL', plugin_dir_url( __FILE__ ) );
@@ -28,14 +28,17 @@ define( 'SIGA_FIRMAS_OPTION', 'siga_firmas_settings' );
 require_once SIGA_FIRMAS_DIR . 'includes/class-siga-firmas-settings.php';
 require_once SIGA_FIRMAS_DIR . 'includes/class-siga-firmas-rest.php';
 require_once SIGA_FIRMAS_DIR . 'includes/class-siga-firmas-shortcode.php';
+require_once SIGA_FIRMAS_DIR . 'includes/class-siga-firmas-paginas.php';
 
 /**
- * Arranque del plugin: registra ajustes, endpoint REST y shortcode.
+ * Arranque del plugin: registra ajustes, endpoint REST, shortcode y el
+ * generador de páginas de campaña.
  */
 function siga_firmas_bootstrap() {
 	SIGA_Firmas_Settings::init();
 	SIGA_Firmas_Rest::init();
 	SIGA_Firmas_Shortcode::init();
+	SIGA_Firmas_Paginas::init();
 }
 add_action( 'plugins_loaded', 'siga_firmas_bootstrap' );
 

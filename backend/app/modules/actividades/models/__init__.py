@@ -14,6 +14,7 @@ from .actividad import (
     RegistroTrabajoActividad,
     DocumentoActividad,
     DocumentoPartida,
+    PublicacionWeb,
 )
 from .tarea import Tarea
 from .campana import (
@@ -58,6 +59,7 @@ __all__ = [
     'RegistroTrabajoActividad',
     'DocumentoActividad',
     'DocumentoPartida',
+    'PublicacionWeb',
     'Tarea',
     # Campañas
     'TipoCampania',

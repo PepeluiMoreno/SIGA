@@ -179,6 +179,7 @@ class Actividad(BaseModel):
     partidas = relationship('PartidaPresupuestoActividad', back_populates='actividad', lazy='selectin', cascade='all, delete-orphan')
     registros_trabajo = relationship('RegistroTrabajoActividad', back_populates='actividad', lazy='selectin', cascade='all, delete-orphan')
     documentos = relationship('DocumentoActividad', back_populates='actividad', lazy='selectin', cascade='all, delete-orphan')
+    publicacion_web = relationship('PublicacionWeb', back_populates='actividad', uselist=False, cascade='all, delete-orphan', lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<Actividad(nombre='{self.nombre}')>"
@@ -186,6 +187,43 @@ class Actividad(BaseModel):
 
 # Alias de compatibilidad
 Accion = Actividad
+
+
+class PublicacionWeb(BaseModel):
+    """Satélite 1:1 de Actividad: contenido de la página pública de la recogida.
+
+    Reúne lo que se publica en la web de esa recogida de firmas concreta: título,
+    lema, descripción e imagen de cabecera (que sobreescriben lo heredado de la
+    campaña si se rellenan), más lo propio de la página: manifiesto que se firma,
+    destinatario, aviso RGPD, PDF de hoja en papel y texto para compartir.
+
+    Si los campos de título/lema/descripción/imagen quedan vacíos, el contenido
+    se hereda de la `Campania` de la actividad (ver `contenido_pagina`)."""
+    __tablename__ = 'publicaciones_web'
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    actividad_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('actividades.id', ondelete='CASCADE'), nullable=False, unique=True, index=True
+    )
+
+    # Overrides con fallback a la campaña.
+    titulo: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
+    lema: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
+    descripcion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    imagen_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+
+    # Propios de la página pública.
+    destinatario: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
+    manifiesto: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    aviso_rgpd: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    hoja_firmas_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    comparte_texto: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
+    publicar: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    actividad = relationship('Actividad', back_populates='publicacion_web', lazy='selectin')
+
+    def __repr__(self) -> str:
+        return f"<PublicacionWeb(actividad_id='{self.actividad_id}')>"
 
 
 class AsistenciaActividad(BaseModel):
