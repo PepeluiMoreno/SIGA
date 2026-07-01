@@ -19,7 +19,8 @@ _TRANSACCIONES = [
     TransaccionDef("MEMBRESIA_MIEMBRO_CREAR",        "Registrar miembro",                 "MUTACION"),
     TransaccionDef("MEMBRESIA_MIEMBRO_EDITAR",       "Editar datos de miembro",           "MUTACION"),
     TransaccionDef("MEMBRESIA_MIS_DATOS_EDITAR",     "Editar mis propios datos",          "MUTACION"),
-    TransaccionDef("MEMBRESIA_MIEMBRO_VALIDAR",      "Validar solicitud de miembro",      "APROBACION"),
+    TransaccionDef("MEMBRESIA_MIEMBRO_VALIDAR",      "Aprobar solicitud de socio",        "APROBACION"),
+    TransaccionDef("MEMBRESIA_MIEMBRO_RECHAZAR",     "Rechazar solicitud de socio",       "APROBACION"),
     TransaccionDef("MEMBRESIA_MIEMBRO_SUSPENDER",    "Suspender miembro",                 "MUTACION"),
     TransaccionDef("MEMBRESIA_MIEMBRO_BAJA",         "Dar de baja a miembro",             "MUTACION"),
     TransaccionDef("MEMBRESIA_MIEMBRO_EXPORTAR",     "Exportar datos de miembros",        "CONSULTA"),
@@ -66,16 +67,31 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
     codigo="GESTION_MIEMBROS",
     nombre="Gestión de miembros",
     modulo=MODULO,
-    descripcion="Registro, edición, validación y baja de miembros",
+    descripcion="Registro, edición y baja de miembros",
     transacciones=[
         FuncionalidadTransaccionDef("MEMBRESIA_SOCIO_GESTIONAR",   AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("MEMBRESIA_MIEMBRO_LISTAR",    AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("MEMBRESIA_MIEMBRO_CREAR",     AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("MEMBRESIA_MIEMBRO_EDITAR",    AmbitoTransaccion.TERRITORIAL),
-        FuncionalidadTransaccionDef("MEMBRESIA_MIEMBRO_VALIDAR",   AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("MEMBRESIA_MIEMBRO_SUSPENDER", AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("MEMBRESIA_MIEMBRO_BAJA",      AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("MEMBRESIA_MIEMBRO_EXPORTAR",  AmbitoTransaccion.TERRITORIAL),
+    ],
+))
+
+ModuleCatalog.register_funcionalidad(FuncionalidadDef(
+    codigo="APROBACION_SOCIOS",
+    nombre="Aprobación de solicitudes de socio",
+    modulo=MODULO,
+    descripcion=(
+        "Validar las solicitudes de alta de socio (aspirantes): aprobar convierte al "
+        "socio aspirante en socio de pleno derecho; rechazar cierra la solicitud. "
+        "Competencia de secretaría/presidencia; se enciende en el MVP aunque Secretaría "
+        "esté apagada (ver FUNCIONALIDADES_OVERRIDE en acceso/services/modulos.py)."
+    ),
+    transacciones=[
+        FuncionalidadTransaccionDef("MEMBRESIA_MIEMBRO_VALIDAR",  AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("MEMBRESIA_MIEMBRO_RECHAZAR", AmbitoTransaccion.TERRITORIAL),
     ],
 ))
 

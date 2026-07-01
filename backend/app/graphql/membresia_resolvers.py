@@ -711,6 +711,65 @@ class MembresiaResolverMutation:
         wb.save(buf)
         return base64.b64encode(buf.getvalue()).decode()
 
+    # ── Aprobación de solicitudes de socio (SOCIO_ASPIRANTE → SOCIO) ──────────
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_VALIDAR")])
+    async def aprobar_solicitud_socio(
+        self, info: strawberry.Info, contacto_id: uuid.UUID,
+        numero_socio: Optional[str] = None,
+    ) -> 'ContactoType':
+        """Aprueba a un socio aspirante: su vinculación SOCIO_ASPIRANTE pasa a SOCIO y se
+        crea su satélite Socio. El aspirante deja de estar pendiente y entra como socio
+        de pleno derecho."""
+        session = info.context.session
+        asp_id = await _tipo_vinc_id(session, "SOCIO_ASPIRANTE")
+        socio_id = await _tipo_vinc_id(session, "SOCIO")
+        vinc = (await session.execute(
+            select(Vinculacion).where(
+                Vinculacion.contacto_id == contacto_id,
+                Vinculacion.tipo_vinculacion_id == asp_id,
+                Vinculacion.estado == "activa",
+                Vinculacion.eliminado == False,  # noqa: E712
+            )
+        )).scalar_one_or_none()
+        if vinc is None:
+            raise ValueError("No hay una solicitud de socio pendiente para este contacto.")
+        # Reconvierte la vinculación a SOCIO y crea el satélite si no existía.
+        vinc.tipo_vinculacion_id = socio_id
+        vinc.fecha_inicio = date.today()
+        existe_socio = (await session.execute(
+            select(Socio).where(Socio.vinculacion_id == vinc.id)
+        )).scalar_one_or_none()
+        if existe_socio is None:
+            session.add(Socio(vinculacion_id=vinc.id, numero_socio=numero_socio))
+        await session.commit()
+        return await _fetch_miembro(session, contacto_id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_RECHAZAR")])
+    async def rechazar_solicitud_socio(
+        self, info: strawberry.Info, contacto_id: uuid.UUID,
+        motivo: Optional[str] = None,
+    ) -> 'ContactoType':
+        """Rechaza la solicitud de un socio aspirante: cierra su vinculación
+        SOCIO_ASPIRANTE (estado 'rechazada', fecha_fin hoy). No se crea satélite Socio."""
+        session = info.context.session
+        asp_id = await _tipo_vinc_id(session, "SOCIO_ASPIRANTE")
+        vinc = (await session.execute(
+            select(Vinculacion).where(
+                Vinculacion.contacto_id == contacto_id,
+                Vinculacion.tipo_vinculacion_id == asp_id,
+                Vinculacion.estado == "activa",
+                Vinculacion.eliminado == False,  # noqa: E712
+            )
+        )).scalar_one_or_none()
+        if vinc is None:
+            raise ValueError("No hay una solicitud de socio pendiente para este contacto.")
+        # La vinculación aspirante se cierra (no pasa a socio). El `motivo` es de cortesía;
+        # cuando exista un modelo de Solicitud con historial de resolución, se guardará allí.
+        vinc.estado = "cerrada"
+        vinc.fecha_fin = date.today()
+        await session.commit()
+        return await _fetch_miembro(session, contacto_id)
+
 
 @strawberry.type(name="VoluntarioAmbito")
 class VoluntarioAmbitoType:
@@ -760,6 +819,27 @@ class ContactoCondicionesItemType:
 
 @strawberry.type
 class MembresiaQuery:
+    @strawberry.field(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_VALIDAR")])
+    async def solicitudes_socio_pendientes(
+        self, info: strawberry.Info,
+    ) -> List['ContactoType']:
+        """Contactos con una solicitud de socio PENDIENTE (vinculación SOCIO_ASPIRANTE
+        activa). Es la bandeja de aprobación para secretario/presidente. Los socios
+        aspirantes NO aparecen en el listado normal de socios; solo aquí."""
+        session = info.context.session
+        asp_id = await _tipo_vinc_id(session, "SOCIO_ASPIRANTE")
+        rows = (await session.execute(
+            select(Contacto)
+            .join(Vinculacion, Vinculacion.contacto_id == Contacto.id)
+            .where(
+                Vinculacion.tipo_vinculacion_id == asp_id,
+                Vinculacion.estado == "activa",
+                Vinculacion.eliminado == False,  # noqa: E712
+            )
+            .order_by(Vinculacion.fecha_inicio)
+        )).scalars().all()
+        return list(rows)
+
     @strawberry.field(permission_classes=[RequireAuthenticated])
     async def condiciones_contacto(
         self, info: strawberry.Info, contacto_id: uuid.UUID

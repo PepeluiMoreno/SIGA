@@ -330,3 +330,35 @@ export const GET_FORMAS_PAGO = `
     }
   }
 `
+
+// ── Aprobación de solicitudes de socio (SOCIO_ASPIRANTE → SOCIO) ──────────────
+export const GET_SOLICITUDES_SOCIO = `
+  query SolicitudesSocioPendientes {
+    solicitudesSocioPendientes {
+      id
+      nombre
+      apellido1
+      apellido2
+      email
+      telefono
+      numeroDocumento
+      agrupacionId
+    }
+  }
+`
+
+export const APROBAR_SOLICITUD_SOCIO = `
+  mutation AprobarSolicitudSocio($contactoId: UUID!, $numeroSocio: String) {
+    aprobarSolicitudSocio(contactoId: $contactoId, numeroSocio: $numeroSocio) {
+      id nombre
+    }
+  }
+`
+
+export const RECHAZAR_SOLICITUD_SOCIO = `
+  mutation RechazarSolicitudSocio($contactoId: UUID!, $motivo: String) {
+    rechazarSolicitudSocio(contactoId: $contactoId, motivo: $motivo) {
+      id nombre
+    }
+  }
+`

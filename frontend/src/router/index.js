@@ -156,6 +156,12 @@ const routes = [
     meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_MIEMBRO_LISTAR' }
   },
   {
+    path: '/solicitudes-socio',
+    component: () => import('@/modules/membresia/views/SolicitudesSocio.vue'),
+    name: 'SolicitudesSocio',
+    meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_MIEMBRO_VALIDAR' }
+  },
+  {
     path: '/miembros/nuevo',
     component: () => import('@/modules/membresia/views/DetalleMiembro.vue'),
     name: 'NuevoMiembro',

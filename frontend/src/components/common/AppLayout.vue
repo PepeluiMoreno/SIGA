@@ -88,7 +88,7 @@
             <hr class="nav-sep" />
 
             <!-- Membresía -->
-            <div v-if="tieneAlguno('CONTACTO_LISTAR','MEMBRESIA_MIEMBRO_LISTAR','MEMBRESIA_AGRUPACION_EDITAR')" class="mb-1">
+            <div v-if="tieneAlguno('CONTACTO_LISTAR','MEMBRESIA_MIEMBRO_LISTAR','MEMBRESIA_AGRUPACION_EDITAR','MEMBRESIA_MIEMBRO_VALIDAR')" class="mb-1">
               <button @click="toggleSection('membresia')" class="section-btn">
                 <span>Membresía</span>
                 <ChevronDownIcon class="chevron" :class="openSections.membresia ? '' : '-rotate-90'" />
@@ -105,6 +105,12 @@
                     <router-link to="/miembros" class="nav-item"
                       :class="$route.path.startsWith('/miembros') ? 'active' : 'inactive'">
                       <UserIcon class="nav-icon" /><span>{{ orgConfigStore.Miembros }}</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('MEMBRESIA_MIEMBRO_VALIDAR')">
+                    <router-link to="/solicitudes-socio" class="nav-item"
+                      :class="$route.path.startsWith('/solicitudes-socio') ? 'active' : 'inactive'">
+                      <CheckBadgeIcon class="nav-icon" /><span>Solicitudes de socio</span>
                     </router-link>
                   </li>
                   <li v-if="tienePermiso('MEMBRESIA_AGRUPACION_EDITAR')">
@@ -517,7 +523,7 @@ import {
   Bars3Icon, XMarkIcon, ChevronDownIcon, ChevronLeftIcon, TrashIcon,
   ClipboardDocumentCheckIcon, DocumentTextIcon, DocumentCheckIcon,
   ChatBubbleLeftRightIcon,
-  ShieldCheckIcon, ShieldExclamationIcon, CheckCircleIcon, EyeIcon,
+  ShieldCheckIcon, ShieldExclamationIcon, CheckCircleIcon, EyeIcon, CheckBadgeIcon,
 } from '@heroicons/vue/24/outline'
 
 defineProps({
