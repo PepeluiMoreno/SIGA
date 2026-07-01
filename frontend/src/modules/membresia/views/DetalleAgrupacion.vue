@@ -34,20 +34,18 @@
     <!-- ══ ALTA DE NUEVA UNIDAD ══════════════════════════════════════════════ -->
     <section v-else-if="esNuevo" :class="cardCls">
       <div class="px-5 py-4 space-y-5">
-        <!-- Tipo + padre -->
-        <div class="grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
-          <div class="col-span-12 sm:col-span-6">
-            <p :class="lbl">Depende de</p>
-            <SelectorAgrupacion v-model="padreSel" :agrupaciones="todasUnidades"
-              placeholder="(unidad raíz — sin superior)" />
-            <p class="mt-1 text-[11px] text-slate-400">Deja vacío para crear una unidad raíz. La unidad superior determina el tipo disponible.</p>
+        <!-- Depende de (la agrupación superior determina el nivel de la nueva) -->
+        <div>
+          <p :class="lbl">Depende de</p>
+          <SelectorAgrupacion v-model="padreSel" :agrupaciones="todasUnidades"
+            placeholder="(agrupación raíz — sin superior)" />
+          <p class="mt-1 text-[11px] text-slate-400">Deja vacío para crear una agrupación raíz. La agrupación superior determina el nivel de la nueva.</p>
+          <!-- Nivel derivado automáticamente del padre (o raíz si no hay). -->
+          <div v-if="nivelDerivado" class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 border border-indigo-200 px-2.5 py-1 text-xs text-indigo-700">
+            <span>Nivel:</span> <span class="font-medium">{{ nivelDerivado.denominacionSingular || nivelDerivado.nombre }}</span>
           </div>
-          <div class="col-span-12 sm:col-span-6">
-            <p :class="lbl">Tipo de unidad <span class="text-red-400">*</span></p>
-            <select v-model="formTipoId" :class="inp">
-              <option value="">— Seleccionar —</option>
-              <option v-for="t in tiposDisponibles" :key="t.id" :value="t.id">{{ t.nombre }}</option>
-            </select>
+          <div v-else-if="padreSel" class="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs text-amber-700">
+            La agrupación elegida no admite subniveles en la estructura actual.
           </div>
         </div>
 
@@ -544,12 +542,14 @@ const candidatosJunta = computed(() =>
 const nombreUnidad = (id) => todasUnidades.value.find(u => u.id === id)?.nombre || ''
 
 const tituloVista = computed(() =>
-  esNuevo.value ? 'Nueva unidad organizativa' : (agrupacion.value?.nombre || 'Agrupación'))
+  esNuevo.value ? 'Nueva agrupación territorial' : (agrupacion.value?.nombre || 'Agrupación'))
 const subtituloVista = computed(() =>
-  esNuevo.value ? (padreUnidad.value ? `Dependiente de ${padreUnidad.value.nombre}` : 'Unidad raíz')
+  esNuevo.value ? (padreUnidad.value ? `Dependiente de ${padreUnidad.value.nombre}` : 'Agrupación raíz')
                 : (agrupacion.value?.tipoUnidad?.nombre || ''))
 
 const padreUnidad = computed(() => todasUnidades.value.find(u => u.id === padreSel.value) || null)
+// Niveles disponibles según el padre (raíz si no hay padre; hijos del nivel del
+// padre en otro caso). El nivel se DERIVA automáticamente, no lo elige el usuario.
 const tiposDisponibles = computed(() => {
   const terr = niveles.value.filter(t => t.naturaleza === 'TERRITORIAL')
   if (!padreSel.value) return terr.filter(t => !t.padreTipoId)
@@ -557,10 +557,9 @@ const tiposDisponibles = computed(() => {
   if (!padreTipoId) return terr
   return terr.filter(t => t.padreTipoId === padreTipoId)
 })
-watch(tiposDisponibles, (lista) => {
-  if (lista.length === 1) formTipoId.value = lista[0].id
-  else if (!lista.find(t => t.id === formTipoId.value)) formTipoId.value = ''
-})
+// Nivel derivado (el primero disponible). Se fija en formTipoId automáticamente.
+const nivelDerivado = computed(() => tiposDisponibles.value[0] || null)
+watch(nivelDerivado, (nivel) => { formTipoId.value = nivel?.id || '' }, { immediate: true })
 // En el alta, mostrar jurídicos solo si el nivel elegido es FILIAL / FEDERADA
 const tipoSelEsJuridica = computed(() =>
   ['FILIAL', 'FEDERADA'].includes(niveles.value.find(t => t.id === formTipoId.value)?.vinculo))
