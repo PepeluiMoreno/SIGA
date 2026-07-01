@@ -53,6 +53,20 @@ Criterio propuesto (fiel a "una actividad que tenga meta expresada en número de
 firmas"): **la Actividad tiene una `MetaActividad` cuyo `TipoMeta.unidad_medida
 == "firmas"`**. No dependemos del nombre del tipo de actividad.
 
+## 1b. Identidad del firmante (implementado)
+
+- Un **firmante es un `Contacto` (PF) con la vinculación `FIRMANTE`**. El alta
+  pública crea/asegura esa `Vinculacion` (tipo `FIRMANTE`, sin satélite) de forma
+  idempotente.
+- **Desduplicación por NIF (DNI/NIE)**, no por email: el `Contacto` se busca por
+  `numero_documento` normalizado. Una misma persona no se duplica aunque firme con
+  emails distintos, y si ya existe (p. ej. es socio) se reutiliza y se le añade la
+  vinculación FIRMANTE.
+- **NIF obligatorio y validado** (letra de control) en las tres capas: navegador,
+  proxy PHP del plugin y endpoint SIGA. Solo DNI/NIE (no pasaporte).
+- **Historial de firmas** por firmante = sus `FirmaCampania` (una por campaña/
+  actividad firmada); ya disponible vía `contacto.firmas_campania`.
+
 ## 2. Estado actual (lo que hay que cambiar)
 
 | Hoy | Objetivo |

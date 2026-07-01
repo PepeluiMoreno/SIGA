@@ -100,8 +100,8 @@ Ejemplo con actividad concreta y pidiendo documento:
 | Apellidos                 | `apellidos`               | Sí          |
 | Correo electrónico        | `email`                   | Sí          |
 | Código postal             | `codigo_postal`           | No          |
-| Tipo de documento         | `tipo_documento`          | No          |
-| Número de documento       | `documento`               | No          |
+| Tipo (DNI/NIE)            | `tipo_documento`          | Sí          |
+| **DNI / NIE**             | `documento`               | **Sí**      |
 | Acepto términos           | `acepta_terminos`         | Sí          |
 | Quiero recibir info        | `acepta_comunicaciones`   | No          |
 | (oculto, honeypot)        | `website`                 | —           |
@@ -110,6 +110,19 @@ Ejemplo con actividad concreta y pidiendo documento:
 > El campo `pais_id` de SIGA es un UUID y se omite en este formulario para no
 > exigir un catálogo de países en WordPress. Si lo necesitas, puede añadirse
 > como atributo fijo del shortcode en una versión posterior.
+
+### NIF, desduplicación y firmante
+
+El **DNI/NIE es obligatorio** y es la clave de identidad. El plugin valida la
+letra de control **en el navegador y en el servidor** (proxy PHP), y SIGA la
+vuelve a validar. Con ese NIF, SIGA:
+
+- **desduplica** al firmante: una misma persona no se duplica aunque firme con
+  emails distintos (se reutiliza su `Contacto`);
+- le da la **vinculación `FIRMANTE`** (si no la tenía);
+- guarda el **historial** de qué ha firmado (una `FirmaCampania` por campaña).
+
+Solo se aceptan **DNI y NIE** (no pasaporte), porque la desduplicación es por NIF.
 
 ## Requisitos en el lado de SIGA
 
@@ -120,6 +133,8 @@ Ejemplo con actividad concreta y pidiendo documento:
 - La actividad de recogida de firmas existe, es **online** y está **activa**
   (iniciada y no cerrada); su campaña incluye la recogida de firmas en su
   métrica. Si no, SIGA responde `campania_no_disponible`.
+- El `TipoVinculacion` **`FIRMANTE`** está sembrado (seed de vinculaciones); si
+  no, SIGA registra la firma pero no asigna la vinculación (queda avisado en log).
 
 Como el navegador habla solo con WordPress, **no hace falta** añadir el dominio
 del WordPress a `FIRMAS_CORS_ORIGINS` del backend.

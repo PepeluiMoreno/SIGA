@@ -66,6 +66,25 @@
 		return '';
 	}
 
+	// Validación de NIF español (DNI/NIE) con letra de control.
+	var NIF_LETRAS = 'TRWAGMYFPDXBNJZSQVHLCKE';
+	function normalizarNif( v ) {
+		return ( v || '' ).replace( /[\s\-.]/g, '' ).toUpperCase();
+	}
+	function validarNif( v ) {
+		var n = normalizarNif( v );
+		var dni = /^(\d{8})([A-Z])$/.exec( n );
+		if ( dni ) {
+			return NIF_LETRAS.charAt( parseInt( dni[ 1 ], 10 ) % 23 ) === dni[ 2 ];
+		}
+		var nie = /^([XYZ])(\d{7})([A-Z])$/.exec( n );
+		if ( nie ) {
+			var base = ( { X: '0', Y: '1', Z: '2' } )[ nie[ 1 ] ] + nie[ 2 ];
+			return NIF_LETRAS.charAt( parseInt( base, 10 ) % 23 ) === nie[ 3 ];
+		}
+		return false;
+	}
+
 	function setMsg( form, text, kind ) {
 		var msg = form.querySelector( '.siga-firmas-msg' );
 		if ( ! msg ) {
@@ -85,6 +104,16 @@
 			return;
 		}
 
+		// NIF obligatorio y bien formado (identidad de desduplicación del firmante).
+		var nifInput = form.querySelector( '[data-siga-nif]' );
+		var nif = normalizarNif( nifInput ? nifInput.value : '' );
+		if ( ! validarNif( nif ) ) {
+			setMsg( form, cfg.i18n.nifInvalido, 'error' );
+			if ( nifInput ) { nifInput.focus(); }
+			return;
+		}
+		if ( nifInput ) { nifInput.value = nif; }  // dejar el valor normalizado a la vista
+
 		var needsCaptcha = cfg.captchaProvider && cfg.captchaProvider !== 'none' && cfg.captchaSiteKey;
 		var captchaToken = tokenFor( form );
 		if ( needsCaptcha && ! captchaToken ) {
@@ -99,7 +128,7 @@
 			apellidos: data.get( 'apellidos' ) || '',
 			email: data.get( 'email' ) || '',
 			codigo_postal: data.get( 'codigo_postal' ) || '',
-			documento: data.get( 'documento' ) || '',
+			documento: nif,
 			tipo_documento: data.get( 'tipo_documento' ) || '',
 			acepta_terminos: data.get( 'acepta_terminos' ) ? '1' : '',
 			acepta_comunicaciones: data.get( 'acepta_comunicaciones' ) ? '1' : '',

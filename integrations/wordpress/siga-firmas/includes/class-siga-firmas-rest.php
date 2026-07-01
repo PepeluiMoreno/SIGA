@@ -84,12 +84,16 @@ class SIGA_Firmas_Rest {
 		$apellidos = sanitize_text_field( (string) $request->get_param( 'apellidos' ) );
 		$email     = sanitize_email( (string) $request->get_param( 'email' ) );
 		$acepta    = self::to_bool( $request->get_param( 'acepta_terminos' ) );
+		$nif       = self::normalizar_nif( (string) $request->get_param( 'documento' ) );
 
 		if ( '' === $nombre || '' === $apellidos ) {
 			return self::error( 422, __( 'Indica tu nombre y tus apellidos.', 'siga-firmas' ) );
 		}
 		if ( ! is_email( $email ) ) {
 			return self::error( 422, __( 'El correo electrónico no es válido.', 'siga-firmas' ) );
+		}
+		if ( ! self::es_nif_valido( $nif ) ) {
+			return self::error( 422, __( 'Introduce un DNI/NIE válido (con su letra).', 'siga-firmas' ) );
 		}
 		if ( ! $acepta ) {
 			return self::error( 422, __( 'Debes aceptar los términos para firmar.', 'siga-firmas' ) );
@@ -111,12 +115,9 @@ class SIGA_Firmas_Rest {
 		if ( '' !== $cp ) {
 			$payload['codigo_postal'] = mb_substr( $cp, 0, 20 );
 		}
-		$doc = sanitize_text_field( (string) $request->get_param( 'documento' ) );
-		if ( '' !== $doc ) {
-			$payload['documento']      = mb_substr( $doc, 0, 255 );
-			$tipo_doc                  = sanitize_text_field( (string) $request->get_param( 'tipo_documento' ) );
-			$payload['tipo_documento'] = '' !== $tipo_doc ? mb_substr( $tipo_doc, 0, 20 ) : 'DNI';
-		}
+		$payload['documento'] = $nif;
+		$tipo_doc             = sanitize_text_field( (string) $request->get_param( 'tipo_documento' ) );
+		$payload['tipo_documento'] = in_array( $tipo_doc, array( 'DNI', 'NIE' ), true ) ? $tipo_doc : 'DNI';
 
 		// 6. Reenvío a SIGA.
 		$url = $settings['api_url'] . '/api/publico/firmas';
@@ -182,6 +183,34 @@ class SIGA_Firmas_Rest {
 	 */
 	private static function to_bool( $value ) {
 		return in_array( $value, array( true, 1, '1', 'true', 'on', 'yes', 'si' ), true );
+	}
+
+	/**
+	 * Normaliza un documento: mayúsculas, sin espacios, guiones ni puntos.
+	 *
+	 * @param string $numero Documento en bruto.
+	 * @return string
+	 */
+	private static function normalizar_nif( $numero ) {
+		return strtoupper( preg_replace( '/[\s\-.]/', '', (string) $numero ) );
+	}
+
+	/**
+	 * Valida un NIF español (DNI o NIE) comprobando la letra de control.
+	 *
+	 * @param string $nif Documento ya normalizado.
+	 * @return bool
+	 */
+	private static function es_nif_valido( $nif ) {
+		$letras = 'TRWAGMYFPDXBNJZSQVHLCKE';
+		if ( preg_match( '/^(\d{8})([A-Z])$/', $nif, $m ) ) {
+			return $letras[ (int) $m[1] % 23 ] === $m[2];
+		}
+		if ( preg_match( '/^([XYZ])(\d{7})([A-Z])$/', $nif, $m ) ) {
+			$base = strtr( $m[1], array( 'X' => '0', 'Y' => '1', 'Z' => '2' ) ) . $m[2];
+			return $letras[ (int) $base % 23 ] === $m[3];
+		}
+		return false;
 	}
 
 	/**

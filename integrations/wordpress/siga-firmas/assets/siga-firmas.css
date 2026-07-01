@@ -96,6 +96,13 @@
 	color: var(--siga-brand-dark);
 }
 
+.siga-firmas-hint {
+	display: block;
+	margin-top: 0.25rem;
+	font-size: 0.78rem;
+	color: #6b7280;
+}
+
 .siga-firmas-captcha {
 	margin: 0.8rem 0;
 }

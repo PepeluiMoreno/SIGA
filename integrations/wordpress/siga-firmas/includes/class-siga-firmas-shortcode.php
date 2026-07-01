@@ -77,6 +77,7 @@ class SIGA_Firmas_Shortcode {
 					'enviando'      => __( 'Enviando…', 'siga-firmas' ),
 					'errorGenerico' => __( 'Ha ocurrido un error. Inténtalo de nuevo.', 'siga-firmas' ),
 					'captchaFalta'  => __( 'Completa la verificación anti-robot.', 'siga-firmas' ),
+					'nifInvalido'   => __( 'Introduce un DNI/NIE válido (con su letra).', 'siga-firmas' ),
 				),
 			)
 		);
@@ -163,22 +164,23 @@ class SIGA_Firmas_Shortcode {
 			</label>
 			<?php endif; ?>
 
-			<?php if ( $pedir_doc ) : ?>
+			<?php // NIF (DNI/NIE) OBLIGATORIO: identidad por la que SIGA desduplica al firmante. ?>
 			<div class="siga-firmas-row">
 				<label class="siga-firmas-field siga-firmas-field--narrow">
-					<span><?php esc_html_e( 'Tipo de documento', 'siga-firmas' ); ?></span>
+					<span><?php esc_html_e( 'Tipo', 'siga-firmas' ); ?></span>
 					<select name="tipo_documento">
 						<option value="DNI">DNI</option>
 						<option value="NIE">NIE</option>
-						<option value="PASAPORTE"><?php esc_html_e( 'Pasaporte', 'siga-firmas' ); ?></option>
 					</select>
 				</label>
 				<label class="siga-firmas-field">
-					<span><?php esc_html_e( 'Número de documento', 'siga-firmas' ); ?></span>
-					<input type="text" name="documento" maxlength="255" autocomplete="off" />
+					<span><?php esc_html_e( 'DNI / NIE', 'siga-firmas' ); ?> <em>*</em></span>
+					<input type="text" name="documento" maxlength="255" autocomplete="off"
+						inputmode="text" spellcheck="false"
+						placeholder="12345678Z" data-siga-nif required />
+					<small class="siga-firmas-hint"><?php esc_html_e( 'Necesario para validar la firma y evitar duplicados.', 'siga-firmas' ); ?></small>
 				</label>
 			</div>
-			<?php endif; ?>
 
 			<label class="siga-firmas-check">
 				<input type="checkbox" name="acepta_terminos" value="1" required />

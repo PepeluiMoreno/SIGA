@@ -146,6 +146,12 @@ class FirmaPublicaService:
             acepta_comunicaciones=acepta_comunicaciones,
         )
 
+        # Todo firmante es un Contacto con la vinculación FIRMANTE (idempotente).
+        # Commit aquí para que contacto + vinculación persistan en TODAS las rutas
+        # (incluidas las de "ya firmada", que retornan sin el commit final).
+        await self._asegurar_vinculacion_firmante(contacto)
+        await self.session.commit()
+
         firma = await self._firma_existente(campania.id, contacto.id)
         if firma is not None:
             if firma.verificado:
@@ -323,31 +329,40 @@ class FirmaPublicaService:
     ) -> Contacto:
         """Crea o actualiza el Contacto (persona física) que firma.
 
-        En el modelo CRM, un firmante es un Contacto PF identificado por email.
-        Si ya existe (sea por firmas previas o por ser miembro), se reutiliza.
+        En el modelo CRM, un firmante es un Contacto PF identificado por su
+        **NIF** (DNI/NIE). La desduplicación es por NIF normalizado: si el
+        contacto ya existe (por firmas previas o por ser socio/voluntario), se
+        reutiliza y solo se corrigen datos básicos. Así una misma persona no se
+        duplica aunque firme con emails distintos.
 
         NOTA (pendiente RGPD): `acepta_comunicaciones` no tiene aún campo en
         Contacto; el consentimiento de comunicaciones debe registrarse en el
         módulo proteccion_datos cuando se reconduzca a Contacto. De momento no
         se persiste aquí para no inventar esquema.
         """
+        from app.core.documento import normalizar_documento
+
+        nif = normalizar_documento(documento)
+
         existente = await self.session.scalar(
             select(Contacto).where(
-                Contacto.email == email,
+                Contacto.numero_documento == nif,
                 Contacto.tipo == "PERSONA_FISICA",
                 Contacto.eliminado.is_(False),
             )
         )
         if existente is not None:
-            # Actualizamos datos básicos (corrección de erratas).
+            # Actualizamos datos básicos (corrección de erratas). El NIF es la
+            # identidad, no se toca; el email se refresca al último usado.
             existente.nombre = nombre.strip()
             existente.apellido1 = apellidos.strip()
+            if email:
+                existente.email = email
             if codigo_postal:
                 existente.codigo_postal = codigo_postal.strip()
             if pais_id:
                 existente.pais_domicilio_id = pais_id
-            if documento:
-                existente.numero_documento = documento.strip()
+            if tipo_documento:
                 existente.tipo_documento = tipo_documento
             await self.session.flush()
             return existente
@@ -359,12 +374,50 @@ class FirmaPublicaService:
             email=email,
             codigo_postal=codigo_postal.strip() if codigo_postal else None,
             pais_domicilio_id=pais_id,
-            numero_documento=documento.strip() if documento else None,
+            numero_documento=nif,
             tipo_documento=tipo_documento,
         )
         self.session.add(contacto)
         await self.session.flush()
         return contacto
+
+    async def _asegurar_vinculacion_firmante(self, contacto: Contacto) -> None:
+        """Garantiza que el Contacto tenga una vinculación FIRMANTE activa.
+
+        Idempotente: si ya existe (activa) no crea otra. El tipo FIRMANTE no
+        lleva satélite (requiere_satelite=False). El historial de qué firmó
+        cada firmante son sus FirmaCampania (una por campaña firmada).
+        """
+        from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
+        from app.modules.membresia.models.vinculacion import Vinculacion
+
+        tipo_id = await self.session.scalar(
+            select(TipoVinculacion.id).where(TipoVinculacion.codigo == "FIRMANTE")
+        )
+        if tipo_id is None:
+            logger.error("No existe TipoVinculacion FIRMANTE; ejecuta el seed de vinculaciones.")
+            return
+
+        ya = await self.session.scalar(
+            select(Vinculacion.id).where(
+                Vinculacion.contacto_id == contacto.id,
+                Vinculacion.tipo_vinculacion_id == tipo_id,
+                Vinculacion.estado == "activa",
+                Vinculacion.eliminado.is_(False),
+            )
+        )
+        if ya is not None:
+            return
+
+        self.session.add(
+            Vinculacion(
+                contacto_id=contacto.id,
+                tipo_vinculacion_id=tipo_id,
+                fecha_inicio=datetime.now(timezone.utc).date(),
+                estado="activa",
+            )
+        )
+        await self.session.flush()
 
     async def _firma_existente(
         self, campania_id: uuid.UUID, contacto_id: uuid.UUID
