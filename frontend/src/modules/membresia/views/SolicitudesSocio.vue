@@ -1,15 +1,6 @@
 <template>
-  <AppLayout title="Solicitudes de admisión" subtitle="Solicitudes pendientes de aprobación y alta directa de socios">
+  <AppLayout title="Solicitudes de admisión" subtitle="Solicitudes de socio pendientes de aprobación o rechazo">
     <div class="w-3/4 mx-auto">
-      <!-- Barra de acciones: alta directa de socio (sin pasar por solicitud) para
-           quien puede dar de alta socios (secretaría de la asociación o de la unidad). -->
-      <div class="flex items-center justify-end mb-4">
-        <router-link v-if="puedeAltaSocio" to="/miembros/nuevo"
-          class="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
-          <PlusIcon class="w-4 h-4" /> Alta de socio
-        </router-link>
-      </div>
-
       <div v-if="cargando" class="text-center py-12 text-slate-400 text-sm">Cargando solicitudes…</div>
       <div v-else-if="error" class="rounded-md bg-red-50 border border-red-200 p-4 text-sm text-red-800">{{ error }}</div>
       <div v-else-if="!solicitudes.length" class="text-center py-16 text-slate-400 text-sm">
@@ -57,26 +48,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { PlusIcon } from '@heroicons/vue/24/outline'
+import { ref, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
-import { usePermisos } from '@/composables/usePermisos'
 import {
   GET_SOLICITUDES_SOCIO, APROBAR_SOLICITUD_SOCIO, RECHAZAR_SOLICITUD_SOCIO,
 } from '@/graphql/queries/miembros.js'
 
 const toast = useToast()
 const confirm = useConfirm()
-const { tienePermiso } = usePermisos()
-
-// Alta directa de socio (sin pasar por solicitud). El botón lleva a la vista de
-// alta (/miembros/nuevo). Lo ve quien puede crear socios: secretaría de la
-// asociación o secretario/coordinador de la unidad territorial del nuevo socio.
-// El backend valida además el ámbito territorial en la mutación.
-const puedeAltaSocio = computed(() => tienePermiso('MEMBRESIA_MIEMBRO_CREAR'))
 
 const solicitudes = ref([])
 const cargando = ref(true)
