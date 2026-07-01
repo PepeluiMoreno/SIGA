@@ -23,7 +23,10 @@ from ..modules.core.geografico import (
 )
 
 # Core - Comunicación
-from ..modules.core.comunicacion import TipoNotificacion, Notificacion, PreferenciaNotificacion
+from ..modules.core.comunicacion import (
+    TipoNotificacion, Notificacion, PreferenciaNotificacion,
+    CanalChat, MensajeEnviado,
+)
 
 # Configuración
 from ..modules.configuracion.models.tema_ui import TemaUI

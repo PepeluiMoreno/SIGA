@@ -12,6 +12,7 @@ autogenerado por strawchemy (no se declara un tipo nuevo).
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import Optional
 
 import strawberry
@@ -27,6 +28,22 @@ class ResultadoOperacionNotificacion:
     exito: bool
     afectadas: int = 0
     mensaje: str = ""
+
+
+@strawberry.type(name="MensajeEnviado")
+class MensajeEnviadoType:
+    """Un mensaje de email enviado desde la app (histórico del módulo Comunicación)."""
+    id: uuid.UUID
+    enviado_en: datetime
+    asunto: str
+    cuerpo_html: str
+    para: str
+    cc: Optional[str]
+    cco: Optional[str]
+    enviados: int
+    total: int
+    errores: Optional[str]
+    remitente_nombre: Optional[str] = None
 
 
 @strawberry.type
@@ -69,6 +86,40 @@ class ComunicacionQuery:
 
         service = FirmaPublicaService(info.context.session)
         return await service.contar_firmas_verificadas(campania_id)
+
+    @strawberry.field(permission_classes=[RequireAuthenticated])
+    async def mensajes_enviados(
+        self,
+        info: strawberry.Info,
+        limite: int = 50,
+        offset: int = 0,
+    ) -> list[MensajeEnviadoType]:
+        """Histórico de mensajes de email enviados desde la app (módulo Comunicación, MVP),
+        más recientes primero. Incluye el nombre del remitente (usuario que lo envió)."""
+        from sqlalchemy import select
+        from app.modules.core.comunicacion.mensajeria import MensajeEnviado
+        from app.modules.acceso.models import Usuario
+        from app.modules.membresia.models.contacto import Contacto
+
+        session = info.context.session
+        limite = max(1, min(limite, 100))  # cota defensiva de paginación
+        # Nombre del remitente: el del contacto ligado al usuario; si no lo hay,
+        # su username/email (usuarios técnicos sin contacto).
+        rows = (await session.execute(
+            select(MensajeEnviado, Contacto.nombre, Usuario.username, Usuario.email)
+            .outerjoin(Usuario, Usuario.id == MensajeEnviado.remitente_id)
+            .outerjoin(Contacto, Contacto.id == Usuario.contacto_id)
+            .order_by(MensajeEnviado.enviado_en.desc())
+            .limit(limite).offset(max(0, offset))
+        )).all()
+        return [
+            MensajeEnviadoType(
+                id=m.id, enviado_en=m.enviado_en, asunto=m.asunto, cuerpo_html=m.cuerpo_html,
+                para=m.para, cc=m.cc, cco=m.cco, enviados=m.enviados, total=m.total,
+                errores=m.errores, remitente_nombre=(nombre or username or email),
+            )
+            for m, nombre, username, email in rows
+        ]
 
     @strawberry.field(permission_classes=[RequireAuthenticated])
     async def mis_notificaciones_no_leidas(self, info: strawberry.Info) -> int:

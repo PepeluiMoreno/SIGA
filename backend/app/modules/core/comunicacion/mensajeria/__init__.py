@@ -12,5 +12,6 @@ from .models import (
     OrigenCanal,
     EstadoSync,
 )
+from .mensaje_enviado import MensajeEnviado
 
-__all__ = ["CanalChat", "OrigenCanal", "EstadoSync"]
+__all__ = ["CanalChat", "OrigenCanal", "EstadoSync", "MensajeEnviado"]

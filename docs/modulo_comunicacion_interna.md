@@ -382,3 +382,43 @@ Convención:
 
 Esta lista la consumirá la futura UI de edición para ofrecer un picker de variables
 ("Insertar {{ nombre_miembro }}").
+
+---
+
+## 13. Histórico de mensajes enviados (MVP, 2026-07-01)
+
+MVP del módulo de Comunicación: cada correo enviado desde la app (mutación
+`enviarMensajeContactos`, botón "Enviar mensaje" del grid de contactos) se **registra**
+para trazabilidad y consulta. NO es un cliente de correo (no lee IMAP): solo el histórico
+de lo enviado por SMTP. La visión de cliente incrustado completo queda post-MVP.
+
+### 13.1 Modelo `MensajeEnviado` (tabla `mensajes_enviados`)
+
+`backend/app/modules/core/comunicacion/mensajeria/mensaje_enviado.py`. Campos: `remitente_id`
+(FK usuarios, SET NULL), `enviado_en`, `asunto`, `cuerpo_html`, `para`/`cc`/`cco` (emails
+serializados por coma), `enviados`/`total`, `errores` (\n-serializados). Registrado en
+`app/models/__init__.py` y en el `__init__` del módulo para que Alembic/el mapper lo vean.
+
+**Regla para el manual:** todo correo que la aplicación envía a socios o contactos queda
+archivado en "Mensajes enviados", con su fecha, remitente, destinatarios y el resultado de la
+entrega. Permite comprobar qué se comunicó, a quién y cuándo.
+
+### 13.2 API GraphQL
+
+- Mutación `enviarMensajeContactos` (en `membresia_resolvers.py`): tras enviar, si `enviados > 0`,
+  crea un `MensajeEnviado` y hace commit.
+- Query `mensajesEnviados(limite, offset)` (en `comunicacion_resolvers.py`, tipo `MensajeEnviadoType`):
+  histórico ordenado por fecha desc; resuelve `remitenteNombre` desde el contacto del usuario
+  (o username/email si es un usuario técnico sin contacto). Permiso: `RequireAuthenticated`.
+
+### 13.3 UI
+
+- Vista `frontend/src/modules/comunicaciones/views/MensajesEnviados.vue`: tabla (fecha, asunto,
+  destinatarios, remitente, envíos ok/total) + modal de detalle con el cuerpo HTML tal cual se
+  envió. Ruta `/mensajes-enviados`; entrada de menú "Mensajes enviados" (icono sobre) en la zona
+  personal del sidebar, gateada por `CONTACTO_LISTAR`/`MEMBRESIA_MIEMBRO_LISTAR`.
+
+### 13.4 SQL pendiente para staging/prod (acumular con el lote)
+
+En dev la tabla se creó vía `MensajeEnviado.__table__.create(checkfirst=True)`. Para staging/prod,
+generar la migración Alembic de la tabla `mensajes_enviados` (columnas arriba) al cerrar el lote.

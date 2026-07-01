@@ -83,6 +83,14 @@
                   <span>Chat interno</span>
                 </router-link>
               </li>
+              <li v-if="tieneAlguno('CONTACTO_LISTAR','MEMBRESIA_MIEMBRO_LISTAR')">
+                <router-link to="/mensajes-enviados"
+                  class="nav-item"
+                  :class="$route.path === '/mensajes-enviados' ? 'active' : 'inactive'">
+                  <EnvelopeIcon class="nav-icon" />
+                  <span>Mensajes enviados</span>
+                </router-link>
+              </li>
             </ul>
 
             <hr class="nav-sep" />
@@ -523,7 +531,7 @@ import {
   ArrowsRightLeftIcon, ChartBarIcon, GiftIcon, UserCircleIcon,
   Bars3Icon, XMarkIcon, ChevronDownIcon, ChevronLeftIcon, TrashIcon,
   ClipboardDocumentCheckIcon, DocumentTextIcon, DocumentCheckIcon,
-  ChatBubbleLeftRightIcon,
+  ChatBubbleLeftRightIcon, EnvelopeIcon,
   ShieldCheckIcon, ShieldExclamationIcon, CheckCircleIcon, EyeIcon, CheckBadgeIcon,
 } from '@heroicons/vue/24/outline'
 

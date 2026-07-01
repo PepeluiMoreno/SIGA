@@ -315,6 +315,12 @@ const routes = [
     name: 'MemoriaAnual',
     meta: { requiresAuth: true, requiredPermission: 'CAMPANA_LISTAR' }
   },
+  {
+    path: '/mensajes-enviados',
+    component: () => import('@/modules/comunicaciones/views/MensajesEnviados.vue'),
+    name: 'MensajesEnviados',
+    meta: { requiresAuth: true }
+  },
 
   // ─── ECONOMICO ────────────────────────────────────────────────────────────
   { path: '/financiero', redirect: '/economico' },

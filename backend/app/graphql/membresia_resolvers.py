@@ -814,7 +814,10 @@ class MembresiaResolverMutation:
         CADA envío. Devuelve el nº de envíos y los errores. Si SMTP no está
         configurado, lanza un error con el detalle (para mostrarlo en la UI)."""
         from app.core.email_service import EmailService
+        from app.modules.core.comunicacion.mensajeria import MensajeEnviado
+        from datetime import datetime, timezone
         session = info.context.session
+        user = info.context.user
 
         contactos = (await session.execute(
             select(Contacto).where(Contacto.id.in_(contacto_ids))
@@ -838,6 +841,25 @@ class MembresiaResolverMutation:
                 raise
             except Exception as exc:  # noqa: BLE001
                 errores.append(f"{nombre or direccion}: {exc}")
+
+        # Registra el envío en el histórico del módulo de Comunicación (MVP).
+        # Solo si se envió al menos uno; un fallo global de SMTP ya se propagó antes.
+        if enviados:
+            session.add(MensajeEnviado(
+                id=uuid.uuid4(),
+                remitente_id=getattr(user, "id", None),
+                enviado_en=datetime.now(timezone.utc),
+                asunto=asunto,
+                cuerpo_html=cuerpo_html,
+                para=", ".join(d for _, d in destinatarios),
+                cc=", ".join(cc_limpio) or None,
+                cco=", ".join(cco_limpio) or None,
+                enviados=enviados,
+                total=len(destinatarios),
+                errores="\n".join(errores) or None,
+            ))
+            await session.commit()
+
         return EnvioMensajeResultado(
             enviados=enviados,
             total=len(destinatarios),
