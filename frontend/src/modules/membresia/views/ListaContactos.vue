@@ -173,27 +173,34 @@ const vinculacionesDisponibles = computed(() => {
   return [...mapa.values()].sort((a, b) => a.nombre.localeCompare(b.nombre))
 })
 
-const filterFields = computed(() => [
-  {
-    key: 'tipos',
-    label: 'Tipo de persona',
-    type: 'multiselect',
-    options: [
-      { value: 'PERSONA_FISICA', label: 'Personas físicas' },
-      { value: 'PERSONA_JURIDICA', label: 'Personas jurídicas' },
-    ],
-    allLabel: 'Todos los tipos',
-    width: 'w-56',
-  },
-  {
-    key: 'vinculaciones',
-    label: 'Vinculación',
-    type: 'multiselect',
-    options: vinculacionesDisponibles.value.map((f) => ({ value: f.codigo, label: f.nombre })),
-    allLabel: 'Cualquier vinculación',
-    width: 'w-56',
-  },
-])
+const filterFields = computed(() => {
+  const campos = [
+    {
+      key: 'tipos',
+      label: 'Tipo de persona',
+      type: 'multiselect',
+      options: [
+        { value: 'PERSONA_FISICA', label: 'Personas físicas' },
+        { value: 'PERSONA_JURIDICA', label: 'Personas jurídicas' },
+      ],
+      allLabel: 'Todos los tipos',
+      width: 'w-56',
+    },
+  ]
+  // El filtro por vinculación solo tiene sentido en la vista GENERAL de Contactos
+  // (cajón mixto). En Socios/Personal el colectivo ya está fijado: sobra.
+  if (!props.colectivo) {
+    campos.push({
+      key: 'vinculaciones',
+      label: 'Vinculación',
+      type: 'multiselect',
+      options: vinculacionesDisponibles.value.map((f) => ({ value: f.codigo, label: f.nombre })),
+      allLabel: 'Cualquier vinculación',
+      width: 'w-56',
+    })
+  }
+  return campos
+})
 
 // Si al cambiar el tipo de persona alguna vinculación elegida deja de tener
 // sentido, se descarta.
