@@ -144,7 +144,7 @@ const COLECTIVO_SOCIO = ['SOCIO']
 const COLECTIVO_PERSONAL = ['EMPLEADO', 'AUTONOMO', 'EMPLEADO_EXTERNO']
 const TITULOS = {
   SOCIO:    { titulo: 'Socios',     sub: 'Personas con vinculación de socio' },
-  PERSONAL: { titulo: 'Personal',   sub: 'Personal contratado y colaborador de servicio' },
+  PERSONAL: { titulo: 'Personal y Empresas contratados', sub: 'Personal contratado y colaborador de servicio (personas y empresas)' },
 }
 
 const router = useRouter()

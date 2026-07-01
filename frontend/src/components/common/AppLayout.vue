@@ -200,7 +200,7 @@
                   <li v-if="tienePermiso('MEMBRESIA_MIEMBRO_LISTAR')">
                     <router-link to="/personal" class="nav-item"
                       :class="$route.path.startsWith('/personal') ? 'active' : 'inactive'">
-                      <UserGroupIcon class="nav-icon" /><span>Personal</span>
+                      <UserGroupIcon class="nav-icon" /><span>Personal y Empresas contratados</span>
                     </router-link>
                   </li>
                   <li v-if="tienePermiso('MEMBRESIA_MIEMBRO_LISTAR')">
