@@ -94,7 +94,7 @@
 
 		var data = new FormData( form );
 		var payload = {
-			campania_id: form.getAttribute( 'data-campania' ) || '',
+			actividad_id: form.getAttribute( 'data-actividad' ) || '',
 			nombre: data.get( 'nombre' ) || '',
 			apellidos: data.get( 'apellidos' ) || '',
 			email: data.get( 'email' ) || '',

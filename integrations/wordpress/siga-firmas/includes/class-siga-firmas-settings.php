@@ -81,7 +81,7 @@ class SIGA_Firmas_Settings {
 		$out   = siga_firmas_default_settings();
 
 		$out['api_url']          = isset( $input['api_url'] ) ? untrailingslashit( esc_url_raw( trim( $input['api_url'] ) ) ) : '';
-		$out['campania_id']      = isset( $input['campania_id'] ) ? sanitize_text_field( $input['campania_id'] ) : '';
+		$out['actividad_id']     = isset( $input['actividad_id'] ) ? sanitize_text_field( $input['actividad_id'] ) : '';
 		$provider                = isset( $input['captcha_provider'] ) ? sanitize_text_field( $input['captcha_provider'] ) : 'turnstile';
 		$out['captcha_provider'] = in_array( $provider, array( 'turnstile', 'hcaptcha', 'none' ), true ) ? $provider : 'turnstile';
 		$out['captcha_site_key'] = isset( $input['captcha_site_key'] ) ? sanitize_text_field( $input['captcha_site_key'] ) : '';
@@ -90,11 +90,11 @@ class SIGA_Firmas_Settings {
 		$timeout                 = isset( $input['timeout'] ) ? absint( $input['timeout'] ) : 10;
 		$out['timeout']          = (string) min( 60, max( 3, $timeout ) );
 
-		if ( '' !== $out['campania_id'] && ! self::is_uuid( $out['campania_id'] ) ) {
+		if ( '' !== $out['actividad_id'] && ! self::is_uuid( $out['actividad_id'] ) ) {
 			add_settings_error(
 				SIGA_FIRMAS_OPTION,
-				'campania_id',
-				__( 'El ID de campaña no parece un UUID válido.', 'siga-firmas' ),
+				'actividad_id',
+				__( 'El ID de actividad no parece un UUID válido.', 'siga-firmas' ),
 				'warning'
 			);
 		}
@@ -113,21 +113,21 @@ class SIGA_Firmas_Settings {
 	}
 
 	/**
-	 * Trae de SIGA las campañas de "Recogida de firmas" abiertas para el
+	 * Trae de SIGA las actividades de recogida de firmas activas para el
 	 * desplegable. Cachea el resultado 5 minutos para no golpear el backend en
 	 * cada carga de la página de ajustes.
 	 *
 	 * @param string $api_url Base del backend (sin barra final).
 	 * @param bool   $force   Si true, ignora la caché.
-	 * @return array<int,array<string,string>>|WP_Error Lista [{id,nombre,lema}] o error.
+	 * @return array<int,array<string,string>>|WP_Error Lista [{id,nombre,campania}] o error.
 	 */
-	public static function fetch_campanias( $api_url, $force = false ) {
+	public static function fetch_actividades( $api_url, $force = false ) {
 		$api_url = untrailingslashit( $api_url );
 		if ( '' === $api_url ) {
 			return new WP_Error( 'no_api', __( 'Falta la URL del backend.', 'siga-firmas' ) );
 		}
 
-		$cache_key = 'siga_firmas_campanias_' . md5( $api_url );
+		$cache_key = 'siga_firmas_actividades_' . md5( $api_url );
 		if ( ! $force ) {
 			$cached = get_transient( $cache_key );
 			if ( is_array( $cached ) ) {
@@ -136,7 +136,7 @@ class SIGA_Firmas_Settings {
 		}
 
 		$resp = wp_remote_get(
-			$api_url . '/api/publico/firmas/campanias',
+			$api_url . '/api/publico/firmas/actividades',
 			array(
 				'timeout' => 8,
 				'headers' => array( 'Accept' => 'application/json' ),
@@ -158,14 +158,14 @@ class SIGA_Firmas_Settings {
 		}
 
 		$out = array();
-		foreach ( $body as $c ) {
-			if ( ! is_array( $c ) || empty( $c['id'] ) ) {
+		foreach ( $body as $a ) {
+			if ( ! is_array( $a ) || empty( $a['id'] ) ) {
 				continue;
 			}
 			$out[] = array(
-				'id'     => sanitize_text_field( $c['id'] ),
-				'nombre' => isset( $c['nombre'] ) ? sanitize_text_field( $c['nombre'] ) : sanitize_text_field( $c['id'] ),
-				'lema'   => isset( $c['lema'] ) && $c['lema'] ? sanitize_text_field( $c['lema'] ) : '',
+				'id'       => sanitize_text_field( $a['id'] ),
+				'nombre'   => isset( $a['nombre'] ) ? sanitize_text_field( $a['nombre'] ) : sanitize_text_field( $a['id'] ),
+				'campania' => isset( $a['campania'] ) && $a['campania'] ? sanitize_text_field( $a['campania'] ) : '',
 			);
 		}
 
@@ -174,7 +174,7 @@ class SIGA_Firmas_Settings {
 	}
 
 	/**
-	 * URL (con nonce) para forzar el refresco de la lista de campañas.
+	 * URL (con nonce) para forzar el refresco de la lista de actividades.
 	 *
 	 * @return string
 	 */
@@ -200,19 +200,19 @@ class SIGA_Firmas_Settings {
 		}
 		$s = siga_firmas_get_settings();
 
-		// ¿Se pidió refrescar la lista de campañas? (enlace con nonce)
+		// ¿Se pidió refrescar la lista de actividades? (enlace con nonce)
 		$force_refresh = isset( $_GET['siga_refresh'] ) && check_admin_referer( 'siga_firmas_refresh' );
 
-		// Intento traer las campañas para el desplegable (si hay URL configurada).
-		$campanias = '' !== $s['api_url'] ? self::fetch_campanias( $s['api_url'], $force_refresh ) : null;
+		// Intento traer las actividades para el desplegable (si hay URL configurada).
+		$actividades = '' !== $s['api_url'] ? self::fetch_actividades( $s['api_url'], $force_refresh ) : null;
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'SIGA · Recogida de firmas', 'siga-firmas' ); ?></h1>
 			<p>
 				<?php esc_html_e( 'Conecta este sitio con el backend de SIGA. El formulario se inserta con el shortcode:', 'siga-firmas' ); ?>
 				<code>[siga_firmas]</code>
-				<?php esc_html_e( 'o, indicando otra campaña,', 'siga-firmas' ); ?>
-				<code>[siga_firmas campania="UUID"]</code>
+				<?php esc_html_e( 'o, indicando otra actividad,', 'siga-firmas' ); ?>
+				<code>[siga_firmas actividad="UUID"]</code>
 			</p>
 			<form action="options.php" method="post">
 				<?php settings_fields( self::GROUP ); ?>
@@ -227,52 +227,52 @@ class SIGA_Firmas_Settings {
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="siga_campania_id"><?php esc_html_e( 'Campaña de firmas por defecto', 'siga-firmas' ); ?></label></th>
+						<th scope="row"><label for="siga_actividad_id"><?php esc_html_e( 'Actividad de recogida de firmas', 'siga-firmas' ); ?></label></th>
 						<td>
-						<?php if ( is_array( $campanias ) && ! empty( $campanias ) ) : ?>
-							<select name="<?php echo esc_attr( SIGA_FIRMAS_OPTION ); ?>[campania_id]" id="siga_campania_id" class="regular-text">
-								<option value="">— <?php esc_html_e( 'Selecciona una campaña', 'siga-firmas' ); ?> —</option>
+						<?php if ( is_array( $actividades ) && ! empty( $actividades ) ) : ?>
+							<select name="<?php echo esc_attr( SIGA_FIRMAS_OPTION ); ?>[actividad_id]" id="siga_actividad_id" class="regular-text">
+								<option value="">— <?php esc_html_e( 'Selecciona una actividad', 'siga-firmas' ); ?> —</option>
 								<?php
 								$encontrada = false;
-								foreach ( $campanias as $c ) {
-									if ( $s['campania_id'] === $c['id'] ) {
+								foreach ( $actividades as $a ) {
+									if ( $s['actividad_id'] === $a['id'] ) {
 										$encontrada = true;
 									}
-									$etiqueta = '' !== $c['lema'] ? $c['nombre'] . ' — ' . $c['lema'] : $c['nombre'];
+									$etiqueta = '' !== $a['campania'] ? $a['campania'] . ' — ' . $a['nombre'] : $a['nombre'];
 									printf(
 										'<option value="%s" %s>%s</option>',
-										esc_attr( $c['id'] ),
-										selected( $s['campania_id'], $c['id'], false ),
+										esc_attr( $a['id'] ),
+										selected( $s['actividad_id'], $a['id'], false ),
 										esc_html( $etiqueta )
 									);
 								}
-								// Si la campaña guardada ya no está abierta, no la perdemos en silencio.
-								if ( '' !== $s['campania_id'] && ! $encontrada ) {
+								// Si la actividad guardada ya no está activa, no la perdemos en silencio.
+								if ( '' !== $s['actividad_id'] && ! $encontrada ) {
 									printf(
 										'<option value="%s" selected>%s</option>',
-										esc_attr( $s['campania_id'] ),
-										esc_html( $s['campania_id'] . ' (' . __( 'no activa', 'siga-firmas' ) . ')' )
+										esc_attr( $s['actividad_id'] ),
+										esc_html( $s['actividad_id'] . ' (' . __( 'no activa', 'siga-firmas' ) . ')' )
 									);
 								}
 								?>
 							</select>
-							<a class="button button-secondary" href="<?php echo esc_url( self::refresh_url() ); ?>"><?php esc_html_e( 'Actualizar campañas', 'siga-firmas' ); ?></a>
-							<p class="description"><?php esc_html_e( 'Campañas de tipo «Recogida de firmas» abiertas, traídas de SIGA. Se puede sobreescribir por página con el shortcode campania="…".', 'siga-firmas' ); ?></p>
+							<a class="button button-secondary" href="<?php echo esc_url( self::refresh_url() ); ?>"><?php esc_html_e( 'Actualizar actividades', 'siga-firmas' ); ?></a>
+							<p class="description"><?php esc_html_e( 'Actividades de recogida de firmas web activas (iniciadas y no cerradas), traídas de SIGA. Se puede sobreescribir por página con el shortcode actividad="…".', 'siga-firmas' ); ?></p>
 						<?php elseif ( '' === $s['api_url'] ) : ?>
-							<input name="<?php echo esc_attr( SIGA_FIRMAS_OPTION ); ?>[campania_id]" id="siga_campania_id" type="text"
+							<input name="<?php echo esc_attr( SIGA_FIRMAS_OPTION ); ?>[actividad_id]" id="siga_actividad_id" type="text"
 								class="regular-text" placeholder="00000000-0000-0000-0000-000000000000"
-								value="<?php echo esc_attr( $s['campania_id'] ); ?>" />
-							<p class="description"><?php esc_html_e( 'Guarda primero la URL del backend para elegir la campaña en un desplegable.', 'siga-firmas' ); ?></p>
+								value="<?php echo esc_attr( $s['actividad_id'] ); ?>" />
+							<p class="description"><?php esc_html_e( 'Guarda primero la URL del backend para elegir la actividad en un desplegable.', 'siga-firmas' ); ?></p>
 						<?php else : ?>
-							<input name="<?php echo esc_attr( SIGA_FIRMAS_OPTION ); ?>[campania_id]" id="siga_campania_id" type="text"
+							<input name="<?php echo esc_attr( SIGA_FIRMAS_OPTION ); ?>[actividad_id]" id="siga_actividad_id" type="text"
 								class="regular-text" placeholder="00000000-0000-0000-0000-000000000000"
-								value="<?php echo esc_attr( $s['campania_id'] ); ?>" />
+								value="<?php echo esc_attr( $s['actividad_id'] ); ?>" />
 							<a class="button button-secondary" href="<?php echo esc_url( self::refresh_url() ); ?>"><?php esc_html_e( 'Reintentar', 'siga-firmas' ); ?></a>
 							<p class="description" style="color:#b91c1c">
 								<?php
-								$motivo = is_wp_error( $campanias ) ? $campanias->get_error_message() : __( 'error desconocido', 'siga-firmas' );
+								$motivo = is_wp_error( $actividades ) ? $actividades->get_error_message() : __( 'error desconocido', 'siga-firmas' );
 								/* translators: %s: motivo del error al contactar con el backend. */
-								echo esc_html( sprintf( __( 'No se pudieron cargar las campañas desde SIGA (%s). Introduce el UUID a mano o pulsa «Reintentar».', 'siga-firmas' ), $motivo ) );
+								echo esc_html( sprintf( __( 'No se pudieron cargar las actividades desde SIGA (%s). Introduce el UUID a mano o pulsa «Reintentar».', 'siga-firmas' ), $motivo ) );
 								?>
 							</p>
 						<?php endif; ?>

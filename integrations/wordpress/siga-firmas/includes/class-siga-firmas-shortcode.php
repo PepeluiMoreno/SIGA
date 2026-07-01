@@ -93,7 +93,7 @@ class SIGA_Firmas_Shortcode {
 
 		$atts = shortcode_atts(
 			array(
-				'campania'         => $settings['campania_id'],
+				'actividad'        => $settings['actividad_id'],
 				'titulo'           => __( 'Firma la campaña', 'siga-firmas' ),
 				'boton'            => __( 'Firmar', 'siga-firmas' ),
 				'pedir_cp'         => '1', // Mostrar campo código postal.
@@ -103,13 +103,13 @@ class SIGA_Firmas_Shortcode {
 			'siga_firmas'
 		);
 
-		$campania = sanitize_text_field( $atts['campania'] );
+		$actividad = sanitize_text_field( $atts['actividad'] );
 
 		// Aviso visible solo para administradores si falta configuración.
-		if ( '' === $settings['api_url'] || ! SIGA_Firmas_Settings::is_uuid( $campania ) ) {
+		if ( '' === $settings['api_url'] || ! SIGA_Firmas_Settings::is_uuid( $actividad ) ) {
 			if ( current_user_can( 'manage_options' ) ) {
 				return '<div class="siga-firmas-aviso">'
-					. esc_html__( 'SIGA Firmas: configura la URL del backend y un ID de campaña válido en Ajustes → SIGA Firmas (o en el atributo campania="…").', 'siga-firmas' )
+					. esc_html__( 'SIGA Firmas: configura la URL del backend y una actividad de recogida de firmas válida en Ajustes → SIGA Firmas (o en el atributo actividad="…").', 'siga-firmas' )
 					. '</div>';
 			}
 			return '';
@@ -136,7 +136,7 @@ class SIGA_Firmas_Shortcode {
 		ob_start();
 		?>
 		<form class="siga-firmas-form" id="<?php echo esc_attr( $uid ); ?>"
-			data-campania="<?php echo esc_attr( $campania ); ?>" novalidate>
+			data-actividad="<?php echo esc_attr( $actividad ); ?>" novalidate>
 
 			<h3 class="siga-firmas-titulo"><?php echo esc_html( $atts['titulo'] ); ?></h3>
 

@@ -33,7 +33,10 @@ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 class FirmaPublicaIn(BaseModel):
-    campania_id: uuid.UUID
+    # Se firma sobre una ACTIVIDAD de recogida de firmas. Se mantiene
+    # campania_id por compatibilidad; debe llegar al menos uno de los dos.
+    actividad_id: Optional[uuid.UUID] = None
+    campania_id: Optional[uuid.UUID] = None
     nombre: str = Field(min_length=1, max_length=100)
     apellidos: str = Field(min_length=1, max_length=200)
     email: str = Field(min_length=3, max_length=200)
@@ -74,6 +77,8 @@ async def registrar_firma(
         raise HTTPException(status_code=422, detail="Email no válido.")
     if not datos.acepta_terminos:
         raise HTTPException(status_code=422, detail="Debes aceptar los términos para firmar.")
+    if datos.actividad_id is None and datos.campania_id is None:
+        raise HTTPException(status_code=422, detail="Falta la actividad de recogida de firmas.")
 
     # 3. Rate-limit (segunda barrera tras el captcha).
     if not limiter_firmas_ip.permitido(ip):
@@ -88,6 +93,7 @@ async def registrar_firma(
     # 5. Alta.
     service = FirmaPublicaService(session)
     resultado = await service.registrar_firma(
+        actividad_id=datos.actividad_id,
         campania_id=datos.campania_id,
         nombre=datos.nombre,
         apellidos=datos.apellidos,
@@ -125,24 +131,25 @@ async def verificar_firma(
     return HTMLResponse(content=html, status_code=200 if ok else 400)
 
 
-@router.get("/campanias", summary="Campañas de recogida de firmas abiertas (para el desplegable)")
-async def listar_campanias(
+@router.get("/actividades", summary="Actividades de recogida de firmas activas (para el desplegable)")
+async def listar_actividades(
     session: AsyncSession = Depends(get_db),
 ):
-    """Lista pública (solo lectura) de campañas de tipo "Recogida de firmas"
-    que admiten firmas ahora mismo. La consume el formulario externo
-    (WordPress) para ofrecerlas en un desplegable y no tener que pegar el UUID
-    a mano. Solo expone id y nombre/lema, datos ya públicos del formulario."""
+    """Lista pública (solo lectura) de actividades de recogida de firmas web
+    **activas** (iniciadas y no cerradas) cuya campaña incluye en su métrica la
+    recogida de firmas. La consume el formulario externo (WordPress) para
+    ofrecerlas en un desplegable y no tener que pegar el UUID a mano. Solo
+    expone id, nombre y la campaña, datos ya públicos del formulario."""
     service = FirmaPublicaService(session)
-    campanias = await service.listar_campanias_abiertas()
+    actividades = await service.listar_actividades_firmas_activas()
     return [
         {
-            "id": str(c.id),
-            "nombre": c.nombre,
-            "lema": c.lema,
-            "descripcion": c.descripcion_corta,
+            "id": str(a.id),
+            "nombre": a.nombre,
+            "campania_id": str(a.campania_id) if a.campania_id else None,
+            "campania": a.campania.nombre if a.campania is not None else None,
         }
-        for c in campanias
+        for a in actividades
     ]
 
 

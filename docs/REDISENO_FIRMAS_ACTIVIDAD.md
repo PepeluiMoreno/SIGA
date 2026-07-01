@@ -1,6 +1,11 @@
 # Rediseño: la recogida de firmas es una Actividad, no una Campaña
 
-> Estado: **propuesta / pendiente de confirmar** (no implementado).
+> Estado: **parcialmente implementado (interim)**. Ya hecho: el desplegable y el
+> alta funcionan **por actividad** (`GET /api/publico/firmas/actividades`,
+> `POST` acepta `actividad_id`), pero el satélite `FirmaCampania` sigue anclado
+> a la campaña de esa actividad y la métrica de firmas se lee de `MetaCampania`
+> (sin `MetaActividad` ni migración todavía). Pendiente: re-anclar la firma a la
+> actividad y mover la meta a la actividad (requiere migración + merge de heads).
 > Marco: es la **Fase 1** del norte arquitectónico
 > `docs/arquitectura/ACTIVIDAD_UNIDAD_ABC.md` (la Actividad como unidad
 > universal de trabajo y de coste).

@@ -95,7 +95,8 @@ class FirmaPublicaService:
     async def registrar_firma(
         self,
         *,
-        campania_id: uuid.UUID,
+        campania_id: Optional[uuid.UUID] = None,
+        actividad_id: Optional[uuid.UUID] = None,
         nombre: str,
         apellidos: str,
         email: str,
@@ -107,6 +108,25 @@ class FirmaPublicaService:
         ip_origen: Optional[str] = None,
     ) -> ResultadoRegistro:
         email = email.strip().lower()
+
+        # La firma se pide sobre una ACTIVIDAD de recogida de firmas. De momento
+        # el satélite sigue anclado a la campaña de esa actividad (interim, sin
+        # migración; ver docs/REDISENO_FIRMAS_ACTIVIDAD.md). Se mantiene el
+        # anclaje directo por campania_id por compatibilidad.
+        if actividad_id is not None:
+            actividad = await self._actividad_firmas_activa(actividad_id)
+            if actividad is None:
+                return ResultadoRegistro(
+                    EstadoRegistro.CAMPANIA_NO_DISPONIBLE,
+                    "La actividad no existe o ya no admite firmas.",
+                )
+            campania_id = actividad.campania_id
+
+        if campania_id is None:
+            return ResultadoRegistro(
+                EstadoRegistro.CAMPANIA_NO_DISPONIBLE,
+                "No se ha indicado una actividad de firmas válida.",
+            )
 
         campania = await self._campania_abierta(campania_id)
         if campania is None:
@@ -206,34 +226,65 @@ class FirmaPublicaService:
         )
 
     # ------------------------------------------------------------ listado
-    async def listar_campanias_abiertas(self) -> list[Campania]:
-        """Campañas de tipo "Recogida de firmas" que admiten firmas ahora.
+    # Estados de EstadoAccion que NO admiten firmas: aún no iniciada (Propuesta)
+    # o ya cerrada (Finalizada/Cancelada). EstadoAccion no tiene `codigo`
+    # (hereda de EstadoBase), así que de momento se filtra por nombre; ver la
+    # decisión (A) en docs/REDISENO_FIRMAS_ACTIVIDAD.md.
+    _ESTADOS_ACCION_NO_ACTIVOS = frozenset({"propuesta", "finalizada", "cancelada"})
 
-        Para el desplegable del formulario externo (WordPress). Aplica el MISMO
-        criterio de apertura que `registrar_firma` (estado no cerrado), de modo
-        que toda campaña ofrecida en el desplegable sea efectivamente firmable.
+    def _actividad_esta_activa(self, actividad) -> bool:
+        """True si la actividad está iniciada y no cerrada."""
+        estado = actividad.estado  # lazy='selectin'
+        nombre = (getattr(estado, "nombre", "") or "").strip().lower()
+        return nombre not in self._ESTADOS_ACCION_NO_ACTIVOS
+
+    async def listar_actividades_firmas_activas(self) -> list:
+        """Actividades de recogida de firmas web activas, para el desplegable.
+
+        Criterio (interim, sin migración): la actividad es ONLINE, está iniciada
+        y no cerrada, y su campaña incluye en su métrica la recogida de firmas
+        (una MetaCampania cuyo TipoMeta.unidad_medida == "firmas"). Cuando la
+        meta se mueva a la actividad (Fase 1), solo cambia el join.
         """
         from sqlalchemy import func
 
-        from app.modules.actividades.models.campana import TipoCampania
+        from app.modules.actividades.models.actividad import Actividad
+        from app.modules.actividades.models.campana import MetaCampania, TipoMeta
 
         stmt = (
-            select(Campania)
-            .join(TipoCampania, Campania.tipo_campania_id == TipoCampania.id)
+            select(Actividad)
+            .join(Campania, Actividad.campania_id == Campania.id)
+            .join(MetaCampania, MetaCampania.campania_id == Campania.id)
+            .join(TipoMeta, MetaCampania.tipo_meta_id == TipoMeta.id)
             .where(
-                Campania.eliminado.is_(False),
-                func.lower(TipoCampania.nombre) == "recogida de firmas",
+                Actividad.eliminado.is_(False),
+                Actividad.es_online.is_(True),
+                func.lower(TipoMeta.unidad_medida) == "firmas",
             )
-            .order_by(Campania.nombre)
+            .order_by(Actividad.nombre)
+            .distinct()
         )
         candidatas = (await self.session.scalars(stmt)).all()
-        # El estado va por relación selectin (ya cargada); filtramos en memoria
-        # con la misma regla que _campania_abierta.
+        # Estados (actividad y campaña) por relación selectin: filtramos en memoria.
         return [
-            c
-            for c in candidatas
-            if not (c.estado is not None and c.estado.codigo in Campania.CODIGOS_ESTADO_CERRADO)
+            a
+            for a in candidatas
+            if self._actividad_esta_activa(a)
+            and not (a.campania is not None and a.campania.esta_cerrada)
         ]
+
+    async def _actividad_firmas_activa(self, actividad_id: uuid.UUID):
+        """Devuelve la Actividad si existe, es online y está activa; si no, None."""
+        from app.modules.actividades.models.actividad import Actividad
+
+        actividad = await self.session.get(Actividad, actividad_id)
+        if actividad is None or actividad.eliminado or not actividad.es_online:
+            return None
+        if not self._actividad_esta_activa(actividad):
+            return None
+        if actividad.campania is not None and actividad.campania.esta_cerrada:
+            return None
+        return actividad
 
     # ---------------------------------------------------------------- conteo
     async def contar_firmas_verificadas(self, campania_id: uuid.UUID) -> int:

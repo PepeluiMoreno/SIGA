@@ -3,7 +3,7 @@
  * Plugin Name:       SIGA · Recogida de firmas
  * Plugin URI:        https://github.com/PepeluiMoreno/SIGA
  * Description:        Muestra un formulario para recoger los datos de contacto de simpatizantes que firman una campaña y los reenvía al backend de SIGA (endpoint público /api/publico/firmas, doble opt-in). WordPress solo presenta el formulario; SIGA es la fuente única de datos y consentimiento.
- * Version:           1.1.0
+ * Version:           1.2.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            SIGA
@@ -17,7 +17,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SIGA_FIRMAS_VERSION', '1.1.0' );
+define( 'SIGA_FIRMAS_VERSION', '1.2.0' );
 define( 'SIGA_FIRMAS_FILE', __FILE__ );
 define( 'SIGA_FIRMAS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SIGA_FIRMAS_URL', plugin_dir_url( __FILE__ ) );
@@ -48,7 +48,7 @@ add_action( 'plugins_loaded', 'siga_firmas_bootstrap' );
 function siga_firmas_default_settings() {
 	return array(
 		'api_url'          => '',          // Ej: https://api.laicismo.org (sin barra final).
-		'campania_id'      => '',          // UUID de la campaña por defecto.
+		'actividad_id'     => '',          // UUID de la actividad de recogida de firmas por defecto.
 		'captcha_provider' => 'turnstile', // turnstile | hcaptcha | none.
 		'captcha_site_key' => '',          // Clave PÚBLICA del captcha (el secreto vive en SIGA).
 		'terminos_url'     => '',          // URL de la política de privacidad / términos.

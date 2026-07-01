@@ -12,7 +12,7 @@ El plugin consume los endpoints públicos que SIGA expone en
 
 ```
 POST /api/publico/firmas              → registra una firma (doble opt-in)
-GET  /api/publico/firmas/campanias    → campañas de "Recogida de firmas" abiertas
+GET  /api/publico/firmas/actividades  → actividades de recogida de firmas activas
 GET  /api/publico/firmas/contador/ID  → nº de firmas verificadas
 ```
 
@@ -56,11 +56,12 @@ server-side. Ventajas:
 3. Ve a **Ajustes → SIGA Firmas** y rellena:
    - **URL del backend de SIGA** — p. ej. `https://api.tu-dominio.org` (sin
      barra final).
-   - **Campaña de firmas por defecto** — se elige en un **desplegable** que el
-     plugin rellena llamando a `GET /api/publico/firmas/campanias` (campañas de
-     tipo «Recogida de firmas» abiertas). No hay que pegar UUIDs a mano. El
-     botón *Actualizar campañas* refresca la lista (se cachea 5 minutos). Si el
-     backend no responde, el campo cae a texto libre para no bloquearte.
+   - **Actividad de recogida de firmas** — se elige en un **desplegable** que el
+     plugin rellena llamando a `GET /api/publico/firmas/actividades` (actividades
+     de recogida de firmas web **activas**: iniciadas y no cerradas, cuya campaña
+     incluye la recogida de firmas en su métrica). No hay que pegar UUIDs a mano.
+     El botón *Actualizar actividades* refresca la lista (se cachea 5 minutos). Si
+     el backend no responde, el campo cae a texto libre para no bloquearte.
    - **Proveedor de captcha** — `turnstile`, `hcaptcha` o `none` (solo
      desarrollo). Debe coincidir con `CAPTCHA_PROVIDER` del backend.
    - **Clave pública (site key) del captcha** — la clave *pública* del widget.
@@ -78,22 +79,23 @@ Atributos opcionales:
 
 | Atributo          | Por defecto                | Descripción                                       |
 |-------------------|----------------------------|---------------------------------------------------|
-| `campania`        | (la de Ajustes)            | UUID de la campaña, para usar otra distinta.      |
+| `actividad`       | (la de Ajustes)            | UUID de la actividad, para usar otra distinta.    |
 | `titulo`          | `Firma la campaña`         | Título mostrado sobre el formulario.              |
 | `boton`           | `Firmar`                   | Texto del botón de envío.                         |
 | `pedir_cp`        | `1`                        | Mostrar el campo Código postal (`1`/`0`).         |
 | `pedir_documento` | `0`                        | Mostrar Tipo + Número de documento (`1`/`0`).     |
 
-Ejemplo con campaña concreta y pidiendo documento:
+Ejemplo con actividad concreta y pidiendo documento:
 
 ```
-[siga_firmas campania="3f6a2c10-1b2c-4d5e-8f90-0a1b2c3d4e5f" pedir_documento="1" titulo="Firma por la laicidad"]
+[siga_firmas actividad="3f6a2c10-1b2c-4d5e-8f90-0a1b2c3d4e5f" pedir_documento="1" titulo="Firma por la laicidad"]
 ```
 
 ## Campos del formulario → payload de SIGA
 
 | Campo del formulario      | Campo en `FirmaPublicaIn` | Obligatorio |
 |---------------------------|---------------------------|-------------|
+| (actividad seleccionada)  | `actividad_id`            | Sí          |
 | Nombre                    | `nombre`                  | Sí          |
 | Apellidos                 | `apellidos`               | Sí          |
 | Correo electrónico        | `email`                   | Sí          |
@@ -115,8 +117,9 @@ Ejemplo con campaña concreta y pidiendo documento:
 - `CAPTCHA_PROVIDER` y `CAPTCHA_SECRET` configurados en el backend, acordes con
   el proveedor y la clave pública del plugin. En desarrollo puede usarse
   `CAPTCHA_PROVIDER=disabled` en SIGA y `none` en el plugin.
-- La campaña existe y **no está en un estado cerrado** (si no, SIGA responde
-  `campania_no_disponible`).
+- La actividad de recogida de firmas existe, es **online** y está **activa**
+  (iniciada y no cerrada); su campaña incluye la recogida de firmas en su
+  métrica. Si no, SIGA responde `campania_no_disponible`.
 
 Como el navegador habla solo con WordPress, **no hace falta** añadir el dominio
 del WordPress a `FIRMAS_CORS_ORIGINS` del backend.

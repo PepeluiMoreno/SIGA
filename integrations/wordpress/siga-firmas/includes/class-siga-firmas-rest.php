@@ -64,13 +64,13 @@ class SIGA_Firmas_Rest {
 			return self::error( 500, __( 'El formulario no está configurado (falta la URL del backend).', 'siga-firmas' ) );
 		}
 
-		$campania_id = $request->get_param( 'campania_id' );
-		$campania_id = is_string( $campania_id ) ? trim( $campania_id ) : '';
-		if ( '' === $campania_id ) {
-			$campania_id = $settings['campania_id'];
+		$actividad_id = $request->get_param( 'actividad_id' );
+		$actividad_id = is_string( $actividad_id ) ? trim( $actividad_id ) : '';
+		if ( '' === $actividad_id ) {
+			$actividad_id = $settings['actividad_id'];
 		}
-		if ( ! SIGA_Firmas_Settings::is_uuid( $campania_id ) ) {
-			return self::error( 422, __( 'Campaña no válida.', 'siga-firmas' ) );
+		if ( ! SIGA_Firmas_Settings::is_uuid( $actividad_id ) ) {
+			return self::error( 422, __( 'Actividad no válida.', 'siga-firmas' ) );
 		}
 
 		// 3. Honeypot: si viene relleno, fingimos éxito y no llamamos a SIGA.
@@ -97,7 +97,7 @@ class SIGA_Firmas_Rest {
 
 		// 5. Construcción del payload para SIGA (FirmaPublicaIn).
 		$payload = array(
-			'campania_id'          => $campania_id,
+			'actividad_id'         => $actividad_id,
 			'nombre'               => mb_substr( $nombre, 0, 100 ),
 			'apellidos'            => mb_substr( $apellidos, 0, 200 ),
 			'email'                => $email,
