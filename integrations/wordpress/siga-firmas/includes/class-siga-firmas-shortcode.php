@@ -164,7 +164,7 @@ class SIGA_Firmas_Shortcode {
 			</label>
 			<?php endif; ?>
 
-			<?php // NIF (DNI/NIE) OBLIGATORIO: identidad por la que SIGA desduplica al firmante. ?>
+			<?php // NIF (DNI/NIE): identidad por la que SIGA desduplica. Obligatorio salvo extranjero sin NIF. ?>
 			<div class="siga-firmas-row">
 				<label class="siga-firmas-field siga-firmas-field--narrow">
 					<span><?php esc_html_e( 'Tipo', 'siga-firmas' ); ?></span>
@@ -174,13 +174,18 @@ class SIGA_Firmas_Shortcode {
 					</select>
 				</label>
 				<label class="siga-firmas-field">
-					<span><?php esc_html_e( 'DNI / NIE', 'siga-firmas' ); ?> <em>*</em></span>
+					<span><?php esc_html_e( 'DNI / NIE', 'siga-firmas' ); ?> <em class="siga-firmas-nif-req">*</em></span>
 					<input type="text" name="documento" maxlength="255" autocomplete="off"
 						inputmode="text" spellcheck="false"
 						placeholder="12345678Z" data-siga-nif required />
 					<small class="siga-firmas-hint"><?php esc_html_e( 'Necesario para validar la firma y evitar duplicados.', 'siga-firmas' ); ?></small>
 				</label>
 			</div>
+
+			<label class="siga-firmas-check">
+				<input type="checkbox" data-siga-sin-nif value="1" />
+				<span><?php esc_html_e( 'Soy extranjero/a y no tengo DNI/NIE.', 'siga-firmas' ); ?></span>
+			</label>
 
 			<label class="siga-firmas-check">
 				<input type="checkbox" name="acepta_terminos" value="1" required />

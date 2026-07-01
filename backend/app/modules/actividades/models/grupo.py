@@ -14,6 +14,14 @@ if TYPE_CHECKING:
     from ...membresia.models.contacto import Contacto
 
 
+# Clases de grupo (generalización del concepto "grupo"). TERRITORIAL queda
+# RESERVADO: hoy la agrupación territorial la implementa UnidadOrganizativa; la
+# fusión total es fase aparte. ORGANICO = permanente/orgánico de trabajo;
+# EFIMERO_CAMPANIA / EFIMERO_ACTIVIDAD = grupos formados con ocasión de una
+# campaña o una actividad.
+CATEGORIAS_GRUPO = ('TERRITORIAL', 'ORGANICO', 'EFIMERO_CAMPANIA', 'EFIMERO_ACTIVIDAD')
+
+
 class TipoGrupo(InmutableMixin, BaseModel):
     """Tipos de grupos de trabajo."""
     __tablename__ = 'tipos_grupo'
@@ -22,6 +30,11 @@ class TipoGrupo(InmutableMixin, BaseModel):
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     descripcion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     es_permanente: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Clasificador que unifica el concepto Grupo (ver CATEGORIAS_GRUPO).
+    # ORGANICO/TERRITORIAL ⇒ permanente; EFIMERO_* ⇒ temporal.
+    categoria: Mapped[str] = mapped_column(
+        String(30), default='ORGANICO', server_default='ORGANICO', nullable=False, index=True
+    )
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
     grupos = relationship('GrupoTrabajo', back_populates='tipo_grupo', lazy='selectin')
@@ -64,7 +77,12 @@ class GrupoTrabajo(BaseModel):
         Uuid, ForeignKey('contactos.id', name='fk_grupos_trabajo_coordinador_id'), nullable=True, index=True
     )
 
+    # Grupo efímero: se forma con ocasión de una campaña (campania_id) o de una
+    # ACTIVIDAD (actividad_id). Ambos nullable; si están vacíos, es orgánico.
     campania_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, nullable=True, index=True)
+    actividad_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('actividades.id'), nullable=True, index=True
+    )
 
     fecha_inicio: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     fecha_fin: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
@@ -80,6 +98,7 @@ class GrupoTrabajo(BaseModel):
 
     tipo_grupo = relationship('TipoGrupo', back_populates='grupos', lazy='selectin')
     coordinador = relationship('Contacto', foreign_keys=[coordinador_id], lazy='selectin')
+    actividad = relationship('Actividad', foreign_keys=[actividad_id], lazy='selectin')
     agrupacion = relationship('UnidadOrganizativa', lazy='selectin')
     miembros = relationship('MiembroGrupo', back_populates='grupo', lazy='selectin')
     tareas = relationship('Tarea', back_populates='grupo', foreign_keys='Tarea.grupo_id', lazy='selectin')

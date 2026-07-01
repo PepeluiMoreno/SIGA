@@ -100,8 +100,10 @@ Ejemplo con actividad concreta y pidiendo documento:
 | Apellidos                 | `apellidos`               | Sí          |
 | Correo electrónico        | `email`                   | Sí          |
 | Código postal             | `codigo_postal`           | No          |
-| Tipo (DNI/NIE)            | `tipo_documento`          | Sí          |
-| **DNI / NIE**             | `documento`               | **Sí**      |
+| Tipo (DNI/NIE)            | `tipo_documento`          | Si hay NIF  |
+| **DNI / NIE**             | `documento`               | Sí\*        |
+
+\* Obligatorio salvo que el firmante marque «extranjero sin DNI/NIE».
 | Acepto términos           | `acepta_terminos`         | Sí          |
 | Quiero recibir info        | `acepta_comunicaciones`   | No          |
 | (oculto, honeypot)        | `website`                 | —           |
@@ -113,16 +115,19 @@ Ejemplo con actividad concreta y pidiendo documento:
 
 ### NIF, desduplicación y firmante
 
-El **DNI/NIE es obligatorio** y es la clave de identidad. El plugin valida la
-letra de control **en el navegador y en el servidor** (proxy PHP), y SIGA la
-vuelve a validar. Con ese NIF, SIGA:
+El **DNI/NIE** es la clave de identidad y se pide por defecto (el plugin valida la
+letra de control en el navegador y en el proxy PHP, y SIGA la vuelve a validar).
+Con NIF, SIGA **desduplica** al firmante: una misma persona no se duplica aunque
+firme con emails distintos (se reutiliza su `Contacto`).
 
-- **desduplica** al firmante: una misma persona no se duplica aunque firme con
-  emails distintos (se reutiliza su `Contacto`);
-- le da la **vinculación `FIRMANTE`** (si no la tenía);
-- guarda el **historial** de qué ha firmado (una `FirmaCampania` por campaña).
+**Extranjeros sin NIF**: una casilla del formulario libera el DNI/NIE; en ese
+caso la desduplicación es blanda por **nombre+apellidos** (si no hay coincidencia
+clara, no se fusiona).
 
-Solo se aceptan **DNI y NIE** (no pasaporte), porque la desduplicación es por NIF.
+**Firmar no crea una «vinculación»**: en el modelo de SIGA, *firmante/participante*
+es una condición **derivada** de tener firmas. El historial son sus `FirmaCampania`
+(una por recogida). Si el firmante da su consentimiento de comunicaciones, SIGA lo
+registra como `Consentimiento` (RGPD) de esa persona, no como rol.
 
 ## Requisitos en el lado de SIGA
 

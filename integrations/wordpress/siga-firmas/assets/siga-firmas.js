@@ -104,15 +104,21 @@
 			return;
 		}
 
-		// NIF obligatorio y bien formado (identidad de desduplicación del firmante).
+		// NIF: obligatorio y bien formado, salvo extranjero sin NIF (casilla).
+		var sinNif = form.querySelector( '[data-siga-sin-nif]' );
+		var esExtranjero = !!( sinNif && sinNif.checked );
 		var nifInput = form.querySelector( '[data-siga-nif]' );
 		var nif = normalizarNif( nifInput ? nifInput.value : '' );
-		if ( ! validarNif( nif ) ) {
-			setMsg( form, cfg.i18n.nifInvalido, 'error' );
-			if ( nifInput ) { nifInput.focus(); }
-			return;
+		if ( ! esExtranjero ) {
+			if ( ! validarNif( nif ) ) {
+				setMsg( form, cfg.i18n.nifInvalido, 'error' );
+				if ( nifInput ) { nifInput.focus(); }
+				return;
+			}
+			if ( nifInput ) { nifInput.value = nif; }  // dejar el valor normalizado a la vista
+		} else {
+			nif = '';  // extranjero sin NIF: dedup blanda por nombre en el backend
 		}
-		if ( nifInput ) { nifInput.value = nif; }  // dejar el valor normalizado a la vista
 
 		var needsCaptcha = cfg.captchaProvider && cfg.captchaProvider !== 'none' && cfg.captchaSiteKey;
 		var captchaToken = tokenFor( form );
@@ -174,6 +180,18 @@
 	function init() {
 		document.querySelectorAll( '.siga-firmas-form' ).forEach( function ( form ) {
 			form.addEventListener( 'submit', onSubmit );
+
+			// Casilla "extranjero sin NIF": libera el DNI/NIE de obligatorio.
+			var sinNif = form.querySelector( '[data-siga-sin-nif]' );
+			var nifInput = form.querySelector( '[data-siga-nif]' );
+			var req = form.querySelector( '.siga-firmas-nif-req' );
+			if ( sinNif && nifInput ) {
+				sinNif.addEventListener( 'change', function () {
+					nifInput.required = ! sinNif.checked;
+					nifInput.disabled = sinNif.checked;
+					if ( req ) { req.style.display = sinNif.checked ? 'none' : ''; }
+				} );
+			}
 		} );
 		setupCaptchas();
 	}

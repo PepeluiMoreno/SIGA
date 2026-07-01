@@ -92,7 +92,8 @@ class SIGA_Firmas_Rest {
 		if ( ! is_email( $email ) ) {
 			return self::error( 422, __( 'El correo electrónico no es válido.', 'siga-firmas' ) );
 		}
-		if ( ! self::es_nif_valido( $nif ) ) {
+		// NIF opcional (extranjero sin NIF). Si se aporta, debe ser válido.
+		if ( '' !== $nif && ! self::es_nif_valido( $nif ) ) {
 			return self::error( 422, __( 'Introduce un DNI/NIE válido (con su letra).', 'siga-firmas' ) );
 		}
 		if ( ! $acepta ) {
@@ -115,9 +116,12 @@ class SIGA_Firmas_Rest {
 		if ( '' !== $cp ) {
 			$payload['codigo_postal'] = mb_substr( $cp, 0, 20 );
 		}
-		$payload['documento'] = $nif;
-		$tipo_doc             = sanitize_text_field( (string) $request->get_param( 'tipo_documento' ) );
-		$payload['tipo_documento'] = in_array( $tipo_doc, array( 'DNI', 'NIE' ), true ) ? $tipo_doc : 'DNI';
+		// Solo enviamos documento/tipo si hay NIF (extranjero sin NIF → se omite).
+		if ( '' !== $nif ) {
+			$payload['documento'] = $nif;
+			$tipo_doc             = sanitize_text_field( (string) $request->get_param( 'tipo_documento' ) );
+			$payload['tipo_documento'] = in_array( $tipo_doc, array( 'DNI', 'NIE' ), true ) ? $tipo_doc : 'DNI';
+		}
 
 		// 6. Reenvío a SIGA.
 		$url = $settings['api_url'] . '/api/publico/firmas';
