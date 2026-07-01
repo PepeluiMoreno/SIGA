@@ -69,7 +69,10 @@
                       class="inline-block px-2 py-0.5 rounded text-xs font-medium"
                       :class="colorVinculacion(v.tipoVinculacion && v.tipoVinculacion.codigo)"
                     >{{ v.tipoVinculacion ? v.tipoVinculacion.nombre : '—' }}</span>
-                    <span v-if="!vinculacionesVigentes(c).length" class="text-xs text-slate-400">sin vinculación</span>
+                    <!-- Condiciones DERIVADAS (no vinculaciones) -->
+                    <span v-if="condicionesDe(c.id).esParticipante" class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-sky-100 text-sky-700">Participante</span>
+                    <span v-if="condicionesDe(c.id).esDonante" class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Donante</span>
+                    <span v-if="!vinculacionesVigentes(c).length && !condicionesDe(c.id).esParticipante && !condicionesDe(c.id).esDonante" class="text-xs text-slate-400">sin vinculación</span>
                   </div>
                 </td>
               </tr>
@@ -90,7 +93,7 @@ import FilterRail from '@/components/common/FilterRail.vue'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { graphqlClient } from '@/graphql/client.js'
-import { GET_CONTACTOS } from '@/graphql/queries/contactos.js'
+import { GET_CONTACTOS, GET_CONDICIONES_CONTACTOS } from '@/graphql/queries/contactos.js'
 
 const router = useRouter()
 const { tienePermiso } = usePermisos()
@@ -196,6 +199,22 @@ const contactosFiltrados = computed(() => {
   })
 })
 
+// Condiciones derivadas (firmante/participante/donante) por contacto, en batch.
+const condicionesMap = ref({})
+const SIN_COND = { esParticipante: false, esFirmante: false, esDonante: false }
+function condicionesDe(id) {
+  return condicionesMap.value[id] || SIN_COND
+}
+async function cargarCondiciones(ids) {
+  if (!ids.length) { condicionesMap.value = {}; return }
+  try {
+    const data = await graphqlClient.request(GET_CONDICIONES_CONTACTOS, { contactoIds: ids })
+    const map = {}
+    for (const it of (data.condicionesContactos || [])) map[it.contactoId] = it
+    condicionesMap.value = map
+  } catch (e) { /* silencioso: los badges son informativos */ }
+}
+
 async function cargar() {
   cargando.value = true
   error.value = ''
@@ -204,6 +223,7 @@ async function cargar() {
       filter: { eliminado: { eq: false } },
     })
     contactos.value = data.contactos || []
+    cargarCondiciones(contactos.value.map((c) => c.id))
   } catch (e) {
     error.value = e?.response?.errors?.[0]?.message || 'No se pudieron cargar los contactos.'
   } finally {

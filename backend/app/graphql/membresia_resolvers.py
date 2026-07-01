@@ -687,6 +687,15 @@ class ContactoCondicionesType:
     n_donaciones: int
 
 
+@strawberry.type(name="ContactoCondicionesItem")
+class ContactoCondicionesItemType:
+    """Condiciones derivadas de un contacto (versión ligera para listados)."""
+    contacto_id: uuid.UUID
+    es_participante: bool
+    es_firmante: bool
+    es_donante: bool
+
+
 @strawberry.type
 class MembresiaQuery:
     @strawberry.field(permission_classes=[RequireAuthenticated])
@@ -728,6 +737,47 @@ class MembresiaQuery:
             n_participaciones=int(n_part),
             n_donaciones=int(n_don),
         )
+
+    @strawberry.field(permission_classes=[RequireAuthenticated])
+    async def condiciones_contactos(
+        self, info: strawberry.Info, contacto_ids: List[uuid.UUID]
+    ) -> List[ContactoCondicionesItemType]:
+        """Condiciones derivadas de VARIOS contactos (batch, para listados). Evita
+        el N+1: 3 consultas agrupadas por contacto para firmas, participaciones y
+        donaciones."""
+        from sqlalchemy import func
+
+        from app.modules.actividades.models.campana import FirmaCampania
+        from app.modules.economico.models.donaciones import Donacion
+
+        session = info.context.session
+        ids = list({cid for cid in contacto_ids})
+        if not ids:
+            return []
+
+        async def _contar(col_modelo, extra=None):
+            stmt = select(col_modelo, func.count()).where(col_modelo.in_(ids))
+            if extra is not None:
+                stmt = stmt.where(extra)
+            stmt = stmt.group_by(col_modelo)
+            return {row[0]: row[1] for row in (await session.execute(stmt)).all()}
+
+        firmas = await _contar(FirmaCampania.contacto_id, FirmaCampania.eliminado.is_(False))
+        parts = await _contar(
+            Participacion.contacto_id,
+            (Participacion.tipo.in_(("FIRMA", "ASISTENCIA"))) & (Participacion.eliminado.is_(False)),
+        )
+        dons = await _contar(Donacion.contacto_id, Donacion.eliminado.is_(False))
+
+        return [
+            ContactoCondicionesItemType(
+                contacto_id=cid,
+                es_firmante=firmas.get(cid, 0) > 0,
+                es_participante=parts.get(cid, 0) > 0,
+                es_donante=dons.get(cid, 0) > 0,
+            )
+            for cid in ids
+        ]
 
     @strawberry.field(permission_classes=[RequireTransaction("MEMBRESIA_VOLUNTARIO_LISTAR")])
     async def voluntarios_en_ambito(self, info: strawberry.Info) -> List[VoluntarioAmbitoType]:

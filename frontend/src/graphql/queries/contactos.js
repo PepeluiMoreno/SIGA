@@ -157,3 +157,15 @@ export const GET_CONDICIONES_CONTACTO = `
     }
   }
 `
+
+// Condiciones derivadas de VARIOS contactos (batch, para el listado).
+export const GET_CONDICIONES_CONTACTOS = `
+  query CondicionesContactos($contactoIds: [UUID!]!) {
+    condicionesContactos(contactoIds: $contactoIds) {
+      contactoId
+      esParticipante
+      esFirmante
+      esDonante
+    }
+  }
+`
