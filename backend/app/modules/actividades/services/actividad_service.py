@@ -323,6 +323,22 @@ class ActividadService:
             campania_id=campania_id, activo=True,
         )
         self.session.add(grupo)
+        await self.session.flush()
+
+        # El coordinador designado al crear el grupo ENTRA como miembro con rol de
+        # coordinador (tratamiento único: coordinador = uno de los miembros). Evita
+        # el doble tratamiento cabecera vs miembro y que se pueda añadir dos veces.
+        if coordinador_id:
+            from ..models.grupo import RolGrupo, MiembroGrupo
+            rol_coord = (await self.session.execute(
+                select(RolGrupo).where(RolGrupo.es_coordinador == True)  # noqa: E712
+            )).scalars().first()
+            if rol_coord:
+                self.session.add(MiembroGrupo(
+                    grupo_id=grupo.id, miembro_id=coordinador_id,
+                    rol_grupo_id=rol_coord.id, activo=True,
+                ))
+
         await self.session.commit()
         await self.session.refresh(grupo)
 

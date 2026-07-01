@@ -641,8 +641,8 @@ const GQL_VOLUNTARIOS = `
 `
 
 const MUTATION_CREAR_MIEMBRO_GRUPO = `
-  mutation CrearMiembroGrupo($grupoId: UUID!, $miembroId: UUID!, $rolGrupoId: UUID!) {
-    crearMiembroGrupo(data: { grupoId: $grupoId, miembroId: $miembroId, rolGrupoId: $rolGrupoId }) {
+  mutation CrearMiembroGrupo($grupoId: UUID!, $miembroId: UUID!, $rolGrupoId: UUID!, $fechaIncorporacion: Date!) {
+    crearMiembroGrupo(data: { grupoId: $grupoId, miembroId: $miembroId, rolGrupoId: $rolGrupoId, fechaIncorporacion: $fechaIncorporacion }) {
       id miembroId activo fechaIncorporacion
       miembro { id nombre apellido1 }
       rolGrupo { id nombre esCoordinador }
@@ -744,6 +744,7 @@ async function añadirMiembro(vol) {
       grupoId: grupoId.value,
       miembroId: vol.id,
       rolGrupoId: rolId,
+      fechaIncorporacion: new Date().toISOString().slice(0, 10),  // hoy (automática)
     })
     grupo.value.miembros = [...(grupo.value.miembros || []), data.crearMiembroGrupo]
   } catch (e) {
