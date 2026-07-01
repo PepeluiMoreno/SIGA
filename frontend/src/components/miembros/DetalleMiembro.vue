@@ -1100,11 +1100,17 @@ if (props.modoPropio) {
 
 // Capitaliza el término configurable de la organización ("socio" → "Socio").
 const _cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s
+// Concuerda el término en género con el sexo del miembro: si es femenino (sexo 'M'
+// = Mujer) y el término acaba en -o, feminiza a -a ("socio" → "socia"). Masculino/
+// otro/no especificado mantienen el término configurado tal cual.
+const _generizar = (termino, sexo) =>
+  (sexo === 'M' && termino?.endsWith('o')) ? termino.slice(0, -1) + 'a' : termino
 const tituloPage = computed(() => {
-  const etiqueta = _cap(orgConfig.miembro || 'miembro')
-  if (isCreateMode.value) return `Nuevo ${orgConfig.miembro || 'miembro'}`
-  // Vistas de detalle: "Nombre de la vista: Nombre de la entidad".
-  return nombreCompleto.value ? `${etiqueta}: ${nombreCompleto.value}` : `Ficha de ${orgConfig.miembro || 'socio'}`
+  const base = orgConfig.miembro || 'miembro'
+  if (isCreateMode.value) return `Nuevo ${base}`
+  // Vistas de detalle: "Nombre de la vista: Nombre de la entidad", con concordancia de género.
+  const etiqueta = _cap(_generizar(base, miembro.value.sexo))
+  return nombreCompleto.value ? `${etiqueta}: ${nombreCompleto.value}` : `Ficha de ${base}`
 })
 
 const subtituloPage = computed(() => {
