@@ -88,35 +88,47 @@
             <hr class="nav-sep" />
 
             <!-- Membresía -->
-            <div v-if="tieneAlguno('CONTACTO_LISTAR','MEMBRESIA_MIEMBRO_LISTAR','MEMBRESIA_AGRUPACION_EDITAR','MEMBRESIA_MIEMBRO_VALIDAR')" class="mb-1">
+            <div v-if="tieneAlguno('CONTACTO_LISTAR','MEMBRESIA_MIEMBRO_LISTAR','MEMBRESIA_AGRUPACION_EDITAR','MEMBRESIA_MIEMBRO_VALIDAR','GRUPO_LISTAR')" class="mb-1">
               <button @click="toggleSection('membresia')" class="section-btn">
                 <span>Membresía</span>
                 <ChevronDownIcon class="chevron" :class="openSections.membresia ? '' : '-rotate-90'" />
               </button>
               <div class="accordion-wrap" :class="{ closed: !openSections.membresia }">
                 <ul class="space-y-1 pb-1">
+                  <li v-if="tienePermiso('MEMBRESIA_MIEMBRO_LISTAR')">
+                    <router-link to="/socios" class="nav-item"
+                      :class="$route.path.startsWith('/socios') ? 'active' : 'inactive'">
+                      <UserIcon class="nav-icon" /><span>Socios</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('MEMBRESIA_MIEMBRO_LISTAR')">
+                    <router-link to="/personal" class="nav-item"
+                      :class="$route.path.startsWith('/personal') ? 'active' : 'inactive'">
+                      <UserGroupIcon class="nav-icon" /><span>Personal</span>
+                    </router-link>
+                  </li>
                   <li v-if="tienePermiso('CONTACTO_LISTAR')">
                     <router-link to="/contactos" class="nav-item"
                       :class="$route.path.startsWith('/contactos') ? 'active' : 'inactive'">
                       <UserGroupIcon class="nav-icon" /><span>Contactos</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('MEMBRESIA_MIEMBRO_LISTAR')">
-                    <router-link to="/miembros" class="nav-item"
-                      :class="$route.path.startsWith('/miembros') ? 'active' : 'inactive'">
-                      <UserIcon class="nav-icon" /><span>{{ orgConfigStore.Miembros }}</span>
-                    </router-link>
-                  </li>
                   <li v-if="tienePermiso('MEMBRESIA_MIEMBRO_VALIDAR')">
                     <router-link to="/solicitudes-socio" class="nav-item"
                       :class="$route.path.startsWith('/solicitudes-socio') ? 'active' : 'inactive'">
-                      <CheckBadgeIcon class="nav-icon" /><span>Solicitudes de socio</span>
+                      <CheckBadgeIcon class="nav-icon" /><span>Aspirantes</span>
                     </router-link>
                   </li>
                   <li v-if="tienePermiso('MEMBRESIA_AGRUPACION_EDITAR')">
                     <router-link to="/agrupaciones" class="nav-item"
                       :class="$route.path.startsWith('/agrupaciones') ? 'active' : 'inactive'">
                       <MapPinIcon class="nav-icon" /><span>Organización Territorial</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('GRUPO_LISTAR')">
+                    <router-link to="/grupos" class="nav-item"
+                      :class="$route.path.startsWith('/grupos') ? 'active' : 'inactive'">
+                      <UserGroupIcon class="nav-icon" /><span>Grupos de trabajo</span>
                     </router-link>
                   </li>
                 </ul>
@@ -155,12 +167,6 @@
                     <router-link to="/actividades" class="nav-item"
                       :class="$route.path.startsWith('/actividades') ? 'active' : 'inactive'">
                       <CalendarDaysIcon class="nav-icon" /><span>Actividades</span>
-                    </router-link>
-                  </li>
-                  <li v-if="tienePermiso('GRUPO_LISTAR')">
-                    <router-link to="/grupos" class="nav-item"
-                      :class="$route.path.startsWith('/grupos') ? 'active' : 'inactive'">
-                      <UserGroupIcon class="nav-icon" /><span>Grupos de Trabajo</span>
                     </router-link>
                   </li>
                 </ul>
@@ -595,10 +601,11 @@ function sectionForPath(path) {
       path.startsWith('/transacciones') || path.startsWith('/auditoria'))
     return 'configuracion'
   if (path.startsWith('/contactos') || path.startsWith('/miembros') ||
-      path.startsWith('/agrupaciones'))
-    return 'membresia'
-  if (path.startsWith('/campanias') || path.startsWith('/acciones') ||
+      path.startsWith('/socios') || path.startsWith('/personal') ||
+      path.startsWith('/agrupaciones') || path.startsWith('/solicitudes-socio') ||
       path.startsWith('/grupos'))
+    return 'membresia'
+  if (path.startsWith('/campanias') || path.startsWith('/acciones'))
     return 'actividades'
   if (path.startsWith('/economico'))
     return 'economico'

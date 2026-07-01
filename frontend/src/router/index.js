@@ -174,11 +174,26 @@ const routes = [
     meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_MIEMBRO_LISTAR' }
   },
   {
-    // Directorio CRM contacto-céntrico (PF+PJ, vinculaciones). MVP: gateado con
+    // Directorio CRM contacto-céntrico (PF+PJ, vinculaciones). Escindido en 3 vistas
+    // por colectivo: /socios, /personal y /contactos (el resto). Misma vista, distinto prop.
     path: '/contactos',
     component: () => import('@/modules/membresia/views/ListaContactos.vue'),
     name: 'Contactos',
     meta: { requiresAuth: true, requiredPermission: 'CONTACTO_LISTAR' }
+  },
+  {
+    path: '/socios',
+    component: () => import('@/modules/membresia/views/ListaContactos.vue'),
+    props: { colectivo: 'SOCIO' },
+    name: 'Socios',
+    meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_MIEMBRO_LISTAR' }
+  },
+  {
+    path: '/personal',
+    component: () => import('@/modules/membresia/views/ListaContactos.vue'),
+    props: { colectivo: 'PERSONAL' },
+    name: 'Personal',
+    meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_MIEMBRO_LISTAR' }
   },
   {
     path: '/contactos/nuevo',

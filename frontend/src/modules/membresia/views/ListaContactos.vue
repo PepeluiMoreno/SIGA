@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="Contactos" :subtitle="subtitulo" fluid>
+  <AppLayout :title="tituloVista" :subtitle="subtitulo" fluid>
     <template v-if="tienePermiso('CONTACTO_CREAR')" #actions>
       <router-link to="/contactos/nuevo"
         class="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
@@ -95,11 +95,37 @@ import { usePermisos } from '@/composables/usePermisos.js'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_CONTACTOS, GET_CONDICIONES_CONTACTOS } from '@/graphql/queries/contactos.js'
 
+// `colectivo` fija esta vista a un subconjunto del directorio (escisión de Contactos):
+//  - SOCIOS: contactos con vinculación SOCIO vigente (excluye aspirantes).
+//  - PERSONAL: colectivo de servicio (EMPLEADO/AUTONOMO/EMPLEADO_EXTERNO).
+//  - null / CONTACTOS: el resto (sin afiliación de socio ni de servicio): participación,
+//    simpatizantes, organizaciones amigas y contactos sueltos.
+const props = defineProps({
+  colectivo: { type: String, default: null },  // 'SOCIO' | 'PERSONAL' | null
+})
+
+const COLECTIVO_SOCIO = ['SOCIO']
+const COLECTIVO_PERSONAL = ['EMPLEADO', 'AUTONOMO', 'EMPLEADO_EXTERNO']
+const TITULOS = {
+  SOCIO:    { titulo: 'Socios',     sub: 'Personas con vinculación de socio' },
+  PERSONAL: { titulo: 'Personal',   sub: 'Personal contratado y colaborador de servicio' },
+}
+
 const router = useRouter()
 const { tienePermiso } = usePermisos()
 const orgConfig = useOrgConfigStore()
-const subtitulo = computed(() =>
+const tituloVista = computed(() => TITULOS[props.colectivo]?.titulo || 'Contactos')
+const subtitulo = computed(() => TITULOS[props.colectivo]?.sub ||
   `Directorio de personas y entidades relacionadas de algún modo con ${orgConfig.nombre || 'la asociación'}`)
+
+// Códigos de vinculación de socio/personal (para clasificar cada contacto).
+function codigosVigentes(c) {
+  return vinculacionesVigentes(c).map(v => v.tipoVinculacion?.codigo).filter(Boolean)
+}
+function esColectivo(c, codigos) {
+  const cods = codigosVigentes(c)
+  return codigos.some(x => cods.includes(x))
+}
 function abrirFicha(id) {
   router.push(`/contactos/${id}`)
 }
@@ -184,6 +210,11 @@ function limpiarFiltros() {
 const contactosFiltrados = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
   return contactos.value.filter((c) => {
+    // Escisión por colectivo:
+    if (props.colectivo === 'SOCIO' && !esColectivo(c, COLECTIVO_SOCIO)) return false
+    if (props.colectivo === 'PERSONAL' && !esColectivo(c, COLECTIVO_PERSONAL)) return false
+    // Vista "Contactos" (colectivo null): excluye socios y personal (esos tienen su vista).
+    if (!props.colectivo && (esColectivo(c, COLECTIVO_SOCIO) || esColectivo(c, COLECTIVO_PERSONAL))) return false
     if (filters.value.tipos.length && !filters.value.tipos.includes(c.tipo)) return false
     if (filters.value.vinculaciones.length) {
       const tiene = vinculacionesVigentes(c).some((v) => v.tipoVinculacion && filters.value.vinculaciones.includes(v.tipoVinculacion.codigo))
