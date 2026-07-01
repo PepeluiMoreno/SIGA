@@ -33,9 +33,9 @@
                 </button>
               </span>
               <span v-if="!paraLista.length" class="text-xs text-slate-400 italic pt-0.5">Sin destinatarios con email.</span>
-              <button v-if="!mostrarCcCco" type="button" @click="mostrarCcCco = true"
-                class="text-xs text-slate-400 hover:text-indigo-600 pt-0.5 ml-1">CC/CCO</button>
             </div>
+            <button v-if="!mostrarCcCco" type="button" @click="mostrarCcCco = true"
+              class="text-xs text-slate-500 hover:text-indigo-600 shrink-0 pt-1.5">CC/CCO</button>
           </div>
 
           <!-- CC / CCO (emails sueltos, separados por coma) -->
