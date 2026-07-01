@@ -276,7 +276,11 @@ const tipoDocumentoOptions = [
 const esPJ = computed(() => form.tipo === 'PERSONA_JURIDICA')
 const tituloPagina = computed(() => {
   if (isCreate.value) return 'Nuevo contacto'
-  return esPJ.value ? (form.razonSocial || 'Contacto') : [form.nombre, form.apellido1, form.apellido2].filter(Boolean).join(' ') || 'Contacto'
+  // Vistas de detalle: "Nombre de la vista: Nombre de la entidad".
+  const nombre = esPJ.value
+    ? (form.razonSocial || 'Sin nombre')
+    : ([form.nombre, form.apellido1, form.apellido2].filter(Boolean).join(' ') || 'Sin nombre')
+  return `Contacto: ${nombre}`
 })
 const pfContactos = computed(() =>
   todosContactos.value

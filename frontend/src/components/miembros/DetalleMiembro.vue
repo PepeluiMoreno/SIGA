@@ -1098,9 +1098,13 @@ if (props.modoPropio) {
 
 // ── Layout dinámico ───────────────────────────────────────────────────────────
 
+// Capitaliza el término configurable de la organización ("socio" → "Socio").
+const _cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s
 const tituloPage = computed(() => {
+  const etiqueta = _cap(orgConfig.miembro || 'miembro')
   if (isCreateMode.value) return `Nuevo ${orgConfig.miembro || 'miembro'}`
-  return `Ficha de ${orgConfig.miembro || 'socio'}`
+  // Vistas de detalle: "Nombre de la vista: Nombre de la entidad".
+  return nombreCompleto.value ? `${etiqueta}: ${nombreCompleto.value}` : `Ficha de ${orgConfig.miembro || 'socio'}`
 })
 
 const subtituloPage = computed(() => {
