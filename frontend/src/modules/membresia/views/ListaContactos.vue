@@ -18,10 +18,13 @@
           search-placeholder="Buscar por nombre, razón social, email o documento…"
           :fields="filterFields"
           @clear="limpiarFiltros" />
-        <!-- Buscador geográfico: filtra por municipio/provincia -->
+        <!-- Buscador geográfico a cualquier nivel (CCAA, provincia, municipio,
+             pedanía…). Con descendientes: elegir "Andalucía" incluye todos sus
+             municipios y pedanías. Sin niveles = todos. -->
         <div class="mt-3 pt-3 border-t border-slate-100">
           <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Ubicación</p>
-          <EntidadGeograficaSelect v-model="filtroGeografico" :editing="true" :niveles="[2, 3]" />
+          <EntidadGeograficaSelect v-model="filtroGeografico" :editing="true"
+            @seleccion="onSeleccionGeografica" />
         </div>
       </FilterRail>
 
@@ -44,7 +47,7 @@
             <thead class="bg-slate-50">
               <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
                 <th class="px-4 py-3">Nombre / Razón social</th>
-                <th class="px-4 py-3">Documento</th>
+                <th class="px-4 py-3">Ubicación</th>
                 <th class="px-4 py-3">Contacto</th>
                 <th class="px-4 py-3 text-right">Acciones</th>
               </tr>
@@ -70,7 +73,7 @@
                     <span v-if="condicionesDe(c.id).esDonante" class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Donante</span>
                   </div>
                 </td>
-                <td class="px-4 py-3 text-slate-600">{{ c.numeroDocumento || c.cif || '—' }}</td>
+                <td class="px-4 py-3 text-slate-600">{{ ubicacionMostrada(c) }}</td>
                 <td class="px-4 py-3 text-slate-600">
                   <div>{{ c.email || '—' }}</div>
                   <div class="text-xs text-slate-400">{{ c.telefono || '' }}</div>
@@ -165,7 +168,29 @@ const error = ref('')
 
 const searchQuery = ref('')
 const filters = ref({ tipos: [], vinculaciones: [] })
-const filtroGeografico = ref(null)   // entidad geográfica (municipio/provincia)
+const filtroGeografico = ref(null)          // id de la entidad geográfica elegida
+const idsAmbitoGeografico = ref(null)       // set de ids de esa entidad + descendientes
+
+// Query de descendientes: entidades cuya ruta cuelga de la elegida (prefijo de ruta).
+const QUERY_DESCENDIENTES_GEO = `
+  query DescendientesGeo($ruta: String!) {
+    entidadesGeograficas(filter: { ruta: { ilike: $ruta } }) { id }
+  }
+`
+
+// Al elegir una entidad (a cualquier nivel: CCAA, provincia, municipio, pedanía…)
+// se calcula el conjunto de sus descendientes para que el filtro los incluya.
+async function onSeleccionGeografica(entidad) {
+  if (!entidad) { idsAmbitoGeografico.value = null; return }
+  const ids = new Set([entidad.id])
+  if (entidad.ruta) {
+    try {
+      const d = await graphqlClient.request(QUERY_DESCENDIENTES_GEO, { ruta: `${entidad.ruta}%` })
+      for (const e of (d.entidadesGeograficas || [])) ids.add(e.id)
+    } catch { /* si falla, al menos filtra por la entidad exacta */ }
+  }
+  idsAmbitoGeografico.value = ids
+}
 
 const _COLORES = {
   SOCIO: 'bg-emerald-100 text-emerald-800',
@@ -182,6 +207,13 @@ function colorVinculacion(codigo) {
 function nombreMostrado(c) {
   if (c.tipo === 'PERSONA_JURIDICA') return c.razonSocial || c.nombre || '—'
   return [c.nombre, c.apellido1, c.apellido2].filter(Boolean).join(' ') || '—'
+}
+
+// Ubicación del contacto: nombre de su entidad geográfica (municipio/pedanía) si
+// se ha resuelto; si no, la localidad de la dirección.
+function ubicacionMostrada(c) {
+  const geo = nombreEntidadGeo.value[c.entidadGeograficaId]
+  return geo || c.localidad || '—'
 }
 
 // Vinculaciones vigentes = sin fecha de fin (la vinculación está abierta).
@@ -241,6 +273,7 @@ function limpiarFiltros() {
   filters.value = { tipos: [], vinculaciones: [] }
   searchQuery.value = ''
   filtroGeografico.value = null
+  idsAmbitoGeografico.value = null
 }
 
 const contactosFiltrados = computed(() => {
@@ -252,7 +285,7 @@ const contactosFiltrados = computed(() => {
     // Vista "Contactos" (colectivo null): excluye socios y personal (esos tienen su vista).
     if (!props.colectivo && (esColectivo(c, COLECTIVO_SOCIO) || esColectivo(c, COLECTIVO_PERSONAL))) return false
     if (filters.value.tipos.length && !filters.value.tipos.includes(c.tipo)) return false
-    if (filtroGeografico.value && c.entidadGeograficaId !== filtroGeografico.value) return false
+    if (idsAmbitoGeografico.value && !(c.entidadGeograficaId && idsAmbitoGeografico.value.has(c.entidadGeograficaId))) return false
     if (filters.value.vinculaciones.length) {
       // DONANTE/FIRMANTE son condiciones DERIVADAS (participación/donación);
       // VOLUNTARIO/SIMPATIZANTE son vinculaciones formales. Un contacto pasa si
@@ -301,11 +334,30 @@ async function cargar() {
     })
     contactos.value = data.contactos || []
     cargarCondiciones(contactos.value.map((c) => c.id))
+    cargarNombresGeo(contactos.value.map((c) => c.entidadGeograficaId).filter(Boolean))
   } catch (e) {
     error.value = e?.response?.errors?.[0]?.message || 'No se pudieron cargar los contactos.'
   } finally {
     cargando.value = false
   }
+}
+
+// Mapa entidadGeograficaId → nombre, para mostrar la ubicación en el listado.
+const nombreEntidadGeo = ref({})
+const QUERY_NOMBRES_GEO = `
+  query NombresGeo($ids: [UUID!]!) {
+    entidadesGeograficas(filter: { id: { in: $ids } }) { id nombre }
+  }
+`
+async function cargarNombresGeo(ids) {
+  const unicos = [...new Set(ids)]
+  if (!unicos.length) return
+  try {
+    const d = await graphqlClient.request(QUERY_NOMBRES_GEO, { ids: unicos })
+    const map = {}
+    for (const e of (d.entidadesGeograficas || [])) map[e.id] = e.nombre
+    nombreEntidadGeo.value = map
+  } catch { /* si falla, se muestra la localidad como fallback */ }
 }
 
 onMounted(cargar)

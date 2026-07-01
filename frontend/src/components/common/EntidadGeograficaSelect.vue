@@ -45,7 +45,7 @@ const props = defineProps({
   niveles: { type: Array, default: () => [] },
   placeholder: { type: String, default: 'Buscar municipio o provincia…' },
 })
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'seleccion'])
 
 const QUERY = `
   query EntidadesGeograficas($filter: EntidadGeograficaFilter!) {
@@ -92,11 +92,13 @@ function elegir(r) {
   resultados.value = []
   termino.value = ''
   emit('update:modelValue', r.id)
+  emit('seleccion', r)   // entidad completa (id, nombre, ruta, nivel)
 }
 
 function limpiar() {
   seleccion.value = null
   emit('update:modelValue', null)
+  emit('seleccion', null)
 }
 
 function onClickFuera(e) {
