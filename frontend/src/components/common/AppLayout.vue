@@ -57,7 +57,7 @@
           <!-- Módulos principales (empujan hacia arriba) -->
           <div class="flex-1 space-y-0">
 
-            <!-- Dashboard + Mis datos -->
+            <!-- Personal: Dashboard (home, siempre primero) + entradas alfabéticas -->
             <ul class="space-y-1 mb-1">
               <li>
                 <router-link to="/"
@@ -65,14 +65,6 @@
                   :class="$route.path === '/' ? 'active' : 'inactive'">
                   <HomeIcon class="nav-icon" />
                   <span>Dashboard</span>
-                </router-link>
-              </li>
-              <li>
-                <router-link to="/mis-datos"
-                  class="nav-item"
-                  :class="$route.path === '/mis-datos' ? 'active' : 'inactive'">
-                  <UserCircleIcon class="nav-icon" />
-                  <span>Mis datos</span>
                 </router-link>
               </li>
               <li v-if="orgConfigStore.chatActivo">
@@ -91,59 +83,23 @@
                   <span>Mensajes enviados</span>
                 </router-link>
               </li>
+              <li>
+                <router-link to="/mis-datos"
+                  class="nav-item"
+                  :class="$route.path === '/mis-datos' ? 'active' : 'inactive'">
+                  <UserCircleIcon class="nav-icon" />
+                  <span>Mis datos</span>
+                </router-link>
+              </li>
             </ul>
 
             <hr class="nav-sep" />
 
-            <!-- Membresía -->
-            <div v-if="tieneAlguno('CONTACTO_LISTAR','MEMBRESIA_MIEMBRO_LISTAR','MEMBRESIA_AGRUPACION_EDITAR','MEMBRESIA_MIEMBRO_VALIDAR','GRUPO_LISTAR')" class="mb-1">
-              <button @click="toggleSection('membresia')" class="section-btn">
-                <span>Membresía</span>
-                <ChevronDownIcon class="chevron" :class="openSections.membresia ? '' : '-rotate-90'" />
-              </button>
-              <div class="accordion-wrap" :class="{ closed: !openSections.membresia }">
-                <ul class="space-y-1 pb-1">
-                  <li v-if="tienePermiso('MEMBRESIA_MIEMBRO_LISTAR')">
-                    <router-link to="/socios" class="nav-item"
-                      :class="$route.path.startsWith('/socios') ? 'active' : 'inactive'">
-                      <UserIcon class="nav-icon" /><span>Socios</span>
-                    </router-link>
-                  </li>
-                  <li v-if="tienePermiso('MEMBRESIA_MIEMBRO_LISTAR')">
-                    <router-link to="/personal" class="nav-item"
-                      :class="$route.path.startsWith('/personal') ? 'active' : 'inactive'">
-                      <UserGroupIcon class="nav-icon" /><span>Personal</span>
-                    </router-link>
-                  </li>
-                  <li v-if="tienePermiso('CONTACTO_LISTAR')">
-                    <router-link to="/contactos" class="nav-item"
-                      :class="$route.path.startsWith('/contactos') ? 'active' : 'inactive'">
-                      <UserGroupIcon class="nav-icon" /><span>Contactos</span>
-                    </router-link>
-                  </li>
-                  <li v-if="tienePermiso('MEMBRESIA_MIEMBRO_VALIDAR')">
-                    <router-link to="/solicitudes-socio" class="nav-item"
-                      :class="$route.path.startsWith('/solicitudes-socio') ? 'active' : 'inactive'">
-                      <CheckBadgeIcon class="nav-icon" /><span>Solicitudes de admisión</span>
-                    </router-link>
-                  </li>
-                  <li v-if="tienePermiso('MEMBRESIA_AGRUPACION_EDITAR')">
-                    <router-link to="/agrupaciones" class="nav-item"
-                      :class="$route.path.startsWith('/agrupaciones') ? 'active' : 'inactive'">
-                      <MapPinIcon class="nav-icon" /><span>Agrupaciones Territoriales</span>
-                    </router-link>
-                  </li>
-                  <li v-if="tienePermiso('GRUPO_LISTAR')">
-                    <router-link to="/grupos" class="nav-item"
-                      :class="$route.path.startsWith('/grupos') ? 'active' : 'inactive'">
-                      <UserGroupIcon class="nav-icon" /><span>Grupos de trabajo</span>
-                    </router-link>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <hr class="nav-sep" />
+            <!-- ═══ MÓDULOS EN ORDEN ALFABÉTICO ═══════════════════════════════════
+                 Secciones ordenadas por su etiqueta: Actividades, Económico,
+                 Membresía, Presidencia, Protección de Datos, Secretaría. Dentro de
+                 cada una, las entradas también van alfabéticas. (Ayuda y Configuración
+                 se quedan ancladas al fondo, fuera de este orden.) -->
 
             <!-- Actividades -->
             <div v-if="tieneAlguno('CAMPANA_LISTAR','ACTIVIDAD_LISTAR','GRUPO_LISTAR')" class="mb-1">
@@ -153,16 +109,16 @@
               </button>
               <div class="accordion-wrap" :class="{ closed: !openSections.actividades }">
                 <ul class="space-y-1 pb-1">
+                  <li v-if="tienePermiso('ACTIVIDAD_LISTAR')">
+                    <router-link to="/actividades" class="nav-item"
+                      :class="$route.path.startsWith('/actividades') ? 'active' : 'inactive'">
+                      <CalendarDaysIcon class="nav-icon" /><span>Actividades</span>
+                    </router-link>
+                  </li>
                   <li v-if="tienePermiso('CAMPANA_LISTAR')">
                     <router-link to="/campanias" class="nav-item"
                       :class="$route.path.startsWith('/campanias') ? 'active' : 'inactive'">
                       <FlagIcon class="nav-icon" /><span>Campañas</span>
-                    </router-link>
-                  </li>
-                  <li v-if="tienePermiso('ACTIVIDAD_CATALOGO_GESTIONAR')">
-                    <router-link to="/parametrizacion/plantillas-campania" class="nav-item"
-                      :class="$route.path.startsWith('/parametrizacion/plantillas-campania') ? 'active' : 'inactive'">
-                      <DocumentTextIcon class="nav-icon" /><span>Plantillas de campaña</span>
                     </router-link>
                   </li>
                   <li v-if="tienePermiso('CAMPANA_LISTAR')">
@@ -171,10 +127,10 @@
                       <BookOpenIcon class="nav-icon" /><span>Memoria Anual</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('ACTIVIDAD_LISTAR')">
-                    <router-link to="/actividades" class="nav-item"
-                      :class="$route.path.startsWith('/actividades') ? 'active' : 'inactive'">
-                      <CalendarDaysIcon class="nav-icon" /><span>Actividades</span>
+                  <li v-if="tienePermiso('ACTIVIDAD_CATALOGO_GESTIONAR')">
+                    <router-link to="/parametrizacion/plantillas-campania" class="nav-item"
+                      :class="$route.path.startsWith('/parametrizacion/plantillas-campania') ? 'active' : 'inactive'">
+                      <DocumentTextIcon class="nav-icon" /><span>Plantillas de campaña</span>
                     </router-link>
                   </li>
                 </ul>
@@ -191,10 +147,10 @@
               </button>
               <div class="accordion-wrap" :class="{ closed: !openSections.economico }">
                 <ul class="space-y-1 pb-1">
-                  <li v-if="tieneAlguno(...ECO_OPERATIVO)">
-                    <router-link to="/economico/tesoreria" class="nav-item"
-                      :class="$route.path.startsWith('/economico/tesoreria') ? 'active' : 'inactive'">
-                      <BuildingLibraryIcon class="nav-icon" /><span>Tesorería</span>
+                  <li v-if="tieneAlguno('ECO_ESTRUCTURA_CONTABLE_LISTAR','ECO_INFORME_FINANCIERO_VER')">
+                    <router-link to="/economico/contabilidad" class="nav-item"
+                      :class="$route.path.startsWith('/economico/contabilidad') ? 'active' : 'inactive'">
+                      <CalculatorIcon class="nav-icon" /><span>Contabilidad</span>
                     </router-link>
                   </li>
                   <li v-if="tienePermiso('ECO_INFORME_FINANCIERO_VER') && orgConfigStore.usaPresupuesto">
@@ -203,10 +159,60 @@
                       <ChartBarIcon class="nav-icon" /><span>Presupuestos</span>
                     </router-link>
                   </li>
-                  <li v-if="tieneAlguno('ECO_ESTRUCTURA_CONTABLE_LISTAR','ECO_INFORME_FINANCIERO_VER')">
-                    <router-link to="/economico/contabilidad" class="nav-item"
-                      :class="$route.path.startsWith('/economico/contabilidad') ? 'active' : 'inactive'">
-                      <CalculatorIcon class="nav-icon" /><span>Contabilidad</span>
+                  <li v-if="tieneAlguno(...ECO_OPERATIVO)">
+                    <router-link to="/economico/tesoreria" class="nav-item"
+                      :class="$route.path.startsWith('/economico/tesoreria') ? 'active' : 'inactive'">
+                      <BuildingLibraryIcon class="nav-icon" /><span>Tesorería</span>
+                    </router-link>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <hr class="nav-sep" />
+
+            <!-- Membresía -->
+            <div v-if="tieneAlguno('CONTACTO_LISTAR','MEMBRESIA_MIEMBRO_LISTAR','MEMBRESIA_AGRUPACION_EDITAR','MEMBRESIA_MIEMBRO_VALIDAR','GRUPO_LISTAR')" class="mb-1">
+              <button @click="toggleSection('membresia')" class="section-btn">
+                <span>Membresía</span>
+                <ChevronDownIcon class="chevron" :class="openSections.membresia ? '' : '-rotate-90'" />
+              </button>
+              <div class="accordion-wrap" :class="{ closed: !openSections.membresia }">
+                <ul class="space-y-1 pb-1">
+                  <li v-if="tienePermiso('MEMBRESIA_AGRUPACION_EDITAR')">
+                    <router-link to="/agrupaciones" class="nav-item"
+                      :class="$route.path.startsWith('/agrupaciones') ? 'active' : 'inactive'">
+                      <MapPinIcon class="nav-icon" /><span>Agrupaciones Territoriales</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('CONTACTO_LISTAR')">
+                    <router-link to="/contactos" class="nav-item"
+                      :class="$route.path.startsWith('/contactos') ? 'active' : 'inactive'">
+                      <UserGroupIcon class="nav-icon" /><span>Contactos</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('GRUPO_LISTAR')">
+                    <router-link to="/grupos" class="nav-item"
+                      :class="$route.path.startsWith('/grupos') ? 'active' : 'inactive'">
+                      <UserGroupIcon class="nav-icon" /><span>Grupos de trabajo</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('MEMBRESIA_MIEMBRO_LISTAR')">
+                    <router-link to="/personal" class="nav-item"
+                      :class="$route.path.startsWith('/personal') ? 'active' : 'inactive'">
+                      <UserGroupIcon class="nav-icon" /><span>Personal</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('MEMBRESIA_MIEMBRO_LISTAR')">
+                    <router-link to="/socios" class="nav-item"
+                      :class="$route.path.startsWith('/socios') ? 'active' : 'inactive'">
+                      <UserIcon class="nav-icon" /><span>Socios</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('MEMBRESIA_MIEMBRO_VALIDAR')">
+                    <router-link to="/solicitudes-socio" class="nav-item"
+                      :class="$route.path.startsWith('/solicitudes-socio') ? 'active' : 'inactive'">
+                      <CheckBadgeIcon class="nav-icon" /><span>Solicitudes de admisión</span>
                     </router-link>
                   </li>
                 </ul>
@@ -223,66 +229,22 @@
               </button>
               <div class="accordion-wrap" :class="{ closed: !openSections.presidencia }">
                 <ul class="space-y-1 pb-1">
-                  <li v-if="tienePermiso('PRESIDENCIA_CUADRO_MANDO_VER')">
-                    <router-link to="/presidencia" class="nav-item"
-                      :class="$route.path === '/presidencia' ? 'active' : 'inactive'">
-                      <HomeIcon class="nav-icon" /><span>Cuadro de mando</span>
-                    </router-link>
-                  </li>
                   <li v-if="tienePermiso('PRESIDENCIA_ACUERDO_SEGUIMIENTO_VER')">
                     <router-link to="/presidencia/acuerdos" class="nav-item"
                       :class="$route.path.startsWith('/presidencia/acuerdos') ? 'active' : 'inactive'">
                       <ClipboardDocumentCheckIcon class="nav-icon" /><span>Acuerdos</span>
                     </router-link>
                   </li>
+                  <li v-if="tienePermiso('PRESIDENCIA_CUADRO_MANDO_VER')">
+                    <router-link to="/presidencia" class="nav-item"
+                      :class="$route.path === '/presidencia' ? 'active' : 'inactive'">
+                      <HomeIcon class="nav-icon" /><span>Cuadro de mando</span>
+                    </router-link>
+                  </li>
                   <li v-if="tienePermiso('PRESIDENCIA_MANDATO_LISTAR')">
                     <router-link to="/presidencia/mandatos" class="nav-item"
                       :class="$route.path.startsWith('/presidencia/mandatos') ? 'active' : 'inactive'">
                       <UserGroupIcon class="nav-icon" /><span>Mandatos</span>
-                    </router-link>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <hr class="nav-sep" />
-
-            <!-- Secretaría -->
-            <div v-if="tieneAlguno('SEC_REUNION_LISTAR','SEC_ACUERDO_LISTAR','SEC_ACTA_LISTAR','SEC_LIBRO_SOCIOS_CONSULTAR','SEC_CONVENIO_LISTAR')" class="mb-1">
-              <button @click="toggleSection('secretaria')" class="section-btn">
-                <span>Secretaría</span>
-                <ChevronDownIcon class="chevron" :class="openSections.secretaria ? '' : '-rotate-90'" />
-              </button>
-              <div class="accordion-wrap" :class="{ closed: !openSections.secretaria }">
-                <ul class="space-y-1 pb-1">
-                  <li v-if="tienePermiso('SEC_REUNION_LISTAR')">
-                    <router-link to="/secretaria/reuniones" class="nav-item"
-                      :class="$route.path.startsWith('/secretaria/reuniones') ? 'active' : 'inactive'">
-                      <CalendarDaysIcon class="nav-icon" /><span>Reuniones</span>
-                    </router-link>
-                  </li>
-                  <li v-if="tienePermiso('SEC_ACUERDO_LISTAR')">
-                    <router-link to="/secretaria/acuerdos" class="nav-item"
-                      :class="$route.path.startsWith('/secretaria/acuerdos') ? 'active' : 'inactive'">
-                      <ClipboardDocumentCheckIcon class="nav-icon" /><span>Acuerdos</span>
-                    </router-link>
-                  </li>
-                  <li v-if="tienePermiso('SEC_ACTA_LISTAR')">
-                    <router-link to="/secretaria/actas" class="nav-item"
-                      :class="$route.path.startsWith('/secretaria/actas') ? 'active' : 'inactive'">
-                      <DocumentTextIcon class="nav-icon" /><span>Libro de Actas</span>
-                    </router-link>
-                  </li>
-                  <li v-if="tienePermiso('SEC_LIBRO_SOCIOS_CONSULTAR')">
-                    <router-link to="/secretaria/libro-socios" class="nav-item"
-                      :class="$route.path.startsWith('/secretaria/libro-socios') ? 'active' : 'inactive'">
-                      <BookOpenIcon class="nav-icon" /><span>Libro de Socios</span>
-                    </router-link>
-                  </li>
-                  <li v-if="tienePermiso('SEC_CONVENIO_LISTAR')">
-                    <router-link to="/secretaria/convenios" class="nav-item"
-                      :class="$route.path.startsWith('/secretaria/convenios') ? 'active' : 'inactive'">
-                      <DocumentCheckIcon class="nav-icon" /><span>Convenios</span>
                     </router-link>
                   </li>
                 </ul>
@@ -299,22 +261,16 @@
               </button>
               <div class="accordion-wrap" :class="{ closed: !openSections.rgpd }">
                 <ul class="space-y-1 pb-1">
-                  <li>
-                    <router-link to="/rgpd" class="nav-item"
-                      :class="$route.path === '/rgpd' ? 'active' : 'inactive'">
-                      <ShieldCheckIcon class="nav-icon" /><span>Panel RGPD</span>
+                  <li v-if="tienePermiso('RGPD_AUDITORIA_LEER')">
+                    <router-link to="/rgpd/auditoria" class="nav-item"
+                      :class="$route.path.startsWith('/rgpd/auditoria') ? 'active' : 'inactive'">
+                      <EyeIcon class="nav-icon" /><span>Auditoría de accesos</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('RGPD_RAT_LEER')">
-                    <router-link to="/rgpd/encargados" class="nav-item"
-                      :class="$route.path.startsWith('/rgpd/encargados') ? 'active' : 'inactive'">
-                      <BuildingOffice2Icon class="nav-icon" /><span>Encargados</span>
-                    </router-link>
-                  </li>
-                  <li v-if="tienePermiso('RGPD_RAT_LEER')">
-                    <router-link to="/rgpd/actividades" class="nav-item"
-                      :class="$route.path.startsWith('/rgpd/actividades') ? 'active' : 'inactive'">
-                      <ClipboardDocumentListIcon class="nav-icon" /><span>RAT (art. 30)</span>
+                  <li v-if="tienePermiso('RGPD_BRECHA_LEER')">
+                    <router-link to="/rgpd/brechas" class="nav-item"
+                      :class="$route.path.startsWith('/rgpd/brechas') ? 'active' : 'inactive'">
+                      <ShieldExclamationIcon class="nav-icon" /><span>Brechas de seguridad</span>
                     </router-link>
                   </li>
                   <li v-if="tienePermiso('RGPD_CLAUSULA_GESTIONAR')">
@@ -329,22 +285,72 @@
                       <CheckCircleIcon class="nav-icon" /><span>Consentimientos</span>
                     </router-link>
                   </li>
+                  <li v-if="tienePermiso('RGPD_RAT_LEER')">
+                    <router-link to="/rgpd/encargados" class="nav-item"
+                      :class="$route.path.startsWith('/rgpd/encargados') ? 'active' : 'inactive'">
+                      <BuildingOffice2Icon class="nav-icon" /><span>Encargados</span>
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link to="/rgpd" class="nav-item"
+                      :class="$route.path === '/rgpd' ? 'active' : 'inactive'">
+                      <ShieldCheckIcon class="nav-icon" /><span>Panel RGPD</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('RGPD_RAT_LEER')">
+                    <router-link to="/rgpd/actividades" class="nav-item"
+                      :class="$route.path.startsWith('/rgpd/actividades') ? 'active' : 'inactive'">
+                      <ClipboardDocumentListIcon class="nav-icon" /><span>RAT (art. 30)</span>
+                    </router-link>
+                  </li>
                   <li v-if="tienePermiso('RGPD_SOLICITUD_LEER')">
                     <router-link to="/rgpd/solicitudes" class="nav-item"
                       :class="$route.path.startsWith('/rgpd/solicitudes') ? 'active' : 'inactive'">
                       <UserIcon class="nav-icon" /><span>Solicitudes ARSULIPO</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('RGPD_BRECHA_LEER')">
-                    <router-link to="/rgpd/brechas" class="nav-item"
-                      :class="$route.path.startsWith('/rgpd/brechas') ? 'active' : 'inactive'">
-                      <ShieldExclamationIcon class="nav-icon" /><span>Brechas de seguridad</span>
+                </ul>
+              </div>
+            </div>
+
+            <hr class="nav-sep" />
+
+            <!-- Secretaría -->
+            <div v-if="tieneAlguno('SEC_REUNION_LISTAR','SEC_ACUERDO_LISTAR','SEC_ACTA_LISTAR','SEC_LIBRO_SOCIOS_CONSULTAR','SEC_CONVENIO_LISTAR')" class="mb-1">
+              <button @click="toggleSection('secretaria')" class="section-btn">
+                <span>Secretaría</span>
+                <ChevronDownIcon class="chevron" :class="openSections.secretaria ? '' : '-rotate-90'" />
+              </button>
+              <div class="accordion-wrap" :class="{ closed: !openSections.secretaria }">
+                <ul class="space-y-1 pb-1">
+                  <li v-if="tienePermiso('SEC_ACUERDO_LISTAR')">
+                    <router-link to="/secretaria/acuerdos" class="nav-item"
+                      :class="$route.path.startsWith('/secretaria/acuerdos') ? 'active' : 'inactive'">
+                      <ClipboardDocumentCheckIcon class="nav-icon" /><span>Acuerdos</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('RGPD_AUDITORIA_LEER')">
-                    <router-link to="/rgpd/auditoria" class="nav-item"
-                      :class="$route.path.startsWith('/rgpd/auditoria') ? 'active' : 'inactive'">
-                      <EyeIcon class="nav-icon" /><span>Auditoría de accesos</span>
+                  <li v-if="tienePermiso('SEC_CONVENIO_LISTAR')">
+                    <router-link to="/secretaria/convenios" class="nav-item"
+                      :class="$route.path.startsWith('/secretaria/convenios') ? 'active' : 'inactive'">
+                      <DocumentCheckIcon class="nav-icon" /><span>Convenios</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('SEC_ACTA_LISTAR')">
+                    <router-link to="/secretaria/actas" class="nav-item"
+                      :class="$route.path.startsWith('/secretaria/actas') ? 'active' : 'inactive'">
+                      <DocumentTextIcon class="nav-icon" /><span>Libro de Actas</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('SEC_LIBRO_SOCIOS_CONSULTAR')">
+                    <router-link to="/secretaria/libro-socios" class="nav-item"
+                      :class="$route.path.startsWith('/secretaria/libro-socios') ? 'active' : 'inactive'">
+                      <BookOpenIcon class="nav-icon" /><span>Libro de Socios</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('SEC_REUNION_LISTAR')">
+                    <router-link to="/secretaria/reuniones" class="nav-item"
+                      :class="$route.path.startsWith('/secretaria/reuniones') ? 'active' : 'inactive'">
+                      <CalendarDaysIcon class="nav-icon" /><span>Reuniones</span>
                     </router-link>
                   </li>
                 </ul>
@@ -395,31 +401,27 @@
               </button>
               <div class="accordion-wrap" :class="{ closed: !openSections.configuracion }">
                 <ul class="space-y-1 pb-1">
-                  <li v-if="tienePermiso('CFG_CONFIGURACION_LEER')">
-                    <router-link to="/configuracion/general" class="nav-item"
-                      :class="$route.path.startsWith('/configuracion/general') ? 'active' : 'inactive'">
-                      <BuildingOffice2Icon class="nav-icon" /><span>Parámetros Generales</span>
-                    </router-link>
-                  </li>
+                  <!-- Configuración general (entradas alfabéticas) -->
                   <li v-if="tienePermiso('ACTIVIDAD_CATALOGO_GESTIONAR')">
                     <router-link to="/parametrizacion/catalogos" class="nav-item"
                       :class="$route.path.startsWith('/parametrizacion/catalogos') ? 'active' : 'inactive'">
                       <ListBulletIcon class="nav-icon" /><span>Catálogos</span>
                     </router-link>
                   </li>
+                  <li v-if="tienePermiso('CFG_CONFIGURACION_LEER')">
+                    <router-link to="/configuracion/general" class="nav-item"
+                      :class="$route.path.startsWith('/configuracion/general') ? 'active' : 'inactive'">
+                      <BuildingOffice2Icon class="nav-icon" /><span>Parámetros Generales</span>
+                    </router-link>
+                  </li>
+                  <!-- Control de Acceso (subgrupo, entradas alfabéticas) -->
                   <li v-if="tieneAlguno('ACCESO_USUARIO_LISTAR','ACCESO_ROL_LISTAR','ACCESO_ROL_ASIGNAR','ACCESO_AUDITORIA_LEER')" class="pt-2 pb-0.5 px-3">
                     <span class="text-[10px] font-semibold text-purple-500 uppercase tracking-wider">Control de Acceso</span>
                   </li>
-                  <li v-if="tienePermiso('ACCESO_USUARIO_LISTAR')">
-                    <router-link to="/usuarios" class="nav-item"
-                      :class="$route.path.startsWith('/usuarios') ? 'active' : 'inactive'">
-                      <UsersIcon class="nav-icon" /><span>Usuarios</span>
-                    </router-link>
-                  </li>
-                  <li v-if="tienePermiso('ACCESO_ROL_LISTAR')">
-                    <router-link to="/roles" class="nav-item"
-                      :class="$route.path.startsWith('/roles') ? 'active' : 'inactive'">
-                      <KeyIcon class="nav-icon" /><span>Roles y Permisos</span>
+                  <li v-if="tienePermiso('ACCESO_AUDITORIA_LEER')">
+                    <router-link to="/auditoria" class="nav-item"
+                      :class="$route.path.startsWith('/auditoria') ? 'active' : 'inactive'">
+                      <ClipboardDocumentListIcon class="nav-icon" /><span>Auditoría</span>
                     </router-link>
                   </li>
                   <li v-if="tienePermiso('ACCESO_ROL_ASIGNAR')">
@@ -428,10 +430,16 @@
                       <ListBulletIcon class="nav-icon" /><span>Catálogo RBAC</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('ACCESO_AUDITORIA_LEER')">
-                    <router-link to="/auditoria" class="nav-item"
-                      :class="$route.path.startsWith('/auditoria') ? 'active' : 'inactive'">
-                      <ClipboardDocumentListIcon class="nav-icon" /><span>Auditoría</span>
+                  <li v-if="tienePermiso('ACCESO_ROL_LISTAR')">
+                    <router-link to="/roles" class="nav-item"
+                      :class="$route.path.startsWith('/roles') ? 'active' : 'inactive'">
+                      <KeyIcon class="nav-icon" /><span>Roles y Permisos</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('ACCESO_USUARIO_LISTAR')">
+                    <router-link to="/usuarios" class="nav-item"
+                      :class="$route.path.startsWith('/usuarios') ? 'active' : 'inactive'">
+                      <UsersIcon class="nav-icon" /><span>Usuarios</span>
                     </router-link>
                   </li>
                 </ul>
