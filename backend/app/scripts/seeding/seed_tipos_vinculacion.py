@@ -14,13 +14,17 @@ from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
 # (nombre, codigo, ambito, area_responsable, requiere_satelite, permite_cuenta) — alineado
 # con el catálogo canónico (ver migración p2 y 1_crear_catalogos_base.crear_tipos_vinculacion).
 # permite_cuenta: el contacto con ese vínculo puede ser dotado de cuenta de usuario.
+# Solo AFILIACIONES con la organización (se almacenan como Vinculacion). NO se
+# incluyen FIRMANTE ni SIMPATIZANTE: "firmante/participante/donante" son
+# condiciones DERIVADAS de los registros del contacto, no vínculos. Las
+# relaciones contacto↔contacto (representante legal, familiar…) viven en el
+# modelo `Relacion`, no aquí.
 TIPOS = [
-    ("Firmante",     "FIRMANTE",     "central",     "COMUNICACION_FIRMAS",            False, False),
-    ("Simpatizante", "SIMPATIZANTE", "central",     "COMUNICACION_SIMPATIZANTES",     False, False),
-    ("Socio",        "SOCIO",        "territorial", "MEMBRESIA_SOCIO_GESTIONAR",      True,  True),
-    ("Voluntario",   "VOLUNTARIO",   "territorial", "MEMBRESIA_VOLUNTARIO_GESTIONAR", True,  True),
-    ("Donante",      "DONANTE",      "central",     "TESORERIA_DONANTES",             False, False),
-    ("Contratado/a", "EMPLEADO",     "central",     "RECURSOS_HUMANOS",               True,  True),
+    ("Socio",              "SOCIO",              "territorial", "MEMBRESIA_SOCIO_GESTIONAR",      True,  True),
+    ("Voluntario",         "VOLUNTARIO",         "territorial", "MEMBRESIA_VOLUNTARIO_GESTIONAR", True,  True),
+    ("Donante",            "DONANTE",            "central",     "TESORERIA_DONANTES",             False, False),
+    ("Contratado/a",       "EMPLEADO",           "central",     "RECURSOS_HUMANOS",               True,  True),
+    ("Organización amiga", "ORGANIZACION_AMIGA", "central",     "SECRETARIA_CONVENIOS",           False, False),
 ]
 
 

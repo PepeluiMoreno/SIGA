@@ -24,7 +24,7 @@ import importlib
 
 from app.core.database import async_session
 from app.scripts.seeding._guard import abort_if_production
-from app.scripts.seeding import seed_tipos_vinculacion, seed_staging_perfiles
+from app.scripts.seeding import seed_tipos_vinculacion, seed_tipos_relacion, seed_staging_perfiles
 from app.scripts.seeding import seed_roles_organizacionales
 
 # Cableado de permisos por rol (cada módulo expone seed()). Sin esto, los roles
@@ -53,9 +53,10 @@ async def main() -> None:
     abort_if_production("juego de datos de prueba")
     print("=== Sembrando datos de prueba ===")
 
-    # 1) Tipos de vinculación (incluye SOCIO) — comparten sesión.
+    # 1) Tipos de vinculación (incluye SOCIO) y de relación — comparten sesión.
     async with async_session() as session:
         await seed_tipos_vinculacion.seed(session)
+        await seed_tipos_relacion.seed(session)
         await session.commit()
 
     # 2) Roles de gobierno (abre su propia sesión y commitea).

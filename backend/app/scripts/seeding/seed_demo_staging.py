@@ -33,6 +33,7 @@ PASOS = [
     # ── Catálogos de dominio (prerrequisito de casi todo lo demás) ──
     ("seed_catalogos_miembros", True),
     ("seed_tipos_vinculacion", True),       # crea SOCIO → lo necesita seed_staging_perfiles
+    ("seed_tipos_relacion", True),          # tipos de relación contacto↔contacto (Relationship)
     ("seed_catalogos_accion", True),        # crea los UUIDs que usa seed_actividades_permanentes
     ("seed_catalogos_campania", True),
     ("seed_eventos_catalogos", True),

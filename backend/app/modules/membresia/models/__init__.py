@@ -5,6 +5,7 @@ from .contacto import Contacto
 from .tipo_entidad_juridica import TipoEntidadJuridica
 from .tipo_vinculacion import TipoVinculacion
 from .vinculacion import Vinculacion, Socio, Voluntario
+from .relacion import TipoRelacion, Relacion
 from .participacion import Participacion, Membresia
 from .nivel_estudios import NivelEstudios
 from .nivel_habilidad import NivelHabilidad
@@ -33,6 +34,7 @@ from .voluntariado import (
 __all__ = [
     'TipoMiembro',
     'Contacto', 'TipoEntidadJuridica', 'TipoVinculacion', 'Vinculacion', 'Socio', 'Voluntario', 'Participacion', 'Membresia',
+    'TipoRelacion', 'Relacion',
     'NivelEstudios',
     'NivelHabilidad',
     'EstadoMiembro',
