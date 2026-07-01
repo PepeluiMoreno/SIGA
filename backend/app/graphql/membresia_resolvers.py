@@ -19,7 +19,7 @@ from app.modules.membresia.models.vinculacion import Vinculacion, Socio, Volunta
 from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
 from app.modules.acceso.services.acceso_service import AccesoService
 from app.graphql.types_auto import ContactoType
-from app.graphql.permissions import RequireTransaction
+from app.graphql.permissions import RequireTransaction, RequireAuthenticated
 from app.core.events import event_bus, MiembroPerfilIncompleto
 
 
@@ -675,8 +675,60 @@ class VoluntarioAmbitoType:
     fecha_alta: Optional[date]
 
 
+@strawberry.type(name="ContactoCondiciones")
+class ContactoCondicionesType:
+    """Condiciones DERIVADAS de un contacto (no son vinculaciones): se calculan a
+    partir de sus registros. Alimentan los badges de la ficha del contacto."""
+    es_participante: bool
+    es_firmante: bool
+    es_donante: bool
+    n_firmas: int
+    n_participaciones: int
+    n_donaciones: int
+
+
 @strawberry.type
 class MembresiaQuery:
+    @strawberry.field(permission_classes=[RequireAuthenticated])
+    async def condiciones_contacto(
+        self, info: strawberry.Info, contacto_id: uuid.UUID
+    ) -> ContactoCondicionesType:
+        """Condiciones derivadas (firmante/participante/donante) de un contacto,
+        calculadas de sus registros (Participacion/FirmaCampania/Donacion)."""
+        from sqlalchemy import func
+
+        from app.modules.actividades.models.campana import FirmaCampania
+        from app.modules.economico.models.donaciones import Donacion
+
+        session = info.context.session
+        n_firmas = await session.scalar(
+            select(func.count(FirmaCampania.id)).where(
+                FirmaCampania.contacto_id == contacto_id,
+                FirmaCampania.eliminado.is_(False),
+            )
+        ) or 0
+        n_part = await session.scalar(
+            select(func.count(Participacion.id)).where(
+                Participacion.contacto_id == contacto_id,
+                Participacion.tipo.in_(("FIRMA", "ASISTENCIA")),
+                Participacion.eliminado.is_(False),
+            )
+        ) or 0
+        n_don = await session.scalar(
+            select(func.count(Donacion.id)).where(
+                Donacion.contacto_id == contacto_id,
+                Donacion.eliminado.is_(False),
+            )
+        ) or 0
+        return ContactoCondicionesType(
+            es_participante=n_part > 0,
+            es_firmante=n_firmas > 0,
+            es_donante=n_don > 0,
+            n_firmas=int(n_firmas),
+            n_participaciones=int(n_part),
+            n_donaciones=int(n_don),
+        )
+
     @strawberry.field(permission_classes=[RequireTransaction("MEMBRESIA_VOLUNTARIO_LISTAR")])
     async def voluntarios_en_ambito(self, info: strawberry.Info) -> List[VoluntarioAmbitoType]:
         """Voluntarios visibles según el ámbito territorial del usuario (Fase 2).

@@ -142,3 +142,18 @@ export const CERRAR_VINCULACION = `
     }
   }
 `
+
+// Condiciones DERIVADAS de un contacto (firmante/participante/donante),
+// calculadas de sus registros. Para los badges de la ficha del contacto.
+export const GET_CONDICIONES_CONTACTO = `
+  query CondicionesContacto($contactoId: UUID!) {
+    condicionesContacto(contactoId: $contactoId) {
+      esParticipante
+      esFirmante
+      esDonante
+      nFirmas
+      nParticipaciones
+      nDonaciones
+    }
+  }
+`

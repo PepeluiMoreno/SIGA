@@ -63,6 +63,13 @@
             </label>
           </div>
 
+          <!-- Condiciones DERIVADAS (no vinculaciones): se calculan de los registros -->
+          <div v-if="!isCreate && condiciones && (condiciones.esParticipante || condiciones.esDonante)" class="flex flex-wrap gap-2 mb-4">
+            <span v-if="condiciones.esParticipante" class="px-2 py-0.5 text-xs font-medium rounded-full bg-sky-100 text-sky-700" :title="`${condiciones.nParticipaciones} participación(es)`">Participante</span>
+            <span v-if="condiciones.esFirmante" class="px-2 py-0.5 text-xs font-medium rounded-full bg-teal-100 text-teal-700" :title="`${condiciones.nFirmas} firma(s)`">Firmante</span>
+            <span v-if="condiciones.esDonante" class="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-700" :title="`${condiciones.nDonaciones} donación(es)`">Donante</span>
+          </div>
+
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
             <template v-if="esPJ">
               <FieldText v-model="form.razonSocial" label="Razón social *" :editing="editing" />
@@ -159,7 +166,7 @@ import { usePermisos } from '@/composables/usePermisos.js'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { graphqlClient } from '@/graphql/client.js'
-import { GET_CONTACTO, GET_CONTACTOS, CREAR_CONTACTO, ACTUALIZAR_CONTACTO, ELIMINAR_CONTACTO } from '@/graphql/queries/contactos.js'
+import { GET_CONTACTO, GET_CONTACTOS, CREAR_CONTACTO, ACTUALIZAR_CONTACTO, ELIMINAR_CONTACTO, GET_CONDICIONES_CONTACTO } from '@/graphql/queries/contactos.js'
 import { GET_PROVINCIAS } from '@/graphql/queries/catalogos.js'
 import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
 import { useAuthStore } from '@/stores/auth.js'
@@ -219,6 +226,7 @@ const error = ref('')
 const guardando = ref(false)
 const contacto = ref(null)
 const representante = ref(null)
+const condiciones = ref(null)  // badges derivados: firmante/participante/donante
 const todosContactos = ref([])
 const authStore = useAuthStore()
 const fotoUrl = ref('')
@@ -344,6 +352,7 @@ async function cargar() {
     contacto.value = (data.contactos || [])[0] || null
     if (contacto.value) {
       poblarForm(contacto.value)
+      cargarCondiciones(contacto.value.id)
       if (contacto.value.representanteLegalId) {
         const rd = await graphqlClient.request(GET_CONTACTO, { id: contacto.value.representanteLegalId })
         representante.value = (rd.contactos || [])[0] || null
@@ -354,6 +363,15 @@ async function cargar() {
   } finally {
     cargando.value = false
   }
+}
+
+// Condiciones derivadas (no vinculaciones): se calculan de los registros.
+async function cargarCondiciones(id) {
+  condiciones.value = null
+  try {
+    const data = await graphqlClient.request(GET_CONDICIONES_CONTACTO, { contactoId: id })
+    condiciones.value = data.condicionesContacto || null
+  } catch (e) { /* silencioso: los badges son informativos */ }
 }
 
 async function cargarPFParaRepresentante() {
