@@ -42,7 +42,7 @@
                 <th class="px-4 py-3">Nombre / Razón social</th>
                 <th class="px-4 py-3">Documento</th>
                 <th class="px-4 py-3">Contacto</th>
-                <th class="px-4 py-3">Vinculación actual</th>
+                <th class="px-4 py-3 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -55,25 +55,32 @@
                     :class="c.tipo === 'PERSONA_JURIDICA' ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800'"
                   >{{ c.tipo === 'PERSONA_JURIDICA' ? 'PJ' : 'PF' }}</span>
                 </td>
-                <td class="px-4 py-3 font-medium text-purple-700">{{ nombreMostrado(c) }}</td>
-                <td class="px-4 py-3 text-slate-600">{{ c.numeroDocumento || c.cif || '—' }}</td>
-                <td class="px-4 py-3 text-slate-600">
-                  <div>{{ c.email || '—' }}</div>
-                  <div class="text-xs text-slate-400">{{ c.telefono || '' }}</div>
-                </td>
                 <td class="px-4 py-3">
-                  <div class="flex flex-wrap gap-1">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="font-medium text-purple-700">{{ nombreMostrado(c) }}</span>
+                    <!-- Badges de vinculación + condiciones derivadas, tras el nombre -->
                     <span
                       v-for="v in vinculacionesVigentes(c)"
                       :key="v.id"
                       class="inline-block px-2 py-0.5 rounded text-xs font-medium"
                       :class="colorVinculacion(v.tipoVinculacion && v.tipoVinculacion.codigo)"
                     >{{ v.tipoVinculacion ? v.tipoVinculacion.nombre : '—' }}</span>
-                    <!-- Condiciones DERIVADAS (no vinculaciones) -->
                     <span v-if="condicionesDe(c.id).esParticipante" class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-sky-100 text-sky-700">Participante</span>
                     <span v-if="condicionesDe(c.id).esDonante" class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Donante</span>
-                    <span v-if="!vinculacionesVigentes(c).length && !condicionesDe(c.id).esParticipante && !condicionesDe(c.id).esDonante" class="text-xs text-slate-400">sin vinculación</span>
                   </div>
+                </td>
+                <td class="px-4 py-3 text-slate-600">{{ c.numeroDocumento || c.cif || '—' }}</td>
+                <td class="px-4 py-3 text-slate-600">
+                  <div>{{ c.email || '—' }}</div>
+                  <div class="text-xs text-slate-400">{{ c.telefono || '' }}</div>
+                </td>
+                <td class="px-4 py-3">
+                  <RowActions show-view
+                    :show-edit="tienePermiso('CONTACTO_EDITAR')"
+                    :show-delete="tienePermiso('CONTACTO_ELIMINAR')"
+                    @view="abrirFicha(c.id)"
+                    @edit="abrirFicha(c.id)"
+                    @delete="eliminarContacto(c)" />
                 </td>
               </tr>
             </tbody>
@@ -90,10 +97,12 @@ import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import FilterRail from '@/components/common/FilterRail.vue'
+import RowActions from '@/components/common/RowActions.vue'
+import { useToast } from '@/composables/useToast'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { graphqlClient } from '@/graphql/client.js'
-import { GET_CONTACTOS, GET_CONDICIONES_CONTACTOS } from '@/graphql/queries/contactos.js'
+import { GET_CONTACTOS, GET_CONDICIONES_CONTACTOS, ELIMINAR_CONTACTO } from '@/graphql/queries/contactos.js'
 
 // `colectivo` fija esta vista a un subconjunto del directorio (escisión de Contactos):
 //  - SOCIOS: contactos con vinculación SOCIO vigente (excluye aspirantes).
@@ -134,6 +143,18 @@ function esColectivo(c, codigos) {
 function abrirFicha(id) {
   // Un socio abre su ficha de socio (DetalleMiembro); el resto, la ficha de contacto.
   router.push(props.colectivo === 'SOCIO' ? `/miembros/${id}` : `/contactos/${id}`)
+}
+
+const toast = useToast()
+// Borrado desde la fila. RowActions ya pide confirmación; aquí solo se ejecuta.
+async function eliminarContacto(c) {
+  try {
+    await graphqlClient.request(ELIMINAR_CONTACTO, { id: c.id })
+    contactos.value = contactos.value.filter(x => x.id !== c.id)
+    toast.success('Contacto eliminado.')
+  } catch (e) {
+    toast.error(e?.response?.errors?.[0]?.message || 'No se pudo eliminar el contacto')
+  }
 }
 
 const contactos = ref([])
