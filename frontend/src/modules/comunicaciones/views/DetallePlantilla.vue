@@ -152,42 +152,10 @@
               <h2 class="text-sm font-semibold text-slate-800">Partidas presupuestarias</h2>
               <span v-if="partidas.length" class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold rounded-full">{{ partidas.length }}</span>
             </template>
-            <div class="px-5 py-4 space-y-3">
-              <div v-if="partidas.length" class="rounded-lg border border-slate-200 overflow-hidden">
-                <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  <span class="col-span-5">Concepto</span>
-                  <span class="col-span-2">Tipo</span>
-                  <span class="col-span-3 text-right">Importe estimado</span>
-                  <span class="col-span-2"></span>
-                </div>
-                <div v-for="(p, i) in partidas" :key="p.id ?? i"
-                  class="grid grid-cols-12 gap-2 px-4 py-2 items-center border-b border-slate-100 last:border-0"
-                  :class="i % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'">
-                  <div class="col-span-5">
-                    <input v-model="p.concepto" type="text" :class="inpSm" placeholder="Concepto…" @blur="guardarTodasPartidas" />
-                  </div>
-                  <div class="col-span-2">
-                    <select v-model="p.tipoPartida" :class="inpSm" @change="guardarTodasPartidas">
-                      <option value="gasto">Gasto</option>
-                      <option value="ingreso">Ingreso</option>
-                    </select>
-                  </div>
-                  <div class="col-span-3">
-                    <input v-model.number="p.importeEstimado" type="number" min="0" step="0.01" :class="inpSm"
-                      placeholder="0.00" @blur="guardarTodasPartidas" />
-                  </div>
-                  <div class="col-span-2 flex justify-end">
-                    <button @click="eliminarPartida(i)" title="Eliminar partida"
-                      class="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">
-                      <TrashIcon class="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <button @click="agregarPartida"
-                class="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
-                <PlusIcon class="w-3.5 h-3.5" /> Añadir partida
-              </button>
+            <div class="px-5 py-4">
+              <PresupuestoEditor v-model="partidas"
+                field-tipo="tipoPartida" field-importe="importeEstimado"
+                @persist="guardarTodasPartidas" />
             </div>
           </AccordionPanel>
 
@@ -202,11 +170,12 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { PlusIcon, ChevronRightIcon, XMarkIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, ChevronRightIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
 import MetasEditor from '@/components/common/editors/MetasEditor.vue'
+import PresupuestoEditor from '@/components/common/editors/PresupuestoEditor.vue'
 import { graphqlClient } from '@/graphql/client'
 import {
   GET_PLANTILLA, GET_TIPOS_META, GET_HABILIDADES, GET_NIVELES_HABILIDAD,
@@ -329,14 +298,7 @@ async function guardarTodasMetas() {
 }
 
 // ── Partidas ──────────────────────────────────────────────────────────────────
-function agregarPartida() {
-  partidas.value.push({ id: null, concepto: '', tipoPartida: 'gasto', importeEstimado: null, orden: partidas.value.length + 1 })
-}
-function eliminarPartida(i) {
-  partidas.value.splice(i, 1)
-  guardarTodasPartidas()
-}
-
+// El alta/borrado/edición de filas lo gestiona PresupuestoEditor; aquí persistimos.
 async function guardarTodasPartidas() {
   try {
     const payload = partidas.value
