@@ -1,11 +1,11 @@
 # Rediseño: la recogida de firmas es una Actividad, no una Campaña
 
-> Estado: **parcialmente implementado (interim)**. Ya hecho: el desplegable y el
-> alta funcionan **por actividad** (`GET /api/publico/firmas/actividades`,
-> `POST` acepta `actividad_id`), pero el satélite `FirmaCampania` sigue anclado
-> a la campaña de esa actividad y la métrica de firmas se lee de `MetaCampania`
-> (sin `MetaActividad` ni migración todavía). Pendiente: re-anclar la firma a la
-> actividad y mover la meta a la actividad (requiere migración + merge de heads).
+> Estado: **implementado** en la rama `claude/mirage-mi-repo-siga-zcgyp1` (pendiente
+> de arranque real / staging). La firma se ancla a la **Actividad**
+> (`FirmaCampania.actividad_id`, `campania_id` nullable), la meta vive en la
+> actividad (`MetaActividad`, migración `firm1act2meta3`), el alta no crea
+> vinculación y el consentimiento se registra por persona. Visión de conjunto y
+> pasos de prueba en `docs/HANDOFF_recogida_firmas_y_crm.md`.
 >
 > **Frontend:** el detalle de campaña (`DetalleCampania.vue`) muestra ya un panel
 > "Recogida de firmas" (firmas verificadas vs objetivo + actividades online),
