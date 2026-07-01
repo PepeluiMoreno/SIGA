@@ -1,10 +1,10 @@
 <template>
   <AppLayout :title="tituloVista" :subtitle="subtitulo" fluid>
     <template v-if="tienePermiso('CONTACTO_CREAR')" #actions>
-      <router-link to="/contactos/nuevo"
+      <router-link :to="altaTo"
         class="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
         <span class="text-base leading-none">+</span>
-        Nuevo contacto
+        Nuevo
       </router-link>
     </template>
 
@@ -118,6 +118,11 @@ const tituloVista = computed(() => TITULOS[props.colectivo]?.titulo || 'Contacto
 const subtitulo = computed(() => TITULOS[props.colectivo]?.sub ||
   `Directorio de personas y entidades relacionadas de algún modo con ${orgConfig.nombre || 'la asociación'}`)
 
+// Alta según el colectivo de la vista. El botón dice siempre "Nuevo" (el título de
+// la vista ya da el contexto); solo cambia la ruta de destino: en Socios se da de
+// alta un socio (vista de miembro), en Personal/Contactos un contacto.
+const altaTo = computed(() => (props.colectivo === 'SOCIO' ? '/miembros/nuevo' : '/contactos/nuevo'))
+
 // Códigos de vinculación de socio/personal (para clasificar cada contacto).
 function codigosVigentes(c) {
   return vinculacionesVigentes(c).map(v => v.tipoVinculacion?.codigo).filter(Boolean)
@@ -159,9 +164,25 @@ function vinculacionesVigentes(c) {
   return (c.vinculaciones || []).filter((v) => !v.fechaFin)
 }
 
+// Opciones de vinculación por vista. Un socio puede acumular condiciones
+// (donante/voluntario/firmante); en Contactos (cajón mixto) además simpatizante.
+const OPCIONES_VINC_SOCIO = [
+  { value: 'DONANTE', label: 'Donantes' },
+  { value: 'VOLUNTARIO', label: 'Voluntarios' },
+  { value: 'FIRMANTE', label: 'Firmantes' },
+]
+const OPCIONES_VINC_CONTACTOS = [
+  { value: 'DONANTE', label: 'Donante' },
+  { value: 'FIRMANTE', label: 'Firmante' },
+  { value: 'SIMPATIZANTE', label: 'Simpatizante' },
+]
+
 const filterFields = computed(() => {
-  const campos = [
-    {
+  const campos = []
+  // El tipo de persona (física/jurídica) solo aporta en el cajón mixto de Contactos
+  // y en Personal; en Socios lo relevante es la vinculación/condición.
+  if (props.colectivo !== 'SOCIO') {
+    campos.push({
       key: 'tipos',
       label: 'Tipo de persona',
       type: 'multiselect',
@@ -171,22 +192,16 @@ const filterFields = computed(() => {
       ],
       allLabel: 'Todos los tipos',
       width: 'w-56',
-    },
-  ]
-  // El filtro por vinculación solo tiene sentido en la vista GENERAL de Contactos
-  // (cajón mixto). En Socios/Personal el colectivo ya está fijado: sobra.
-  // Aquí solo aplican las condiciones/vinculaciones propias de este cajón:
-  // Donante y Firmante (condiciones derivadas) y Simpatizante (vinculación).
-  if (!props.colectivo) {
+    })
+  }
+  // Filtro por vinculación: en Socios (condiciones acumuladas) y en Contactos
+  // (cajón mixto). En Personal el colectivo es fijo (contratado): no aplica.
+  if (props.colectivo === 'SOCIO' || !props.colectivo) {
     campos.push({
       key: 'vinculaciones',
       label: 'Vinculación',
       type: 'multiselect',
-      options: [
-        { value: 'DONANTE', label: 'Donante' },
-        { value: 'FIRMANTE', label: 'Firmante' },
-        { value: 'SIMPATIZANTE', label: 'Simpatizante' },
-      ],
+      options: props.colectivo === 'SOCIO' ? OPCIONES_VINC_SOCIO : OPCIONES_VINC_CONTACTOS,
       allLabel: 'Cualquier vinculación',
       width: 'w-56',
     })
@@ -213,14 +228,14 @@ const contactosFiltrados = computed(() => {
     if (filters.value.tipos.length && !filters.value.tipos.includes(c.tipo)) return false
     if (filters.value.vinculaciones.length) {
       // DONANTE/FIRMANTE son condiciones DERIVADAS (participación/donación);
-      // SIMPATIZANTE es una vinculación formal. Un contacto pasa si cumple
-      // cualquiera de las condiciones seleccionadas (OR).
+      // VOLUNTARIO/SIMPATIZANTE son vinculaciones formales. Un contacto pasa si
+      // cumple cualquiera de las seleccionadas (OR).
       const cond = condicionesDe(c.id)
       const codsVinc = new Set(vinculacionesVigentes(c).map((v) => v.tipoVinculacion?.codigo).filter(Boolean))
       const cumple = filters.value.vinculaciones.some((sel) => {
         if (sel === 'DONANTE') return cond.esDonante
         if (sel === 'FIRMANTE') return cond.esFirmante
-        return codsVinc.has(sel)   // SIMPATIZANTE (u otra vinculación formal)
+        return codsVinc.has(sel)   // VOLUNTARIO, SIMPATIZANTE (u otra vinculación formal)
       })
       if (!cumple) return false
     }
