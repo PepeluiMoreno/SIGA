@@ -45,6 +45,10 @@
             class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200 rounded-lg transition-colors">
             <DocumentDuplicateIcon class="w-3.5 h-3.5" /> Clonar
           </button>
+          <button v-if="tienePermiso('CAMPANA_EDITAR')" @click="abrirModalGuardarPlantilla"
+            class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200 rounded-lg transition-colors">
+            <DocumentTextIcon class="w-3.5 h-3.5" /> Guardar como plantilla
+          </button>
           <button v-if="esEliminable && tienePermiso('CAMPANA_ELIMINAR')"
             @click="confirmarEliminar = true"
             class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200 rounded-lg transition-colors">
@@ -314,12 +318,12 @@
                       <div v-else class="pl-10 pr-4 py-2 text-xs text-slate-400 italic">Sin tareas.</div>
 
                       <!-- Participantes (compacto) -->
-                      <div v-if="act.participaciones?.length"
+                      <div v-if="act.asistencias?.length"
                         class="pl-10 pr-4 py-2 flex flex-wrap gap-1.5 border-t border-slate-50">
                         <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide self-center mr-1">Participantes:</span>
-                        <span v-for="p in act.participaciones" :key="p.id"
+                        <span v-for="p in act.asistencias" :key="p.id"
                           class="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-white border border-slate-200 rounded-full text-slate-600">
-                          {{ p.miembro ? `${p.miembro.nombre} ${p.miembro.apellido1}` : p.nombreExterno || 'Externo' }}
+                          {{ p.participacion?.miembro ? `${p.participacion?.miembro.nombre} ${p.participacion?.miembro.apellido1}` : 'Externo' }}
                           <span v-if="p.horasAportadas" class="text-amber-600 font-medium">{{ p.horasAportadas }}h</span>
                         </span>
                       </div>
@@ -766,6 +770,48 @@
     </div>
   </div>
 
+  <!-- Modal: Guardar campaña como plantilla -->
+  <div v-if="modalPlantilla.visible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 space-y-5">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-semibold text-slate-900">Guardar como plantilla</h3>
+        <button @click="modalPlantilla.visible = false" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+          <XMarkIcon class="w-5 h-5" />
+        </button>
+      </div>
+      <p class="text-xs text-slate-500">
+        Se creará una plantilla reutilizable del mismo tipo de campaña, con sus partidas (e importes
+        estimados), metas y actividades con sus tareas y horas. No se copian fechas, estados ni datos
+        concretos de esta campaña.
+      </p>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">Nombre de la plantilla</label>
+          <input v-model="modalPlantilla.nombre" type="text" maxlength="200"
+            class="h-10 w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">Descripción (opcional)</label>
+          <textarea v-model="modalPlantilla.descripcion" rows="2"
+            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"></textarea>
+        </div>
+      </div>
+      <div v-if="modalPlantilla.error" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+        {{ modalPlantilla.error }}
+      </div>
+      <div class="flex justify-end gap-2 pt-1 border-t border-slate-100">
+        <button @click="modalPlantilla.visible = false"
+          class="h-9 px-4 text-sm font-medium text-slate-600 hover:text-slate-900">Cancelar</button>
+        <button @click="ejecutarGuardarPlantilla" :disabled="modalPlantilla.guardando || !modalPlantilla.nombre.trim()"
+          class="h-9 px-5 inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg">
+          <span v-if="modalPlantilla.guardando" class="animate-spin rounded-full h-3.5 w-3.5 border-[2px] border-white border-t-transparent"></span>
+          <DocumentTextIcon v-else class="w-3.5 h-3.5" />
+          Guardar plantilla
+        </button>
+      </div>
+    </div>
+  </div>
+
 </template>
 
 <script setup>
@@ -783,7 +829,7 @@ import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
 import CampaniaKpiBar from '@/modules/comunicaciones/components/CampaniaKpiBar.vue'
 import { graphqlClient } from '@/graphql/client'
-import { GET_CAMPANIA, GET_PLANTILLAS_CAMPANIA, PREVISUALIZAR_NOTIFICACION_CAMPANIA, ENVIAR_NOTIFICACION_CAMPANIA, CERRAR_CAMPANIA, CLONAR_CAMPANIA, FIRMAS_VERIFICADAS_CAMPANIA } from '@/modules/comunicaciones/graphql/queries.js'
+import { GET_CAMPANIA, GET_PLANTILLAS_CAMPANIA, PREVISUALIZAR_NOTIFICACION_CAMPANIA, ENVIAR_NOTIFICACION_CAMPANIA, CERRAR_CAMPANIA, CLONAR_CAMPANIA, CREAR_PLANTILLA_DESDE_CAMPANIA, FIRMAS_VERIFICADAS_CAMPANIA } from '@/modules/comunicaciones/graphql/queries.js'
 import { TRANSICIONAR_CAMPANIA, APROBAR_CAMPANIA } from '@/modules/actividades/graphql/queries.js'
 import { usePermisos } from '@/composables/usePermisos.js'
 const toast = useToast()
@@ -823,6 +869,34 @@ const modalClonar = ref({
   nombre: '', offsetValor: 0, offsetUnidad: 'dias',
   incluirMetas: true, incluirPartidas: true, incluirCanales: true, incluirActividades: true,
 })
+
+// ── Guardar campaña como plantilla ────────────────────────────────────────────
+const modalPlantilla = ref({ visible: false, guardando: false, error: null, nombre: '', descripcion: '' })
+function abrirModalGuardarPlantilla() {
+  modalPlantilla.value = {
+    visible: true, guardando: false, error: null,
+    nombre: `Plantilla — ${campania.value?.nombre || 'campaña'}`, descripcion: '',
+  }
+}
+async function ejecutarGuardarPlantilla() {
+  const mp = modalPlantilla.value
+  if (!mp.nombre.trim()) return
+  mp.guardando = true
+  mp.error = null
+  try {
+    await graphqlClient.request(CREAR_PLANTILLA_DESDE_CAMPANIA, {
+      campaniaId: campania.value.id,
+      nombre: mp.nombre.trim(),
+      descripcion: mp.descripcion.trim() || null,
+    })
+    modalPlantilla.value.visible = false
+    toast.success('Plantilla creada a partir de la campaña.')
+  } catch (e) {
+    mp.error = e?.response?.errors?.[0]?.message || 'Error al guardar la plantilla'
+  } finally {
+    mp.guardando = false
+  }
+}
 
 // ── Agenda: actividades expandibles ──────────────────────────────────────────
 const expandedActs = ref(new Set())

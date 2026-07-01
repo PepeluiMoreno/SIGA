@@ -88,7 +88,7 @@
             <hr class="nav-sep" />
 
             <!-- Membresía -->
-            <div v-if="tieneAlguno('CONTACTO_LISTAR','MEMBRESIA_MIEMBRO_LISTAR','MEMBRESIA_AGRUPACION_EDITAR','MEMBRESIA_VOLUNTARIO_LISTAR')" class="mb-1">
+            <div v-if="tieneAlguno('CONTACTO_LISTAR','MEMBRESIA_MIEMBRO_LISTAR','MEMBRESIA_AGRUPACION_EDITAR')" class="mb-1">
               <button @click="toggleSection('membresia')" class="section-btn">
                 <span>Membresía</span>
                 <ChevronDownIcon class="chevron" :class="openSections.membresia ? '' : '-rotate-90'" />
@@ -113,12 +113,6 @@
                       <MapPinIcon class="nav-icon" /><span>Organización Territorial</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('MEMBRESIA_VOLUNTARIO_LISTAR')">
-                    <router-link to="/voluntarios" class="nav-item"
-                      :class="$route.path.startsWith('/voluntarios') ? 'active' : 'inactive'">
-                      <HeartIcon class="nav-icon" /><span>Voluntariado</span>
-                    </router-link>
-                  </li>
                 </ul>
               </div>
             </div>
@@ -137,6 +131,12 @@
                     <router-link to="/campanias" class="nav-item"
                       :class="$route.path.startsWith('/campanias') ? 'active' : 'inactive'">
                       <FlagIcon class="nav-icon" /><span>Campañas</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('ACTIVIDAD_CATALOGO_GESTIONAR')">
+                    <router-link to="/parametrizacion/plantillas-campania" class="nav-item"
+                      :class="$route.path.startsWith('/parametrizacion/plantillas-campania') ? 'active' : 'inactive'">
+                      <DocumentTextIcon class="nav-icon" /><span>Plantillas de campaña</span>
                     </router-link>
                   </li>
                   <li v-if="tienePermiso('CAMPANA_LISTAR')">
@@ -589,8 +589,7 @@ function sectionForPath(path) {
       path.startsWith('/transacciones') || path.startsWith('/auditoria'))
     return 'configuracion'
   if (path.startsWith('/contactos') || path.startsWith('/miembros') ||
-      path.startsWith('/agrupaciones') ||
-      path.startsWith('/voluntarios'))
+      path.startsWith('/agrupaciones'))
     return 'membresia'
   if (path.startsWith('/campanias') || path.startsWith('/acciones') ||
       path.startsWith('/grupos'))

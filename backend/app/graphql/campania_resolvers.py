@@ -9,7 +9,7 @@ from typing import Optional
 import strawberry
 from sqlalchemy import select
 
-from app.modules.actividades.services.campania_service_p1 import CampaniaService
+from app.modules.actividades.services.campania_service import CampaniaService
 from app.graphql.types_auto import CampaniaType, PlantillaCampaniaType, PlantillaActividadType, PlantillaTareaType
 from app.graphql.permissions import RequireTransaction
 from app.modules.actividades.models.campana import PlantillaActividad, PlantillaTarea
@@ -299,6 +299,16 @@ class CampaniaResolverMutation:
     async def crear_plantilla(self, info: strawberry.Info, data: PlantillaCreateInput) -> PlantillaCampaniaType:
         return await CampaniaService(info.context.session).crear_plantilla(
             data.tipo_campania_id, data.nombre, data.descripcion, data.activo,
+        )
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])
+    async def crear_plantilla_desde_campania(
+        self, info: strawberry.Info, campania_id: uuid.UUID, nombre: str,
+        descripcion: Optional[str] = None,
+    ) -> PlantillaCampaniaType:
+        """Guarda una campaña existente como plantilla reutilizable (mismo tipo de campaña)."""
+        return await CampaniaService(info.context.session).crear_plantilla_desde_campania(
+            campania_id, nombre, descripcion,
         )
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_EDITAR")])

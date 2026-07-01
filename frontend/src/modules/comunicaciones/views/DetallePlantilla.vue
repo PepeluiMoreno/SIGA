@@ -59,7 +59,7 @@
                 <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   <span class="col-span-4">Tipo de meta</span>
                   <span class="col-span-2">Unidad</span>
-                  <span class="col-span-2 text-right">Valor sugerido</span>
+                  <span class="col-span-2">Valor sugerido</span>
                   <span class="col-span-3">Notas</span>
                   <span class="col-span-1"></span>
                 </div>
