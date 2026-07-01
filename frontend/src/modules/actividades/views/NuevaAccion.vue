@@ -181,6 +181,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FormActions from '@/components/common/FormActions.vue'
+import { hoyISO } from '@/utils/fecha.js'
 import { graphqlClient } from '@/graphql/client'
 import { GET_TIPOS_ACCION, GET_ESTADOS_ACCION, CREAR_ACCION } from '../graphql/queries.js'
 
@@ -203,7 +204,7 @@ const form = ref({
   estadoId: '',
   descripcion: '',
   caracter: 'PUNTUAL',  // PUNTUAL | RECURRENTE | PERMANENTE
-  fechaInicio: '',
+  fechaInicio: hoyISO(),   // alta: fecha de inicio = hoy por defecto
   horaInicio: '',
   fechaFin: '',
   horaFin: '',

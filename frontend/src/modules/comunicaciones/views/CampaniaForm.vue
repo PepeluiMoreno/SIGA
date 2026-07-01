@@ -522,6 +522,7 @@ import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
 import SelectorAgrupacion from '@/components/common/SelectorAgrupacion.vue'
 import TarjetaActividadPlantilla from '@/components/campanias/TarjetaActividadPlantilla.vue'
+import { hoyISO } from '@/utils/fecha.js'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
 import {
   GET_CAMPANIA, GET_TIPOS_CAMPANIA, GET_ESTADOS_CAMPANIA,
@@ -604,7 +605,9 @@ const error      = ref(null)
 const campania = ref({
   nombre: '', lema: '', descripcion_corta: '', descripcion_larga: '',
   url_externa: '', tipo_campania_id: '', estado_campania_id: '',
-  periodicidad: 'puntual', fecha_inicio: '', fecha_fin: '',
+  // Alta: fecha de inicio = hoy por defecto. En edición loadCampania() sustituye
+  // el objeto completo con la fecha guardada, así que nunca se pisa.
+  periodicidad: 'puntual', fecha_inicio: isEdit.value ? '' : hoyISO(), fecha_fin: '',
   objetivo_principal: '', responsable_id: '', agrupacion_id: '',
   presupuesto_ejecutado: null, objetivos_cumplidos: false, valoracion: '',
 })

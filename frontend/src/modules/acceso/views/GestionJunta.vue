@@ -262,6 +262,7 @@ import EstadoCarga    from '@/components/common/EstadoCarga.vue'
 import ErrorAlert     from '@/components/common/ErrorAlert.vue'
 import AppDrawer      from '@/components/common/AppDrawer.vue'
 import ConfirmPopover from '@/components/common/ConfirmPopover.vue'
+import { hoyISO }     from '@/utils/fecha.js'
 import { useToast }   from '@/composables/useToast'
 import { graphqlClient } from '@/graphql/client.js'
 import { useOrgConfigStore } from '@/stores/orgConfig'
@@ -297,7 +298,7 @@ const errorCargo     = ref('')
 const revocandoId    = ref(null)
 
 const formJunta   = ref({ nombre: '', fechaConstitucion: new Date().toISOString().slice(0, 10), observaciones: '' })
-const formCargo   = ref({ tipoCargaId: '', miembroId: '', fechaInicio: new Date().toISOString().slice(0, 10), posicion: 1 })
+const formCargo   = ref({ tipoCargaId: '', miembroId: '', fechaInicio: hoyISO(), posicion: 1 })
 const busquedaMiembro           = ref('')
 const miembroSeleccionadoNombre = ref('')
 
@@ -390,7 +391,8 @@ function abrirDrawerJunta() {
 }
 
 function abrirDrawerCargo() {
-  formCargo.value = { tipoCargaId: '', miembroId: '', fechaInicio: new Date().toISOString().slice(0, 10), posicion: 1 }
+  // Alta de cargo: fecha de inicio = hoy por defecto.
+  formCargo.value = { tipoCargaId: '', miembroId: '', fechaInicio: hoyISO(), posicion: 1 }
   busquedaMiembro.value = ''
   miembroSeleccionadoNombre.value = ''
   errorCargo.value = ''

@@ -95,7 +95,7 @@
         <div v-if="tipoSelEsJuridica">
           <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">Datos jurídicos</p>
           <div class="grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
-            <div class="col-span-6 sm:col-span-4"><p :class="lbl">NIF / CIF</p><input v-model="form.nif" type="text" :class="inp" /></div>
+            <div class="col-span-6 sm:col-span-4"><p :class="lbl">NIF</p><input v-model="form.nif" type="text" :class="inp" /></div>
             <div class="col-span-6 sm:col-span-4"><p :class="lbl">Fecha de constitución</p><input v-model="form.fechaConstitucion" type="date" :class="inp" /></div>
             <div class="col-span-12 sm:col-span-4"><p :class="lbl">Registro oficial</p><input v-model="form.registroOficial" type="text" :class="inp" /></div>
           </div>
@@ -210,7 +210,7 @@
             <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">Datos jurídicos</p>
             <div class="grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
               <div class="col-span-6 sm:col-span-4">
-                <p :class="lbl">NIF / CIF</p>
+                <p :class="lbl">NIF</p>
                 <input v-if="editMode" v-model="form.nif" type="text" :class="inp" />
                 <p v-else :class="ro">{{ agrupacion.nif || '—' }}</p>
               </div>
@@ -496,6 +496,7 @@ import EstructuraOrganizativaEditor from '@/components/configuracion/EstructuraO
 import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
 import SelectorAgrupacion from '@/components/common/SelectorAgrupacion.vue'
 import FormActions from '@/components/common/FormActions.vue'
+import { hoyISO } from '@/utils/fecha.js'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
@@ -1038,7 +1039,6 @@ const miembrosFiltrados = computed(() => {
 })
 
 function abrirRegistro(registro = null) {
-  const hoy = new Date().toISOString().split('T')[0]
   Object.assign(modal, {
     visible: true, error: null, guardando: false, showList: false,
     rolId: registro?.rolId ?? (rolSugerido.value?.id ?? ''),
@@ -1048,7 +1048,8 @@ function abrirRegistro(registro = null) {
     miembroSearch: registro?.miembro
       ? `${registro.miembro.nombre} ${registro.miembro.apellido1}`
       : '',
-    fechaInicio: registro?.fechaInicio ?? hoy,
+    // Alta: fecha de inicio = hoy por defecto; en edición conserva la guardada.
+    fechaInicio: registro?.fechaInicio ?? hoyISO(),
     fechaFin: registro?.fechaFin ?? '',
     observaciones: registro?.observaciones ?? '',
   })

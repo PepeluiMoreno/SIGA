@@ -220,6 +220,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import TabsNavigation from '@/components/common/TabsNavigation.vue'
 import RowActions from '@/components/common/RowActions.vue'
+import { hoyISO } from '@/utils/fecha.js'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { executeQuery, executeMutation } from '@/graphql/client'
 import {
@@ -251,7 +252,8 @@ const modalDelegacion = ref(false)
 
 const formConvenio = ref({
   tipoConvenioId: '', titulo: '', entidadContraparte: '', nifContraparte: '',
-  fechaFirma: '', fechaInicio: '', fechaFin: '', renovacionAutomatica: false, objeto: '',
+  // Alta: fecha de inicio de vigencia = hoy por defecto.
+  fechaFirma: '', fechaInicio: hoyISO(), fechaFin: '', renovacionAutomatica: false, objeto: '',
 })
 
 const formatFecha   = (s) => s ? new Date(s).toLocaleDateString('es-ES') : '—'
@@ -293,7 +295,8 @@ watch(tabActiva, (tab) => {
 const abrirModalConvenio = () => {
   formConvenio.value = {
     tipoConvenioId: '', titulo: '', entidadContraparte: '', nifContraparte: '',
-    fechaFirma: '', fechaInicio: '', fechaFin: '', renovacionAutomatica: false, objeto: '',
+    // Alta: fecha de inicio de vigencia = hoy por defecto.
+    fechaFirma: '', fechaInicio: hoyISO(), fechaFin: '', renovacionAutomatica: false, objeto: '',
   }
   errorModal.value = ''
   modalConvenio.value = true

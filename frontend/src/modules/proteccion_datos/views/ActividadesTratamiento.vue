@@ -164,6 +164,7 @@ import FilterBar from '@/components/common/FilterBar.vue'
 import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import AppDrawer from '@/components/common/AppDrawer.vue'
+import { hoyISO } from '@/utils/fecha.js'
 import { executeQuery, executeMutation } from '@/graphql/client'
 import {
   GET_ACTIVIDADES_TRATAMIENTO,
@@ -243,7 +244,8 @@ function estadoInicial() {
 
 function abrirAlta() {
   modoEdicion.value = false
-  form.value = estadoInicial()
+  // Alta: fecha de alta de la actividad = hoy por defecto (no se toca al editar).
+  form.value = { ...estadoInicial(), fechaAltaActividad: hoyISO() }
   modalAbierto.value = true
 }
 

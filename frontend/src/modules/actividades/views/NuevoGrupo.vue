@@ -98,6 +98,7 @@ import { ExclamationTriangleIcon, UserGroupIcon } from '@heroicons/vue/24/outlin
 import AppLayout from '@/components/common/AppLayout.vue'
 import FormActions from '@/components/common/FormActions.vue'
 import SelectorAgrupacion from '@/components/common/SelectorAgrupacion.vue'
+import { hoyISO } from '@/utils/fecha.js'
 import { graphqlClient } from '@/graphql/client'
 import { GET_TIPOS_GRUPO } from '@/modules/actividades/graphql/grupos.js'
 
@@ -164,7 +165,7 @@ const form = ref({
   coordinadorId: '',
   descripcion: '',
   objetivo: '',
-  fechaInicio: '',
+  fechaInicio: hoyISO(),   // alta: fecha de inicio = hoy por defecto
   fechaFin: '',
 })
 

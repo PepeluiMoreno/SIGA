@@ -15,6 +15,7 @@ import {
 } from '@/graphql/queries/miembros.js'
 import { GET_PAISES, GET_PROVINCIAS, GET_NIVELES_ESTUDIOS, GET_NIVELES_HABILIDAD } from '@/graphql/queries/catalogos.js'
 import { GET_MOTIVOS_REDUCCION } from '@/graphql/queries/economico.js'
+import { hoyISO } from '@/utils/fecha.js'
 
 export function useMiembro() {
   const router = useRouter()
@@ -197,7 +198,8 @@ export function useMiembro() {
 }
 
 function createEmptyMiembro() {
-  const hoy = new Date().toISOString().slice(0, 10)
+  // Alta: fecha de alta del socio = hoy por defecto.
+  const hoy = hoyISO()
   return {
     id: null,
     tipoMiembroId: null,

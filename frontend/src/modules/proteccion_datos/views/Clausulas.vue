@@ -100,6 +100,7 @@ import FilterBar from '@/components/common/FilterBar.vue'
 import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import AppDrawer from '@/components/common/AppDrawer.vue'
+import { hoyISO } from '@/utils/fecha.js'
 import { executeQuery, executeMutation } from '@/graphql/client'
 import {
   GET_CLAUSULAS, CREATE_CLAUSULA, UPDATE_CLAUSULA,
@@ -168,7 +169,8 @@ function estadoInicial() {
 
 function abrirAlta() {
   modoEdicion.value = false
-  form.value = estadoInicial()
+  // Alta: fecha de inicio de vigencia = hoy por defecto (no se toca al editar).
+  form.value = { ...estadoInicial(), fechaVigenciaDesde: hoyISO() }
   modalAbierto.value = true
 }
 

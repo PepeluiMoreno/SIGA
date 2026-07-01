@@ -481,6 +481,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import DetailHeader from '@/components/common/DetailHeader.vue'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import { hoyISO } from '@/utils/fecha.js'
 import { graphqlClient } from '@/graphql/client.js'
 
 const route = useRoute()
@@ -776,7 +777,8 @@ async function incluirSeleccionados() {
   if (!seleccion.value.size || !rolIncluir.value) return
   incluyendo.value = true
   errorAnadir.value = ''
-  const hoy = new Date().toISOString().slice(0, 10)
+  // Alta: fecha de incorporación al grupo = hoy por defecto.
+  const hoy = hoyISO()
   try {
     for (const id of seleccion.value) {
       if (yaEsMiembro(id)) continue
