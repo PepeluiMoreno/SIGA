@@ -222,7 +222,7 @@ const estadisticas = computed(() => {
   const todasActs = camps.flatMap(c => c.actividades || []).concat(acts)
 
   const totalParticipantes = camps.reduce((s, c) => s + (c.participantes?.length || 0), 0)
-    + todasActs.reduce((s, a) => s + (a.participaciones?.length || 0), 0)
+    + todasActs.reduce((s, a) => s + (a.asistencias?.length || 0), 0)
 
   const presupEstimado = [...camps, ...todasActs].reduce((s, x) => s + parseFloat(x.presupuestoEstimado || 0), 0)
   const presupEjecutado = [...camps, ...todasActs].reduce((s, x) => s + parseFloat(x.presupuestoEjecutado || 0), 0)

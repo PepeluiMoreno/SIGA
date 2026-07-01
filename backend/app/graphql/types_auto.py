@@ -620,7 +620,9 @@ class TipoCanalDifusionType:
 
 @strawchemy.type(TipoCampania, include="all", override=True)
 class TipoCampaniaType:
-    pass
+    # 1:1 opcional (uselist=False): un tipo de campaña puede NO tener plantilla.
+    # strawchemy la infería no-nullable → reventaba al resolverla en tipos sin plantilla.
+    plantilla: Optional['PlantillaCampaniaType'] = None
 
 @strawchemy.type(MetaCampania, include="all", override=True)
 class MetaCampaniaType:

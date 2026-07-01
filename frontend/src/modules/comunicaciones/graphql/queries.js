@@ -62,10 +62,7 @@ export const GET_CAMPANIA = `
         nombre
         apellido1
         apellido2
-        agrupacion {
-          id
-          nombre
-        }
+        agrupacionId
       }
       agrupacion {
         id
@@ -131,11 +128,9 @@ export const GET_CAMPANIA = `
         presupuestoEstimado
         presupuestoEjecutado
         esRecurrente
-        participaciones {
+        asistencias {
           id
-          miembro { id nombre apellido1 apellido2 fotoUrl }
-          nombreExterno
-          emailExterno
+          participacion { miembro { id nombre apellido1 apellido2 fotoUrl } }
           rol
           confirmado
           asistio
@@ -576,7 +571,7 @@ export const GET_MEMORIA_ANUAL = `
         objetivosCumplidos
         valoracion
         asistenciaReal
-        participaciones { id }
+        asistencias { id }
       }
       participantes { id }
     }
@@ -594,7 +589,7 @@ export const GET_MEMORIA_ANUAL = `
       objetivosCumplidos
       valoracion
       asistenciaReal
-      participaciones { id }
+      asistencias { id }
     }
   }
 `
@@ -667,6 +662,15 @@ export const CLONAR_CAMPANIA = `
   mutation ClonarCampania($data: ClonarCampaniaInput!) {
     clonarCampania(data: $data) {
       id nombre estado { id nombre color }
+    }
+  }
+`
+
+// Guarda una campaña como plantilla reutilizable (mismo tipo de campaña).
+export const CREAR_PLANTILLA_DESDE_CAMPANIA = `
+  mutation CrearPlantillaDesdeCampania($campaniaId: UUID!, $nombre: String!, $descripcion: String) {
+    crearPlantillaDesdeCampania(campaniaId: $campaniaId, nombre: $nombre, descripcion: $descripcion) {
+      id nombre
     }
   }
 `

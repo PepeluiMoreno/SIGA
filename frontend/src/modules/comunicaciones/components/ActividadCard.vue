@@ -159,18 +159,18 @@
         <div class="px-4 py-3">
           <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Recursos humanos</h4>
 
-          <div v-if="actividad.participaciones?.length || !readonly" class="space-y-1 mb-2">
+          <div v-if="actividad.asistencias?.length || !readonly" class="space-y-1 mb-2">
             <div
-              v-for="p in actividad.participaciones"
+              v-for="p in actividad.asistencias"
               :key="p.id"
               class="flex items-center gap-2 text-sm py-1 border-b border-slate-100 last:border-0"
             >
-              <img v-if="p.miembro?.fotoUrl" :src="p.miembro.fotoUrl" class="w-6 h-6 rounded-full object-cover shrink-0" />
+              <img v-if="p.participacion?.miembro?.fotoUrl" :src="p.participacion?.miembro.fotoUrl" class="w-6 h-6 rounded-full object-cover shrink-0" />
               <span v-else class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs flex items-center justify-center font-semibold shrink-0">
-                {{ (p.miembro?.nombre ?? p.nombreExterno ?? '?')[0] }}
+                {{ (p.participacion?.miembro?.nombre ?? '?')[0] }}
               </span>
               <span class="flex-1 text-slate-700">
-                {{ p.miembro ? `${p.miembro.nombre} ${p.miembro.apellido1}` : p.nombreExterno }}
+                {{ p.participacion?.miembro ? `${p.participacion?.miembro.nombre} ${p.participacion?.miembro.apellido1}` : 'Externo' }}
               </span>
               <span class="text-xs text-slate-400 px-1.5 py-0.5 bg-slate-50 rounded">{{ p.rol }}</span>
               <span class="text-xs text-slate-400">{{ p.horasAportadas ?? '0' }}h</span>
@@ -178,7 +178,7 @@
                 {{ p.asistio === true ? '✓' : p.asistio === false ? '✗' : '·' }}
               </span>
             </div>
-            <p v-if="!actividad.participaciones?.length" class="text-sm text-slate-400 italic">Sin participantes</p>
+            <p v-if="!actividad.asistencias?.length" class="text-sm text-slate-400 italic">Sin participantes</p>
           </div>
 
           <button
