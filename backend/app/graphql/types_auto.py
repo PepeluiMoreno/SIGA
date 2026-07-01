@@ -740,11 +740,10 @@ class RolGrupoType:
 
 @strawchemy.type(GrupoTrabajo, include="all", override=True)
 class GrupoTrabajoType:
-    # El coordinador es opcional: un grupo puede crearse sin coordinador y designarlo
-    # después entre sus integrantes. Sin este override, strawchemy lo genera como
-    # no-nullable (ContactoType!) y consultar un grupo sin coordinador revienta con
-    # "Cannot return null for non-nullable field GrupoTrabajoType.coordinador".
-    coordinador: Optional['ContactoType'] = None
+    # coordinador es non-nullable: un grupo NACE con coordinador (regla de negocio, no
+    # se graba sin él — validado en ActividadService.crear_grupo_trabajo). Por eso NO se
+    # hace override a Optional. Los datos deben garantizar coordinador_id no nulo.
+    pass
 
 @strawchemy.type(MiembroGrupo, include="all", override=True)
 class MiembroGrupoType:

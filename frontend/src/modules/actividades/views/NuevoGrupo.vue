@@ -2,7 +2,7 @@
   <AppLayout title="Nuevo grupo de trabajo" subtitle="Crear un nuevo equipo">
     <template #actions>
       <FormActions submit-text="Crear grupo" :loading="guardando"
-        :disabled="!form.nombre || !form.tipoGrupoId || !form.agrupacionId"
+        :disabled="!form.nombre || !form.tipoGrupoId || !form.agrupacionId || !form.coordinadorId"
         @cancel="$router.push('/grupos')" @submit="guardar" />
     </template>
 
@@ -34,22 +34,22 @@
             <p class="mt-1 text-xs text-slate-400">Fija el ámbito del que se eligen los integrantes: no podrá entrar quien pertenezca a otra agrupación.</p>
           </div>
           <div class="col-span-12 sm:col-span-6">
-            <label class="block text-sm font-medium text-slate-700 mb-1">Coordinador del grupo</label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Coordinador del grupo <span class="text-red-500">*</span></label>
             <select v-model="form.coordinadorId" :disabled="!form.agrupacionId"
               class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-400">
-              <option value="">{{ form.agrupacionId ? (candidatos.length ? 'Sin designar de momento' : 'No hay candidatos en este ámbito') : 'Elige antes la agrupación' }}</option>
+              <option value="">{{ form.agrupacionId ? (candidatos.length ? 'Elige coordinador…' : 'No hay candidatos en este ámbito') : 'Elige antes la agrupación' }}</option>
               <option v-for="c in candidatos" :key="c.id" :value="c.id">
                 {{ c.nombre }} {{ c.apellido1 || '' }} — {{ colectivoLabel(c.colectivo) }}
               </option>
             </select>
-            <p class="mt-1 text-xs text-slate-400">Se elige entre los candidatos del ámbito. También podrás designarlo después entre los miembros.</p>
+            <p class="mt-1 text-xs text-slate-400">El grupo nace con coordinador: elígelo entre los candidatos del ámbito de la agrupación.</p>
           </div>
 
-          <!-- Aviso (a todo lo ancho): la agrupación elegida no tiene coordinador/cargo nombrado -->
-          <div v-if="form.agrupacionId && !agrupacionTieneCoordinador"
+          <!-- Aviso (a todo lo ancho): el ámbito no tiene candidatos para coordinar -->
+          <div v-if="form.agrupacionId && !candidatos.length"
             class="col-span-12 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
             <ExclamationTriangleIcon class="w-4 h-4 mt-0.5 shrink-0" />
-            <span>Esta agrupación territorial no tiene coordinador nombrado. Puedes crear el grupo igualmente y designar su coordinador entre los integrantes.</span>
+            <span>No hay candidatos (voluntarios/contratados) en el ámbito de esta agrupación, y el grupo necesita un coordinador. Añade primero personas al ámbito o elige otra agrupación.</span>
           </div>
 
           <!-- Fila 3: Descripción + Objetivo -->

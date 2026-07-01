@@ -300,6 +300,13 @@ class ActividadService:
                 "La agrupación territorial del grupo es obligatoria: define el ámbito "
                 "del que se eligen sus integrantes."
             )
+        # El grupo NACE con coordinador: no se graba sin designarlo. El coordinador es
+        # uno de los candidatos del ámbito de la agrupación (ver candidatos_grupo).
+        if coordinador_id is None:
+            raise ValueError(
+                "El grupo debe tener coordinador desde su creación: elige un coordinador "
+                "entre los candidatos del ámbito de la agrupación."
+            )
         if tipo_grupo_id is None:
             r = await self.session.execute(
                 select(TipoGrupo).where(TipoGrupo.activo == True).order_by(TipoGrupo.nombre)
