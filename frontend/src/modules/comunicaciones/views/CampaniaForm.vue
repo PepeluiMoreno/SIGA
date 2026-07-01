@@ -160,14 +160,8 @@
             </div>
             <div class="col-span-4">
               <label :class="lbl">Ámbito</label>
-              <select v-model="campania.agrupacion_id" :class="inp">
-                <option value="">— General (todas las agrupaciones) —</option>
-                <template v-for="grupo in agrupacionesPorNivel" :key="grupo.nombre">
-                  <optgroup :label="grupo.nombre">
-                    <option v-for="a in grupo.items" :key="a.id" :value="a.id">{{ a.nombre }}</option>
-                  </optgroup>
-                </template>
-              </select>
+              <SelectorAgrupacion v-model="campania.agrupacion_id" :agrupaciones="agrupaciones"
+                placeholder="General — todas las agrupaciones (buscar para acotar)…" />
             </div>
             <div class="col-span-4">
               <label :class="lbl">
@@ -526,6 +520,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import FormActions from '@/components/common/FormActions.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
+import SelectorAgrupacion from '@/components/common/SelectorAgrupacion.vue'
 import TarjetaActividadPlantilla from '@/components/campanias/TarjetaActividadPlantilla.vue'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
 import {
@@ -820,20 +815,6 @@ const habilidades     = ref([])
 const nivelesHabilidad = ref([])
 
 // ── Derivados de catálogos ────────────────────────────────────────────────────
-const agrupacionesPorNivel = computed(() => {
-  const map = {}
-  agrupaciones.value.forEach(a => {
-    const nombre = a.tipoUnidad?.nombre || 'Sin clasificar'
-    const nivel  = a.tipoUnidad?.nivel  ?? 99
-    const key    = `${String(nivel).padStart(3, '0')}__${nombre}`
-    if (!map[key]) map[key] = { nivel, nombre, items: [] }
-    map[key].items.push(a)
-  })
-  return Object.values(map)
-    .sort((a, b) => a.nivel - b.nivel)
-    .map(g => ({ ...g, items: g.items.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')) }))
-})
-
 const CAMP_COORD_ROLES = ['PLANIFICADOR', 'SUPERADMIN']
 
 const sinCoordinadores = computed(() =>

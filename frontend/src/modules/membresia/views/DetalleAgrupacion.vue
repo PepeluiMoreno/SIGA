@@ -462,10 +462,8 @@
           </p>
           <div>
             <label :class="lbl">Unidad de destino <span class="text-red-400">*</span></label>
-            <select v-model="trasladoModal.destinoId" :class="inp">
-              <option value="">— Seleccionar unidad —</option>
-              <option v-for="u in unidadesDestinoFiltradas" :key="u.id" :value="u.id">{{ etiquetaUnidad(u) }}</option>
-            </select>
+            <SelectorAgrupacion v-model="trasladoModal.destinoId" :agrupaciones="unidadesDestinoFiltradas"
+              placeholder="Buscar unidad de destino…" />
           </div>
           <ErrorAlert v-if="trasladoModal.error" :message="trasladoModal.error" />
         </div>
@@ -658,10 +656,6 @@ function cargosDe(socioId) {
 const unidadesDestinoFiltradas = computed(() =>
   unidadesDestino.value.filter(u => u.id !== agrupacionId.value)
 )
-function etiquetaUnidad(u) {
-  const niv = u.tipoUnidad?.denominacionSingular || u.tipoUnidad?.nombre
-  return niv ? `${u.nombre} · ${niv}` : u.nombre
-}
 async function abrirTraslado(socio) {
   Object.assign(trasladoModal, { visible: true, socio, destinoId: '', error: null, guardando: false })
   if (!unidadesDestino.value.length) {

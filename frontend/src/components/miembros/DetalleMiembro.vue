@@ -12,11 +12,8 @@
         <p class="text-sm text-gray-600">
           Hemos detectado la provincia de residencia. ¿Deseas asignar este {{ orgConfig.miembro }} a una agrupación territorial de su zona?
         </p>
-        <select v-model="miembro.agrupacionId"
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500">
-          <option value="">Sin asignar</option>
-          <option v-for="a in agrupacionesSugeridas" :key="a.id" :value="a.id">{{ a.nombre }}</option>
-        </select>
+        <SelectorAgrupacion v-model="miembro.agrupacionId" :agrupaciones="agrupacionesSugeridas"
+          placeholder="Buscar agrupación (p. ej. su provincia)…" />
       </div>
       <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
         <button @click="mostrarModalAgrupacion = false"
@@ -509,8 +506,12 @@
                 <FieldSelect v-model="miembro.estadoId" label="Estado *" :edit-mode="editAdmin"
                   :options="catalogos.estadosMiembro" option-label="nombre" option-value="id" />
                 <FieldText v-model="miembro.fechaAlta" label="Fecha de alta *" type="date" :edit-mode="editAdmin" />
-                <FieldSelect v-model="miembro.agrupacionId" label="Agrupación territorial" :edit-mode="editAdmin"
-                  :options="catalogos.agrupaciones" option-label="nombre" option-value="id" empty-label="Sin asignar" />
+                <div class="w-full">
+                  <label class="block text-xs font-medium text-slate-600 mb-1">Agrupación territorial</label>
+                  <SelectorAgrupacion v-if="editAdmin" v-model="miembro.agrupacionId"
+                    :agrupaciones="catalogos.agrupaciones" placeholder="Buscar agrupación (p. ej. Sevilla)…" />
+                  <div v-else class="py-1.5 text-sm text-slate-900 min-h-[34px]">{{ agrupacionNombre(miembro.agrupacionId) || 'Sin asignar' }}</div>
+                </div>
               </div>
 
               <!-- Crear cuenta (sólo en alta) -->
@@ -862,11 +863,8 @@
                           :key="r.id" :value="r.id">{{ r.nombre }}</option>
                       </optgroup>
                     </select>
-                    <select v-model="nuevoRolAgrupacionId"
-                      class="flex-1 min-w-full sm:w-40 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
-                      <option value="">Toda la organización</option>
-                      <option v-for="a in catalogos.agrupaciones" :key="a.id" :value="a.id">{{ a.nombre }}</option>
-                    </select>
+                    <SelectorAgrupacion v-model="nuevoRolAgrupacionId" :agrupaciones="catalogos.agrupaciones"
+                      placeholder="Toda la organización (buscar para acotar)…" class="flex-1 min-w-full sm:w-40" />
                     <button @click="asignarRol" :disabled="!nuevoRolId || guardandoRol"
                       class="px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 disabled:opacity-50">
                       Asignar
@@ -1039,6 +1037,7 @@ import FieldText from '@/components/common/form/FieldText.vue'
 import FieldTextarea from '@/components/common/form/FieldTextarea.vue'
 import FieldSelect from '@/components/common/form/FieldSelect.vue'
 import FieldCheckbox from '@/components/common/form/FieldCheckbox.vue'
+import SelectorAgrupacion from '@/components/common/SelectorAgrupacion.vue'
 import FranjasDisponibilidad from '@/components/miembros/FranjasDisponibilidad.vue'
 import SeccionContacto from '@/components/miembros/secciones/SeccionContacto.vue'
 import SeccionIdentificacion from '@/components/miembros/secciones/SeccionIdentificacion.vue'

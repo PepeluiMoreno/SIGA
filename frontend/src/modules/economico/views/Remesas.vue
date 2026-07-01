@@ -154,10 +154,8 @@
               </div>
               <div>
                 <label class="label">Agrupación territorial</label>
-                <select v-model="asistente.agrupacionId" class="input">
-                  <option :value="null">— Toda la organización —</option>
-                  <option v-for="u in unidades" :key="u.id" :value="u.id">{{ u.nombre }}</option>
-                </select>
+                <SelectorAgrupacion v-model="asistente.agrupacionId" :agrupaciones="unidades"
+                  placeholder="Toda la organización (buscar para acotar)…" />
               </div>
               <div>
                 <label class="label">Concepto</label>
@@ -249,10 +247,8 @@
               </div>
               <div>
                 <label class="label">Agrupación territorial</label>
-                <select v-model="asistente.agrupacionId" class="input">
-                  <option :value="null">— Toda la organización —</option>
-                  <option v-for="u in unidades" :key="u.id" :value="u.id">{{ u.nombre }}</option>
-                </select>
+                <SelectorAgrupacion v-model="asistente.agrupacionId" :agrupaciones="unidades"
+                  placeholder="Toda la organización (buscar para acotar)…" />
               </div>
             </template>
 
@@ -342,6 +338,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
+import SelectorAgrupacion from '@/components/common/SelectorAgrupacion.vue'
 import ModalLiquidacionRemesa from './ModalLiquidacionRemesa.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import { useUnidadesOrganizativas } from '@/composables/useUnidadesOrganizativas'
@@ -350,7 +347,7 @@ import { GET_REMESA_DETALLE } from '@/graphql/queries/economico'
 const confirmDialog = useConfirm()
 
 const { query: gqlQuery, mutation: gqlMutation, loading } = useGraphQL()
-const { unidades } = useUnidadesOrganizativas()
+const { unidades, cargarArbol: cargarUnidades } = useUnidadesOrganizativas()
 
 // ── Estado principal ──────────────────────────────────────────────────────────
 const remesas = ref([])
@@ -705,7 +702,9 @@ const badgeEstado = (nombre) => ({
 }[nombre] || 'bg-slate-100 text-slate-500')
 
 onMounted(async () => {
-  await Promise.all([cargarRemesas(), cargarCuentas()])
+  // cargarUnidades: sin esto, el selector de agrupación del asistente de remesa queda
+  // vacío (la lista `unidades` del composable no se puebla sola).
+  await Promise.all([cargarRemesas(), cargarCuentas(), cargarUnidades()])
 })
 </script>
 

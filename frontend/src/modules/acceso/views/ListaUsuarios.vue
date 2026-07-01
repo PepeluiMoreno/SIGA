@@ -198,13 +198,11 @@
                 <!-- Selector de territorio para roles TERRITORIAL -->
                 <div v-if="estaAsignado(rol.id) && rol.tipo === 'TERRITORIAL' && agrupaciones.length > 0" class="mt-2">
                   <label class="block text-xs text-gray-500 mb-1">Territorio de aplicación</label>
-                  <select
-                    :value="agrupacionDeRolAsignado(rol.id)"
-                    @change="cambiarAgrupacion(rol, $event.target.value || null)"
-                    class="w-full text-xs border border-gray-300 rounded-md px-2 py-1 focus:ring-1 focus:ring-purple-500 focus:border-purple-500 focus:outline-none">
-                    <option value="">Todos los territorios (global)</option>
-                    <option v-for="ag in agrupaciones" :key="ag.id" :value="ag.id">{{ ag.nombre }}</option>
-                  </select>
+                  <SelectorAgrupacion
+                    :model-value="agrupacionDeRolAsignado(rol.id)"
+                    :agrupaciones="agrupaciones"
+                    placeholder="Todos los territorios (buscar para acotar)…"
+                    @update:model-value="cambiarAgrupacion(rol, $event)" />
                 </div>
 
                 <div v-else-if="estaAsignado(rol.id) && agrupacionDeRolAsignado(rol.id)" class="mt-1">
@@ -241,6 +239,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import TablaJerarquica from '@/components/common/TablaJerarquica.vue'
 import RowActions from '@/components/common/RowActions.vue'
+import SelectorAgrupacion from '@/components/common/SelectorAgrupacion.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { useGraphQL } from '@/composables/useGraphQL.js'
