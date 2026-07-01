@@ -3,6 +3,23 @@
     :title="esEdicion ? `Editar rol: ${form.nombre || '…'}` : 'Nuevo rol'"
     :subtitle="esEdicion && rolOriginal ? `${rolOriginal.codigo} · ${rolOriginal.tipo} · Nivel ${rolOriginal.nivel}` : 'Definición de atributos y permisos'"
   >
+    <template #actions>
+      <span v-if="errorGuardado" class="flex items-center gap-1.5 text-xs text-red-600 mr-1">
+        <ExclamationTriangleIcon class="w-4 h-4 shrink-0" /> {{ errorGuardado }}
+      </span>
+      <span v-else-if="guardadoOk" class="flex items-center gap-1.5 text-xs text-green-600 mr-1">
+        <CheckIcon class="w-4 h-4" /> Guardado
+      </span>
+      <button type="button" @click="window.history.state?.back ? router.back() : router.push('/roles')"
+        class="h-8 px-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
+        Volver
+      </button>
+      <button type="button" @click="guardar" :disabled="guardando"
+        class="inline-flex items-center gap-2 h-8 px-4 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 shadow-sm transition-colors">
+        <span v-if="guardando" class="animate-spin rounded-full h-3.5 w-3.5 border-[2px] border-white border-t-transparent"></span>
+        {{ esEdicion ? 'Guardar cambios' : 'Crear rol' }}
+      </button>
+    </template>
     <DetailHeader fallback="/roles" />
 
     <!-- Carga inicial -->
@@ -244,33 +261,6 @@
         </div>
       </div>
     </template>
-
-    <!-- ══ Barra de acciones fija ═══════════════════════════════════════════ -->
-    <div class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-t border-slate-200 shadow-[0_-4px_16px_-4px_rgba(0,0,0,0.08)]">
-      <div class="max-w-screen-xl mx-auto px-6 py-3 flex items-center justify-between">
-        <p v-if="errorGuardado" class="flex items-center gap-1.5 text-xs text-red-600">
-          <ExclamationTriangleIcon class="w-4 h-4 shrink-0" />
-          {{ errorGuardado }}
-        </p>
-        <span v-else-if="guardadoOk" class="flex items-center gap-1.5 text-xs text-green-600">
-          <CheckIcon class="w-4 h-4" /> Guardado correctamente
-        </span>
-        <div v-else></div>
-        <div class="flex items-center gap-3">
-          <button type="button" @click="window.history.state?.back ? router.back() : router.push('/roles')"
-            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-            <ArrowLeftIcon class="w-4 h-4" />
-            Volver
-          </button>
-          <button @click="guardar" :disabled="guardando"
-            class="inline-flex items-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 shadow-sm transition-colors">
-            <span v-if="guardando" class="animate-spin rounded-full h-3.5 w-3.5 border-[2px] border-white border-t-transparent"></span>
-            <CheckIcon v-else class="w-4 h-4" />
-            {{ esEdicion ? 'Guardar cambios' : 'Crear rol' }}
-          </button>
-        </div>
-      </div>
-    </div>
 
   </AppLayout>
 </template>

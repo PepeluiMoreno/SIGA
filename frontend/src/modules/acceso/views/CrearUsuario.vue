@@ -1,11 +1,25 @@
 <template>
   <AppLayout title="Nuevo usuario" subtitle="Dota de cuenta de acceso a un contacto de la organización">
+    <template #actions>
+      <span v-if="serverError" class="flex items-center gap-1.5 text-xs text-red-600 mr-1">
+        <ExclamationCircleIcon class="w-4 h-4 shrink-0" /> {{ serverError }}
+      </span>
+      <button type="button" @click="$router.back()"
+        class="h-8 px-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
+        Cancelar
+      </button>
+      <button type="button" :disabled="submitting || success || !contactoElegido" @click="handleSubmit"
+        class="inline-flex items-center gap-2 h-8 px-4 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 shadow-sm transition-colors">
+        <span v-if="submitting" class="animate-spin rounded-full h-3.5 w-3.5 border-[2px] border-white border-t-transparent"></span>
+        Crear usuario
+      </button>
+    </template>
 
     <div v-if="loading" class="flex items-center justify-center py-20">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
     </div>
 
-    <form v-else @submit.prevent="handleSubmit" class="w-3/4 mx-auto space-y-3 pb-24">
+    <form v-else @submit.prevent="handleSubmit" class="w-3/4 mx-auto space-y-3">
 
       <!-- ══ 1. Destinatario de la cuenta ════════════════════════════════════ -->
       <section class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -181,31 +195,6 @@
       </div>
 
     </form>
-
-    <!-- ══ Barra de acciones fija ═════════════════════════════════════════════ -->
-    <div class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-t border-slate-200 shadow-[0_-4px_16px_-4px_rgba(0,0,0,0.08)]">
-      <div class="w-3/4 mx-auto px-6 py-3 flex items-center justify-between">
-        <p v-if="serverError" class="flex items-center gap-1.5 text-xs text-red-600">
-          <ExclamationCircleIcon class="w-4 h-4 shrink-0" />
-          {{ serverError }}
-        </p>
-        <div v-else></div>
-        <div class="flex items-center gap-3">
-          <button type="button" @click="$router.back()"
-            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-            <ChevronLeftIcon class="w-4 h-4" />
-            Cancelar
-          </button>
-          <button type="button" :disabled="submitting || success || !contactoElegido"
-            @click="handleSubmit"
-            class="inline-flex items-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 shadow-sm transition-colors">
-            <span v-if="submitting" class="animate-spin rounded-full h-3.5 w-3.5 border-[2px] border-white border-t-transparent"></span>
-            <CheckIcon v-else class="w-4 h-4" />
-            Crear usuario
-          </button>
-        </div>
-      </div>
-    </div>
 
   </AppLayout>
 </template>

@@ -1,5 +1,15 @@
 <template>
   <AppLayout title="Nueva actividad" :subtitle="campaniaNombre ? `Campaña: ${campaniaNombre}` : 'Crear una nueva actividad'">
+    <template #actions>
+      <button type="button" @click="$router.back()"
+        class="h-8 px-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
+        Cancelar
+      </button>
+      <button type="submit" form="nueva-actividad-form" :disabled="saving"
+        class="h-8 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
+        {{ saving ? 'Guardando…' : 'Crear actividad' }}
+      </button>
+    </template>
     <div class="w-3/4 mx-auto">
 
     <!-- Contexto campaña -->
@@ -13,7 +23,7 @@
       <span>Nueva actividad</span>
     </div>
 
-    <form @submit.prevent="guardar" class="space-y-5 bg-white rounded-xl border border-slate-200 p-6">
+    <form id="nueva-actividad-form" @submit.prevent="guardar" class="space-y-5 bg-white rounded-xl border border-slate-200 p-6">
       <!-- Nombre -->
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Nombre *</label>
@@ -165,22 +175,6 @@
       <ErrorAlert v-if="error" :message="error" />
 
       <!-- Botones -->
-      <div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
-        <button
-          type="button"
-          @click="$router.back()"
-          class="h-10 px-4 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          :disabled="saving"
-          class="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
-        >
-          {{ saving ? 'Guardando…' : 'Crear actividad' }}
-        </button>
-      </div>
     </form>
     </div>
   </AppLayout>

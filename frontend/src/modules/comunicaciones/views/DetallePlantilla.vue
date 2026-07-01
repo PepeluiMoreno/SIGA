@@ -1,5 +1,12 @@
 <template>
   <AppLayout :title="titulo" subtitle="Edita las metas, presupuesto, actividades y tareas predefinidos">
+    <template v-if="plantilla" #actions>
+      <span v-if="guardadoOk" class="text-xs text-emerald-600 font-medium mr-1">✓ Guardado</span>
+      <button @click="guardarTodo" :disabled="guardandoTodo"
+        class="inline-flex items-center gap-2 h-8 px-4 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+        {{ guardandoTodo ? 'Guardando…' : 'Guardar plantilla' }}
+      </button>
+    </template>
 
     <div v-if="cargando" class="flex items-center justify-center py-20">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -12,16 +19,6 @@
 
     <template v-else-if="plantilla">
       <div class="space-y-3">
-
-        <!-- Barra de acciones sticky: los campos se autoguardan al salir, pero este
-             botón persiste TODO de una vez (cabecera + metas + partidas). -->
-        <div class="sticky top-0 z-20 -mx-1 px-1 py-2 bg-slate-50/90 backdrop-blur flex items-center justify-end gap-3 border-b border-slate-200">
-          <span v-if="guardadoOk" class="text-xs text-emerald-600 font-medium">✓ Guardado</span>
-          <button @click="guardarTodo" :disabled="guardandoTodo"
-            class="inline-flex items-center gap-2 px-4 h-9 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-            {{ guardandoTodo ? 'Guardando…' : 'Guardar plantilla' }}
-          </button>
-        </div>
 
         <!-- Cabecera general (siempre visible) -->
         <section class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -91,8 +88,9 @@
                     <input v-model="m.notas" type="text" :class="inpSm" placeholder="Notas…" @blur="guardarTodasMetas" />
                   </div>
                   <div class="col-span-1 flex justify-end">
-                    <button @click="eliminarMeta(i)" class="p-1 rounded text-slate-300 hover:text-red-500 transition-colors">
-                      <XMarkIcon class="w-3.5 h-3.5" />
+                    <button @click="eliminarMeta(i)" title="Eliminar meta"
+                      class="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                      <TrashIcon class="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -100,6 +98,83 @@
               <button @click="agregarMeta"
                 class="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
                 <PlusIcon class="w-3.5 h-3.5" /> Añadir meta
+              </button>
+            </div>
+          </AccordionPanel>
+
+          <!-- 3 · ACTIVIDADES -->
+          <AccordionPanel :default-open="false">
+            <template #title>
+              <span class="shrink-0 w-1.5 h-5 rounded-full bg-sky-500"></span>
+              <h2 class="text-sm font-semibold text-slate-800">Actividades predefinidas</h2>
+              <span v-if="actividades.length" class="px-2 py-0.5 bg-sky-50 text-sky-700 border border-sky-200 text-xs font-semibold rounded-full">{{ actividades.length }}</span>
+            </template>
+            <div class="px-5 py-4 space-y-4">
+              <div v-for="(act, ai) in actividades" :key="act.id ?? ai"
+                class="rounded-lg border border-slate-200 overflow-hidden">
+                <div class="flex items-center gap-3 px-4 py-2.5 bg-sky-50/60 border-b border-slate-200">
+                  <button @click="toggleAct(ai)" class="p-0.5">
+                    <ChevronRightIcon class="w-4 h-4 text-slate-400 transition-transform"
+                      :class="expandedActs.has(ai) ? 'rotate-90' : ''" />
+                  </button>
+                  <input v-model="act.nombre" type="text"
+                    class="flex-1 text-sm font-medium text-slate-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0"
+                    placeholder="Nombre de la actividad…" @blur="guardarActividad(act)" />
+                  <div class="flex items-center gap-2 shrink-0">
+                    <select v-model="act.tipoActividadId" :class="inpSm" class="w-full sm:w-36"
+                      @change="guardarActividad(act)">
+                      <option value="">— Tipo —</option>
+                      <option v-for="t in tiposActividad" :key="t.id" :value="t.id">{{ t.nombre }}</option>
+                    </select>
+                    <label class="text-xs text-slate-500">día:</label>
+                    <input v-model.number="act.duracionDias" type="number" min="0"
+                      class="w-14 h-7 px-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center"
+                      @blur="guardarActividad(act)" />
+                    <button @click.stop="eliminarActividad(ai)" title="Eliminar actividad"
+                      class="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                      <TrashIcon class="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <div v-if="expandedActs.has(ai)" class="px-4 py-3 space-y-2 bg-white">
+                  <div>
+                    <input v-model="act.descripcion" type="text"
+                      class="w-full text-xs text-slate-500 border-0 bg-transparent focus:outline-none focus:ring-0 px-0"
+                      placeholder="Descripción de la actividad…" @blur="guardarActividad(act)" />
+                  </div>
+                  <!-- Tareas -->
+                  <div class="pl-4 border-l-2 border-slate-200 space-y-2 mt-2">
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tareas</p>
+                    <div v-for="(t, ti) in act.tareas" :key="t.id ?? ti"
+                      class="grid grid-cols-12 gap-1.5 items-center">
+                      <input v-model="t.titulo" type="text" :class="inpSm" placeholder="Título de la tarea…"
+                        @blur="guardarTarea(t, act.id)" class="col-span-4" />
+                      <select v-model="t.habilidadId" :class="inpSm" @change="guardarTarea(t, act.id)" class="col-span-4">
+                        <option value="">— Habilidad —</option>
+                        <option v-for="h in habilidades" :key="h.id" :value="h.id">{{ h.nombre }}</option>
+                      </select>
+                      <select v-model="t.nivelHabilidadId" :class="inpSm" @change="guardarTarea(t, act.id)" class="col-span-2">
+                        <option value="">— Nivel —</option>
+                        <option v-for="n in nivelesHabilidad" :key="n.id" :value="n.id">{{ n.nombre }}</option>
+                      </select>
+                      <input v-model.number="t.horasEstimadas" type="number" min="0" step="0.5"
+                        class="col-span-1 h-8 px-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 text-right"
+                        placeholder="h" @blur="guardarTarea(t, act.id)" />
+                      <button @click="eliminarTarea(act, ti)" title="Eliminar tarea"
+                        class="col-span-1 p-1 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors justify-self-center">
+                        <TrashIcon class="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <button @click="agregarTarea(act)"
+                      class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                      <PlusIcon class="w-3 h-3" /> Añadir tarea
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <button @click="agregarActividad"
+                class="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                <PlusIcon class="w-3.5 h-3.5" /> Añadir actividad
               </button>
             </div>
           </AccordionPanel>
@@ -136,8 +211,9 @@
                       placeholder="0.00" @blur="guardarTodasPartidas" />
                   </div>
                   <div class="col-span-2 flex justify-end">
-                    <button @click="eliminarPartida(i)" class="p-1 rounded text-slate-300 hover:text-red-500 transition-colors">
-                      <XMarkIcon class="w-3.5 h-3.5" />
+                    <button @click="eliminarPartida(i)" title="Eliminar partida"
+                      class="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                      <TrashIcon class="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -145,81 +221,6 @@
               <button @click="agregarPartida"
                 class="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
                 <PlusIcon class="w-3.5 h-3.5" /> Añadir partida
-              </button>
-            </div>
-          </AccordionPanel>
-
-          <!-- 3 · ACTIVIDADES -->
-          <AccordionPanel :default-open="false">
-            <template #title>
-              <span class="shrink-0 w-1.5 h-5 rounded-full bg-sky-500"></span>
-              <h2 class="text-sm font-semibold text-slate-800">Actividades predefinidas</h2>
-              <span v-if="actividades.length" class="px-2 py-0.5 bg-sky-50 text-sky-700 border border-sky-200 text-xs font-semibold rounded-full">{{ actividades.length }}</span>
-            </template>
-            <div class="px-5 py-4 space-y-4">
-              <div v-for="(act, ai) in actividades" :key="act.id ?? ai"
-                class="rounded-lg border border-slate-200 overflow-hidden">
-                <div class="flex items-center gap-3 px-4 py-2.5 bg-sky-50/60 border-b border-slate-200">
-                  <button @click="toggleAct(ai)" class="p-0.5">
-                    <ChevronRightIcon class="w-4 h-4 text-slate-400 transition-transform"
-                      :class="expandedActs.has(ai) ? 'rotate-90' : ''" />
-                  </button>
-                  <input v-model="act.nombre" type="text"
-                    class="flex-1 text-sm font-medium text-slate-800 bg-transparent border-0 focus:outline-none focus:ring-0 px-0"
-                    placeholder="Nombre de la actividad…" @blur="guardarActividad(act)" />
-                  <div class="flex items-center gap-2 shrink-0">
-                    <select v-model="act.tipoActividadId" :class="inpSm" class="w-full sm:w-36"
-                      @change="guardarActividad(act)">
-                      <option value="">— Tipo —</option>
-                      <option v-for="t in tiposActividad" :key="t.id" :value="t.id">{{ t.nombre }}</option>
-                    </select>
-                    <label class="text-xs text-slate-500">día:</label>
-                    <input v-model.number="act.duracionDias" type="number" min="0"
-                      class="w-14 h-7 px-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center"
-                      @blur="guardarActividad(act)" />
-                    <button @click="eliminarActividad(ai)" class="p-1 rounded text-slate-300 hover:text-red-500 transition-colors">
-                      <XMarkIcon class="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-                <div v-if="expandedActs.has(ai)" class="px-4 py-3 space-y-2 bg-white">
-                  <div>
-                    <input v-model="act.descripcion" type="text"
-                      class="w-full text-xs text-slate-500 border-0 bg-transparent focus:outline-none focus:ring-0 px-0"
-                      placeholder="Descripción de la actividad…" @blur="guardarActividad(act)" />
-                  </div>
-                  <!-- Tareas -->
-                  <div class="pl-4 border-l-2 border-slate-200 space-y-2 mt-2">
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tareas</p>
-                    <div v-for="(t, ti) in act.tareas" :key="t.id ?? ti"
-                      class="grid grid-cols-12 gap-1.5 items-center">
-                      <input v-model="t.titulo" type="text" :class="inpSm" placeholder="Título de la tarea…"
-                        @blur="guardarTarea(t, act.id)" class="col-span-4" />
-                      <select v-model="t.habilidadId" :class="inpSm" @change="guardarTarea(t, act.id)" class="col-span-4">
-                        <option value="">— Habilidad —</option>
-                        <option v-for="h in habilidades" :key="h.id" :value="h.id">{{ h.nombre }}</option>
-                      </select>
-                      <select v-model="t.nivelHabilidadId" :class="inpSm" @change="guardarTarea(t, act.id)" class="col-span-2">
-                        <option value="">— Nivel —</option>
-                        <option v-for="n in nivelesHabilidad" :key="n.id" :value="n.id">{{ n.nombre }}</option>
-                      </select>
-                      <input v-model.number="t.horasEstimadas" type="number" min="0" step="0.5"
-                        class="col-span-1 h-8 px-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 text-right"
-                        placeholder="h" @blur="guardarTarea(t, act.id)" />
-                      <button @click="eliminarTarea(act, ti)" class="col-span-1 p-1 rounded text-slate-300 hover:text-red-500 transition-colors justify-self-center">
-                        <XMarkIcon class="w-3 h-3" />
-                      </button>
-                    </div>
-                    <button @click="agregarTarea(act)"
-                      class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
-                      <PlusIcon class="w-3 h-3" /> Añadir tarea
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <button @click="agregarActividad"
-                class="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
-                <PlusIcon class="w-3.5 h-3.5" /> Añadir actividad
               </button>
             </div>
           </AccordionPanel>
@@ -235,7 +236,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { PlusIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, ChevronRightIcon, XMarkIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'

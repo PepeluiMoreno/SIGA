@@ -1,11 +1,11 @@
 <template>
   <AppLayout title="Parámetros Generales" subtitle="Configuración de la organización">
-    <template #footer>
+    <template #actions>
+      <span v-if="error" class="text-sm text-red-600 mr-1">{{ error }}</span>
       <button type="button" :disabled="guardando" @click="guardar"
-        class="h-10 px-5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+        class="h-8 px-4 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">
         {{ guardando ? 'Guardando…' : 'Guardar cambios' }}
       </button>
-            <span v-if="error" class="text-sm text-red-600">{{ error }}</span>
     </template>
 
     <form @submit.prevent="guardar" class="flex flex-col"  id="parametros-form">
