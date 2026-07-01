@@ -36,8 +36,26 @@
     <div v-if="abierto"
       class="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
       <div class="max-h-72 overflow-y-auto py-1">
-        <!-- Modo árbol (sin búsqueda): jerárquico, raíz primero -->
+        <!-- Modo árbol (sin búsqueda): acceso rápido a las raíces + árbol completo -->
         <template v-if="!busqueda">
+          <!-- Raíces destacadas: elegir el ámbito de la organización de un clic -->
+          <div v-if="raices.length" class="px-2 pb-1 mb-1 border-b border-slate-100">
+            <p class="px-1 pt-1 pb-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Ámbito general</p>
+            <button
+              v-for="root in raices"
+              :key="`root-${root.id}`"
+              type="button"
+              @click="elegir(root)"
+              class="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-lg transition-colors text-left"
+              :class="root.id === modelValue ? 'bg-indigo-100 text-indigo-800 font-semibold' : 'bg-indigo-50/60 text-indigo-700 hover:bg-indigo-100 font-medium'"
+            >
+              <MapPinIcon class="w-4 h-4 flex-shrink-0" />
+              <span class="truncate">{{ root.nombre }}</span>
+              <span v-if="nivelNombre(root)" class="flex-shrink-0 px-1.5 py-0.5 text-[10px] rounded-full bg-white text-indigo-600 border border-indigo-200 leading-none">
+                {{ nivelNombre(root) }}
+              </span>
+            </button>
+          </div>
           <button
             v-for="node in arbolPlano"
             :key="node.id"
@@ -121,6 +139,14 @@ const arbolPlano = computed(() => {
   hijosDe(null).forEach(r => dfs(r, 0))
   return out
 })
+
+// Raíces (agrupaciones sin padre): acceso rápido al ámbito general, arriba de la
+// lista, para elegirlas sin teclear su nombre.
+const raices = computed(() =>
+  props.agrupaciones
+    .filter(a => !a.agrupacionPadreId)
+    .sort((x, y) => x.nombre.localeCompare(y.nombre, 'es'))
+)
 
 // Ruta de ancestros ("Raíz › Padre") para dar contexto en la búsqueda.
 const rutaDe = (id) => {
