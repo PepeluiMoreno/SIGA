@@ -234,27 +234,13 @@ function onMensajeEnviado(res) {
 const searchQuery = ref('')
 const filters = ref({ tipos: [], vinculaciones: [] })
 const filtroGeografico = ref(null)          // id de la entidad geográfica elegida
-const idsAmbitoGeografico = ref(null)       // set de ids de esa entidad + descendientes
+const rutaAmbitoGeo = ref(null)             // ruta de la entidad elegida (para filtrar por descendientes)
 
-// Query de descendientes: entidades cuya ruta cuelga de la elegida (prefijo de ruta).
-const QUERY_DESCENDIENTES_GEO = `
-  query DescendientesGeo($ruta: String!) {
-    entidadesGeograficas(filter: { ruta: { ilike: $ruta } }) { id }
-  }
-`
-
-// Al elegir una entidad (a cualquier nivel: CCAA, provincia, municipio, pedanía…)
-// se calcula el conjunto de sus descendientes para que el filtro los incluya.
-async function onSeleccionGeografica(entidad) {
-  if (!entidad) { idsAmbitoGeografico.value = null; return }
-  const ids = new Set([entidad.id])
-  if (entidad.ruta) {
-    try {
-      const d = await graphqlClient.request(QUERY_DESCENDIENTES_GEO, { ruta: `${entidad.ruta}%` })
-      for (const e of (d.entidadesGeograficas || [])) ids.add(e.id)
-    } catch { /* si falla, al menos filtra por la entidad exacta */ }
-  }
-  idsAmbitoGeografico.value = ids
+// Al elegir una entidad (a cualquier nivel: país, CCAA, provincia, municipio,
+// pedanía…) se guarda su ruta; un contacto pertenece al ámbito si la ruta de su
+// entidad empieza por la de la elegida (los descendientes cuelgan de ella).
+function onSeleccionGeografica(entidad) {
+  rutaAmbitoGeo.value = entidad?.ruta || null
 }
 
 const _COLORES = {
@@ -277,8 +263,8 @@ function nombreMostrado(c) {
 // Ubicación del contacto: nombre de su entidad geográfica (municipio/pedanía) si
 // se ha resuelto; si no, la localidad de la dirección.
 function ubicacionMostrada(c) {
-  const geo = nombreEntidadGeo.value[c.entidadGeograficaId]
-  return geo || c.localidad || '—'
+  const geo = geoDeContacto.value[c.entidadGeograficaId]
+  return geo?.nombre || c.localidad || '—'
 }
 
 // Vinculaciones vigentes = sin fecha de fin (la vinculación está abierta).
@@ -338,7 +324,7 @@ function limpiarFiltros() {
   filters.value = { tipos: [], vinculaciones: [] }
   searchQuery.value = ''
   filtroGeografico.value = null
-  idsAmbitoGeografico.value = null
+  rutaAmbitoGeo.value = null
 }
 
 const contactosFiltrados = computed(() => {
@@ -350,7 +336,10 @@ const contactosFiltrados = computed(() => {
     // Vista "Contactos" (colectivo null): excluye socios y personal (esos tienen su vista).
     if (!props.colectivo && (esColectivo(c, COLECTIVO_SOCIO) || esColectivo(c, COLECTIVO_PERSONAL))) return false
     if (filters.value.tipos.length && !filters.value.tipos.includes(c.tipo)) return false
-    if (idsAmbitoGeografico.value && !(c.entidadGeograficaId && idsAmbitoGeografico.value.has(c.entidadGeograficaId))) return false
+    if (rutaAmbitoGeo.value) {
+      const geo = geoDeContacto.value[c.entidadGeograficaId]
+      if (!geo || !geo.ruta.startsWith(rutaAmbitoGeo.value)) return false
+    }
     if (filters.value.vinculaciones.length) {
       // DONANTE/FIRMANTE son condiciones DERIVADAS (participación/donación);
       // VOLUNTARIO/SIMPATIZANTE son vinculaciones formales. Un contacto pasa si
@@ -408,10 +397,13 @@ async function cargar() {
 }
 
 // Mapa entidadGeograficaId → nombre, para mostrar la ubicación en el listado.
-const nombreEntidadGeo = ref({})
+// Mapa entidadGeograficaId → { nombre, ruta } de las entidades de los contactos.
+// La ruta permite filtrar por descendientes (una entidad ancestro es prefijo de
+// la ruta de sus descendientes), sin cargar todo el árbol geográfico.
+const geoDeContacto = ref({})
 const QUERY_NOMBRES_GEO = `
   query NombresGeo($ids: [UUID!]!) {
-    entidadesGeograficas(filter: { id: { in: $ids } }) { id nombre }
+    entidadesGeograficas(filter: { id: { in: $ids } }) { id nombre ruta }
   }
 `
 async function cargarNombresGeo(ids) {
@@ -420,8 +412,8 @@ async function cargarNombresGeo(ids) {
   try {
     const d = await graphqlClient.request(QUERY_NOMBRES_GEO, { ids: unicos })
     const map = {}
-    for (const e of (d.entidadesGeograficas || [])) map[e.id] = e.nombre
-    nombreEntidadGeo.value = map
+    for (const e of (d.entidadesGeograficas || [])) map[e.id] = { nombre: e.nombre, ruta: e.ruta || '' }
+    geoDeContacto.value = map
   } catch { /* si falla, se muestra la localidad como fallback */ }
 }
 
