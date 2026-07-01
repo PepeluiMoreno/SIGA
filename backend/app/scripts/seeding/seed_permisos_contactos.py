@@ -25,7 +25,7 @@ from app.modules.acceso.models.transaccion import Transaccion
 from app.modules.acceso.models.rol_transaccion import RolTransaccion
 
 
-_GESTION = ["SECRETARIO", "EXTENSION"]
+_GESTION = ["SECRETARIO", "EXTENSION", "PRESIDENTE"]
 _LECTURA = ["SECRETARIO", "EXTENSION", "TESORERO", "COORDINADOR",
             "COORDINADOR_CAMPANA", "PRESIDENTE", "VICEPRESIDENTE"]
 

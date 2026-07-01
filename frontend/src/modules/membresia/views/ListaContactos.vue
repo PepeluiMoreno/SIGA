@@ -18,6 +18,11 @@
           search-placeholder="Buscar por nombre, razón social, email o documento…"
           :fields="filterFields"
           @clear="limpiarFiltros" />
+        <!-- Buscador geográfico: filtra por municipio/provincia -->
+        <div class="mt-3 pt-3 border-t border-slate-100">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Ubicación</p>
+          <EntidadGeograficaSelect v-model="filtroGeografico" :editing="true" :niveles="[2, 3]" />
+        </div>
       </FilterRail>
 
       <!-- Columna de resultados -->
@@ -38,7 +43,6 @@
           <table class="min-w-full divide-y divide-slate-200 text-sm">
             <thead class="bg-slate-50">
               <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                <th class="px-4 py-3">Tipo</th>
                 <th class="px-4 py-3">Nombre / Razón social</th>
                 <th class="px-4 py-3">Documento</th>
                 <th class="px-4 py-3">Contacto</th>
@@ -50,14 +54,11 @@
                 class="hover:bg-purple-50 cursor-pointer"
                 @click="abrirFicha(c.id)">
                 <td class="px-4 py-3">
-                  <span
-                    class="inline-block px-2 py-0.5 rounded text-xs font-medium"
-                    :class="c.tipo === 'PERSONA_JURIDICA' ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800'"
-                  >{{ c.tipo === 'PERSONA_JURIDICA' ? 'PJ' : 'PF' }}</span>
-                </td>
-                <td class="px-4 py-3">
                   <div class="flex flex-wrap items-center gap-1.5">
                     <span class="font-medium text-purple-700">{{ nombreMostrado(c) }}</span>
+                    <!-- Solo las personas jurídicas se etiquetan; las físicas no llevan badge de tipo -->
+                    <span v-if="c.tipo === 'PERSONA_JURIDICA'"
+                      class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Persona jurídica</span>
                     <!-- Badges de vinculación + condiciones derivadas, tras el nombre -->
                     <span
                       v-for="v in vinculacionesVigentes(c)"
@@ -98,6 +99,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import FilterRail from '@/components/common/FilterRail.vue'
 import RowActions from '@/components/common/RowActions.vue'
+import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
 import { useToast } from '@/composables/useToast'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { usePermisos } from '@/composables/usePermisos.js'
@@ -163,6 +165,7 @@ const error = ref('')
 
 const searchQuery = ref('')
 const filters = ref({ tipos: [], vinculaciones: [] })
+const filtroGeografico = ref(null)   // entidad geográfica (municipio/provincia)
 
 const _COLORES = {
   SOCIO: 'bg-emerald-100 text-emerald-800',
@@ -237,6 +240,7 @@ const filterFields = computed(() => {
 function limpiarFiltros() {
   filters.value = { tipos: [], vinculaciones: [] }
   searchQuery.value = ''
+  filtroGeografico.value = null
 }
 
 const contactosFiltrados = computed(() => {
@@ -248,6 +252,7 @@ const contactosFiltrados = computed(() => {
     // Vista "Contactos" (colectivo null): excluye socios y personal (esos tienen su vista).
     if (!props.colectivo && (esColectivo(c, COLECTIVO_SOCIO) || esColectivo(c, COLECTIVO_PERSONAL))) return false
     if (filters.value.tipos.length && !filters.value.tipos.includes(c.tipo)) return false
+    if (filtroGeografico.value && c.entidadGeograficaId !== filtroGeografico.value) return false
     if (filters.value.vinculaciones.length) {
       // DONANTE/FIRMANTE son condiciones DERIVADAS (participación/donación);
       // VOLUNTARIO/SIMPATIZANTE son vinculaciones formales. Un contacto pasa si
