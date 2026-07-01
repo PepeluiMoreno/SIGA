@@ -370,7 +370,7 @@
 <script setup>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import ConfirmPopover from '@/components/common/ConfirmPopover.vue'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { useToast } from '@/composables/useToast'
@@ -395,10 +395,13 @@ const COLORES_PRESET = [
 const orgConfig = useOrgConfigStore()
 const toast = useToast()
 
-// ── Acordeón del sidebar ──────────────────────────────────────────────────────
-const gruposColapsados = ref({})
-function grupoAbierto(nombre) { return !gruposColapsados.value[nombre] }
-function toggleGrupo(nombre) { gruposColapsados.value[nombre] = !gruposColapsados.value[nombre] }
+// ── Acordeón del sidebar: EXCLUSIVO (solo un grupo abierto) para evitar el scroll
+// largo de tener todos los grupos desplegados a la vez. Empieza todo colapsado.
+const grupoActivo = ref(null)
+function grupoAbierto(nombre) { return grupoActivo.value === nombre }
+function toggleGrupo(nombre) { grupoActivo.value = grupoActivo.value === nombre ? null : nombre }
+// Abrir el primer grupo al entrar, para que el sidebar sea usable de inicio.
+onMounted(() => { grupoActivo.value = CATALOGOS.value[0]?.grupo ?? null })
 
 // Catálogos de SISTEMA: el código se ramifica sobre su `codigo` (estados de
 // flujo de trabajo, tipos de vinculación). Se siembran y son "read-mostly":
