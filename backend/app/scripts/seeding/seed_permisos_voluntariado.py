@@ -29,7 +29,12 @@ from app.modules.acceso.models.transaccion import Transaccion
 from app.modules.acceso.models.rol_transaccion import RolTransaccion
 
 
-_TRANS = ["MEMBRESIA_VOLUNTARIO_LISTAR", "VOL_VIEW", "MEMBRESIA_VOLUNTARIO_GESTIONAR", "MEMBRESIA_VOLUNTARIO_GESTIONAR", "HAB_LIST"]
+# Voluntariado NO es un módulo/sección: es una condición del contacto (vinculación
+# VOLUNTARIO). Solo queda la transacción de GESTIONAR su perfil (editar disponibilidad,
+# competencias, habilidades por delegación desde la ficha). Las de "listar voluntarios
+# como sección" (MEMBRESIA_VOLUNTARIO_LISTAR) y códigos legacy nunca implementados
+# (VOL_VIEW, HAB_LIST) se retiraron.
+_TRANS = ["MEMBRESIA_VOLUNTARIO_GESTIONAR"]
 
 REPARTO = {
     "PRESIDENTE":          _TRANS,

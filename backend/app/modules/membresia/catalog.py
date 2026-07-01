@@ -26,7 +26,6 @@ _TRANSACCIONES = [
     TransaccionDef("MEMBRESIA_MIEMBRO_VER_IBAN",     "Ver datos bancarios del miembro",   "CONSULTA"),
     TransaccionDef("MEMBRESIA_MIEMBRO_EDITAR_DATOS_ECONOMICOS", "Editar datos económicos del miembro", "MUTACION"),
     TransaccionDef("MEMBRESIA_AGRUPACION_EDITAR",    "Editar agrupación territorial",     "MUTACION"),
-    TransaccionDef("MEMBRESIA_VOLUNTARIO_LISTAR",    "Listar voluntariado",               "CONSULTA"),
     TransaccionDef("MEMBRESIA_TRASLADO_SOLICITAR",   "Solicitar traslado de agrupación",  "MUTACION"),
     TransaccionDef("MEMBRESIA_TRASLADO_APROBAR",     "Aprobar traslado",                  "APROBACION"),
     TransaccionDef("MEMBRESIA_TRASLADO_RECHAZAR",    "Rechazar traslado",                 "APROBACION"),
@@ -142,12 +141,15 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
 ))
 
 ModuleCatalog.register_funcionalidad(FuncionalidadDef(
-    codigo="GESTION_VOLUNTARIADO",
-    nombre="Gestión de voluntariado",
+    codigo="PERFIL_VOLUNTARIO",
+    nombre="Perfil de voluntario del contacto",
     modulo=MODULO,
-    descripcion="Competencias, formación y disponibilidad de voluntarios",
+    descripcion=(
+        "Editar la condición de voluntario de un contacto: disponibilidad, competencias "
+        "y formación. Voluntariado no es un módulo aparte, sino una condición del socio "
+        "(vinculación VOLUNTARIO); se gestiona desde su ficha."
+    ),
     transacciones=[
-        FuncionalidadTransaccionDef("MEMBRESIA_VOLUNTARIO_LISTAR",    AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("MEMBRESIA_VOLUNTARIO_GESTIONAR", AmbitoTransaccion.TERRITORIAL),
     ],
 ))

@@ -36,7 +36,6 @@ PASOS = [
     ("seed_tipos_relacion", True),          # tipos de relación contacto↔contacto (Relationship)
     ("seed_catalogos_accion", True),        # crea los UUIDs que usa seed_actividades_permanentes
     ("seed_catalogos_campania", True),
-    ("seed_eventos_catalogos", True),
     ("seed_habilidades", True),
     # ── Roles organizativos (los funcionales y permisos base van en bootstrap) ──
     ("seed_roles_organizacionales", True),  # crea PRESIDENTE/TESORERO/… → los necesita perfiles

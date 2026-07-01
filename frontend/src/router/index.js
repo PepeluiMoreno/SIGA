@@ -38,7 +38,6 @@ import Donaciones from '@/modules/economico/views/Donaciones.vue'
 import ReglasContables from '@/modules/economico/views/ReglasContables.vue'
 
 // === Módulo: MEMBRESIA - Voluntariado ===
-import ListaVoluntarios from '@/modules/membresia/views/ListaVoluntarios.vue'
 
 // === Módulo: PRESIDENCIA ===
 import PresidenciaDashboard from '@/modules/presidencia/views/Dashboard.vue'
@@ -210,12 +209,6 @@ const routes = [
     component: () => import('@/modules/acceso/views/GestionJunta.vue'),
     name: 'GestionJunta',
     meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_CARGO_ASIGNAR' }
-  },
-  {
-    path: '/voluntarios',
-    component: ListaVoluntarios,
-    name: 'Voluntarios',
-    meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_VOLUNTARIO_LISTAR' }
   },
 
   // ─── ACTIVIDADES / GRUPOS ─────────────────────────────────────────────────
