@@ -92,14 +92,8 @@
             <FieldText v-model="form.telefono2" label="Tel. alternativo" :editing="editing" />
             <FieldText v-model="form.direccion" label="Dirección" :editing="editing" class="sm:col-span-2" />
             <FieldText v-model="form.codigoPostal" label="Código postal" :editing="editing" />
-            <FieldText v-model="form.localidad" label="Localidad" :editing="editing" />
-            <FieldSelect v-model="form.provinciaId" label="Provincia" :editing="editing" :options="provinciaOptions" />
-            <EntidadGeograficaSelect v-model="form.entidadGeograficaId" label="Ubicación (geografía unificada)"
+            <EntidadGeograficaSelect v-model="form.entidadGeograficaId" label="Ubicación (municipio / provincia)"
               :editing="editing" :niveles="[2, 3]" class="sm:col-span-2" />
-            <div>
-              <label class="block text-xs font-medium text-slate-500 mb-1">Comunidad autónoma</label>
-              <div class="py-1.5 text-sm text-slate-500 min-h-[34px]">{{ ccaaActual || '—' }}</div>
-            </div>
           </div>
         </div>
 
@@ -197,7 +191,6 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_CONTACTO, GET_CONTACTOS, CREAR_CONTACTO, ACTUALIZAR_CONTACTO, ELIMINAR_CONTACTO, GET_CONDICIONES_CONTACTO } from '@/graphql/queries/contactos.js'
-import { GET_PROVINCIAS } from '@/graphql/queries/catalogos.js'
 import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
 import { useAuthStore } from '@/stores/auth.js'
 
@@ -273,23 +266,8 @@ const form = reactive({
   provinciaId: '', entidadGeograficaId: null,
 })
 
-// Catálogo de provincias (para el select de ubicación; la CCAA se deriva de la provincia)
-const provincias = ref([])
-const provinciaOptions = computed(() =>
-  [...provincias.value]
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-    .map((p) => ({ value: p.id, label: p.nombre }))
-)
-const ccaaActual = computed(() =>
-  provincias.value.find((p) => p.id === form.provinciaId)?.comunidadAutonoma || ''
-)
-async function cargarProvincias() {
-  if (provincias.value.length) return
-  try {
-    const data = await graphqlClient.request(GET_PROVINCIAS)
-    provincias.value = data.provincias || []
-  } catch { /* el select quedará vacío */ }
-}
+// La ubicación se captura con EntidadGeograficaSelect (municipio/provincia
+// unificados); ya no hace falta cargar el catálogo de provincias por separado.
 
 // Alta de PJ: el representante legal se da de alta como PF junto con la entidad.
 const repForm = reactive({
@@ -509,5 +487,5 @@ function entrarEdicion() {
   if (esPJ.value) cargarPFParaRepresentante()
 }
 
-onMounted(() => { cargar(); cargarProvincias() })
+onMounted(() => { cargar() })
 </script>

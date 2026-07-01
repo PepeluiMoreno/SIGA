@@ -75,32 +75,9 @@
         <!-- Ubicación -->
         <div>
           <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">Ubicación</p>
-          <div class="grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
-            <div class="col-span-12 sm:col-span-4">
-              <p :class="lbl">País <span class="text-red-400">*</span></p>
-              <select v-model="form.paisId" @change="onPaisChange" :class="inp">
-                <option value="">— Seleccionar —</option>
-                <option v-for="p in paises" :key="p.id" :value="p.id">{{ p.nombre }}</option>
-              </select>
-            </div>
-            <div class="col-span-6 sm:col-span-4">
-              <p :class="lbl">Provincia</p>
-              <select v-model="form.provinciaId" @change="onProvinciaChange" :disabled="!form.paisId" :class="inp + ' disabled:bg-slate-50 disabled:text-slate-400'">
-                <option value="">— Seleccionar —</option>
-                <option v-for="p in provinciasDelPais" :key="p.id" :value="p.id">{{ p.nombre }}</option>
-              </select>
-            </div>
-            <div class="col-span-6 sm:col-span-4">
-              <p :class="lbl">Municipio</p>
-              <select v-model="form.municipioId" :disabled="!form.provinciaId" :class="inp + ' disabled:bg-slate-50 disabled:text-slate-400'">
-                <option value="">— Seleccionar —</option>
-                <option v-for="m in municipios" :key="m.id" :value="m.id">{{ m.nombre }}</option>
-              </select>
-            </div>
-            <div class="col-span-12">
-              <p :class="lbl">Ubicación (geografía unificada)</p>
-              <EntidadGeograficaSelect v-model="form.entidadGeograficaId" :editing="true" :niveles="[2, 3]" />
-            </div>
+          <div>
+            <p :class="lbl">Ubicación (municipio / provincia)</p>
+            <EntidadGeograficaSelect v-model="form.entidadGeograficaId" :editing="true" :niveles="[2, 3]" />
           </div>
         </div>
 
@@ -119,7 +96,7 @@
         <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
           <router-link to="/agrupaciones"
             class="px-4 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50">Cancelar</router-link>
-          <button type="button" @click="guardarNuevo" :disabled="creando || !form.nombre.trim() || !form.paisId || !formTipoId"
+          <button type="button" @click="guardarNuevo" :disabled="creando || !form.nombre.trim() || !formTipoId"
             class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50">
             <span v-if="creando" class="animate-spin inline-block h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
             Crear unidad
@@ -199,35 +176,9 @@
           <!-- Ubicación -->
           <div>
             <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">Ubicación</p>
-            <div class="grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
-              <div class="col-span-12 sm:col-span-4">
-                <p :class="lbl">País</p>
-                <select v-if="editMode" v-model="form.paisId" @change="onPaisChange" :class="inp">
-                  <option value="">— Seleccionar —</option>
-                  <option v-for="p in paises" :key="p.id" :value="p.id">{{ p.nombre }}</option>
-                </select>
-                <p v-else :class="ro">{{ paisNombre }}</p>
-              </div>
-              <div class="col-span-6 sm:col-span-4">
-                <p :class="lbl">Provincia</p>
-                <select v-if="editMode" v-model="form.provinciaId" @change="onProvinciaChange" :disabled="!form.paisId" :class="inp + ' disabled:bg-slate-50 disabled:text-slate-400'">
-                  <option value="">— Seleccionar —</option>
-                  <option v-for="p in provinciasDelPais" :key="p.id" :value="p.id">{{ p.nombre }}</option>
-                </select>
-                <p v-else :class="ro">{{ provinciaNombre }}</p>
-              </div>
-              <div class="col-span-6 sm:col-span-4">
-                <p :class="lbl">Municipio</p>
-                <select v-if="editMode" v-model="form.municipioId" :disabled="!form.provinciaId" :class="inp + ' disabled:bg-slate-50 disabled:text-slate-400'">
-                  <option value="">— Seleccionar —</option>
-                  <option v-for="m in municipios" :key="m.id" :value="m.id">{{ m.nombre }}</option>
-                </select>
-                <p v-else :class="ro">{{ municipioNombre }}</p>
-              </div>
-              <div class="col-span-12">
-                <p :class="lbl">Ubicación (geografía unificada)</p>
-                <EntidadGeograficaSelect v-model="form.entidadGeograficaId" :editing="editMode" :niveles="[2, 3]" />
-              </div>
+            <div>
+              <p :class="lbl">Ubicación (municipio / provincia)</p>
+              <EntidadGeograficaSelect v-model="form.entidadGeograficaId" :editing="editMode" :niveles="[2, 3]" />
             </div>
           </div>
 
@@ -643,7 +594,7 @@ async function iniciarAlta() {
 }
 
 async function guardarNuevo() {
-  if (!form.nombre.trim() || !form.paisId || !formTipoId.value) return
+  if (!form.nombre.trim() || !formTipoId.value) return
   creando.value = true
   datosError.value = null
   try {
