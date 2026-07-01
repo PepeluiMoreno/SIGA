@@ -1,6 +1,9 @@
 # Rediseño: la recogida de firmas es una Actividad, no una Campaña
 
 > Estado: **propuesta / pendiente de confirmar** (no implementado).
+> Marco: es la **Fase 1** del norte arquitectónico
+> `docs/arquitectura/ACTIVIDAD_UNIDAD_ABC.md` (la Actividad como unidad
+> universal de trabajo y de coste).
 > Origen: la firma pública se ancló a `Campania`, pero el modelo correcto es:
 > una **campaña de recogida de firmas** es una Campaña cuya **actividad
 > principal** (si no la única) es una **recogida de firmas en la web** de la
