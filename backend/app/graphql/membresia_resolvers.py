@@ -322,6 +322,23 @@ class PerfilVoluntarioInput:
     disponibilidad_viajar: Optional[bool] = None
 
 
+@strawberry.input
+class FranjaDisponibilidadInput:
+    """Una franja horaria semanal: día (0=Lunes … 6=Domingo) + tramo hora_inicio–hora_fin."""
+    dia_semana: int
+    hora_inicio: str
+    hora_fin: str
+
+
+@strawberry.type(name="FranjaDisponibilidad")
+class FranjaDisponibilidadOut:
+    """Franja de disponibilidad de un voluntario (lectura por contacto)."""
+    id: uuid.UUID
+    dia_semana: int
+    hora_inicio: str
+    hora_fin: str
+
+
 @strawberry.type
 class MembresiaResolverMutation:
 
@@ -774,6 +791,44 @@ class MembresiaResolverMutation:
         await session.commit()
         return await _fetch_miembro(session, contacto_id)
 
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_VOLUNTARIO_GESTIONAR")])
+    async def guardar_franjas_disponibilidad(
+        self, info: strawberry.Info,
+        contacto_id: uuid.UUID,
+        franjas: list['FranjaDisponibilidadInput'],
+    ) -> bool:
+        """Reemplaza las franjas de disponibilidad de un voluntario (por su contacto).
+
+        Ancla las franjas al satélite Voluntario del contacto (voluntario_id), resolviéndolo
+        vía su Vinculacion(VOLUNTARIO); el input auto de strawchemy no expone esa FK de
+        relación, por eso este resolver custom. Patrón 'guardar todas': borra las existentes
+        y crea las nuevas."""
+        from app.modules.membresia.models.disponibilidad import FranjaDisponibilidad
+        from app.modules.membresia.models.vinculacion import Voluntario
+        from sqlalchemy import delete as sa_delete
+
+        session = info.context.session
+        vinc = await _vinc_voluntario(session, contacto_id)
+        if vinc is None:
+            raise ValueError("El contacto no tiene una vinculación de voluntario.")
+        voluntario = (await session.execute(
+            select(Voluntario).where(Voluntario.vinculacion_id == vinc.id)
+        )).scalar_one_or_none()
+        if voluntario is None:
+            raise ValueError("El voluntario no tiene satélite de datos.")
+
+        await session.execute(
+            sa_delete(FranjaDisponibilidad).where(FranjaDisponibilidad.voluntario_id == voluntario.id)
+        )
+        for f in franjas:
+            session.add(FranjaDisponibilidad(
+                voluntario_id=voluntario.id,
+                dia_semana=f.dia_semana, hora_inicio=f.hora_inicio, hora_fin=f.hora_fin,
+                activa=True,
+            ))
+        await session.commit()
+        return True
+
 
 @strawberry.type(name="CandidatoGrupo")
 class CandidatoGrupoType:
@@ -1074,4 +1129,34 @@ class MembresiaQuery:
                 activo=c.activo, fecha_alta=vinc.fecha_inicio,
             )
             for (c, v, vinc) in r.all()
+        ]
+
+    @strawberry.field(permission_classes=[RequireAuthenticated])
+    async def franjas_disponibilidad_contacto(
+        self, info: strawberry.Info, contacto_id: uuid.UUID,
+    ) -> List[FranjaDisponibilidadOut]:
+        """Franjas de disponibilidad del voluntario de un contacto (por contacto_id).
+        Devuelve [] si el contacto no es voluntario o no tiene franjas."""
+        from app.modules.membresia.models.disponibilidad import FranjaDisponibilidad
+        session = info.context.session
+        vinc = await _vinc_voluntario(session, contacto_id)
+        if vinc is None:
+            return []
+        voluntario = (await session.execute(
+            select(Voluntario).where(Voluntario.vinculacion_id == vinc.id)
+        )).scalar_one_or_none()
+        if voluntario is None:
+            return []
+        rows = (await session.execute(
+            select(FranjaDisponibilidad).where(
+                FranjaDisponibilidad.voluntario_id == voluntario.id,
+                FranjaDisponibilidad.activa.is_(True),
+            ).order_by(FranjaDisponibilidad.dia_semana, FranjaDisponibilidad.hora_inicio)
+        )).scalars().all()
+        return [
+            FranjaDisponibilidadOut(
+                id=f.id, dia_semana=f.dia_semana,
+                hora_inicio=f.hora_inicio, hora_fin=f.hora_fin,
+            )
+            for f in rows
         ]

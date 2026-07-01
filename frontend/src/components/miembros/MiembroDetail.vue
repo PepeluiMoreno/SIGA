@@ -713,102 +713,15 @@
               <!-- Disponibilidad -->
               <section class="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
                 <h3 class="text-xs font-semibold uppercase tracking-widest text-sky-600">Disponibilidad</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FieldText v-model="miembro.disponibilidad" label="Disponibilidad" :edit-mode="editForm" />
-                  <FieldText v-model="miembro.horasDisponiblesSemana" label="Horas/semana" type="number" :edit-mode="editForm" />
+                  <FieldText v-model="miembro.horasDisponiblesSemana" label="Horas/semana" type="number" width="sm" :edit-mode="editForm" />
                 </div>
 
                 <p v-if="isCreateMode" class="text-xs text-gray-400 italic">
                   Las franjas horarias podrán configurarse una vez creada la ficha.
                 </p>
-                <template v-else>
-                  <div v-if="loadingFranjas" class="text-center py-6 text-gray-400 text-sm">Cargando...</div>
-                  <div v-else class="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 lg:grid-cols-7 gap-2">
-                    <div v-for="(dia, i) in diasSemana" :key="i"
-                      class="rounded-xl border flex flex-col min-h-[140px] overflow-hidden"
-                      :class="franjasPorDia[i]?.length ? 'border-purple-200' : 'border-gray-200'">
-                      <div class="px-3 py-2 flex items-center justify-between"
-                        :class="franjasPorDia[i]?.length ? 'bg-purple-100' : 'bg-gray-100'">
-                        <span class="text-xs font-semibold"
-                          :class="franjasPorDia[i]?.length ? 'text-purple-800' : 'text-gray-500'">{{ dia }}</span>
-                        <button @click="abrirFormFranja(i)"
-                          class="w-5 h-5 flex items-center justify-center rounded-full text-sm font-bold leading-none"
-                          :class="franjasPorDia[i]?.length ? 'text-purple-500 hover:bg-purple-200' : 'text-gray-400 hover:bg-gray-200'">
-                          +
-                        </button>
-                      </div>
-                      <div class="flex-1 px-2 py-2 flex flex-col gap-1">
-                        <template v-if="franjasPorDia[i]?.length">
-                          <div v-for="f in franjasPorDia[i]" :key="f.id"
-                            class="flex items-center justify-between bg-white rounded-lg px-2 py-1 border border-purple-100 text-xs">
-                            <span class="text-purple-700 font-medium">{{ f.horaInicio.slice(0,5) }}–{{ f.horaFin.slice(0,5) }}</span>
-                            <button @click="eliminarFranja(f.id)" class="text-gray-300 hover:text-red-400 font-bold ml-1 leading-none">×</button>
-                          </div>
-                        </template>
-                        <div v-else class="flex-1 flex items-center justify-center">
-                          <span class="text-xs text-gray-400 italic">No disponible</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div v-if="!mostrarFormFranja" class="flex justify-end">
-                    <button @click="abrirFormFranja(0)"
-                      class="px-3 py-1.5 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700">
-                      + Añadir franja
-                    </button>
-                  </div>
-
-                  <!-- Drawer de nueva franja: el día ya viene fijado por la columna -->
-                  <AppDrawer
-                    v-model="mostrarFormFranja"
-                    :title="`Disponibilidad — ${diasSemanaLargo[nuevaFranja.diaSemana]}`"
-                    subtitle="Indica el tramo horario en que puedes colaborar"
-                    size="sm"
-                  >
-                    <div class="space-y-4">
-                      <!-- Día (cambiable, por si se abrió desde el botón general) -->
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Día de la semana</label>
-                        <div class="grid grid-cols-7 gap-1">
-                          <button
-                            v-for="(dia, i) in diasSemana" :key="i"
-                            type="button"
-                            @click="nuevaFranja.diaSemana = i"
-                            class="h-9 rounded-lg text-xs font-medium transition-colors"
-                            :class="nuevaFranja.diaSemana === i
-                              ? 'bg-purple-600 text-white'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-                          >{{ dia }}</button>
-                        </div>
-                      </div>
-
-                      <div class="grid grid-cols-2 gap-3">
-                        <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">Desde</label>
-                          <input v-model="nuevaFranja.horaInicio" type="time"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
-                        </div>
-                        <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">Hasta</label>
-                          <input v-model="nuevaFranja.horaFin" type="time"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <template #footer>
-                      <button @click="mostrarFormFranja = false"
-                        class="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
-                        Cancelar
-                      </button>
-                      <button @click="guardarFranja" :disabled="!nuevaFranja.horaInicio || !nuevaFranja.horaFin"
-                        class="px-4 py-2 text-sm text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50">
-                        Guardar franja
-                      </button>
-                    </template>
-                  </AppDrawer>
-                </template>
+                <FranjasDisponibilidad v-else :contacto-id="miembro.id" :edit-mode="editForm" />
               </section>
             </template>
           </div>
@@ -1193,6 +1106,7 @@ import FieldText from '@/components/common/form/FieldText.vue'
 import FieldTextarea from '@/components/common/form/FieldTextarea.vue'
 import FieldSelect from '@/components/common/form/FieldSelect.vue'
 import FieldCheckbox from '@/components/common/form/FieldCheckbox.vue'
+import FranjasDisponibilidad from '@/components/miembros/FranjasDisponibilidad.vue'
 import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
 import JustificantesGastoPanel from '@/components/common/JustificantesGastoPanel.vue'
 import { gql } from 'graphql-request'
@@ -1859,81 +1773,6 @@ async function eliminarHabilidad(id) {
   await cargarHabilidades()
 }
 
-// ── Franjas de disponibilidad ─────────────────────────────────────────────────
-const franjas = ref([])
-const loadingFranjas = ref(false)
-const mostrarFormFranja = ref(false)
-const nuevaFranja = ref({ diaSemana: 0, horaInicio: '', horaFin: '' })
-const diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
-const diasSemanaLargo = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-
-const franjasPorDia = computed(() => {
-  const grupos = {}
-  for (const f of franjas.value) {
-    if (!grupos[f.diaSemana]) grupos[f.diaSemana] = []
-    grupos[f.diaSemana].push(f)
-  }
-  return grupos
-})
-
-const QUERY_FRANJAS = gql`
-  query Franjas($miembroId: UUID!) {
-    franjasDisponibilidad(filter: { miembroId: { eq: $miembroId }, activa: { eq: true } }) {
-      id diaSemana horaInicio horaFin notas activa
-    }
-  }
-`
-const MUTATION_CREATE_FRANJA = gql`
-  mutation CrearFranja($data: FranjaDisponibilidadCreateInput!) {
-    crearFranjaDisponibilidad(data: $data) { id }
-  }
-`
-const MUTATION_DELETE_FRANJA = gql`
-  mutation EliminarFranjas($filter: FranjaDisponibilidadFilter!) {
-    eliminarFranjasDisponibilidad(filter: $filter) { id }
-  }
-`
-
-async function cargarFranjas(id = null) {
-  const miembroId = id || miembro.value.id
-  if (!miembroId) return
-  loadingFranjas.value = true
-  try {
-    const r = await graphqlClient.request(QUERY_FRANJAS, { miembroId })
-    franjas.value = (r.franjasDisponibilidad || []).sort(
-      (a, b) => a.diaSemana - b.diaSemana || a.horaInicio.localeCompare(b.horaInicio)
-    )
-  } finally {
-    loadingFranjas.value = false
-  }
-}
-
-function abrirFormFranja(dia) {
-  nuevaFranja.value = { diaSemana: dia, horaInicio: '', horaFin: '' }
-  mostrarFormFranja.value = true
-}
-
-async function guardarFranja() {
-  if (!nuevaFranja.value.horaInicio || !nuevaFranja.value.horaFin || !miembro.value.id) return
-  await graphqlClient.request(MUTATION_CREATE_FRANJA, {
-    data: {
-      miembroId: miembro.value.id,
-      diaSemana: nuevaFranja.value.diaSemana,
-      horaInicio: nuevaFranja.value.horaInicio,
-      horaFin: nuevaFranja.value.horaFin,
-      activa: true,
-    },
-  })
-  mostrarFormFranja.value = false
-  nuevaFranja.value = { diaSemana: 0, horaInicio: '', horaFin: '' }
-  await cargarFranjas()
-}
-
-async function eliminarFranja(id) {
-  await graphqlClient.request(MUTATION_DELETE_FRANJA, { filter: { id: { eq: id } } })
-  await cargarFranjas()
-}
-
 // ── Acceso y roles ────────────────────────────────────────────────────────────
 const rolesDisponibles = ref([])
 const loadingRoles = ref(false)
@@ -2174,7 +2013,7 @@ onMounted(async () => {
   }
   const resolvedId = props.miembroIdProp || route.params.id
   if (resolvedId) {
-    await Promise.all([fetchMiembro(resolvedId), cargarHabilidades(resolvedId), cargarFranjas(resolvedId), cargarNombramientos(resolvedId), cargarCuotas(resolvedId), cargarSolicitudReduccion(resolvedId)])
+    await Promise.all([fetchMiembro(resolvedId), cargarHabilidades(resolvedId), cargarNombramientos(resolvedId), cargarCuotas(resolvedId), cargarSolicitudReduccion(resolvedId)])
     if (!props.modoPropio) await cargarRolesDisponibles()
     if (props.editarInicial || route.query.modo === 'editar') editMode.value = true
     // modoPropio entra ya en edición: guardamos el snapshot para poder descartar.
