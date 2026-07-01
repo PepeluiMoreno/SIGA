@@ -5,7 +5,7 @@
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
     </div>
 
-    <form v-else @submit.prevent="handleSubmit" class="max-w-2xl mx-auto space-y-3 pb-24">
+    <form v-else @submit.prevent="handleSubmit" class="w-3/4 mx-auto space-y-3 pb-24">
 
       <!-- ══ 1. Destinatario de la cuenta ════════════════════════════════════ -->
       <section class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -184,7 +184,7 @@
 
     <!-- ══ Barra de acciones fija ═════════════════════════════════════════════ -->
     <div class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-t border-slate-200 shadow-[0_-4px_16px_-4px_rgba(0,0,0,0.08)]">
-      <div class="max-w-2xl mx-auto px-6 py-3 flex items-center justify-between">
+      <div class="w-3/4 mx-auto px-6 py-3 flex items-center justify-between">
         <p v-if="serverError" class="flex items-center gap-1.5 text-xs text-red-600">
           <ExclamationCircleIcon class="w-4 h-4 shrink-0" />
           {{ serverError }}

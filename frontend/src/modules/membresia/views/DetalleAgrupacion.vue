@@ -33,7 +33,9 @@
         <div class="grid grid-cols-12 gap-x-4 gap-y-3 text-sm">
           <div class="col-span-12 sm:col-span-6">
             <p :class="lbl">Depende de</p>
-            <p :class="ro">{{ padreUnidad?.nombre || '(unidad raíz)' }}</p>
+            <SelectorAgrupacion v-model="padreSel" :agrupaciones="todasUnidades"
+              placeholder="(unidad raíz — sin superior)" />
+            <p class="mt-1 text-[11px] text-slate-400">Deja vacío para crear una unidad raíz. La unidad superior determina el tipo disponible.</p>
           </div>
           <div class="col-span-12 sm:col-span-6">
             <p :class="lbl">Tipo de unidad <span class="text-red-400">*</span></p>
@@ -544,6 +546,7 @@ import {
 import AppLayout from '@/components/common/AppLayout.vue'
 import EstructuraOrganizativaEditor from '@/components/configuracion/EstructuraOrganizativaEditor.vue'
 import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
+import SelectorAgrupacion from '@/components/common/SelectorAgrupacion.vue'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
@@ -559,7 +562,9 @@ const editMode = ref(false)
 
 // ── Modo alta (crear nueva unidad) ──────────────────────────────────────────
 const esNuevo       = computed(() => route.name === 'NuevaAgrupacion')
-const padreIdParam  = computed(() => route.query.padre || null)
+// Unidad superior de la que cuelga la nueva. Se puede prefijar con ?padre=… (al
+// crear desde el árbol) pero es editable con el selector — vacío ⇒ unidad raíz.
+const padreSel      = ref(null)
 const niveles       = ref([])   // plantillas de nivel (NivelOrganizativo)
 const todasUnidades = ref([])   // unidades activas (árbol: id + agrupacionPadreId)
 const candidatos    = ref([])   // todos los socios activos (pool de candidatos a cargos)
@@ -598,10 +603,10 @@ const subtituloVista = computed(() =>
   esNuevo.value ? (padreUnidad.value ? `Dependiente de ${padreUnidad.value.nombre}` : 'Unidad raíz')
                 : (agrupacion.value?.tipoUnidad?.nombre || ''))
 
-const padreUnidad = computed(() => todasUnidades.value.find(u => u.id === padreIdParam.value) || null)
+const padreUnidad = computed(() => todasUnidades.value.find(u => u.id === padreSel.value) || null)
 const tiposDisponibles = computed(() => {
   const terr = niveles.value.filter(t => t.naturaleza === 'TERRITORIAL')
-  if (!padreIdParam.value) return terr.filter(t => !t.padreTipoId)
+  if (!padreSel.value) return terr.filter(t => !t.padreTipoId)
   const padreTipoId = padreUnidad.value?.tipoId
   if (!padreTipoId) return terr
   return terr.filter(t => t.padreTipoId === padreTipoId)
@@ -626,6 +631,8 @@ async function iniciarAlta() {
     ])
     if (rNiv.status === 'fulfilled')   niveles.value = rNiv.value.nivelesOrganizativos ?? []
     if (rUni.status === 'fulfilled')   todasUnidades.value = rUni.value.unidadesOrganizativas ?? []
+    // Prefijar el padre si se llegó desde el árbol con ?padre=…
+    if (route.query.padre) padreSel.value = route.query.padre
     if (rPaises.status === 'fulfilled') paises.value = (rPaises.value.paises ?? []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
     if (rProvs.status === 'fulfilled') provincias.value = (rProvs.value.provincias ?? []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
   } catch (e) {
@@ -649,7 +656,7 @@ async function guardarNuevo() {
         nombreCorto: form.nombreCorto.trim() || null,
         descripcion: form.descripcion.trim() || null,
         tipoId: formTipoId.value || null,
-        agrupacionPadreId: padreIdParam.value || null,
+        agrupacionPadreId: padreSel.value || null,
         paisId: form.paisId || null,
         provinciaId: form.provinciaId || null,
         municipioId: form.municipioId || null,

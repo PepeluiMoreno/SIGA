@@ -1,6 +1,6 @@
 <template>
   <AppLayout title="Nuevo grupo de trabajo" subtitle="Crear un nuevo equipo">
-    <div class="max-w-2xl mx-auto">
+    <div class="w-3/4 mx-auto">
       <div class="bg-white rounded-lg shadow p-6 space-y-5">
 
         <div>
@@ -20,11 +20,7 @@
 
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Agrupación territorial <span class="text-red-500">*</span></label>
-          <select v-model="form.agrupacionId"
-            class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="">Seleccionar agrupación…</option>
-            <option v-for="a in agrupaciones" :key="a.id" :value="a.id">{{ a.nombre }}</option>
-          </select>
+          <SelectorAgrupacion v-model="form.agrupacionId" :agrupaciones="agrupaciones" />
           <p class="mt-1 text-xs text-slate-400">Fija el ámbito del que se eligen los integrantes: no podrá entrar quien pertenezca a otra agrupación.</p>
         </div>
 
@@ -76,6 +72,7 @@ import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
+import SelectorAgrupacion from '@/components/common/SelectorAgrupacion.vue'
 import { graphqlClient } from '@/graphql/client'
 import { GET_TIPOS_GRUPO } from '@/modules/actividades/graphql/grupos.js'
 
@@ -107,7 +104,10 @@ const GQL_CREAR_GRUPO = `
 
 const GQL_AGRUPACIONES = `
   query AgrupacionesParaGrupo {
-    unidadesOrganizativas { id nombre activo }
+    unidadesOrganizativas {
+      id nombre activo agrupacionPadreId
+      tipoUnidad { id nombre }
+    }
   }
 `
 
@@ -120,7 +120,7 @@ const error = ref('')
 const form = ref({
   nombre: '',
   tipoGrupoId: '',
-  agrupacionId: '',
+  agrupacionId: null,
   descripcion: '',
   objetivo: '',
   fechaInicio: '',

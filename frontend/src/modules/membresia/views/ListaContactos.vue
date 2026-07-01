@@ -85,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
@@ -159,20 +159,6 @@ function vinculacionesVigentes(c) {
   return (c.vinculaciones || []).filter((v) => !v.fechaFin)
 }
 
-// Catálogo de vinculaciones presentes, RELACIONADO con los tipos de persona
-// elegidos: solo se ofrecen las que de hecho tienen contactos de ese tipo.
-const vinculacionesDisponibles = computed(() => {
-  const mapa = new Map()
-  for (const c of contactos.value) {
-    if (filters.value.tipos.length && !filters.value.tipos.includes(c.tipo)) continue
-    for (const v of vinculacionesVigentes(c)) {
-      const tv = v.tipoVinculacion
-      if (tv && !mapa.has(tv.codigo)) mapa.set(tv.codigo, { codigo: tv.codigo, nombre: tv.nombre })
-    }
-  }
-  return [...mapa.values()].sort((a, b) => a.nombre.localeCompare(b.nombre))
-})
-
 const filterFields = computed(() => {
   const campos = [
     {
@@ -189,12 +175,18 @@ const filterFields = computed(() => {
   ]
   // El filtro por vinculación solo tiene sentido en la vista GENERAL de Contactos
   // (cajón mixto). En Socios/Personal el colectivo ya está fijado: sobra.
+  // Aquí solo aplican las condiciones/vinculaciones propias de este cajón:
+  // Donante y Firmante (condiciones derivadas) y Simpatizante (vinculación).
   if (!props.colectivo) {
     campos.push({
       key: 'vinculaciones',
       label: 'Vinculación',
       type: 'multiselect',
-      options: vinculacionesDisponibles.value.map((f) => ({ value: f.codigo, label: f.nombre })),
+      options: [
+        { value: 'DONANTE', label: 'Donante' },
+        { value: 'FIRMANTE', label: 'Firmante' },
+        { value: 'SIMPATIZANTE', label: 'Simpatizante' },
+      ],
       allLabel: 'Cualquier vinculación',
       width: 'w-56',
     })
@@ -202,12 +194,8 @@ const filterFields = computed(() => {
   return campos
 })
 
-// Si al cambiar el tipo de persona alguna vinculación elegida deja de tener
-// sentido, se descarta.
-watch(() => filters.value.tipos.slice(), () => {
-  const validas = new Set(vinculacionesDisponibles.value.map((f) => f.codigo))
-  filters.value.vinculaciones = filters.value.vinculaciones.filter((cod) => validas.has(cod))
-})
+// El filtro de vinculación de la vista Contactos es fijo (Donante/Firmante/
+// Simpatizante); no depende del tipo de persona, así que no hay que depurarlo.
 
 function limpiarFiltros() {
   filters.value = { tipos: [], vinculaciones: [] }
@@ -224,8 +212,17 @@ const contactosFiltrados = computed(() => {
     if (!props.colectivo && (esColectivo(c, COLECTIVO_SOCIO) || esColectivo(c, COLECTIVO_PERSONAL))) return false
     if (filters.value.tipos.length && !filters.value.tipos.includes(c.tipo)) return false
     if (filters.value.vinculaciones.length) {
-      const tiene = vinculacionesVigentes(c).some((v) => v.tipoVinculacion && filters.value.vinculaciones.includes(v.tipoVinculacion.codigo))
-      if (!tiene) return false
+      // DONANTE/FIRMANTE son condiciones DERIVADAS (participación/donación);
+      // SIMPATIZANTE es una vinculación formal. Un contacto pasa si cumple
+      // cualquiera de las condiciones seleccionadas (OR).
+      const cond = condicionesDe(c.id)
+      const codsVinc = new Set(vinculacionesVigentes(c).map((v) => v.tipoVinculacion?.codigo).filter(Boolean))
+      const cumple = filters.value.vinculaciones.some((sel) => {
+        if (sel === 'DONANTE') return cond.esDonante
+        if (sel === 'FIRMANTE') return cond.esFirmante
+        return codsVinc.has(sel)   // SIMPATIZANTE (u otra vinculación formal)
+      })
+      if (!cumple) return false
     }
     if (q) {
       const heno = [

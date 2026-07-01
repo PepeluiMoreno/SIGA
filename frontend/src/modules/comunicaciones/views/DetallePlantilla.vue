@@ -13,6 +13,16 @@
     <template v-else-if="plantilla">
       <div class="space-y-3">
 
+        <!-- Barra de acciones sticky: los campos se autoguardan al salir, pero este
+             botón persiste TODO de una vez (cabecera + metas + partidas). -->
+        <div class="sticky top-0 z-20 -mx-1 px-1 py-2 bg-slate-50/90 backdrop-blur flex items-center justify-end gap-3 border-b border-slate-200">
+          <span v-if="guardadoOk" class="text-xs text-emerald-600 font-medium">✓ Guardado</span>
+          <button @click="guardarTodo" :disabled="guardandoTodo"
+            class="inline-flex items-center gap-2 px-4 h-9 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+            {{ guardandoTodo ? 'Guardando…' : 'Guardar plantilla' }}
+          </button>
+        </div>
+
         <!-- Cabecera general (siempre visible) -->
         <section class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
           <div class="flex items-center gap-3 px-5 py-3.5 border-b border-slate-200">
@@ -309,6 +319,24 @@ async function cargar() {
     error.value = e?.response?.errors?.[0]?.message || e.message || 'Error'
   } finally {
     cargando.value = false
+  }
+}
+
+// ── Guardar todo (botón explícito de la barra sticky) ──────────────────────────
+const guardandoTodo = ref(false)
+const guardadoOk = ref(false)
+async function guardarTodo() {
+  guardandoTodo.value = true
+  guardadoOk.value = false
+  try {
+    await guardarCabecera()
+    await guardarTodasMetas()
+    await guardarTodasPartidas()
+    // Las actividades/tareas ya se persisten en su propio @blur; refrescamos por si acaso.
+    guardadoOk.value = true
+    setTimeout(() => { guardadoOk.value = false }, 2500)
+  } finally {
+    guardandoTodo.value = false
   }
 }
 
