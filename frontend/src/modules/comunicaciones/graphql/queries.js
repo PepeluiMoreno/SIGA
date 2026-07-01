@@ -705,3 +705,11 @@ export const CERRAR_CAMPANIA = `
     }
   }
 `
+
+// Nº de firmas verificadas (doble opt-in) de una campaña de recogida de firmas.
+// Alimenta el panel "Recogida de firmas" del detalle de campaña.
+export const FIRMAS_VERIFICADAS_CAMPANIA = `
+  query FirmasVerificadasCampania($campaniaId: UUID!) {
+    firmasVerificadasCampania(campaniaId: $campaniaId)
+  }
+`

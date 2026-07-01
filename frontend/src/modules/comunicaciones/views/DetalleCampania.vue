@@ -384,6 +384,36 @@
               </div>
               <p v-else class="text-sm text-slate-400 italic">Sin metas definidas</p>
 
+              <!-- Recogida de firmas (campaña cuya métrica incluye firmas) -->
+              <div v-if="metaFirmas" class="rounded-lg border border-sky-200 bg-sky-50/50 p-4">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">Recogida de firmas</span>
+                  <span class="text-xs text-slate-500">recogida en el formulario web público</span>
+                </div>
+                <div class="flex flex-wrap items-end gap-6">
+                  <div>
+                    <div class="text-2xl font-semibold tabular-nums text-slate-800">
+                      {{ firmasRecogidas != null ? firmasRecogidas : '—' }}
+                    </div>
+                    <div class="text-xs text-slate-500">firmas verificadas</div>
+                  </div>
+                  <div v-if="objetivoFirmas">
+                    <div class="text-sm font-medium text-slate-600 tabular-nums">
+                      / {{ objetivoFirmas }} <span class="text-xs text-slate-400">objetivo</span>
+                    </div>
+                    <div v-if="pctFirmas != null" class="mt-1 h-1.5 w-40 rounded-full bg-slate-200 overflow-hidden">
+                      <div class="h-full rounded-full bg-sky-500" :style="{ width: Math.min(100, pctFirmas) + '%' }"></div>
+                    </div>
+                    <div v-if="pctFirmas != null" class="text-xs text-slate-500 mt-0.5">{{ pctFirmas }}%</div>
+                  </div>
+                </div>
+                <div v-if="actividadesFirmasOnline.length" class="mt-3 text-xs text-slate-500">
+                  Actividad(es) online de recogida:
+                  <span v-for="(a, i) in actividadesFirmasOnline" :key="a.id" class="font-medium text-slate-700">{{ a.nombre }}<span v-if="i < actividadesFirmasOnline.length - 1">, </span></span>
+                </div>
+                <p v-else class="mt-3 text-xs text-amber-600">Esta campaña tiene meta de firmas pero ninguna actividad online que las recoja.</p>
+              </div>
+
               <!-- Foto de campaña -->
               <div v-if="campania.fotoUrl">
                 <label :class="lbl">Infografía / imagen</label>
@@ -753,7 +783,7 @@ import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
 import CampaniaKpiBar from '@/modules/comunicaciones/components/CampaniaKpiBar.vue'
 import { graphqlClient } from '@/graphql/client'
-import { GET_CAMPANIA, GET_PLANTILLAS_CAMPANIA, PREVISUALIZAR_NOTIFICACION_CAMPANIA, ENVIAR_NOTIFICACION_CAMPANIA, CERRAR_CAMPANIA, CLONAR_CAMPANIA } from '@/modules/comunicaciones/graphql/queries.js'
+import { GET_CAMPANIA, GET_PLANTILLAS_CAMPANIA, PREVISUALIZAR_NOTIFICACION_CAMPANIA, ENVIAR_NOTIFICACION_CAMPANIA, CERRAR_CAMPANIA, CLONAR_CAMPANIA, FIRMAS_VERIFICADAS_CAMPANIA } from '@/modules/comunicaciones/graphql/queries.js'
 import { TRANSICIONAR_CAMPANIA, APROBAR_CAMPANIA } from '@/modules/actividades/graphql/queries.js'
 import { usePermisos } from '@/composables/usePermisos.js'
 const toast = useToast()
@@ -772,6 +802,7 @@ const cargando          = ref(true)
 const error             = ref(null)
 const campania          = ref(null)
 const estadosCampania   = ref([])
+const firmasRecogidas   = ref(null)  // nº de firmas verificadas (recogida de firmas)
 const cargandoTransicion = ref(false)
 // ── Modales ──────────────────────────────────────────────────────────────────
 const modalAprobacion = ref({ visible: false, titulo: '', notas: '', placeholder: '', btnLabel: '', esRechazo: false, estadoId: null, tipo: '' })
@@ -815,6 +846,24 @@ const actividades = computed(() => {
     const hb = b.horaInicio ?? '99:99'
     return ha.localeCompare(hb)
   })
+})
+
+// ── Recogida de firmas ────────────────────────────────────────────────────────
+// La campaña es "de recogida de firmas" si tiene una meta cuya unidad es firmas.
+// La recogida se hace en una actividad ONLINE (el formulario web público).
+const metaFirmas = computed(() =>
+  (campania.value?.metas ?? []).find(
+    m => (m.tipoMeta?.unidadMedida || '').toLowerCase().includes('firma')
+  ) || null
+)
+const objetivoFirmas = computed(() => metaFirmas.value?.valorPlanificado ?? null)
+const actividadesFirmasOnline = computed(() =>
+  (campania.value?.actividades ?? []).filter(a => a.esOnline)
+)
+const pctFirmas = computed(() => {
+  const obj = Number(objetivoFirmas.value)
+  if (!obj || firmasRecogidas.value == null) return null
+  return Math.round((Number(firmasRecogidas.value) / obj) * 100)
 })
 
 const esFinal = computed(() => {
@@ -1032,7 +1081,18 @@ async function cargarCampania() {
     const data = await graphqlClient.request(GET_CAMPANIA, { id: route.params.id })
     if (!data.campanias?.length) throw new Error('Campaña no encontrada')
     campania.value = data.campanias[0]
+    await cargarFirmasRecogidas()
   } catch (err) { error.value = err }
+}
+
+// Solo tiene sentido para campañas de recogida de firmas (meta en firmas).
+async function cargarFirmasRecogidas() {
+  firmasRecogidas.value = null
+  if (!metaFirmas.value) return
+  try {
+    const data = await graphqlClient.request(FIRMAS_VERIFICADAS_CAMPANIA, { campaniaId: campania.value.id })
+    firmasRecogidas.value = data.firmasVerificadasCampania ?? 0
+  } catch (e) { console.error('Error firmas recogidas:', e) }
 }
 
 async function cargarTodo() {

@@ -6,6 +6,11 @@
 > a la campaña de esa actividad y la métrica de firmas se lee de `MetaCampania`
 > (sin `MetaActividad` ni migración todavía). Pendiente: re-anclar la firma a la
 > actividad y mover la meta a la actividad (requiere migración + merge de heads).
+>
+> **Frontend:** el detalle de campaña (`DetalleCampania.vue`) muestra ya un panel
+> "Recogida de firmas" (firmas verificadas vs objetivo + actividades online),
+> alimentado por el nuevo resolver `firmasVerificadasCampania`. El resto de la UI
+> ya contemplaba lo necesario (`esOnline` editable, métricas con unidad "firmas").
 > Marco: es la **Fase 1** del norte arquitectónico
 > `docs/arquitectura/ACTIVIDAD_UNIDAD_ABC.md` (la Actividad como unidad
 > universal de trabajo y de coste).

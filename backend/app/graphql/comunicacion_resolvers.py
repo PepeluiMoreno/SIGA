@@ -57,6 +57,20 @@ class ComunicacionQuery:
         return notificaciones  # strawchemy mapea Notificacion → NotificacionType
 
     @strawberry.field(permission_classes=[RequireAuthenticated])
+    async def firmas_verificadas_campania(
+        self, info: strawberry.Info, campania_id: uuid.UUID
+    ) -> int:
+        """Nº de firmas verificadas (doble opt-in) de una campaña de recogida
+        de firmas. Reutiliza el servicio del formulario público para que la
+        vista de campaña muestre el progreso de la recogida."""
+        from app.modules.actividades.services.firma_publica_service import (
+            FirmaPublicaService,
+        )
+
+        service = FirmaPublicaService(info.context.session)
+        return await service.contar_firmas_verificadas(campania_id)
+
+    @strawberry.field(permission_classes=[RequireAuthenticated])
     async def mis_notificaciones_no_leidas(self, info: strawberry.Info) -> int:
         """Contador de notificaciones no leídas (para el badge del frontend)."""
         user = info.context.user
