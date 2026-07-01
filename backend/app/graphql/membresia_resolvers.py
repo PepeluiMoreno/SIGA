@@ -78,6 +78,7 @@ class MiembroCreateInput:
     localidad: Optional[str] = None
     provincia_id: Optional[uuid.UUID] = None
     pais_domicilio_id: Optional[uuid.UUID] = None
+    entidad_geografica_id: Optional[uuid.UUID] = None
     telefono: Optional[str] = None
     telefono2: Optional[str] = None
     email: Optional[str] = None
@@ -131,6 +132,7 @@ class MiembroUpdateInput:
     localidad: Optional[str] = None
     provincia_id: Optional[uuid.UUID] = None
     pais_domicilio_id: Optional[uuid.UUID] = None
+    entidad_geografica_id: Optional[uuid.UUID] = None
     telefono: Optional[str] = None
     telefono2: Optional[str] = None
     email: Optional[str] = None
@@ -174,7 +176,8 @@ class MiembroUpdateInput:
 _CONTACTO_FIELDS = (
     'nombre', 'apellido1', 'apellido2', 'sexo', 'fecha_nacimiento', 'tipo_documento',
     'numero_documento', 'pais_documento_id', 'pais_nacimiento_id', 'direccion',
-    'codigo_postal', 'localidad', 'provincia_id', 'pais_domicilio_id', 'telefono',
+    'codigo_postal', 'localidad', 'provincia_id', 'pais_domicilio_id', 'entidad_geografica_id',
+    'telefono',
     'telefono2', 'email', 'agrupacion_id', 'profesion', 'nivel_estudios_id',
     'activo', 'solicita_supresion_datos', 'fecha_solicitud_supresion',
     'fecha_limite_retencion', 'datos_anonimizados', 'fecha_anonimizacion',
@@ -199,7 +202,8 @@ _ECONOMIC_FIELDS = frozenset({
 _AUTO_EDITABLE_FIELDS = frozenset({
     'nombre', 'apellido1', 'apellido2', 'sexo', 'fecha_nacimiento', 'tipo_documento',
     'numero_documento', 'pais_documento_id', 'pais_nacimiento_id', 'direccion',
-    'codigo_postal', 'localidad', 'provincia_id', 'pais_domicilio_id', 'telefono',
+    'codigo_postal', 'localidad', 'provincia_id', 'pais_domicilio_id', 'entidad_geografica_id',
+    'telefono',
     'telefono2', 'email', 'profesion', 'nivel_estudios_id', 'foto_url',
     'solicita_supresion_datos',  # ejercer derecho RGPD propio (solicitar, no ejecutar)
 })

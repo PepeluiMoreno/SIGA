@@ -144,6 +144,7 @@ export const GET_MIEMBRO_BY_ID = `
       direccion
       localidad
       codigoPostal
+      entidadGeograficaId
       iban
       swiftBic
       referenciaPago

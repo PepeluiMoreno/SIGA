@@ -194,22 +194,18 @@
                   <FieldText v-model="miembro.telefono" label="Teléfono" :edit-mode="editMode || isCreateMode" />
                   <FieldText v-model="miembro.telefono2" label="Tel. alternativo" :edit-mode="editMode || isCreateMode" />
                 </div>
-                <FieldText v-model="miembro.direccion" label="Dirección" :edit-mode="editMode || isCreateMode" />
                 <div class="grid grid-cols-12 gap-4">
-                  <div class="col-span-2">
-                    <FieldSelect v-model="miembro.paisDomicilioId" label="País" :edit-mode="editMode || isCreateMode"
-                      :options="catalogos.paises" option-label="nombre" option-value="id" empty-label="—" />
+                  <div class="col-span-12 sm:col-span-8">
+                    <FieldText v-model="miembro.direccion" label="Dirección" :edit-mode="editMode || isCreateMode" />
                   </div>
-                  <div class="col-span-4">
-                    <FieldSelect v-model="miembro.provinciaId" label="Provincia" :edit-mode="editMode || isCreateMode"
-                      :options="catalogos.provincias" option-label="nombre" option-value="id" empty-label="Sin especificar" />
-                  </div>
-                  <div class="col-span-4">
-                    <FieldText v-model="miembro.localidad" label="Localidad" :edit-mode="editMode || isCreateMode" />
-                  </div>
-                  <div class="col-span-2">
+                  <div class="col-span-6 sm:col-span-2">
                     <FieldText v-model="miembro.codigoPostal" label="CP" :edit-mode="editMode || isCreateMode" />
                   </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Ubicación (municipio / provincia)</label>
+                  <EntidadGeograficaSelect v-model="miembro.entidadGeograficaId"
+                    :editing="editMode || isCreateMode" :niveles="[2, 3]" />
                 </div>
               </div>
             </section>
@@ -1197,6 +1193,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import TabsNavigation from '@/components/common/TabsNavigation.vue'
 import AppDrawer from '@/components/common/AppDrawer.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
+import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
 import JustificantesGastoPanel from '@/components/common/JustificantesGastoPanel.vue'
 import { gql } from 'graphql-request'
 import { graphqlClient } from '@/graphql/client.js'
