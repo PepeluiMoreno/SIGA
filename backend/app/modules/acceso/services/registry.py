@@ -110,3 +110,17 @@ class ModuleCatalog:
             t for t in cls._transacciones.values()
             if cls._transaccion_modulos.get(t.codigo) == modulo
         ]
+
+    @classmethod
+    def get_funcionalidades_de_transaccion(cls, codigo_transaccion: str) -> List[tuple[str, str]]:
+        """Funcionalidades a las que pertenece una transacción: lista de (codigo_func, modulo_func).
+
+        Una transacción puede estar en varias funcionalidades. Se usa para el gateo de
+        activación por funcionalidad (una transacción está activa si está en al menos una
+        funcionalidad activa). Ver acceso.services.modulos.
+        """
+        return [
+            (f.codigo, f.modulo)
+            for f in cls._funcionalidades.values()
+            if any(ft.transaccion_codigo == codigo_transaccion for ft in f.transacciones)
+        ]

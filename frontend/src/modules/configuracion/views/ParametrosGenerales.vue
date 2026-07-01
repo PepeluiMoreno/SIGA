@@ -516,6 +516,32 @@
           </div>
         </AccordionPanel>
 
+        <!-- 9. Módulos de la aplicación (solo lectura) -->
+        <AccordionPanel title="Módulos de la aplicación" :default-open="false">
+          <div class="px-5 py-4 space-y-3">
+            <p class="text-xs text-slate-500">
+              Módulos actualmente activos en la aplicación. Los módulos apagados ocultan sus
+              pantallas y deniegan sus operaciones para todos los perfiles. De momento es
+              informativo (solo lectura); el encendido/apagado se gestionará desde aquí más adelante.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div v-for="m in modulos" :key="m.codigo"
+                   class="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+                   :class="m.activo ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50'">
+                <div class="min-w-0">
+                  <span class="text-sm font-medium text-slate-800">{{ m.nombre }}</span>
+                  <span v-if="m.sistema" class="ml-1.5 text-xs text-slate-400">· transversal</span>
+                </div>
+                <span class="inline-flex items-center gap-1.5 text-xs font-medium shrink-0"
+                      :class="m.activo ? 'text-emerald-700' : 'text-slate-400'">
+                  <span class="w-2 h-2 rounded-full" :class="m.activo ? 'bg-emerald-500' : 'bg-slate-300'"></span>
+                  {{ m.activo ? 'Activo' : 'Apagado' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </AccordionPanel>
+
       </AccordionGroup>
 
     </form>
@@ -722,6 +748,10 @@ const redesSociales = [
   },
 ]
 
+// Módulos de la aplicación (solo lectura, panel informativo)
+const modulos = ref([])
+const QUERY_MODULOS = `query { modulos { codigo nombre activo sistema } }`
+
 const QUERY_PARAMETROS = `
   query {
     parametrosOrganizacion {
@@ -774,6 +804,12 @@ function eliminarLogo() {
 onMounted(async () => {
   if (orgConfigStore.nombre) form.nombre = orgConfigStore.nombre
   if (orgConfigStore.logo)   form.logo   = orgConfigStore.logo
+
+  // Estado de módulos (panel informativo de solo lectura)
+  try {
+    const dm = await graphqlClient.request(QUERY_MODULOS)
+    modulos.value = dm.modulos || []
+  } catch (e) { /* panel informativo; si falla, se muestra vacío */ }
 
   try {
     const data = await graphqlClient.request(QUERY_PARAMETROS)

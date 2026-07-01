@@ -39,12 +39,20 @@ class CatalogSyncService:
     # ------------------------------------------------------------------
 
     async def _sync_transacciones(self) -> None:
+        from .modulos import transaccion_activa_por_funcionalidades
         for defn in ModuleCatalog.get_transacciones():
             # Módulo canónico declarado en el catálogo (constante MODULO), no el
             # prefijo del código: un módulo puede declarar varios prefijos
-            # (actividades → CAMPANA_/GRUPO_/EVENTO_/ACTIVIDAD_). El fallback al
+            # (actividades → CAMPANA_/GRUPO_/ACTIVIDAD_). El fallback al
             # prefijo solo cubre transacciones registradas sin módulo explícito.
             modulo = ModuleCatalog.get_modulo_transaccion(defn.codigo) or defn.codigo.split("_")[0].lower()
+            # `activa` refleja el estado efectivo por FUNCIONALIDAD (con fallback a módulo):
+            # una transacción está activa si está en ≥1 funcionalidad activa. Así el apagado
+            # tiene granularidad fina (una func económica puede quedar OFF en un módulo ON).
+            # La columna gobierna la UI (mis_transacciones filtra por activa) en la misma
+            # verdad que la matrix (enforcement de backend).
+            funcs = ModuleCatalog.get_funcionalidades_de_transaccion(defn.codigo)
+            activa = transaccion_activa_por_funcionalidades(modulo, funcs)
             result = await self.session.execute(
                 select(Transaccion).where(Transaccion.codigo == defn.codigo)
             )
@@ -57,7 +65,7 @@ class CatalogSyncService:
                     descripcion=defn.descripcion,
                     tipo=defn.tipo,
                     modulo=modulo,
-                    activa=True,
+                    activa=activa,
                     sistema=defn.sistema,
                 )
                 self.session.add(obj)
@@ -66,6 +74,7 @@ class CatalogSyncService:
                 obj.nombre = defn.nombre
                 obj.descripcion = defn.descripcion
                 obj.modulo = modulo
+                obj.activa = activa
                 obj.sistema = defn.sistema
 
     # ------------------------------------------------------------------

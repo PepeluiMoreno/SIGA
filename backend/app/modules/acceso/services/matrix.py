@@ -53,27 +53,53 @@ class AsyncPermissionMatrixBuilder:
         self.permissions = SQLPermissionRepository(session)
         self.functionalities = SQLFunctionalityRepository(session)
 
+    async def _transacciones_inactivas(self) -> FrozenSet[str]:
+        """IDs de transacciones cuya FUNCIONALIDAD (o módulo) está apagada.
+
+        Se excluyen del snapshot para que ningún rol —ni el SUPERADMIN— pueda
+        ejecutarlas mientras estén apagadas. Fuente de verdad: services.modulos +
+        el mapa transacción→funcionalidades del ModuleCatalog. Coincide con la columna
+        `activa` que fija el CatalogSyncService.
+        """
+        from sqlalchemy import select
+        from .modulos import transaccion_activa_por_funcionalidades
+        from .registry import ModuleCatalog
+        from ..models.transaccion import Transaccion
+
+        rows = (await self.roles.session.execute(  # reutiliza la sesión del repo
+            select(Transaccion.id, Transaccion.codigo, Transaccion.modulo)
+        )).all()
+        inactivas = set()
+        for (tid, codigo, modulo) in rows:
+            funcs = ModuleCatalog.get_funcionalidades_de_transaccion(codigo)
+            if not transaccion_activa_por_funcionalidades(modulo, funcs):
+                inactivas.add(str(tid))
+        return frozenset(inactivas)
+
     async def build(self) -> PermissionMatrixSnapshot:
         snapshot = PermissionMatrixSnapshot()
+
+        inactivas = await self._transacciones_inactivas()
 
         role_ids = await self.roles.get_all_role_ids()
         func_ids = await self.functionalities.get_all_functionality_ids()
 
         for rid in role_ids:
             txs = await self.permissions.get_transactions_by_role(rid)
-            snapshot.role_transactions[rid] = frozenset(txs)
+            snapshot.role_transactions[rid] = frozenset(txs) - inactivas
 
             funcs = await self.functionalities.get_functionalities_by_role(rid)
             snapshot.role_functionalities[rid] = frozenset(funcs)
 
         for fid in func_ids:
             txs = await self.functionalities.get_transactions_by_functionality(fid)
-            snapshot.functionality_transactions[fid] = frozenset(txs)
+            snapshot.functionality_transactions[fid] = frozenset(txs) - inactivas
 
         logger.info(
-            "PermissionMatrix construida: %d roles, %d funcionalidades",
+            "PermissionMatrix construida: %d roles, %d funcionalidades, %d transacciones inactivas (módulos OFF)",
             len(role_ids),
             len(func_ids),
+            len(inactivas),
         )
         return snapshot
 

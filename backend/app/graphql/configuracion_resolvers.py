@@ -17,6 +17,15 @@ from app.core.email_service import _load_smtp_config
 from app.graphql.permissions import RequireTransaction
 
 
+@strawberry.type
+class ModuloEstado:
+    """Estado de un módulo de la aplicación (encendido / apagado). Solo lectura."""
+    codigo: str
+    nombre: str
+    activo: bool
+    sistema: bool  # transversal: no se puede apagar
+
+
 # ---------------------------------------------------------------------------
 # Tipos de salida
 # ---------------------------------------------------------------------------
@@ -236,6 +245,20 @@ class ConfiguracionOrganizacionQuery:
         """True si los parámetros SMTP obligatorios están rellenos."""
         config = await _load_smtp_config(info.context.session)
         return config.configured
+
+    @strawberry.field
+    async def modulos(self, info: strawberry.Info) -> list[ModuloEstado]:
+        """Módulos de la aplicación con su estado (encendido/apagado). SOLO LECTURA.
+
+        Fuente de verdad: app.modules.acceso.services.modulos. En el MVP están
+        activos Membresía, Contactos y Actividades, más los transversales
+        (Configuración, Control de Acceso); el resto apagado.
+        """
+        from app.modules.acceso.services.modulos import modulos_estado
+        return [
+            ModuloEstado(codigo=m.codigo, nombre=m.nombre, activo=m.activo, sistema=m.sistema)
+            for m in modulos_estado()
+        ]
 
 
 # ---------------------------------------------------------------------------
