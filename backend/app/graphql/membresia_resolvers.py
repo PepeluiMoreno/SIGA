@@ -7,7 +7,7 @@ Este módulo define MiembroCreateInput y MiembroUpdateInput completos
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import date, datetime
 from typing import Optional, List
 
 import strawberry
@@ -969,6 +969,18 @@ class ContactoCondicionesItemType:
     es_donante: bool
 
 
+@strawberry.type(name="ActoContacto")
+class ActoContactoType:
+    """Un acto del contacto en la línea de tiempo de su historial: una firma, una
+    asistencia a una actividad o una donación. Cada acto lleva su fecha, el tipo, la
+    campaña/actividad asociada y (en donaciones) el importe."""
+    tipo: str                    # 'FIRMA' | 'ASISTENCIA' | 'DONACION'
+    fecha: datetime
+    entidad_nombre: Optional[str] = None   # nombre de la campaña o actividad
+    importe: Optional[float] = None        # solo donaciones (€)
+    verificado: Optional[bool] = None      # solo firmas (doble opt-in)
+
+
 @strawberry.type
 class MembresiaQuery:
     @strawberry.field(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_VALIDAR")])
@@ -1112,6 +1124,75 @@ class MembresiaQuery:
             n_participaciones=int(n_part),
             n_donaciones=int(n_don),
         )
+
+    @strawberry.field(permission_classes=[RequireAuthenticated])
+    async def historial_contacto(
+        self, info: strawberry.Info, contacto_id: uuid.UUID
+    ) -> List['ActoContactoType']:
+        """Línea de tiempo de los ACTOS de un contacto (firmas, asistencias a
+        actividades y donaciones), más recientes primero. Cada acto lleva su fecha,
+        tipo, la campaña/actividad asociada y (donaciones) el importe. Sustituye a los
+        contadores agregados por un historial cronológico legible."""
+        from app.modules.actividades.models.campana import FirmaCampania, Campania
+        from app.modules.actividades.models.actividad import AsistenciaActividad, Actividad
+        from app.modules.economico.models.donaciones import Donacion
+
+        session = info.context.session
+
+        def _dt(valor):
+            """Normaliza date|datetime → datetime para poder ordenar la mezcla."""
+            if valor is None:
+                return None
+            return valor if isinstance(valor, datetime) else datetime(valor.year, valor.month, valor.day)
+
+        actos: list[ActoContactoType] = []
+
+        # Firmas de campaña (con el nombre de la campaña firmada).
+        firmas = (await session.execute(
+            select(FirmaCampania.fecha_firma, Campania.nombre, FirmaCampania.verificado)
+            .join(Campania, FirmaCampania.campania_id == Campania.id, isouter=True)
+            .where(FirmaCampania.contacto_id == contacto_id, FirmaCampania.eliminado.is_(False))
+        )).all()
+        for fecha, nombre, verificado in firmas:
+            actos.append(ActoContactoType(
+                tipo="FIRMA", fecha=_dt(fecha), entidad_nombre=nombre, verificado=verificado,
+            ))
+
+        # Asistencias a actividades (fecha del acto = fecha de la actividad, con fallback
+        # a la fecha de registro de la participación).
+        asistencias = (await session.execute(
+            select(Actividad.fecha_inicio, Participacion.fecha, Actividad.nombre)
+            .select_from(AsistenciaActividad)
+            .join(Participacion, AsistenciaActividad.participacion_id == Participacion.id)
+            .join(Actividad, AsistenciaActividad.actividad_id == Actividad.id)
+            .where(
+                Participacion.contacto_id == contacto_id,
+                Participacion.tipo == "ASISTENCIA",
+                Participacion.eliminado.is_(False),
+            )
+        )).all()
+        for fecha_act, fecha_part, nombre in asistencias:
+            actos.append(ActoContactoType(
+                tipo="ASISTENCIA", fecha=_dt(fecha_act or fecha_part), entidad_nombre=nombre,
+            ))
+
+        # Donaciones (con el nombre de la campaña de fundraising, si la hay, y el importe).
+        # Donacion.campania_id es un Uuid suelto (aún sin FK SQL), pero el join por igualdad
+        # de columnas funciona igual.
+        donaciones = (await session.execute(
+            select(Donacion.fecha, Campania.nombre, Donacion.importe)
+            .join(Campania, Donacion.campania_id == Campania.id, isouter=True)
+            .where(Donacion.contacto_id == contacto_id, Donacion.eliminado.is_(False))
+        )).all()
+        for fecha, nombre, importe in donaciones:
+            actos.append(ActoContactoType(
+                tipo="DONACION", fecha=_dt(fecha), entidad_nombre=nombre,
+                importe=float(importe) if importe is not None else None,
+            ))
+
+        actos = [a for a in actos if a.fecha is not None]
+        actos.sort(key=lambda a: a.fecha, reverse=True)  # lo más reciente arriba
+        return actos
 
     @strawberry.field(permission_classes=[RequireAuthenticated])
     async def condiciones_contactos(

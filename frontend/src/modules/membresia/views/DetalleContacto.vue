@@ -137,24 +137,11 @@
           </h2>
           <HistorialVinculaciones :contacto-id="route.params.id" />
 
-          <!-- Condiciones derivadas de actos (participaciones, firmas, donaciones) -->
-          <div v-if="condiciones && (condiciones.esParticipante || condiciones.esFirmante || condiciones.esDonante)"
-            class="mt-4 pt-4 border-t border-slate-100">
-            <p class="text-xs font-medium text-slate-500 mb-2">Actividad registrada</p>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <div v-if="condiciones.esParticipante" class="rounded-lg border border-sky-200 bg-sky-50/50 px-3 py-2">
-                <p class="text-lg font-semibold text-sky-800">{{ condiciones.nParticipaciones }}</p>
-                <p class="text-xs text-sky-700">participación(es)</p>
-              </div>
-              <div v-if="condiciones.esFirmante" class="rounded-lg border border-teal-200 bg-teal-50/50 px-3 py-2">
-                <p class="text-lg font-semibold text-teal-800">{{ condiciones.nFirmas }}</p>
-                <p class="text-xs text-teal-700">firma(s)</p>
-              </div>
-              <div v-if="condiciones.esDonante" class="rounded-lg border border-amber-200 bg-amber-50/50 px-3 py-2">
-                <p class="text-lg font-semibold text-amber-800">{{ condiciones.nDonaciones }}</p>
-                <p class="text-xs text-amber-700">donación(es)</p>
-              </div>
-            </div>
+          <!-- Historial cronológico de actos: firmas, asistencias y donaciones, en
+               líneas de detalle ("El DD/MM firmó en apoyo de la campaña X"), no contadores. -->
+          <div class="mt-5 pt-4 border-t border-slate-100">
+            <p class="text-xs font-medium text-slate-500 mb-3">Actividad registrada</p>
+            <HistorialActosContacto :contacto-id="route.params.id" />
           </div>
         </div>
       </template>
@@ -170,6 +157,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
 import TabsNavigation from '@/components/common/TabsNavigation.vue'
 import HistorialVinculaciones from '@/components/miembros/HistorialVinculaciones.vue'
+import HistorialActosContacto from '@/components/miembros/HistorialActosContacto.vue'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
