@@ -1,6 +1,15 @@
 <template>
-  <AppLayout title="Solicitudes de socio" subtitle="Aspirantes pendientes de aprobación">
-    <div class="max-w-4xl">
+  <AppLayout title="Solicitudes de admisión" subtitle="Solicitudes pendientes de aprobación y alta directa de socios">
+    <div class="w-3/4 mx-auto">
+      <!-- Barra de acciones: alta directa de socio (sin pasar por solicitud) para
+           quien puede dar de alta socios (secretaría de la asociación o de la unidad). -->
+      <div class="flex items-center justify-end mb-4">
+        <button v-if="puedeAltaSocio" @click="mostrarAlta = true"
+          class="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+          <PlusIcon class="w-4 h-4" /> Alta de socio
+        </button>
+      </div>
+
       <div v-if="cargando" class="text-center py-12 text-slate-400 text-sm">Cargando solicitudes…</div>
       <div v-else-if="error" class="rounded-md bg-red-50 border border-red-200 p-4 text-sm text-red-800">{{ error }}</div>
       <div v-else-if="!solicitudes.length" class="text-center py-16 text-slate-400 text-sm">
@@ -44,26 +53,45 @@
         </table>
       </div>
     </div>
+
+    <!-- Alta directa de socio (reutiliza el modal estándar de nuevo miembro) -->
+    <NuevoMiembroModal v-if="mostrarAlta" @close="mostrarAlta = false" @created="onAltaCreada" />
   </AppLayout>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { PlusIcon } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
+import NuevoMiembroModal from '@/components/miembros/NuevoMiembroModal.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
+import { usePermisos } from '@/composables/usePermisos'
 import {
   GET_SOLICITUDES_SOCIO, APROBAR_SOLICITUD_SOCIO, RECHAZAR_SOLICITUD_SOCIO,
 } from '@/graphql/queries/miembros.js'
 
 const toast = useToast()
 const confirm = useConfirm()
+const { tienePermiso } = usePermisos()
+
+// Alta directa de socio (sin pasar por solicitud). La ve quien puede crear socios:
+// secretaría de la asociación o secretario/coordinador de la unidad territorial del
+// nuevo socio. El backend valida además el ámbito territorial en la mutación.
+const puedeAltaSocio = computed(() => tienePermiso('MEMBRESIA_MIEMBRO_CREAR'))
+const mostrarAlta = ref(false)
 
 const solicitudes = ref([])
 const cargando = ref(true)
 const error = ref('')
 const procesando = ref(null)
+
+function onAltaCreada() {
+  mostrarAlta.value = false
+  toast.success('Socio dado de alta.')
+  cargar()
+}
 
 async function cargar() {
   cargando.value = true

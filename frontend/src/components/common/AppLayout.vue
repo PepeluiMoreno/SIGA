@@ -116,7 +116,7 @@
                   <li v-if="tienePermiso('MEMBRESIA_MIEMBRO_VALIDAR')">
                     <router-link to="/solicitudes-socio" class="nav-item"
                       :class="$route.path.startsWith('/solicitudes-socio') ? 'active' : 'inactive'">
-                      <CheckBadgeIcon class="nav-icon" /><span>Aspirantes</span>
+                      <CheckBadgeIcon class="nav-icon" /><span>Solicitudes de admisión</span>
                     </router-link>
                   </li>
                   <li v-if="tienePermiso('MEMBRESIA_AGRUPACION_EDITAR')">
