@@ -118,8 +118,10 @@ class EmailService:
         asunto: str,
         cuerpo_html: str,
         cuerpo_texto: Optional[str] = None,
+        cc: Optional[list] = None,
+        cco: Optional[list] = None,
     ) -> None:
-        """Envía un email.
+        """Envía un email. `cc` en copia visible, `cco` en copia oculta.
 
         Raises:
             RuntimeError: si SMTP no está configurado o el envío falla.
@@ -138,6 +140,11 @@ class EmailService:
         msg['Subject'] = asunto
         msg['From']    = config.from_
         msg['To']      = destinatario
+        if cc:
+            msg['Cc'] = ', '.join(cc)
+        # El Bcc (cco) NO se pone como cabecera (sería visible); se pasa aparte como
+        # destinatario adicional en el sobre SMTP.
+        recipients = [destinatario] + list(cc or []) + list(cco or [])
 
         if cuerpo_texto:
             msg.attach(MIMEText(cuerpo_texto, 'plain', 'utf-8'))
@@ -146,6 +153,7 @@ class EmailService:
         try:
             await aiosmtplib.send(
                 msg,
+                recipients=recipients,
                 hostname=config.host,
                 port=config.port,
                 username=config.usuario or None,

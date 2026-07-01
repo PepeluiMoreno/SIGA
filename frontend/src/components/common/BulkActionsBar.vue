@@ -1,33 +1,28 @@
 <template>
   <!-- Barra de acciones masivas: aparece al haber selección (estilo WordPress) -->
   <Transition name="bulk">
+    <!-- Barra de acciones en lote, estética sobria estilo WordPress. -->
     <div v-if="count > 0"
-      class="flex flex-wrap items-center gap-3 px-4 py-2.5 mb-3 bg-indigo-50 border border-indigo-200 rounded-lg text-sm">
-      <span class="font-semibold text-indigo-800">
-        {{ count }} seleccionado{{ count === 1 ? '' : 's' }}
-      </span>
+      class="flex flex-wrap items-center gap-2 px-3 py-2 mb-3 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600">
+      <!-- Desplegable de acción conjunta + Aplicar, junto a la cuenta.
+           La selección se quita con el toggle del checkbox general de la tabla. -->
+      <select v-model="accionSel"
+        class="h-8 px-2.5 text-sm border border-slate-300 rounded bg-white text-slate-700">
+        <option value="">Acciones en lote…</option>
+        <option v-for="a in accionesVisibles" :key="a.key" :value="a.key">{{ a.label }}</option>
+      </select>
+      <button type="button" :disabled="!accionSel" @click="aplicar"
+        class="h-8 px-3 text-sm text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-100 disabled:opacity-50">
+        Aplicar
+      </button>
+
+      <span class="text-slate-500">{{ count }} seleccionado{{ count === 1 ? '' : 's' }}</span>
 
       <!-- Seleccionar todo el resultado del filtro, no solo lo visible -->
       <button v-if="!todoSeleccionado && total > count" type="button"
         @click="$emit('seleccionar-todos')"
-        class="text-indigo-600 hover:underline text-xs">
+        class="text-slate-500 hover:text-slate-700 hover:underline text-xs">
         Seleccionar los {{ total }} del filtro
-      </button>
-      <button type="button" @click="$emit('limpiar')"
-        class="text-slate-500 hover:text-slate-700 text-xs">
-        Quitar selección
-      </button>
-
-      <span class="flex-1" />
-
-      <select v-model="accionSel"
-        class="h-8 px-2.5 text-sm border border-slate-300 rounded-lg bg-white">
-        <option value="">Acciones…</option>
-        <option v-for="a in accionesVisibles" :key="a.key" :value="a.key">{{ a.label }}</option>
-      </select>
-      <button type="button" :disabled="!accionSel" @click="aplicar"
-        class="h-8 px-3 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-        Aplicar
       </button>
     </div>
   </Transition>
@@ -44,7 +39,7 @@ const props = defineProps({
   /** [{ key, label, permiso? }] — permiso opcional gatea la acción por RBAC. */
   acciones: { type: Array, default: () => [] },
 })
-const emit = defineEmits(['seleccionar-todos', 'limpiar', 'ejecutar'])
+const emit = defineEmits(['seleccionar-todos', 'ejecutar'])
 
 const { tienePermiso } = usePermisos()
 const accionSel = ref('')

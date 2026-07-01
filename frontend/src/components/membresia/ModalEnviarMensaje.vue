@@ -1,73 +1,105 @@
 <template>
   <Teleport to="body">
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" @click.self="$emit('close')">
-      <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-        <!-- Cabecera -->
-        <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-200">
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col">
+        <!-- Cabecera tipo "Redactar" de un webmail -->
+        <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200 bg-slate-50 rounded-t-xl">
           <h3 class="text-sm font-semibold text-slate-800">Redactar mensaje</h3>
-          <button @click="$emit('close')" class="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+          <button @click="$emit('close')" class="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-200">
             <XMarkIcon class="w-5 h-5" />
           </button>
         </div>
 
-        <div class="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-          <!-- Plantilla pre-redactada (arriba). El catálogo por rol es post-MVP;
-               de momento solo la opción de redactar libremente. -->
-          <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Mensaje preestablecido</label>
+        <div class="flex-1 overflow-y-auto">
+          <!-- Plantilla pre-redactada -->
+          <div class="flex items-center gap-2 px-5 py-2 border-b border-slate-100">
+            <span class="text-xs text-slate-500 w-16 shrink-0">Plantilla</span>
             <select v-model="plantillaSel" @change="aplicarPlantilla"
-              class="w-full h-9 px-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              class="flex-1 h-8 px-2 text-sm border border-slate-200 rounded bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400">
               <option value="">Redactar mensaje nuevo…</option>
               <option v-for="p in plantillas" :key="p.id" :value="p.id">{{ p.nombre }}</option>
             </select>
           </div>
 
-          <!-- Para: emails de los seleccionados (chips) -->
-          <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Para ({{ conEmail.length }})</label>
-            <div class="flex flex-wrap gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 max-h-24 overflow-y-auto">
-              <span v-for="d in conEmail" :key="d.id"
-                class="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-white border border-slate-200 rounded-full text-slate-700">
+          <!-- Para: chips quitables -->
+          <div class="flex items-start gap-2 px-5 py-2 border-b border-slate-100">
+            <span class="text-xs text-slate-500 w-16 shrink-0 pt-1.5">Para</span>
+            <div class="flex-1 flex flex-wrap gap-1.5">
+              <span v-for="d in paraLista" :key="d.id"
+                class="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 text-xs bg-indigo-50 border border-indigo-200 rounded-full text-indigo-700">
                 {{ d.email }}
+                <button @click="quitarPara(d.id)" class="text-indigo-400 hover:text-red-500" title="Quitar">
+                  <XMarkIcon class="w-3 h-3" />
+                </button>
               </span>
-              <span v-if="!conEmail.length" class="text-xs text-slate-400 italic">Ningún destinatario con email.</span>
+              <span v-if="!paraLista.length" class="text-xs text-slate-400 italic pt-0.5">Sin destinatarios con email.</span>
+              <button v-if="!mostrarCcCco" type="button" @click="mostrarCcCco = true"
+                class="text-xs text-slate-400 hover:text-indigo-600 pt-0.5 ml-1">CC/CCO</button>
             </div>
-            <p v-if="sinEmail" class="mt-1 text-xs text-amber-600">
-              {{ sinEmail }} seleccionado{{ sinEmail === 1 ? '' : 's' }} sin email (no recibirá{{ sinEmail === 1 ? '' : 'n' }}).
-            </p>
           </div>
+
+          <!-- CC / CCO (emails sueltos, separados por coma) -->
+          <template v-if="mostrarCcCco">
+            <div class="flex items-center gap-2 px-5 py-2 border-b border-slate-100">
+              <span class="text-xs text-slate-500 w-16 shrink-0">CC</span>
+              <input v-model="ccTexto" type="text" placeholder="correo1@ejemplo.com, correo2@ejemplo.com"
+                class="flex-1 h-8 px-2 text-sm border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+            </div>
+            <div class="flex items-center gap-2 px-5 py-2 border-b border-slate-100">
+              <span class="text-xs text-slate-500 w-16 shrink-0">CCO</span>
+              <input v-model="ccoTexto" type="text" placeholder="copia oculta…"
+                class="flex-1 h-8 px-2 text-sm border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+            </div>
+          </template>
 
           <!-- Asunto -->
-          <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Asunto</label>
+          <div class="flex items-center gap-2 px-5 py-2 border-b border-slate-100">
+            <span class="text-xs text-slate-500 w-16 shrink-0">Asunto</span>
             <input v-model="asunto" type="text" placeholder="Asunto del mensaje"
-              class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              class="flex-1 h-8 px-2 text-sm border-0 focus:outline-none focus:ring-0" />
           </div>
 
-          <!-- Cuerpo: editable in situ como un webmail -->
-          <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Mensaje</label>
-            <textarea v-model="cuerpo" rows="10" placeholder="Escribe el mensaje…"
-              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          <!-- Cuerpo: editor enriquecido tipo webmail -->
+          <div class="px-5 py-3">
+            <EditorTextoRico v-model="cuerpo" placeholder="Escribe el mensaje…" />
           </div>
 
-          <div v-if="error" class="rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-700 flex items-start gap-2">
+          <!-- Pie del mensaje (firma) -->
+          <div class="px-5 pb-3">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-medium text-slate-500">Pie del mensaje (firma)</span>
+              <button type="button" @click="mostrarPie = !mostrarPie" class="text-xs text-indigo-600 hover:underline">
+                {{ mostrarPie ? 'Ocultar' : 'Editar' }}
+              </button>
+            </div>
+            <EditorTextoRico v-if="mostrarPie" v-model="pie" placeholder="Firma / datos de la asociación…" />
+            <p v-else class="text-xs text-slate-400 italic">Se añadirá el pie al final del mensaje.</p>
+          </div>
+
+          <div v-if="error" class="mx-5 mb-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-700 flex items-start gap-2">
             <ExclamationTriangleIcon class="w-4 h-4 mt-0.5 shrink-0" />
             <span>{{ error }}</span>
           </div>
         </div>
 
         <!-- Acciones -->
-        <div class="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-slate-200">
-          <button @click="$emit('close')"
-            class="h-9 px-4 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
-            Cancelar
-          </button>
-          <button @click="enviar" :disabled="enviando || !conEmail.length || !asunto.trim() || !cuerpo.trim()"
-            class="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-            <span v-if="enviando" class="animate-spin rounded-full h-3.5 w-3.5 border-[2px] border-white border-t-transparent"></span>
-            {{ enviando ? 'Enviando…' : `Enviar a ${conEmail.length}` }}
-          </button>
+        <div class="flex items-center justify-between gap-2 px-5 py-3 border-t border-slate-200 bg-slate-50 rounded-b-xl">
+          <span class="text-xs text-slate-400">
+            {{ paraLista.length }} destinatario{{ paraLista.length === 1 ? '' : 's' }}
+            <template v-if="sinEmail"> · {{ sinEmail }} sin email</template>
+          </span>
+          <div class="flex items-center gap-2">
+            <button @click="$emit('close')"
+              class="h-9 px-4 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
+              Descartar
+            </button>
+            <button @click="enviar" :disabled="enviando || !puedeEnviar"
+              class="inline-flex items-center gap-2 h-9 px-5 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+              <PaperAirplaneIcon v-if="!enviando" class="w-4 h-4" />
+              <span v-else class="animate-spin rounded-full h-3.5 w-3.5 border-[2px] border-white border-t-transparent"></span>
+              {{ enviando ? 'Enviando…' : 'Enviar' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -76,31 +108,47 @@
 
 <script setup>
 /**
- * ModalEnviarMensaje — redacción tipo webmail para enviar un email a varios
- * contactos. Arriba, un selector de mensaje preestablecido (plantilla pre-
- * redactada, catálogo por rol post-MVP); el cuerpo se edita in situ. Los emails
- * de los destinatarios se muestran en "Para". Envía por el SMTP de Parámetros
- * Generales; si no está configurado, el backend devuelve el error y se muestra.
+ * ModalEnviarMensaje — compositor de correo tipo cliente webmail: Para con chips
+ * quitables, CC/CCO, asunto, cuerpo con editor enriquecido y pie del mensaje
+ * (firma). Envía por el SMTP de Parámetros Generales; si no está configurado, el
+ * backend devuelve el error y se muestra.
  */
 import { ref, computed } from 'vue'
-import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
+import { XMarkIcon, ExclamationTriangleIcon, PaperAirplaneIcon } from '@heroicons/vue/24/outline'
+import EditorTextoRico from '@/components/common/EditorTextoRico.vue'
 import { graphqlClient } from '@/graphql/client'
 
 const props = defineProps({
-  // Contactos seleccionados: [{ id, nombre, email }]
-  destinatarios: { type: Array, default: () => [] },
+  destinatarios: { type: Array, default: () => [] },  // [{ id, nombre, email }]
 })
 const emit = defineEmits(['close', 'enviado'])
 
-const conEmail = computed(() => props.destinatarios.filter((d) => d.email))
-const sinEmail = computed(() => props.destinatarios.length - conEmail.value.length)
+// Destinatarios "Para": los que tienen email, quitables uno a uno.
+const quitados = ref(new Set())
+const paraLista = computed(() =>
+  props.destinatarios.filter((d) => d.email && !quitados.value.has(d.id))
+)
+const sinEmail = computed(() => props.destinatarios.filter((d) => !d.email).length)
+function quitarPara(id) { quitados.value = new Set([...quitados.value, id]) }
 
-const plantillas = ref([])   // MVP: vacío (catálogo por rol es post-MVP)
+const mostrarCcCco = ref(false)
+const ccTexto = ref('')
+const ccoTexto = ref('')
+const parseEmails = (t) => t.split(',').map((e) => e.trim()).filter(Boolean)
+
+const plantillas = ref([])   // catálogo por rol post-MVP; de momento vacío
 const plantillaSel = ref('')
 const asunto = ref('')
 const cuerpo = ref('')
+const mostrarPie = ref(false)
+const pie = ref('')
 const enviando = ref(false)
 const error = ref('')
+
+const puedeEnviar = computed(() =>
+  (paraLista.value.length || parseEmails(ccTexto.value).length || parseEmails(ccoTexto.value).length) &&
+  asunto.value.trim() && cuerpo.value.trim()
+)
 
 function aplicarPlantilla() {
   const p = plantillas.value.find((x) => x.id === plantillaSel.value)
@@ -108,8 +156,8 @@ function aplicarPlantilla() {
 }
 
 const MUTATION = `
-  mutation EnviarMensaje($contactoIds: [UUID!]!, $asunto: String!, $cuerpoHtml: String!) {
-    enviarMensajeContactos(contactoIds: $contactoIds, asunto: $asunto, cuerpoHtml: $cuerpoHtml) {
+  mutation EnviarMensaje($contactoIds: [UUID!]!, $asunto: String!, $cuerpoHtml: String!, $cc: [String!], $cco: [String!]) {
+    enviarMensajeContactos(contactoIds: $contactoIds, asunto: $asunto, cuerpoHtml: $cuerpoHtml, cc: $cc, cco: $cco) {
       enviados total sinEmail errores
     }
   }
@@ -118,12 +166,16 @@ async function enviar() {
   enviando.value = true
   error.value = ''
   try {
-    // El cuerpo se manda como HTML sencillo (saltos de línea → <br>).
-    const cuerpoHtml = cuerpo.value.replace(/\n/g, '<br>')
+    // Cuerpo = mensaje + pie (separados por una línea).
+    const cuerpoHtml = pie.value.trim()
+      ? `${cuerpo.value}<br><br><hr>${pie.value}`
+      : cuerpo.value
     const data = await graphqlClient.request(MUTATION, {
-      contactoIds: conEmail.value.map((d) => d.id),
+      contactoIds: paraLista.value.map((d) => d.id),
       asunto: asunto.value.trim(),
       cuerpoHtml,
+      cc: parseEmails(ccTexto.value),
+      cco: parseEmails(ccoTexto.value),
     })
     emit('enviado', data.enviarMensajeContactos)
   } catch (e) {

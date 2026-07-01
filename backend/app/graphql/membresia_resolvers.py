@@ -806,9 +806,12 @@ class MembresiaResolverMutation:
         contacto_ids: list[uuid.UUID],
         asunto: str,
         cuerpo_html: str,
+        cc: Optional[list[str]] = None,
+        cco: Optional[list[str]] = None,
     ) -> 'EnvioMensajeResultado':
         """Envía un mensaje por email a los contactos indicados usando el SMTP de
-        Parámetros Generales. Devuelve el nº de envíos y los errores. Si SMTP no está
+        Parámetros Generales. `cc`/`cco` son direcciones sueltas que acompañan a
+        CADA envío. Devuelve el nº de envíos y los errores. Si SMTP no está
         configurado, lanza un error con el detalle (para mostrarlo en la UI)."""
         from app.core.email_service import EmailService
         session = info.context.session
@@ -817,15 +820,18 @@ class MembresiaResolverMutation:
             select(Contacto).where(Contacto.id.in_(contacto_ids))
         )).scalars().all()
         destinatarios = [(c.nombre, c.email) for c in contactos if c.email]
-        if not destinatarios:
-            raise ValueError("Ninguno de los contactos seleccionados tiene email.")
+        cc_limpio = [e.strip() for e in (cc or []) if e and e.strip()]
+        cco_limpio = [e.strip() for e in (cco or []) if e and e.strip()]
+        if not destinatarios and not cc_limpio and not cco_limpio:
+            raise ValueError("No hay ningún destinatario con email.")
 
         email = EmailService(session)
         enviados = 0
         errores: list[str] = []
         for nombre, direccion in destinatarios:
             try:
-                await email.enviar(destinatario=direccion, asunto=asunto, cuerpo_html=cuerpo_html)
+                await email.enviar(destinatario=direccion, asunto=asunto, cuerpo_html=cuerpo_html,
+                                   cc=cc_limpio or None, cco=cco_limpio or None)
                 enviados += 1
             except ValueError:
                 # SMTP no configurado: es un fallo global, se propaga para avisar en la UI.

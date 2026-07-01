@@ -39,7 +39,6 @@
           :todo-seleccionado="todoSeleccionado"
           :acciones="accionesMasivas"
           @seleccionar-todos="seleccionarTodos"
-          @limpiar="seleccionados = new Set()"
           @ejecutar="ejecutarAccionMasiva" />
 
         <!-- Estados -->
@@ -66,15 +65,14 @@
             </thead>
             <tbody class="divide-y divide-slate-100">
               <tr v-for="c in contactosFiltrados" :key="c.id"
-                class="hover:bg-purple-50 cursor-pointer"
-                @click="abrirFicha(c.id)">
-                <td class="px-3 py-3" @click.stop>
+                class="hover:bg-slate-50">
+                <td class="px-3 py-3">
                   <input type="checkbox" :checked="seleccionados.has(c.id)" @change="toggleSel(c.id)"
                     class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex flex-wrap items-center gap-1.5">
-                    <span class="font-medium text-purple-700">{{ nombreMostrado(c) }}</span>
+                    <span class="font-medium text-slate-800">{{ nombreMostrado(c) }}</span>
                     <!-- Solo las personas jurídicas se etiquetan; las físicas no llevan badge de tipo -->
                     <span v-if="c.tipo === 'PERSONA_JURIDICA'"
                       class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Persona jurídica</span>
