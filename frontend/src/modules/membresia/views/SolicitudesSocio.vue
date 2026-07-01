@@ -4,10 +4,10 @@
       <!-- Barra de acciones: alta directa de socio (sin pasar por solicitud) para
            quien puede dar de alta socios (secretaría de la asociación o de la unidad). -->
       <div class="flex items-center justify-end mb-4">
-        <button v-if="puedeAltaSocio" @click="mostrarAlta = true"
+        <router-link v-if="puedeAltaSocio" to="/miembros/nuevo"
           class="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
           <PlusIcon class="w-4 h-4" /> Alta de socio
-        </button>
+        </router-link>
       </div>
 
       <div v-if="cargando" class="text-center py-12 text-slate-400 text-sm">Cargando solicitudes…</div>
@@ -53,9 +53,6 @@
         </table>
       </div>
     </div>
-
-    <!-- Alta directa de socio (reutiliza el modal estándar de nuevo miembro) -->
-    <NuevoMiembroModal v-if="mostrarAlta" @close="mostrarAlta = false" @created="onAltaCreada" />
   </AppLayout>
 </template>
 
@@ -63,7 +60,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { PlusIcon } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
-import NuevoMiembroModal from '@/components/miembros/NuevoMiembroModal.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -76,22 +72,16 @@ const toast = useToast()
 const confirm = useConfirm()
 const { tienePermiso } = usePermisos()
 
-// Alta directa de socio (sin pasar por solicitud). La ve quien puede crear socios:
-// secretaría de la asociación o secretario/coordinador de la unidad territorial del
-// nuevo socio. El backend valida además el ámbito territorial en la mutación.
+// Alta directa de socio (sin pasar por solicitud). El botón lleva a la vista de
+// alta (/miembros/nuevo). Lo ve quien puede crear socios: secretaría de la
+// asociación o secretario/coordinador de la unidad territorial del nuevo socio.
+// El backend valida además el ámbito territorial en la mutación.
 const puedeAltaSocio = computed(() => tienePermiso('MEMBRESIA_MIEMBRO_CREAR'))
-const mostrarAlta = ref(false)
 
 const solicitudes = ref([])
 const cargando = ref(true)
 const error = ref('')
 const procesando = ref(null)
-
-function onAltaCreada() {
-  mostrarAlta.value = false
-  toast.success('Socio dado de alta.')
-  cargar()
-}
 
 async function cargar() {
   cargando.value = true
