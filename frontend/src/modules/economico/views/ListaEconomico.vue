@@ -48,26 +48,9 @@
       </div>
     </div>
 
-    <!-- Tabs de navegación -->
+    <!-- Tabs de navegación (estilo canónico, el mismo que la ficha de socio) -->
     <div class="mb-6">
-      <div class="border-b border-gray-200">
-        <nav class="-mb-px flex space-x-8">
-          <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            @click="activeTab = tab.id"
-            :class="[
-              activeTab === tab.id
-                ? 'border-purple-500 text-purple-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-              'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center'
-            ]"
-          >
-            <span class="mr-2">{{ tab.icon }}</span>
-            {{ tab.name }}
-          </button>
-        </nav>
-      </div>
+      <TabsNavigation :tabs="tabs" :active-tab="activeTab" @tab-change="activeTab = $event" />
     </div>
 
     <!-- Contenido de tabs -->
@@ -412,6 +395,7 @@
 import { ref, onMounted, computed } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
+import TabsNavigation from '@/components/common/TabsNavigation.vue'
 import { executeQuery } from '@/graphql/client'
 import { GET_CUOTAS_ANUALES, GET_DONACIONES, GET_REMESAS } from '@/graphql/queries/economico.js'
 import { badgeStyle } from '@/utils/badge'

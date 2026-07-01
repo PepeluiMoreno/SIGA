@@ -2,10 +2,10 @@
   <div class="relative" ref="raiz">
     <label v-if="label" class="block text-sm font-medium text-slate-700 mb-1.5">{{ label }}</label>
 
-    <!-- Lectura / no editable: muestra la selección con el aspecto de un campo readonly -->
-    <div v-if="!editing"
-      class="h-10 w-full px-3 flex items-center text-sm text-slate-800 bg-slate-50 border border-slate-200 rounded-lg">
-      <span v-if="seleccion" class="truncate">
+    <!-- Lectura / no editable: texto plano bajo el label, igual que FieldText (sin caja
+         ni borde) para que la sección de datos se vea uniforme en modo lectura. -->
+    <div v-if="!editing" class="py-1.5 text-sm text-slate-900 min-h-[34px]">
+      <span v-if="seleccion">
         {{ seleccion.nombre }}<span class="text-slate-400 text-xs"> · {{ seleccion.ruta }}</span>
       </span>
       <span v-else class="text-slate-400">—</span>

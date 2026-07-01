@@ -9,7 +9,7 @@
         <button v-for="tab in tabs" :key="tab.id"
           @click="activeTab = tab.id"
           :class="[activeTab === tab.id ? 'border-purple-500 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700', 'py-3 px-1 border-b-2 font-medium text-sm']"
-        >{{ tab.icon }} {{ tab.name }}</button>
+        >{{ tab.name }}</button>
       </nav>
       <router-link to="/economico/cierre-ejercicio"
         class="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700">
