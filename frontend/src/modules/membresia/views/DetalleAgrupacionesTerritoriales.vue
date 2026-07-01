@@ -1,11 +1,11 @@
 <template>
-  <AppLayout title="Organización Territorial"
+  <AppLayout title="Agrupaciones Territoriales"
     :subtitle="`Presencia de ${orgConfig.nombre || 'la asociación'} en el territorio`">
 
     <template v-if="tienePermiso('CFG_TERRITORIO_CREAR')" #actions>
       <button type="button" @click="irANuevaRaiz"
-        class="h-8 px-3 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
-        + Nueva unidad
+        class="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+        <span class="text-base leading-none">+</span> Nuevo
       </button>
     </template>
 

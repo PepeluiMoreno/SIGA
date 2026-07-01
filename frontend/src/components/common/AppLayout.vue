@@ -122,7 +122,7 @@
                   <li v-if="tienePermiso('MEMBRESIA_AGRUPACION_EDITAR')">
                     <router-link to="/agrupaciones" class="nav-item"
                       :class="$route.path.startsWith('/agrupaciones') ? 'active' : 'inactive'">
-                      <MapPinIcon class="nav-icon" /><span>Organización Territorial</span>
+                      <MapPinIcon class="nav-icon" /><span>Agrupaciones Territoriales</span>
                     </router-link>
                   </li>
                   <li v-if="tienePermiso('GRUPO_LISTAR')">
