@@ -34,24 +34,23 @@
   <!-- Layout wrapper: AppLayout para vista independiente, div para modoPropio -->
   <component :is="layoutComponent" v-bind="layoutBindings">
 
-    <!-- Botón Editar en cabecera de página (AppLayout #actions) -->
+    <!-- Acciones de la vista: SIEMPRE arriba a la derecha (AppLayout #actions),
+         antes de la navegación. En edición/alta: Cancelar + Crear/Guardar; en
+         lectura: Editar. -->
     <template v-if="!modoPropio" #actions>
-      <button v-if="!isCreateMode && miembro.id" @click="toggleEditMode"
-        :class="editMode ? 'text-slate-500 hover:text-slate-700' : 'text-indigo-600 hover:text-indigo-800'"
-        class="h-8 px-3 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-        {{ editMode ? 'Cancelar edición' : 'Editar' }}
-      </button>
-    </template>
-
-    <!-- Barra de guardado en footer de AppLayout -->
-    <template v-if="!modoPropio && (editMode || isCreateMode)" #footer>
-      <button @click="handleCancel"
-        class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
-        {{ isCreateMode ? 'Cancelar' : 'Cancelar cambios' }}
-      </button>
-      <button @click="handleSave" :disabled="loading || !formValido"
-        class="px-5 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50">
-        {{ isCreateMode ? 'Crear miembro' : 'Guardar cambios' }}
+      <template v-if="editMode || isCreateMode">
+        <button @click="handleCancel"
+          class="h-8 px-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
+          {{ isCreateMode ? 'Cancelar' : 'Cancelar cambios' }}
+        </button>
+        <button @click="handleSave" :disabled="loading || !formValido"
+          class="h-8 px-4 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50">
+          {{ isCreateMode ? `Crear ${orgConfig.miembro || 'socio'}` : 'Guardar cambios' }}
+        </button>
+      </template>
+      <button v-else-if="miembro.id" @click="toggleEditMode"
+        class="h-8 px-3 text-sm font-medium text-indigo-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+        Editar
       </button>
     </template>
 

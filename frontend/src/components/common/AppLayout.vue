@@ -399,12 +399,6 @@
                       <ListBulletIcon class="nav-icon" /><span>Catálogos</span>
                     </router-link>
                   </li>
-                  <li v-if="tienePermiso('CFG_CONFIGURACION_EDITAR')">
-                    <router-link to="/parametrizacion/temas" class="nav-item"
-                      :class="$route.path.startsWith('/parametrizacion/temas') ? 'active' : 'inactive'">
-                      <SwatchIcon class="nav-icon" /><span>Temas de color</span>
-                    </router-link>
-                  </li>
                   <li v-if="tieneAlguno('ACCESO_USUARIO_LISTAR','ACCESO_ROL_LISTAR','ACCESO_ROL_ASIGNAR','ACCESO_AUDITORIA_LEER')" class="pt-2 pb-0.5 px-3">
                     <span class="text-[10px] font-semibold text-purple-500 uppercase tracking-wider">Control de Acceso</span>
                   </li>
@@ -523,7 +517,7 @@ import NotificacionesBell from '@/components/common/NotificacionesBell.vue'
 import {
   HomeIcon, UserIcon, UsersIcon, MapPinIcon, FlagIcon, UserGroupIcon,
   HeartIcon, KeyIcon, ListBulletIcon, ClipboardDocumentListIcon,
-  GlobeAltIcon, BookOpenIcon, CalendarDaysIcon, SwatchIcon,
+  GlobeAltIcon, BookOpenIcon, CalendarDaysIcon,
   BuildingOffice2Icon, BuildingLibraryIcon, CalculatorIcon, CreditCardIcon,
   ArrowsRightLeftIcon, ChartBarIcon, GiftIcon, UserCircleIcon,
   Bars3Icon, XMarkIcon, ChevronDownIcon, ChevronLeftIcon, TrashIcon,
