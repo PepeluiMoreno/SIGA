@@ -30,6 +30,12 @@
       <div v-else-if="!isCreate && !contacto" class="text-center py-12 text-slate-400 text-sm">Contacto no encontrado.</div>
 
       <template v-else>
+        <!-- Solapas estilo ficha de socio: Datos (común) + Historial (facetas) -->
+        <TabsNavigation v-if="!isCreate" :tabs="tabs" :active-tab="tabActiva"
+          @tab-change="tabActiva = $event" class="mb-3" />
+
+        <!-- ── Solapa DATOS (campos comunes + identificación) ── -->
+        <div v-show="isCreate || tabActiva === 'datos'" class="space-y-3">
         <!-- Tipo (solo en alta) -->
         <div v-if="isCreate" class="bg-white border border-slate-200 rounded-xl p-5 mb-3">
           <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Tipo de contacto</span>
@@ -134,9 +140,10 @@
           </div>
           <p v-else class="text-sm text-slate-400">Sin representante legal asignado.</p>
         </div>
+        </div><!-- /solapa datos -->
 
-        <!-- Historial: vinculaciones + condiciones derivadas -->
-        <div v-if="!isCreate && !editMode" class="bg-white border border-slate-200 rounded-xl p-5 mt-3">
+        <!-- ── Solapa HISTORIAL (facetas: vinculaciones + actividad) ── -->
+        <div v-show="!isCreate && tabActiva === 'historial'" class="bg-white border border-slate-200 rounded-xl p-5">
           <h2 class="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <span class="w-1.5 h-5 rounded-full bg-indigo-500"></span>
             Historial de vinculaciones
@@ -174,6 +181,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { EyeIcon } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
+import TabsNavigation from '@/components/common/TabsNavigation.vue'
 import HistorialVinculaciones from '@/components/miembros/HistorialVinculaciones.vue'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { useToast } from '@/composables/useToast'
@@ -234,6 +242,13 @@ const form = reactive({
 
 // Países para los selects de nacimiento/expedición de la sección de identificación.
 const paises = ref([])
+
+// Solapas de la ficha (estilo detalle de socio): Datos (común) + Historial.
+const tabActiva = ref('datos')
+const tabs = computed(() => [
+  { id: 'datos', name: 'Datos', icon: '👤' },
+  { id: 'historial', name: 'Historial', icon: '🕑' },
+])
 
 // La ubicación se captura con EntidadGeograficaSelect (municipio/provincia
 // unificados); ya no hace falta cargar el catálogo de provincias por separado.
