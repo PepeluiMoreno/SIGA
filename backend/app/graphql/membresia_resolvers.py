@@ -771,6 +771,23 @@ class MembresiaResolverMutation:
         return await _fetch_miembro(session, contacto_id)
 
 
+@strawberry.type(name="CandidatoGrupo")
+class CandidatoGrupoType:
+    """Candidato a integrar un grupo de trabajo, con su COLECTIVO de procedencia.
+
+    Los grupos se nutren de tres colectivos: voluntarios (vinculación VOLUNTARIO),
+    contratados (EMPLEADO/AUTONOMO/EMPLEADO_EXTERNO) y coordinadores de campaña
+    (rol COORDINADOR_CAMPANA, para liderar). Un mismo contacto puede aparecer con
+    más de un colectivo si acumula varias condiciones.
+    """
+    id: uuid.UUID                 # contacto_id
+    nombre: str
+    apellido1: Optional[str] = None
+    apellido2: Optional[str] = None
+    email: Optional[str] = None
+    colectivo: str = "VOLUNTARIO"  # VOLUNTARIO | CONTRATADO | COORDINADOR
+
+
 @strawberry.type(name="VoluntarioAmbito")
 class VoluntarioAmbitoType:
     """Voluntario (subconjunto de Miembro) para el listado con scoping de ámbito.
@@ -839,6 +856,68 @@ class MembresiaQuery:
             .order_by(Vinculacion.fecha_inicio)
         )).scalars().all()
         return list(rows)
+
+    @strawberry.field(permission_classes=[RequireTransaction("GRUPO_EDITAR")])
+    async def candidatos_grupo(
+        self, info: strawberry.Info, colectivo: Optional[str] = None,
+    ) -> List[CandidatoGrupoType]:
+        """Candidatos para integrar un grupo de trabajo, de los tres colectivos:
+        voluntarios, contratados y coordinadores de campaña. Filtrable por `colectivo`
+        (VOLUNTARIO | CONTRATADO | COORDINADOR); sin filtro devuelve los tres.
+        Un contacto puede aparecer con varios colectivos si acumula condiciones."""
+        session = info.context.session
+        quiere = (colectivo or "").upper() or None
+
+        def _cand(c, col):
+            return CandidatoGrupoType(
+                id=c.id, nombre=c.nombre, apellido1=c.apellido1,
+                apellido2=c.apellido2, email=c.email, colectivo=col,
+            )
+
+        resultado: list[CandidatoGrupoType] = []
+
+        # Voluntarios y contratados: contactos por tipo de vinculación activa.
+        COLECTIVO_VINCULOS = {
+            "VOLUNTARIO": ["VOLUNTARIO"],
+            "CONTRATADO": ["EMPLEADO", "AUTONOMO", "EMPLEADO_EXTERNO"],
+        }
+        for col, codigos in COLECTIVO_VINCULOS.items():
+            if quiere and quiere != col:
+                continue
+            tipo_ids = [tid for tid in [await _tipo_vinc_id(session, cod) for cod in codigos] if tid]
+            if not tipo_ids:
+                continue
+            contactos = (await session.execute(
+                select(Contacto)
+                .join(Vinculacion, Vinculacion.contacto_id == Contacto.id)
+                .where(
+                    Vinculacion.tipo_vinculacion_id.in_(tipo_ids),
+                    Vinculacion.estado == "activa",
+                    Vinculacion.eliminado == False,  # noqa: E712
+                )
+                .distinct()
+            )).scalars().all()
+            resultado.extend(_cand(c, col) for c in contactos)
+
+        # Coordinadores de campaña: usuarios con rol COORDINADOR_CAMPANA, vía su contacto.
+        if not quiere or quiere == "COORDINADOR":
+            from app.modules.acceso.models.rol import Rol
+            from app.modules.acceso.models.usuario import Usuario, UsuarioRol
+            coords = (await session.execute(
+                select(Contacto)
+                .join(Usuario, Usuario.contacto_id == Contacto.id)
+                .join(UsuarioRol, UsuarioRol.usuario_id == Usuario.id)
+                .join(Rol, Rol.id == UsuarioRol.rol_id)
+                .where(
+                    Rol.codigo == "COORDINADOR_CAMPANA",
+                    UsuarioRol.activo == True,  # noqa: E712
+                    UsuarioRol.eliminado == False,  # noqa: E712
+                )
+                .distinct()
+            )).scalars().all()
+            resultado.extend(_cand(c, "COORDINADOR") for c in coords)
+
+        return resultado
 
     @strawberry.field(permission_classes=[RequireAuthenticated])
     async def condiciones_contacto(

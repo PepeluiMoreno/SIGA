@@ -107,25 +107,17 @@
             </button>
           </div>
 
-          <!-- Panel buscador de voluntarios -->
+          <!-- Panel buscador de candidatos (voluntarios / contratados / coordinadores) -->
           <div v-if="panelVoluntarios" class="border-b border-slate-100 bg-indigo-50 px-5 py-4 space-y-3">
-            <p class="text-xs font-semibold text-indigo-800 uppercase tracking-wide">Buscar voluntarios para añadir</p>
+            <p class="text-xs font-semibold text-indigo-800 uppercase tracking-wide">Añadir miembros al grupo</p>
             <div class="flex flex-wrap gap-2">
-              <input v-model="busqVoluntario" type="text" placeholder="Nombre del voluntario…"
+              <input v-model="busqVoluntario" type="text" placeholder="Nombre…"
                 class="h-9 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white w-full sm:w-48" />
-              <select v-model="filtroHabilidad" class="h-9 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="">Todas las habilidades</option>
-                <option v-for="h in habilidades" :key="h.id" :value="h.id">{{ h.nombre }}</option>
-              </select>
-              <select v-model="filtroDia" class="h-9 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option value="">Cualquier día</option>
-                <option value="0">Lunes</option>
-                <option value="1">Martes</option>
-                <option value="2">Miércoles</option>
-                <option value="3">Jueves</option>
-                <option value="4">Viernes</option>
-                <option value="5">Sábado</option>
-                <option value="6">Domingo</option>
+              <select v-model="filtroColectivo" class="h-9 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                <option value="">Todos los colectivos</option>
+                <option value="VOLUNTARIO">Voluntarios</option>
+                <option value="CONTRATADO">Contratados</option>
+                <option value="COORDINADOR">Coordinadores de campaña</option>
               </select>
               <button @click="buscarVoluntarios" :disabled="cargandoVol"
                 class="h-9 px-4 text-sm font-medium rounded-lg bg-white border border-indigo-300 text-indigo-700 hover:bg-indigo-50 transition-colors disabled:opacity-50">
@@ -134,16 +126,16 @@
             </div>
 
             <div v-if="voluntariosResultado.length" class="space-y-1 max-h-56 overflow-y-auto rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
-              <div v-for="vol in voluntariosResultado" :key="vol.id"
+              <div v-for="vol in voluntariosResultado" :key="`${vol.id}-${vol.colectivo}`"
                 class="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-slate-50">
                 <div class="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
                   {{ iniciales(vol.nombre, vol.apellido1) }}
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="font-medium text-slate-900">{{ vol.nombre }} {{ vol.apellido1 }}</p>
-                  <p class="text-xs text-slate-400 truncate">
-                    {{ vol.habilidades?.map(h => h.habilidad?.nombre).filter(Boolean).join(', ') || 'Sin habilidades registradas' }}
-                  </p>
+                  <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium" :class="colectivoBadge(vol.colectivo)">
+                    {{ colectivoLabel(vol.colectivo) }}
+                  </span>
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0">
                   <select v-model="rolSeleccionado[vol.id]" class="h-8 text-xs px-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
@@ -158,7 +150,7 @@
                 </div>
               </div>
             </div>
-            <p v-else-if="busqRealizada" class="text-xs text-slate-400 text-center py-2">No se encontraron voluntarios con esos criterios.</p>
+            <p v-else-if="busqRealizada" class="text-xs text-slate-400 text-center py-2">No se encontraron candidatos con esos criterios.</p>
             <ErrorAlert v-if="errorAnadir" :message="errorAnadir" />
           </div>
 
@@ -592,11 +584,9 @@ const MUTATION_ELIMINAR_APORTACION = `
 `
 
 const GQL_VOLUNTARIOS = `
-  query VoluntariosParaGrupo($nombre: String, $habilidadId: UUID, $diaSemana: Int) {
-    miembros: socios(esVoluntario: true) {
-      id nombre apellido1 email
-      habilidades { id habilidad { id nombre } nivelHabilidad { nombre } validado }
-      franjasDisponibilidad { diaSemana horaInicio horaFin activa }
+  query CandidatosParaGrupo($colectivo: String) {
+    candidatos: candidatosGrupo(colectivo: $colectivo) {
+      id nombre apellido1 apellido2 email colectivo
     }
   }
 `
@@ -654,8 +644,7 @@ async function cargar() {
 // ── Buscador voluntarios ──────────────────────────────────────────────────────
 const panelVoluntarios = ref(false)
 const busqVoluntario = ref('')
-const filtroHabilidad = ref('')
-const filtroDia = ref('')
+const filtroColectivo = ref('')
 const voluntariosResultado = ref([])
 const cargandoVol = ref(false)
 const busqRealizada = ref(false)
@@ -666,29 +655,31 @@ async function buscarVoluntarios() {
   cargandoVol.value = true
   busqRealizada.value = false
   try {
-    const data = await graphqlClient.request(GQL_VOLUNTARIOS)
-    let vols = data.miembros || []
+    const data = await graphqlClient.request(GQL_VOLUNTARIOS, {
+      colectivo: filtroColectivo.value || null,
+    })
+    let cands = data.candidatos || []
     const q = busqVoluntario.value.toLowerCase()
-    if (q) vols = vols.filter(v =>
-      `${v.nombre} ${v.apellido1}`.toLowerCase().includes(q)
+    if (q) cands = cands.filter(v =>
+      `${v.nombre} ${v.apellido1 || ''}`.toLowerCase().includes(q)
     )
-    if (filtroHabilidad.value) vols = vols.filter(v =>
-      v.habilidades?.some(h => h.habilidad?.id === filtroHabilidad.value)
-    )
-    if (filtroDia.value !== '') {
-      const dia = Number(filtroDia.value)
-      vols = vols.filter(v =>
-        v.franjasDisponibilidad?.some(f => f.diaSemana === dia && f.activa)
-      )
-    }
-    voluntariosResultado.value = vols
+    voluntariosResultado.value = cands
     busqRealizada.value = true
   } catch (e) {
-    errorAnadir.value = e?.response?.errors?.[0]?.message || 'Error buscando voluntarios'
+    errorAnadir.value = e?.response?.errors?.[0]?.message || 'Error buscando candidatos'
   } finally {
     cargandoVol.value = false
   }
 }
+
+const COLECTIVO_LABELS = { VOLUNTARIO: 'Voluntario', CONTRATADO: 'Contratado', COORDINADOR: 'Coordinador' }
+const COLECTIVO_BADGES = {
+  VOLUNTARIO: 'bg-purple-100 text-purple-700',
+  CONTRATADO: 'bg-orange-100 text-orange-700',
+  COORDINADOR: 'bg-sky-100 text-sky-700',
+}
+function colectivoLabel(c) { return COLECTIVO_LABELS[c] || c }
+function colectivoBadge(c) { return COLECTIVO_BADGES[c] || 'bg-slate-100 text-slate-600' }
 
 function yaEsMiembro(miembroId) {
   return miembrosActivos.value.some(m => m.miembroId === miembroId || m.miembro?.id === miembroId)
