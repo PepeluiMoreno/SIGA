@@ -10,7 +10,7 @@
       </div>
 
       <template v-else>
-        <MiembroDetail
+        <DetalleMiembro
           :miembro-id-prop="perfil.miembroId"
           :modo-propio="true"
         />
@@ -31,7 +31,7 @@
 import { ref, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
-import MiembroDetail from '@/components/miembros/MiembroDetail.vue'
+import DetalleMiembro from '@/components/miembros/DetalleMiembro.vue'
 import HistorialVinculaciones from '@/components/miembros/HistorialVinculaciones.vue'
 import { graphqlClient } from '@/graphql/client.js'
 

@@ -10,7 +10,7 @@
           Ver evolución ↗
         </router-link>
       </div>
-      <BudgetTimeline
+      <LineaTiempoPresupuesto
         :ejercicios="ejerciciosTimeline"
         :seleccionado="ejercicioActual"
         @select="irAEjercicio"
@@ -42,7 +42,7 @@
 
     <!-- Creador de presupuesto: nuevo / clonar / prorrogar (panel unificado) -->
     <div v-if="!loading && mostrarCreador" class="mb-4 max-w-2xl mx-auto">
-      <BudgetCreator
+      <CreadorPresupuesto
         :ejercicio="ejercicioActual"
         :ratio-cuota="ratioCuota"
         :puede-clonarse="hayPlanEjercicioAnterior"
@@ -322,8 +322,8 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
-import BudgetTimeline from '@/components/economico/BudgetTimeline.vue'
-import BudgetCreator from '@/components/economico/BudgetCreator.vue'
+import LineaTiempoPresupuesto from '@/components/economico/LineaTiempoPresupuesto.vue'
+import CreadorPresupuesto from '@/components/economico/CreadorPresupuesto.vue'
 import PartidasPorCategoria from '@/modules/economico/components/PartidasPorCategoria.vue'
 import ModificacionesPresupuestarias from '@/modules/economico/components/ModificacionesPresupuestarias.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
@@ -440,7 +440,7 @@ const estadoColor = computed(() => estadoActual.value?.color ?? '#9ca3af')
 const codigoEstadoDe = (plan) =>
   estados.value.find(e => e.id === plan?.estadoId)?.codigo ?? 'BORRADOR'
 
-// Datos para el BudgetTimeline: un nodo por ejercicio con su estado más relevante.
+// Datos para la línea de tiempo de presupuesto: un nodo por ejercicio con su estado más relevante.
 // Para cada año se elige el plan definitivo (aprobado+) o, si solo hay borradores,
 // el estado del primero. Si no hay ningún plan, estado null (nodo "+", crear).
 const ejerciciosTimeline = computed(() =>

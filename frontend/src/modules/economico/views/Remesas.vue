@@ -325,7 +325,7 @@
     </div>
 
     <!-- Pantalla 5.1 — Liquidación de remesa (Flujo 4) -->
-    <LiquidacionRemesaModal
+    <ModalLiquidacionRemesa
       v-if="remesaParaLiquidar"
       :remesa="remesaParaLiquidar"
       :cuentas-bancarias="cuentasBancarias"
@@ -342,7 +342,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
-import LiquidacionRemesaModal from './LiquidacionRemesaModal.vue'
+import ModalLiquidacionRemesa from './ModalLiquidacionRemesa.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import { useUnidadesOrganizativas } from '@/composables/useUnidadesOrganizativas'
 import { executeQuery } from '@/graphql/client'

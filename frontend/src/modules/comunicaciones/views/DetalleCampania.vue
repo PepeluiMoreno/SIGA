@@ -24,7 +24,7 @@
         />
 
         <!-- KPI Bar -->
-        <CampaniaKpiBar :campania="campania" />
+        <BarraKpiCampania :campania="campania" />
 
         <!-- Botones de acción global -->
         <div class="flex items-center justify-end gap-2">
@@ -827,7 +827,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import WorkflowBar from '@/components/common/WorkflowBar.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
-import CampaniaKpiBar from '@/modules/comunicaciones/components/CampaniaKpiBar.vue'
+import BarraKpiCampania from '@/modules/comunicaciones/components/BarraKpiCampania.vue'
 import { graphqlClient } from '@/graphql/client'
 import { GET_CAMPANIA, GET_PLANTILLAS_CAMPANIA, PREVISUALIZAR_NOTIFICACION_CAMPANIA, ENVIAR_NOTIFICACION_CAMPANIA, CERRAR_CAMPANIA, CLONAR_CAMPANIA, CREAR_PLANTILLA_DESDE_CAMPANIA, FIRMAS_VERIFICADAS_CAMPANIA } from '@/modules/comunicaciones/graphql/queries.js'
 import { TRANSICIONAR_CAMPANIA, APROBAR_CAMPANIA } from '@/modules/actividades/graphql/queries.js'

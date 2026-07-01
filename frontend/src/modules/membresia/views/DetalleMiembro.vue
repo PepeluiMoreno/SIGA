@@ -1,7 +1,7 @@
 <template>
-  <MiembroDetail />
+  <DetalleMiembro />
 </template>
 
 <script setup>
-import MiembroDetail from '@/components/miembros/MiembroDetail.vue'
+import DetalleMiembro from '@/components/miembros/DetalleMiembro.vue'
 </script>

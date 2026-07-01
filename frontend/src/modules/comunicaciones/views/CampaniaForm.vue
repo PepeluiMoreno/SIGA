@@ -328,7 +328,7 @@
                 <span class="text-xs text-slate-400 italic">Fija las fechas antes de crear la campaña</span>
               </div>
               <div class="space-y-2">
-                <ActividadPlantillaCard
+                <TarjetaActividadPlantilla
                   v-for="(act, idx) in actividadesPreview"
                   :key="act._id"
                   :actividad="act"
@@ -526,7 +526,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import FormActions from '@/components/common/FormActions.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
-import ActividadPlantillaCard from '@/components/campanias/ActividadPlantillaCard.vue'
+import TarjetaActividadPlantilla from '@/components/campanias/TarjetaActividadPlantilla.vue'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
 import {
   GET_CAMPANIA, GET_TIPOS_CAMPANIA, GET_ESTADOS_CAMPANIA,

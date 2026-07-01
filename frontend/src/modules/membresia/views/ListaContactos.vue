@@ -132,7 +132,7 @@ function esColectivo(c, codigos) {
   return codigos.some(x => cods.includes(x))
 }
 function abrirFicha(id) {
-  // Un socio abre su ficha de socio (MiembroDetail); el resto, la ficha de contacto.
+  // Un socio abre su ficha de socio (DetalleMiembro); el resto, la ficha de contacto.
   router.push(props.colectivo === 'SOCIO' ? `/miembros/${id}` : `/contactos/${id}`)
 }
 

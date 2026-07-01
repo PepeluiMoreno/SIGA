@@ -36,7 +36,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <ActividadRow
+            <FilaActividad
               v-for="a in actividadesSinCampania"
               :key="a.id"
               :actividad="a"
@@ -80,7 +80,7 @@
               <th class="px-4 py-2"></th>
             </tr>
             <!-- Actividades de la campaña (nivel 2 del árbol) -->
-            <ActividadRow
+            <FilaActividad
               v-for="a in grupo.actividades"
               v-show="!estaColapsada(grupo.campania.id)"
               :key="a.id"
@@ -102,7 +102,7 @@ import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
-import ActividadRow from './ActividadRow.vue'
+import FilaActividad from './FilaActividad.vue'
 import { FolderIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import { graphqlClient } from '@/graphql/client'
 import { usePermisos } from '@/composables/usePermisos.js'
