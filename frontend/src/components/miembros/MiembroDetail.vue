@@ -632,21 +632,21 @@
             </section>
 
             <template v-if="miembro.esVoluntario">
-              <div class="grid grid-cols-1 lg:grid-cols-1 sm:grid-cols-2 gap-5">
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                 <!-- Perfil voluntario -->
-                <section class="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
+                <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-5">
                   <h3 class="text-xs font-semibold uppercase tracking-widest text-purple-600">Perfil voluntario</h3>
-                  <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                     <FieldText v-model="miembro.profesion" label="Profesión" :edit-mode="editForm" />
                     <FieldSelect v-model="miembro.nivelEstudiosId" label="Nivel de estudios"
                       :options="catalogos.nivelesEstudios" option-label="nombre" option-value="id"
                       empty-label="Sin especificar" :edit-mode="editForm" />
+                    <FieldTextarea v-model="miembro.intereses" label="Intereses" :edit-mode="editForm" rows="2" />
+                    <FieldTextarea v-model="miembro.experienciaVoluntariado" label="Experiencia en voluntariado" :edit-mode="editForm" rows="2" />
+                    <FieldTextarea class="sm:col-span-2" v-model="miembro.observacionesVoluntariado" label="Observaciones de voluntariado" :edit-mode="editForm" rows="2" />
                   </div>
-                  <FieldTextarea v-model="miembro.intereses" label="Intereses" :edit-mode="editForm" rows="3" />
-                  <FieldTextarea v-model="miembro.experienciaVoluntariado" label="Experiencia en voluntariado" :edit-mode="editForm" rows="3" />
-                  <FieldTextarea v-model="miembro.observacionesVoluntariado" label="Observaciones de voluntariado" :edit-mode="editForm" rows="3" />
-                  <div class="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+                  <div class="flex flex-wrap gap-x-6 gap-y-2 pt-1">
                     <FieldCheckbox v-model="miembro.puedeConducir" label="Puede conducir" :edit-mode="editForm" />
                     <FieldCheckbox v-model="miembro.vehiculoPropio" label="Vehículo propio" :edit-mode="editForm" />
                     <FieldCheckbox v-model="miembro.disponibilidadViajar" label="Disponibilidad para viajar" :edit-mode="editForm" />
