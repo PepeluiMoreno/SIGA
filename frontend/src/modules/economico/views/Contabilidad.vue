@@ -377,7 +377,7 @@
       </p>
     </div>
 
-    <LoadSpinner v-if="loading" />
+    <EstadoCarga v-if="loading" />
 
     <!-- MODAL: Nueva cuenta contable -->
     <div v-if="modalCuenta" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="modalCuenta = false">
@@ -587,7 +587,7 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { ref, reactive, computed, onMounted, provide, watch } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
-import LoadSpinner from '@/components/common/LoadSpinner.vue'
+import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import ImputacionActividadPicker from '@/components/common/ImputacionActividadPicker.vue'
 import CuentaNode from './CuentaNode.vue'

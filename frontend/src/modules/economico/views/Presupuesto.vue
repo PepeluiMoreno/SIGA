@@ -38,7 +38,7 @@
       </button>
     </div>
 
-    <LoadSpinner v-if="loading" />
+    <EstadoCarga v-if="loading" />
 
     <!-- Creador de presupuesto: nuevo / clonar / prorrogar (panel unificado) -->
     <div v-if="!loading && mostrarCreador" class="mb-4 max-w-2xl mx-auto">
@@ -321,7 +321,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
-import LoadSpinner from '@/components/common/LoadSpinner.vue'
+import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import BudgetTimeline from '@/components/economico/BudgetTimeline.vue'
 import BudgetCreator from '@/components/economico/BudgetCreator.vue'
 import PartidasPorCategoria from '@/modules/economico/components/PartidasPorCategoria.vue'

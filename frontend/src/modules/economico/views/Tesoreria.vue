@@ -26,7 +26,7 @@
       </div>
     </div>
 
-    <LoadSpinner v-if="loading" />
+    <EstadoCarga v-if="loading" />
 
     <AccordionGroup v-else>
       <!-- ════════ CAJA Y BANCOS ════════ -->
@@ -365,7 +365,7 @@ import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted, h } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
-import LoadSpinner from '@/components/common/LoadSpinner.vue'
+import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
 import ImputacionActividadPicker from '@/components/common/ImputacionActividadPicker.vue'

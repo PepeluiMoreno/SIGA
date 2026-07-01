@@ -3,7 +3,7 @@
     <div class="max-w-5xl">
 
     <div v-if="loading" class="flex items-center justify-center py-20">
-      <LoadSpinner />
+      <EstadoCarga />
     </div>
 
     <div v-else-if="!accion" class="py-20 text-center text-slate-400">Actividad no encontrada.</div>
@@ -741,7 +741,7 @@ import WorkflowBar from '@/components/common/WorkflowBar.vue'
 import RowActions from '@/components/common/RowActions.vue'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
-import LoadSpinner from '@/components/common/LoadSpinner.vue'
+import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import { graphqlClient } from '@/graphql/client'
 import {
   GET_ACCION_BY_ID, ACTUALIZAR_ACCION, ELIMINAR_ACCION, SOFT_DELETE_ACCION,

@@ -7,7 +7,7 @@
       sobre la fila.
     </p>
 
-    <LoadSpinner v-if="loading" />
+    <EstadoCarga v-if="loading" />
 
     <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
       {{ error }}
@@ -136,7 +136,7 @@
 <script setup>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, onMounted } from 'vue'
-import LoadSpinner from '@/components/common/LoadSpinner.vue'
+import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
 import { usePermisos } from '@/composables/usePermisos.js'
 import {
