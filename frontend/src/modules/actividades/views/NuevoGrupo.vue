@@ -7,73 +7,83 @@
     </template>
 
     <div class="w-full">
-      <div class="bg-white rounded-lg shadow p-6 space-y-5">
+      <div class="bg-white rounded-lg shadow p-6">
+        <!-- Campos en rejilla de 12 columnas: en cada fila varios campos con longitud
+             razonable, sin ocupar todo el ancho innecesariamente. -->
+        <div class="grid grid-cols-12 gap-x-4 gap-y-4">
 
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Nombre <span class="text-red-500">*</span></label>
-          <input v-model="form.nombre" type="text" maxlength="200"
-            class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-        </div>
+          <!-- Fila 1: Nombre (ancho) + Tipo de grupo -->
+          <div class="col-span-12 sm:col-span-7">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Nombre <span class="text-red-500">*</span></label>
+            <input v-model="form.nombre" type="text" maxlength="200"
+              class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div class="col-span-12 sm:col-span-5">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Tipo de grupo <span class="text-red-500">*</span></label>
+            <select v-model="form.tipoGrupoId"
+              class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="">Seleccionar tipo…</option>
+              <option v-for="t in tipos" :key="t.id" :value="t.id">{{ t.nombre }}</option>
+            </select>
+          </div>
 
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Tipo de grupo <span class="text-red-500">*</span></label>
-          <select v-model="form.tipoGrupoId"
-            class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="">Seleccionar tipo…</option>
-            <option v-for="t in tipos" :key="t.id" :value="t.id">{{ t.nombre }}</option>
-          </select>
-        </div>
+          <!-- Fila 2: Agrupación territorial + Coordinador -->
+          <div class="col-span-12 sm:col-span-6">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Agrupación territorial <span class="text-red-500">*</span></label>
+            <SelectorAgrupacion v-model="form.agrupacionId" :agrupaciones="agrupaciones" />
+            <p class="mt-1 text-xs text-slate-400">Fija el ámbito del que se eligen los integrantes: no podrá entrar quien pertenezca a otra agrupación.</p>
+          </div>
+          <div class="col-span-12 sm:col-span-6">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Coordinador del grupo</label>
+            <select v-model="form.coordinadorId" :disabled="!form.agrupacionId"
+              class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-400">
+              <option value="">{{ form.agrupacionId ? (candidatos.length ? 'Sin designar de momento' : 'No hay candidatos en este ámbito') : 'Elige antes la agrupación' }}</option>
+              <option v-for="c in candidatos" :key="c.id" :value="c.id">
+                {{ c.nombre }} {{ c.apellido1 || '' }} — {{ colectivoLabel(c.colectivo) }}
+              </option>
+            </select>
+            <p class="mt-1 text-xs text-slate-400">Se elige entre los candidatos del ámbito. También podrás designarlo después entre los miembros.</p>
+          </div>
 
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Agrupación territorial <span class="text-red-500">*</span></label>
-          <SelectorAgrupacion v-model="form.agrupacionId" :agrupaciones="agrupaciones" />
-          <p class="mt-1 text-xs text-slate-400">Fija el ámbito del que se eligen los integrantes: no podrá entrar quien pertenezca a otra agrupación.</p>
-          <!-- Aviso: la agrupación elegida no tiene coordinador/cargo nombrado -->
+          <!-- Aviso (a todo lo ancho): la agrupación elegida no tiene coordinador/cargo nombrado -->
           <div v-if="form.agrupacionId && !agrupacionTieneCoordinador"
-            class="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            class="col-span-12 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
             <ExclamationTriangleIcon class="w-4 h-4 mt-0.5 shrink-0" />
             <span>Esta agrupación territorial no tiene coordinador nombrado. Puedes crear el grupo igualmente y designar su coordinador entre los integrantes.</span>
           </div>
-        </div>
 
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Coordinador del grupo</label>
-          <select v-model="form.coordinadorId" :disabled="!form.agrupacionId"
-            class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-400">
-            <option value="">{{ form.agrupacionId ? (candidatos.length ? 'Sin designar de momento' : 'No hay candidatos en este ámbito') : 'Elige antes la agrupación' }}</option>
-            <option v-for="c in candidatos" :key="c.id" :value="c.id">
-              {{ c.nombre }} {{ c.apellido1 || '' }} — {{ colectivoLabel(c.colectivo) }}
-            </option>
-          </select>
-          <p class="mt-1 text-xs text-slate-400">Se elige entre los candidatos del ámbito de la agrupación. También podrás designarlo después entre los miembros.</p>
-        </div>
+          <!-- Fila 3: Descripción + Objetivo -->
+          <div class="col-span-12 sm:col-span-6">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Descripción</label>
+            <textarea v-model="form.descripcion" rows="3"
+              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
+          </div>
+          <div class="col-span-12 sm:col-span-6">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Objetivo</label>
+            <textarea v-model="form.objetivo" rows="3"
+              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
+          </div>
 
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Descripción</label>
-          <textarea v-model="form.descripcion" rows="3"
-            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Objetivo</label>
-          <textarea v-model="form.objetivo" rows="2"
-            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
+          <!-- Fila 4: Fechas (cortas, alineadas a la izquierda) -->
+          <div class="col-span-6 sm:col-span-3">
             <label class="block text-sm font-medium text-slate-700 mb-1">Fecha inicio</label>
             <input v-model="form.fechaInicio" type="date"
               class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
-          <div>
+          <div class="col-span-6 sm:col-span-3">
             <label class="block text-sm font-medium text-slate-700 mb-1">Fecha fin</label>
             <input v-model="form.fechaFin" type="date"
               class="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
+
+          <ErrorAlert v-if="error" :message="error" class="col-span-12" />
         </div>
 
-        <ErrorAlert v-if="error" :message="error" />
+        <!-- Guía: la composición de integrantes se administra en la ficha del grupo. -->
+        <p class="mt-5 pt-4 border-t border-slate-100 text-xs text-slate-500 flex items-center gap-2">
+          <UserGroupIcon class="w-4 h-4 text-slate-400 shrink-0" />
+          Al crear el grupo entrarás en su ficha, donde podrás incluir los integrantes (voluntarios del ámbito) en el maestro-detalle de composición.
+        </p>
 
       </div>
     </div>
@@ -84,7 +94,7 @@
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
+import { ExclamationTriangleIcon, UserGroupIcon } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FormActions from '@/components/common/FormActions.vue'
 import SelectorAgrupacion from '@/components/common/SelectorAgrupacion.vue'
@@ -203,7 +213,8 @@ async function guardar() {
       fechaFin: form.value.fechaFin || null,
     }
     const res = await graphqlClient.request(GQL_CREAR_GRUPO, vars)
-    router.push(`/grupos/${res.crearGrupoTrabajoSeguro.id}`)
+    // Entra directo a la pestaña Miembros para administrar la composición (maestro-detalle).
+    router.push(`/grupos/${res.crearGrupoTrabajoSeguro.id}?tab=miembros`)
   } catch (e) {
     error.value = e?.response?.errors?.[0]?.message ?? 'Error al crear el grupo'
   } finally {

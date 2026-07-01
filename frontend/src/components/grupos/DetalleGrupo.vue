@@ -496,7 +496,10 @@ const estadosTarea = ref([])
 const requisitos = ref([])
 
 // ── Tabs ─────────────────────────────────────────────────────────────────────
-const activeTab = ref('info')
+// Pestaña inicial: respeta ?tab=… de la ruta (p. ej. tras crear el grupo se llega
+// con ?tab=miembros para administrar la composición). Si no es válida, 'info'.
+const _TABS_VALIDAS = ['info', 'miembros', 'tareas', 'recursos', 'reuniones']
+const activeTab = ref(_TABS_VALIDAS.includes(route.query.tab) ? route.query.tab : 'info')
 const tabs = computed(() => [
   { id: 'info',      name: 'Información',  count: null },
   { id: 'miembros',  name: 'Miembros',     count: miembrosActivos.value.length },
