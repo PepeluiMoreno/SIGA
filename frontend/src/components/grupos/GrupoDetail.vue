@@ -99,17 +99,17 @@
         <div class="bg-white rounded-xl border border-slate-200">
           <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
             <h2 class="text-sm font-semibold text-slate-800">Miembros del grupo ({{ miembrosActivos.length }})</h2>
-            <button @click="panelVoluntarios = !panelVoluntarios"
+            <button @click="togglePanelIncluir"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
-              <span>{{ panelVoluntarios ? '✕ Cerrar buscador' : '+ Añadir voluntario' }}</span>
+              <span>{{ panelVoluntarios ? '✕ Cerrar' : '+ Incluir integrantes' }}</span>
             </button>
           </div>
 
           <!-- Panel buscador de candidatos (voluntarios / contratados / coordinadores) -->
           <div v-if="panelVoluntarios" class="border-b border-slate-100 bg-indigo-50 px-5 py-4 space-y-3">
-            <p class="text-xs font-semibold text-indigo-800 uppercase tracking-wide">Añadir miembros al grupo</p>
-            <div class="flex flex-wrap gap-2">
-              <input v-model="busqVoluntario" type="text" placeholder="Nombre…"
+            <p class="text-xs font-semibold text-indigo-800 uppercase tracking-wide">Incluir integrantes en el grupo</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <input v-model="busqVoluntario" type="text" placeholder="Filtrar por nombre…"
                 class="h-9 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white w-full sm:w-48" />
               <select v-model="filtroColectivo" class="h-9 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
                 <option value="">Todos los colectivos</option>
@@ -117,38 +117,43 @@
                 <option value="CONTRATADO">Contratados</option>
                 <option value="COORDINADOR">Coordinadores de campaña</option>
               </select>
-              <button @click="buscarVoluntarios" :disabled="cargandoVol"
-                class="h-9 px-4 text-sm font-medium rounded-lg bg-white border border-indigo-300 text-indigo-700 hover:bg-indigo-50 transition-colors disabled:opacity-50">
-                {{ cargandoVol ? 'Buscando…' : 'Buscar' }}
-              </button>
+              <select v-model="rolIncluir" class="h-9 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                <option value="">Rol en el grupo…</option>
+                <option v-for="r in rolesGrupoNoCoord" :key="r.id" :value="r.id">{{ r.nombre }}</option>
+              </select>
             </div>
 
-            <div v-if="voluntariosResultado.length" class="space-y-1 max-h-56 overflow-y-auto rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
-              <div v-for="vol in voluntariosResultado" :key="`${vol.id}-${vol.colectivo}`"
-                class="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-slate-50">
+            <!-- Grid de candidatos del ámbito con selección múltiple -->
+            <div v-if="cargandoVol" class="text-xs text-slate-400 text-center py-4">Cargando candidatos del ámbito…</div>
+            <div v-else-if="candidatosSeleccionables.length"
+              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-72 overflow-y-auto">
+              <label v-for="vol in candidatosSeleccionables" :key="vol.id"
+                class="flex items-center gap-2.5 rounded-lg border bg-white px-3 py-2 cursor-pointer transition-colors"
+                :class="seleccion.has(vol.id) ? 'border-indigo-400 ring-1 ring-indigo-200 bg-indigo-50/40' : 'border-slate-200 hover:border-slate-300'">
+                <input type="checkbox" :checked="seleccion.has(vol.id)" @change="toggleSel(vol.id)"
+                  class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
                 <div class="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
                   {{ iniciales(vol.nombre, vol.apellido1) }}
                 </div>
-                <div class="flex-1 min-w-0">
-                  <p class="font-medium text-slate-900">{{ vol.nombre }} {{ vol.apellido1 }}</p>
-                  <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium" :class="colectivoBadge(vol.colectivo)">
+                <div class="min-w-0">
+                  <p class="text-sm font-medium text-slate-900 truncate">{{ vol.nombre }} {{ vol.apellido1 }}</p>
+                  <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium" :class="colectivoBadge(vol.colectivo)">
                     {{ colectivoLabel(vol.colectivo) }}
                   </span>
                 </div>
-                <div class="flex items-center gap-2 flex-shrink-0">
-                  <select v-model="rolSeleccionado[vol.id]" class="h-8 text-xs px-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    <option value="">Rol…</option>
-                    <option v-for="r in rolesGrupo" :key="r.id" :value="r.id">{{ r.nombre }}</option>
-                  </select>
-                  <button @click="añadirMiembro(vol)"
-                    :disabled="!rolSeleccionado[vol.id] || yaEsMiembro(vol.id)"
-                    class="px-2 py-1 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 transition-colors">
-                    {{ yaEsMiembro(vol.id) ? 'Ya está' : 'Añadir' }}
-                  </button>
-                </div>
-              </div>
+              </label>
             </div>
-            <p v-else-if="busqRealizada" class="text-xs text-slate-400 text-center py-2">No se encontraron candidatos con esos criterios.</p>
+            <p v-else class="text-xs text-slate-400 text-center py-3">
+              No hay candidatos disponibles en el ámbito de la agrupación (o ya son todos miembros).
+            </p>
+
+            <div class="flex items-center justify-between gap-3 pt-1">
+              <span class="text-xs text-slate-500">{{ seleccion.size }} seleccionado{{ seleccion.size === 1 ? '' : 's' }}</span>
+              <button @click="incluirSeleccionados" :disabled="!seleccion.size || !rolIncluir || incluyendo"
+                class="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors">
+                {{ incluyendo ? 'Incluyendo…' : `Incluir en el grupo de trabajo` }}
+              </button>
+            </div>
             <ErrorAlert v-if="errorAnadir" :message="errorAnadir" />
           </div>
 
@@ -690,37 +695,16 @@ async function cargar() {
   }
 }
 
-// ── Buscador voluntarios ──────────────────────────────────────────────────────
+// ── Incluir integrantes (grid multi-selección de candidatos del ámbito) ────────
 const panelVoluntarios = ref(false)
 const busqVoluntario = ref('')
 const filtroColectivo = ref('')
-const voluntariosResultado = ref([])
+const candidatos = ref([])           // candidatos del ámbito (3 colectivos)
 const cargandoVol = ref(false)
-const busqRealizada = ref(false)
-const rolSeleccionado = ref({})
+const seleccion = ref(new Set())     // ids seleccionados en el grid
+const rolIncluir = ref('')           // rol de grupo a aplicar a los incluidos
+const incluyendo = ref(false)
 const errorAnadir = ref('')
-
-async function buscarVoluntarios() {
-  cargandoVol.value = true
-  busqRealizada.value = false
-  try {
-    const data = await graphqlClient.request(GQL_VOLUNTARIOS, {
-      colectivo: filtroColectivo.value || null,
-      agrupacionId: grupo.value?.agrupacion?.id || null,
-    })
-    let cands = data.candidatos || []
-    const q = busqVoluntario.value.toLowerCase()
-    if (q) cands = cands.filter(v =>
-      `${v.nombre} ${v.apellido1 || ''}`.toLowerCase().includes(q)
-    )
-    voluntariosResultado.value = cands
-    busqRealizada.value = true
-  } catch (e) {
-    errorAnadir.value = e?.response?.errors?.[0]?.message || 'Error buscando candidatos'
-  } finally {
-    cargandoVol.value = false
-  }
-}
 
 const COLECTIVO_LABELS = { VOLUNTARIO: 'Voluntario', CONTRATADO: 'Contratado', COORDINADOR: 'Coordinador' }
 const COLECTIVO_BADGES = {
@@ -735,20 +719,75 @@ function yaEsMiembro(miembroId) {
   return miembrosActivos.value.some(m => m.miembroId === miembroId || m.miembro?.id === miembroId)
 }
 
-async function añadirMiembro(vol) {
-  const rolId = rolSeleccionado.value[vol.id]
-  if (!rolId) return
+// Roles de grupo asignables en el grid: se excluye el de coordinador (el
+// coordinador se designa aparte, entre los miembros ya incluidos).
+const rolesGrupoNoCoord = computed(() => rolesGrupo.value.filter(r => !r.esCoordinador))
+
+// Candidatos seleccionables: los del ámbito, menos quienes ya son miembros y
+// menos el coordinador ya nombrado (no debe volver a añadirse). Filtrados por
+// texto y colectivo.
+const candidatosSeleccionables = computed(() => {
+  const coordId = grupo.value?.coordinador?.id
+  const q = busqVoluntario.value.trim().toLowerCase()
+  return candidatos.value.filter(v => {
+    if (yaEsMiembro(v.id) || v.id === coordId) return false
+    if (filtroColectivo.value && v.colectivo !== filtroColectivo.value) return false
+    if (q && !`${v.nombre} ${v.apellido1 || ''}`.toLowerCase().includes(q)) return false
+    return true
+  })
+})
+
+// Carga los candidatos del ámbito de la agrupación del grupo (una vez por apertura).
+async function cargarCandidatos() {
+  if (!grupo.value?.agrupacion?.id) return
+  cargandoVol.value = true
   errorAnadir.value = ''
   try {
-    const data = await graphqlClient.request(MUTATION_CREAR_MIEMBRO_GRUPO, {
-      grupoId: grupoId.value,
-      miembroId: vol.id,
-      rolGrupoId: rolId,
-      fechaIncorporacion: new Date().toISOString().slice(0, 10),  // hoy (automática)
+    const data = await graphqlClient.request(GQL_VOLUNTARIOS, {
+      colectivo: null, agrupacionId: grupo.value.agrupacion.id,
     })
-    grupo.value.miembros = [...(grupo.value.miembros || []), data.crearMiembroGrupo]
+    candidatos.value = data.candidatos || []
   } catch (e) {
-    errorAnadir.value = e?.response?.errors?.[0]?.message || 'Error añadiendo miembro'
+    errorAnadir.value = e?.response?.errors?.[0]?.message || 'Error cargando candidatos'
+  } finally {
+    cargandoVol.value = false
+  }
+}
+
+function togglePanelIncluir() {
+  panelVoluntarios.value = !panelVoluntarios.value
+  if (panelVoluntarios.value) {
+    seleccion.value = new Set()
+    cargarCandidatos()
+  }
+}
+
+function toggleSel(id) {
+  const s = new Set(seleccion.value)
+  s.has(id) ? s.delete(id) : s.add(id)
+  seleccion.value = s
+}
+
+// Incluye de golpe a todos los seleccionados con el rol elegido.
+async function incluirSeleccionados() {
+  if (!seleccion.value.size || !rolIncluir.value) return
+  incluyendo.value = true
+  errorAnadir.value = ''
+  const hoy = new Date().toISOString().slice(0, 10)
+  try {
+    for (const id of seleccion.value) {
+      if (yaEsMiembro(id)) continue
+      const data = await graphqlClient.request(MUTATION_CREAR_MIEMBRO_GRUPO, {
+        grupoId: grupoId.value, miembroId: id, rolGrupoId: rolIncluir.value,
+        fechaIncorporacion: hoy,
+      })
+      grupo.value.miembros = [...(grupo.value.miembros || []), data.crearMiembroGrupo]
+    }
+    seleccion.value = new Set()
+  } catch (e) {
+    errorAnadir.value = e?.response?.errors?.[0]?.message || 'Error incluyendo integrantes'
+  } finally {
+    incluyendo.value = false
   }
 }
 

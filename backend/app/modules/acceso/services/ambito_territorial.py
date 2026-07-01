@@ -149,6 +149,38 @@ async def ensure_rol_coordinador_campania(
     await session.commit()
 
 
+async def ensure_rol_coordinador_grupo(
+    session: AsyncSession, miembro_id: Optional[uuid.UUID],
+) -> None:
+    """Concede el rol COORDINADOR_GRUPO_TRABAJO al usuario del coordinador de un grupo.
+
+    Mini-coordinador acotado a las actividades de su grupo. Idempotente; no se revoca
+    al cambiar de coordinador (si deja de coordinar grupos, su ámbito queda vacío).
+    No commitea: se ejecuta dentro de la transacción de creación/designación del grupo.
+    """
+    if not miembro_id:
+        return
+    from app.modules.acceso.models.usuario import Usuario
+    from app.modules.acceso.models.rol import Rol
+
+    usuario_id = await session.scalar(select(Usuario.id).where(Usuario.contacto_id == miembro_id))
+    if not usuario_id:
+        return  # el coordinador no tiene cuenta de acceso
+    rol_id = await session.scalar(select(Rol.id).where(Rol.codigo == "COORDINADOR_GRUPO_TRABAJO"))
+    if not rol_id:
+        return
+    existe = await session.scalar(
+        select(UsuarioRol.id).where(
+            UsuarioRol.usuario_id == usuario_id,
+            UsuarioRol.rol_id == rol_id,
+            UsuarioRol.activo.is_(True),
+        )
+    )
+    if existe:
+        return
+    session.add(UsuarioRol(usuario_id=usuario_id, rol_id=rol_id, agrupacion_id=None, activo=True))
+
+
 async def assert_unidad_en_ambito(
     session: AsyncSession, usuario_id: uuid.UUID, unidad_id: uuid.UUID | None,
 ) -> None:

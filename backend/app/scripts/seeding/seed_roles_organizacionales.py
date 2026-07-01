@@ -75,6 +75,17 @@ ORGANIZACION_ROLES = [
         "nivel_territorial": None,
     },
     {
+        # Ámbito = su grupo de trabajo (no territorial). Mini-coordinador acotado a
+        # las actividades de ese grupo. Se asigna al usuario al nombrarlo coordinador
+        # del grupo (ver ActividadService al designar coordinador).
+        "codigo": "COORDINADOR_GRUPO_TRABAJO",
+        "nombre": "Coordinador de grupo de trabajo",
+        "descripcion": "Coordinador responsable de un grupo de trabajo concreto",
+        "nivel": 9,
+        "es_territorial": False,
+        "nivel_territorial": None,
+    },
+    {
         # Captación de socios / extensión: gestiona el CRM de contactos (leads).
         "codigo": "EXTENSION",
         "nombre": "Extensión",

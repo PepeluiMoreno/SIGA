@@ -338,6 +338,10 @@ class ActividadService:
                     grupo_id=grupo.id, miembro_id=coordinador_id,
                     rol_grupo_id=rol_coord.id, activo=True,
                 ))
+            # Y su usuario obtiene el rol de acceso "Coordinador de grupo de trabajo"
+            # (mini-coordinador acotado a las actividades del grupo).
+            from app.modules.acceso.services.ambito_territorial import ensure_rol_coordinador_grupo
+            await ensure_rol_coordinador_grupo(self.session, coordinador_id)
 
         await self.session.commit()
         await self.session.refresh(grupo)
