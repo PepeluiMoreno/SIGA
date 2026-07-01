@@ -38,16 +38,12 @@
          antes de la navegación. En edición/alta: Cancelar + Crear/Guardar; en
          lectura: Editar. -->
     <template v-if="!modoPropio" #actions>
-      <template v-if="editMode || isCreateMode">
-        <button @click="handleCancel"
-          class="h-8 px-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
-          {{ isCreateMode ? 'Cancelar' : 'Cancelar cambios' }}
-        </button>
-        <button @click="handleSave" :disabled="loading || !formValido"
-          class="h-8 px-4 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50">
-          {{ isCreateMode ? `Crear ${orgConfig.miembro || 'socio'}` : 'Guardar cambios' }}
-        </button>
-      </template>
+      <FormActions v-if="editMode || isCreateMode"
+        :submit-text="isCreateMode ? `Crear ${orgConfig.miembro || 'socio'}` : 'Guardar cambios'"
+        :cancel-text="isCreateMode ? 'Cancelar' : 'Cancelar cambios'"
+        :variant="isCreateMode ? 'green' : 'indigo'"
+        :loading="loading" :disabled="!formValido"
+        @cancel="handleCancel" @submit="handleSave" />
       <button v-else-if="miembro.id" @click="toggleEditMode"
         class="h-8 px-3 text-sm font-medium text-indigo-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
         Editar
@@ -1186,12 +1182,17 @@
 import { ArrowUpTrayIcon } from '@heroicons/vue/24/outline'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { useToast } from '@/composables/useToast'
-import { computed, defineComponent, h, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import TabsNavigation from '@/components/common/TabsNavigation.vue'
 import AppDrawer from '@/components/common/AppDrawer.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
+import FormActions from '@/components/common/FormActions.vue'
+import FieldText from '@/components/common/form/FieldText.vue'
+import FieldTextarea from '@/components/common/form/FieldTextarea.vue'
+import FieldSelect from '@/components/common/form/FieldSelect.vue'
+import FieldCheckbox from '@/components/common/form/FieldCheckbox.vue'
 import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
 import JustificantesGastoPanel from '@/components/common/JustificantesGastoPanel.vue'
 import { gql } from 'graphql-request'
@@ -2181,117 +2182,6 @@ onMounted(async () => {
   }
 })
 
-// ── Componentes de campo inline ───────────────────────────────────────────────
-
-const FieldText = defineComponent({
-  props: {
-    modelValue: { type: [String, Number], default: '' },
-    label: { type: String, required: true },
-    type: { type: String, default: 'text' },
-    editMode: { type: Boolean, default: false },
-  },
-  emits: ['update:modelValue'],
-  setup(props, { emit }) {
-    return () => h('div', [
-      h('label', { class: 'block text-xs font-medium text-slate-600 mb-1' }, props.label),
-      props.editMode
-        ? h('input', {
-            class: 'mt-0.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30',
-            type: props.type,
-            value: props.modelValue ?? '',
-            onInput: (e) => emit('update:modelValue', e.target.value),
-          })
-        : h('div', { class: 'mt-0.5 px-0 py-1.5 text-sm text-slate-900 min-h-[34px]' }, formatDisplay(props.modelValue)),
-    ])
-  },
-})
-
-const FieldTextarea = defineComponent({
-  props: {
-    modelValue: { type: String, default: '' },
-    label: { type: String, required: true },
-    rows: { type: [Number, String], default: 4 },
-    editMode: { type: Boolean, default: false },
-  },
-  emits: ['update:modelValue'],
-  setup(props, { emit }) {
-    return () => h('div', [
-      h('label', { class: 'block text-xs font-medium text-slate-600 mb-1' }, props.label),
-      props.editMode
-        ? h('textarea', {
-            class: 'mt-0.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30',
-            rows: props.rows,
-            value: props.modelValue ?? '',
-            onInput: (e) => emit('update:modelValue', e.target.value),
-          })
-        : h('div', { class: 'mt-0.5 py-1.5 text-sm text-slate-900 min-h-[60px] whitespace-pre-wrap' }, formatDisplay(props.modelValue)),
-    ])
-  },
-})
-
-const FieldSelect = defineComponent({
-  props: {
-    modelValue: { default: null },
-    label: { type: String, default: '' },
-    options: { type: Array, default: () => [] },
-    optionLabel: { type: String, default: 'label' },
-    optionValue: { type: String, default: 'value' },
-    emptyLabel: { type: String, default: 'Sin especificar' },
-    editMode: { type: Boolean, default: false },
-  },
-  emits: ['update:modelValue'],
-  setup(props, { emit }) {
-    const displayValue = computed(() => {
-      const current = props.options.find((item) => item?.[props.optionValue] === props.modelValue)
-      return current?.[props.optionLabel] || props.emptyLabel
-    })
-    return () => h('div', [
-      props.label ? h('label', { class: 'block text-xs font-medium text-slate-600 mb-1' }, props.label) : null,
-      props.editMode
-        ? h('select', {
-            class: 'mt-0.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30',
-            value: props.modelValue ?? '',
-            onChange: (e) => emit('update:modelValue', e.target.value || null),
-          }, [
-            h('option', { value: '' }, props.emptyLabel),
-            ...props.options.map((item) =>
-              h('option', { value: item?.[props.optionValue] }, item?.[props.optionLabel] || ''),
-            ),
-          ])
-        : h('div', { class: 'mt-0.5 py-1.5 text-sm text-slate-900 min-h-[34px]' }, displayValue.value),
-    ])
-  },
-})
-
-const FieldCheckbox = defineComponent({
-  props: {
-    modelValue: { type: Boolean, default: false },
-    label: { type: String, required: true },
-    editMode: { type: Boolean, default: false },
-  },
-  emits: ['update:modelValue'],
-  setup(props, { emit }) {
-    return () => h('label', {
-      class: [
-        'flex items-center gap-2 rounded-lg px-3 py-2.5 min-h-[42px] text-sm',
-        props.modelValue ? 'bg-purple-50 border border-purple-200 text-purple-800' : 'bg-gray-50 border border-gray-200 text-gray-700'
-      ]
-    }, [
-      h('input', {
-        type: 'checkbox',
-        class: 'rounded border-gray-300 text-purple-600 focus:ring-purple-500',
-        checked: props.modelValue,
-        disabled: !props.editMode,
-        onChange: (e) => emit('update:modelValue', e.target.checked),
-      }),
-      h('span', {}, props.label),
-    ])
-  },
-})
-
-function formatDisplay(value) {
-  return value === null || value === undefined || value === '' ? '—' : String(value)
-}
 
 const formatDate = (dateString) => {
   if (!dateString) return '—'

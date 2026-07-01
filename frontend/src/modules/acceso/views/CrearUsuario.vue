@@ -1,18 +1,9 @@
 <template>
   <AppLayout title="Nuevo usuario" subtitle="Dota de cuenta de acceso a un contacto de la organización">
     <template #actions>
-      <span v-if="serverError" class="flex items-center gap-1.5 text-xs text-red-600 mr-1">
-        <ExclamationCircleIcon class="w-4 h-4 shrink-0" /> {{ serverError }}
-      </span>
-      <button type="button" @click="$router.back()"
-        class="h-8 px-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
-        Cancelar
-      </button>
-      <button type="button" :disabled="submitting || success || !contactoElegido" @click="handleSubmit"
-        class="inline-flex items-center gap-2 h-8 px-4 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 shadow-sm transition-colors">
-        <span v-if="submitting" class="animate-spin rounded-full h-3.5 w-3.5 border-[2px] border-white border-t-transparent"></span>
-        Crear usuario
-      </button>
+      <FormActions submit-text="Crear usuario" :loading="submitting" :error="serverError"
+        :disabled="success || !contactoElegido"
+        @cancel="$router.back()" @submit="handleSubmit" />
     </template>
 
     <div v-if="loading" class="flex items-center justify-center py-20">
@@ -205,10 +196,10 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   EyeIcon, EyeSlashIcon, CheckIcon, CheckCircleIcon,
-  ExclamationCircleIcon, ChevronLeftIcon, ChevronRightIcon,
-  EnvelopeIcon, MagnifyingGlassIcon,
+  ChevronRightIcon, EnvelopeIcon, MagnifyingGlassIcon,
 } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
+import FormActions from '@/components/common/FormActions.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { CREAR_USUARIO, GET_TIPOS_VINCULACION, GET_CONTACTOS_DOTABLES } from '@/graphql/queries/usuarios.js'
 
