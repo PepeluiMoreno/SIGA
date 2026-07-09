@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Optional, List
 
 from sqlalchemy import String, Boolean, ForeignKey, DateTime, Uuid, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from strawchemy.dto.utils import PRIVATE
 
 from ....infrastructure.base_model import BaseModel, InmutableMixin
 
@@ -22,7 +23,9 @@ class Usuario(BaseModel):
     # `superadmin`, que no tiene email). Ambos únicos; email opcional.
     username: Mapped[Optional[str]] = mapped_column(String(150), unique=True, index=True, nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String(255), unique=True, index=True, nullable=True)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    # info=PRIVATE: secreto de autenticación; strawchemy lo excluye de TODOS los
+    # DTOs (tipo, embebido, filtro, order_by) — nunca debe viajar por GraphQL.
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False, info=PRIVATE)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
     # Contacto (persona) asociado (1:1, nullable: usuarios técnicos pueden no ser contactos)
@@ -46,9 +49,11 @@ class Usuario(BaseModel):
     bloqueado_hasta: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Reset de contraseña (token de un solo uso, expira en 30 min)
-    reset_token: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, index=True)
-    reset_token_expira_en: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    reset_token_solicitado_en: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    # Token de recuperación: exponerlo permite tomar la cuenta. info=PRIVATE lo
+    # mantiene fuera de todo DTO GraphQL (incluidos filtros, que serían un oráculo).
+    reset_token: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, index=True, info=PRIVATE)
+    reset_token_expira_en: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, info=PRIVATE)
+    reset_token_solicitado_en: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, info=PRIVATE)
 
     # Relaciones
     roles: Mapped[List["UsuarioRol"]] = relationship(
