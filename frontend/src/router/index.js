@@ -164,6 +164,18 @@ const routes = [
     meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_MIEMBRO_LISTAR' }
   },
   {
+    path: '/traslados',
+    component: () => import('@/modules/membresia/views/BandejaTraslados.vue'),
+    name: 'BandejaTraslados',
+    meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_TRASLADO_APROBAR' }
+  },
+  {
+    path: '/estadisticas-socios',
+    component: () => import('@/modules/membresia/views/EstadisticasSocios.vue'),
+    name: 'EstadisticasSocios',
+    meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_MIEMBRO_LISTAR' }
+  },
+  {
     path: '/solicitudes-socio',
     component: () => import('@/modules/membresia/views/SolicitudesSocio.vue'),
     name: 'SolicitudesSocio',

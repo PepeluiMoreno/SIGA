@@ -172,7 +172,7 @@
             <hr class="nav-sep" />
 
             <!-- Membresía -->
-            <div v-if="tieneAlguno('CONTACTO_LISTAR','MEMBRESIA_MIEMBRO_LISTAR','MEMBRESIA_AGRUPACION_EDITAR','MEMBRESIA_MIEMBRO_VALIDAR','GRUPO_LISTAR')" class="mb-1">
+            <div v-if="tieneAlguno('CONTACTO_LISTAR','MEMBRESIA_MIEMBRO_LISTAR','MEMBRESIA_AGRUPACION_EDITAR','MEMBRESIA_MIEMBRO_VALIDAR','MEMBRESIA_TRASLADO_APROBAR','GRUPO_LISTAR')" class="mb-1">
               <button @click="toggleSection('membresia')" class="section-btn">
                 <span>Membresía</span>
                 <ChevronDownIcon class="chevron" :class="openSections.membresia ? '' : '-rotate-90'" />
@@ -213,6 +213,18 @@
                     <router-link to="/solicitudes-socio" class="nav-item"
                       :class="$route.path.startsWith('/solicitudes-socio') ? 'active' : 'inactive'">
                       <CheckBadgeIcon class="nav-icon" /><span>Solicitudes de admisión</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('MEMBRESIA_TRASLADO_APROBAR')">
+                    <router-link to="/traslados" class="nav-item"
+                      :class="$route.path.startsWith('/traslados') ? 'active' : 'inactive'">
+                      <ArrowsRightLeftIcon class="nav-icon" /><span>Traslados</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('MEMBRESIA_MIEMBRO_LISTAR')">
+                    <router-link to="/estadisticas-socios" class="nav-item"
+                      :class="$route.path.startsWith('/estadisticas-socios') ? 'active' : 'inactive'">
+                      <ChartBarIcon class="nav-icon" /><span>Estadísticas de socios</span>
                     </router-link>
                   </li>
                 </ul>
