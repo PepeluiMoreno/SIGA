@@ -97,6 +97,14 @@ const routes = [
     name: 'Inicializacion',
     meta: { public: true }
   },
+  {
+    // Pago de cuota por el socio desde el enlace tokenizado del email de aviso.
+    // Pública a propósito: el token firmado es la autorización.
+    path: '/pagar-cuota',
+    component: () => import('@/views/PagarCuota.vue'),
+    name: 'PagarCuota',
+    meta: { public: true }
+  },
 
   // ─── ACCESO ───────────────────────────────────────────────────────────────
   {

@@ -56,6 +56,11 @@ async def info_pago(
         info = await service.info(token)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    # El client-id de PayPal es público por diseño (va en la URL del SDK JS);
+    # exponerlo aquí evita duplicar configuración en el frontend.
+    from app.modules.economico.services.paypal_service import (
+        PAYPAL_CLIENT_ID, PAYPAL_MODE,
+    )
     return {
         "ejercicio": info.ejercicio,
         "nombre_socio": info.nombre_socio,
@@ -63,6 +68,8 @@ async def info_pago(
         "importe_pagado": str(info.importe_pagado),
         "pendiente": str(info.pendiente),
         "pagada": info.pagada,
+        "paypal_client_id": PAYPAL_CLIENT_ID or "",
+        "paypal_mode": PAYPAL_MODE,
     }
 
 

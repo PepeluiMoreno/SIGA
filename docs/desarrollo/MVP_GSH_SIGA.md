@@ -92,12 +92,17 @@ reclamaciones de impago (4 modelos muertos; GSH tampoco lo tiene).
     (autoservicio del socio) → `RequireAuthenticated` (con TODO de ámbito horizontal
     self/tesorería).
   - Verificado: ya no queda ninguna mutation pública económica sin RBAC.
-- ⏳ **Pendiente (lado lectura)**: los `ECO_*_LISTAR` no se aplican porque los
-  listados los sirve `strawchemy.field` en `schema_simple.py` sin control. La versión
-  moderna de strawchemy acepta `permission_classes=` en `field()`, pero **antes de
-  aplicarlo hay que confirmar la versión de strawchemy desplegada** (un skew rompería
-  el arranque). Severidad menor: /graphql va tras Authelia/VPN; el hueco es horizontal
-  (cualquier usuario autenticado lista datos económicos aunque no tenga rol económico).
+- ✅ **Lado lectura**: confirmada la versión desplegada por `uv.lock`
+  (strawchemy 0.21.0, soporta `permission_classes` en `field()`). Aplicado
+  `RequireTransaction` a los 18 listados sensibles de `schema_simple.py`
+  (tesorería→ECO_CONCILIACION_LISTAR, cuentas→ECO_CUENTA_LISTAR,
+  contabilidad→ECO_ESTRUCTURA_CONTABLE_LISTAR, cuotas/reducciones→ECO_CUOTA_LISTAR,
+  donaciones/remesas/recibos/justificantes→sus ECO_*_LISTAR,
+  presupuesto→ECO_PRESUPUESTO_CONSULTAR). Los catálogos inocuos que usan los
+  formularios (formasPago, importesCuotaAnio, motivosReduccionCuota,
+  donacionConceptos, estadosPlanificacion, categoriasPartida) quedan solo con
+  autenticación. **Esquema completo verificado** con python3.13 + versiones del
+  lock: construye y todos los campos siguen en el SDL.
 
 ### Bucket B — parcialmente hecho
 - ✅ **Mutations de ciclo de vida del socio** (`vinculaciones_resolvers.py`):
@@ -155,5 +160,8 @@ reclamaciones de impago (4 modelos muertos; GSH tampoco lo tiene).
   - ⚠️ **Verificar en sandbox PayPal antes de producción** (requiere
     `PAYPAL_CLIENT_ID/SECRET`, no disponibles en esta sesión): crear orden,
     aprobar como buyer, capturar y comprobar que la cuota queda Cobrada.
-  - El front debe servir una página `/pagar-cuota?token=…` que consuma estos
-    endpoints con el SDK JS de PayPal (el enlace de los avisos apunta ahí).
+  - ✅ **Página front `/pagar-cuota`** (`frontend/src/views/PagarCuota.vue`, ruta
+    pública): lee el token de la URL, muestra la cuota (importes del servidor),
+    monta los botones del SDK JS de PayPal contra los endpoints públicos y muestra
+    los estados ya-pagada / completado / error. El `client-id` lo sirve el endpoint
+    de info (es público por diseño del SDK). Build de Vite verificado.

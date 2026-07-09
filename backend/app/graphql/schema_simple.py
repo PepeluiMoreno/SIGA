@@ -11,6 +11,7 @@ import strawberry
 
 from . import strawchemy
 from .auth import AuthQuery
+from .permissions import RequireTransaction
 from .configuracion_resolvers import ConfiguracionOrganizacionQuery
 from .economico_resolvers import EconomicoQuery
 from .categoria_fiscal_resolvers import CategoriaFiscalQuery
@@ -91,37 +92,37 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
     plantillasEmail: list[PlantillaEmailType] = strawchemy.field(filter_input=PlantillaEmailFilter)
 
     # === FINANCIERO - Tesorería ===
-    cuentasBancarias: list[CuentaBancariaType] = strawchemy.field(filter_input=CuentaBancariaFilter)
-    apuntesCaja: list[ApunteCajaType] = strawchemy.field(filter_input=ApunteCajaFilter)
-    extractosBancarios: list[ExtractoBancarioType] = strawchemy.field(filter_input=ExtractoBancarioFilter)
-    movimientosTesoreria: list[MovimientoTesoreriaType] = strawchemy.field(filter_input=MovimientoTesoreriaFilter)
-    conciliacionesBancarias: list[ConciliacionBancariaType] = strawchemy.field(filter_input=ConciliacionBancariaFilter)
+    cuentasBancarias: list[CuentaBancariaType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_CUENTA_LISTAR")], filter_input=CuentaBancariaFilter)
+    apuntesCaja: list[ApunteCajaType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_CONCILIACION_LISTAR")], filter_input=ApunteCajaFilter)
+    extractosBancarios: list[ExtractoBancarioType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_CONCILIACION_LISTAR")], filter_input=ExtractoBancarioFilter)
+    movimientosTesoreria: list[MovimientoTesoreriaType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_CONCILIACION_LISTAR")], filter_input=MovimientoTesoreriaFilter)
+    conciliacionesBancarias: list[ConciliacionBancariaType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_CONCILIACION_LISTAR")], filter_input=ConciliacionBancariaFilter)
 
     # === FINANCIERO - Contabilidad ===
-    cuentasContables: list[CuentaContableType] = strawchemy.field(filter_input=CuentaContableFilter)
-    asientosContables: list[AsientoContableType] = strawchemy.field(filter_input=AsientoContableFilter)
-    apuntesContables: list[ApunteContableType] = strawchemy.field(filter_input=ApunteContableFilter)
-    reglasContables: list[ReglaContableType] = strawchemy.field(filter_input=ReglaContableFilter)
+    cuentasContables: list[CuentaContableType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_LISTAR")], filter_input=CuentaContableFilter)
+    asientosContables: list[AsientoContableType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_LISTAR")], filter_input=AsientoContableFilter)
+    apuntesContables: list[ApunteContableType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_LISTAR")], filter_input=ApunteContableFilter)
+    reglasContables: list[ReglaContableType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_ESTRUCTURA_CONTABLE_LISTAR")], filter_input=ReglaContableFilter)
 
     # === FINANCIERO - Cuotas/Donaciones/Presupuesto ===
     importesCuotaAnio: list[ImporteCuotaAnioType] = strawchemy.field(filter_input=ImporteCuotaAnioFilter)
     formasPago: list[FormaPagoType] = strawchemy.field(filter_input=FormaPagoFilter)
-    cuotasAnuales: list[CuotaAnualType] = strawchemy.field(filter_input=CuotaAnualFilter)
+    cuotasAnuales: list[CuotaAnualType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_CUOTA_LISTAR")], filter_input=CuotaAnualFilter)
     # Flujo 1 — catálogo de motivos de reducción
     motivosReduccionCuota: list[MotivoReduccionCuotaType] = strawchemy.field(filter_input=MotivoReduccionCuotaFilter)
     donacionConceptos: list[DonacionConceptoType] = strawchemy.field(filter_input=DonacionConceptoFilter)
-    donaciones: list[DonacionType] = strawchemy.field(filter_input=DonacionFilter)
-    remesas: list[RemesaType] = strawchemy.field(filter_input=RemesaFilter)
-    ordenesCobro: list[OrdenCobroType] = strawchemy.field(filter_input=OrdenCobroFilter)
-    recibos: list[ReciboType] = strawchemy.field(filter_input=ReciboFilter)
-    justificantesGasto: list[JustificanteGastoType] = strawchemy.field(filter_input=JustificanteGastoFilter)
-    solicitudesReduccionCuota: list[SolicitudReduccionCuotaType] = strawchemy.field(filter_input=SolicitudReduccionCuotaFilter)
+    donaciones: list[DonacionType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_DONACION_LISTAR")], filter_input=DonacionFilter)
+    remesas: list[RemesaType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_REMESA_LISTAR")], filter_input=RemesaFilter)
+    ordenesCobro: list[OrdenCobroType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_REMESA_LISTAR")], filter_input=OrdenCobroFilter)
+    recibos: list[ReciboType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_RECIBO_LISTAR")], filter_input=ReciboFilter)
+    justificantesGasto: list[JustificanteGastoType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_JUSTIFICANTE_LISTAR")], filter_input=JustificanteGastoFilter)
+    solicitudesReduccionCuota: list[SolicitudReduccionCuotaType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_CUOTA_LISTAR")], filter_input=SolicitudReduccionCuotaFilter)
     estadosPlanificacion: list[EstadoPlanificacionType] = strawchemy.field()
     categoriasPartida: list[CategoriaPartidaType] = strawchemy.field()
     # `partidasPresupuestarias` lo sirve el resolver de PresupuestoQuery (filtra por
     # planificacionId y tipo); no se declara aquí para no tapar ese resolver.
-    compromisos_presupuestarios: list[CompromisoPresupuestarioType] = strawchemy.field(filter_input=CompromisoPresupuestarioFilter)
-    planificacionesAnuales: list[PlanificacionAnualType] = strawchemy.field()
+    compromisos_presupuestarios: list[CompromisoPresupuestarioType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")], filter_input=CompromisoPresupuestarioFilter)
+    planificacionesAnuales: list[PlanificacionAnualType] = strawchemy.field(permission_classes=[RequireTransaction("ECO_PRESUPUESTO_CONSULTAR")], )
 
     # === COLABORACIONES ===
     # Módulo `organizaciones` obsoleto; los convenios de secretaría se consultan
