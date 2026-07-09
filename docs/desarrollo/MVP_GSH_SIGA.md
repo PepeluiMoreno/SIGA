@@ -197,6 +197,26 @@ que consume las mutations/queries nuevas (se irá construyendo sobre la misma ra
 
 ---
 
+## Verificación en ejecución (2026-07-09) — hecha
+
+La rama se verificó contra un backend vivo. Resultado y detalle técnico de los fixes
+aplicados en **[VERIFICACION_MVP_RBAC_RGPD.md](VERIFICACION_MVP_RBAC_RGPD.md)**.
+Resumen de lo que cambió respecto al MVP original:
+
+- **Módulo económico encendido** (`modulos.py`: `economico` → `activo=True`). Estaba
+  OFF, lo que dejaba inerte todo el RBAC económico nuevo (denegaba hasta a SUPERADMIN).
+- **Permisos del tesorero completados** (`seed_permisos_tesorero.py`): +5 transacciones
+  que la PR volvió obligatorias (cuentas, apuntes de caja, pago manual, asientos,
+  presupuesto).
+- **Default-deny en los 122 listados strawchemy** + **secretos de `Usuario`
+  (`password_hash`/`reset_token*`) marcados `info=PRIVATE`**: cerró una fuga
+  preexistente (104 listados públicos sin auth; token de reset filtrable).
+- **Fix RGPD**: modelos `Consentimiento`/`SolicitudDerecho` alineados a la columna
+  real `contacto_id` (la migración la había renombrado; el ORM se quedó en
+  `miembro_id`). Sin esto, la auto-alta con consentimiento abortaba.
+
+---
+
 ## Checklist antes de merge (PR #11)
 
 1. Arrancar stack dev y confirmar backend `healthy`.
