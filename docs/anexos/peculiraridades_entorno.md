@@ -2,11 +2,11 @@
 
 ## Resumen ejecutivo
 
-El desarrollo activo ocurre en el **Optiplex-790** (máquina física en la red local, accedida por SSH o VSCode Remote SSH). El código vive en `/opt/docker/apps/SIGA` directamente en esa máquina. Los cambios se prueban ahí y, cuando son estables, se hace push a `master`, lo que dispara un pipeline de GitHub Actions que despliega automáticamente en staging (`vps2.europalaica.org`).
+El desarrollo activo ocurre en **z4dev**, una instancia de **WSL** sobre el mismo Windows donde se usa VSCode. El código y el stack de Docker viven dentro de esa WSL. Los cambios se prueban ahí y, cuando son estables, se hace push a `master`, lo que dispara un pipeline de GitHub Actions que despliega automáticamente en staging (`vps2.europalaica.org`).
 
 ---
 
-## Entorno de desarrollo — Optiplex-790
+## Entorno de desarrollo — z4dev
 
 ### Arranque
 
@@ -60,9 +60,9 @@ El contenedor backend ejecuta en orden:
 
 ### Acceso web
 
-Traefik ya corre en el Optiplex con dnsmasq. El frontend es accesible en:
-- `http://siga.optiplex-790`
-- `https://siga.optiplex-790` (certificado mkcert local)
+Traefik ya corre en el z4dev con dnsmasq. El frontend es accesible en:
+- `http://siga.z4dev`
+- `https://siga.z4dev` (certificado mkcert local)
 
 El backend **no está expuesto directamente**: Vite proxea `/graphql → http://backend:8000` dentro de la red Docker interna.
 
@@ -76,7 +76,7 @@ POSTGRES_PASSWORD=...
 POSTGRES_DB=siga
 JWT_SECRET=...
 APP_PREFIX=siga
-APP_DEV_DOMAIN=siga.optiplex-790
+APP_DEV_DOMAIN=siga.z4dev
 INITIAL_ADMIN_EMAIL=...
 INITIAL_ADMIN_PASSWORD=...
 ```
@@ -241,19 +241,19 @@ Añadir al `.env.staging` (secret `SIGA_ENV_STAGING` en GitHub) y al `.env.dev` 
 
 ---
 
-## DNS y certificados TLS locales (Optiplex-790)
+## DNS y certificados TLS locales (z4dev)
 
-El Optiplex corre **dnsmasq** con wildcard `address=/optiplex-790/192.168.1.141`. Cualquier subdominio `*.optiplex-790` resuelve a la IP del Optiplex sin configuración adicional.
+El z4dev corre **dnsmasq** con wildcard `address=/z4dev/192.168.1.141`. Cualquier subdominio `*.z4dev` resuelve a la IP del z4dev sin configuración adicional.
 
 Para acceder desde otros equipos de la red local: apuntar DNS primario a `192.168.1.141`.
 
-Los certificados TLS están generados con **mkcert** (CA local instalada en el Optiplex):
+Los certificados TLS están generados con **mkcert** (CA local instalada en el z4dev):
 
 ```bash
 # Certificados en:
 /opt/docker/apps/traefik/certs/local.crt
 /opt/docker/apps/traefik/certs/local.key
-# Generados para: *.optiplex-790
+# Generados para: *.z4dev
 # Expiran en 3 años desde la generación
 ```
 

@@ -5,7 +5,7 @@ Patrón normativo: el código lee toda credencial sensible con el patrón
 ``<VAR>_FILE`` (Docker secret montado como fichero en ``/run/secrets``) y cae a
 la variable de entorno ``<VAR>`` solo por compatibilidad de desarrollo.
 
-En desarrollo (optiplex-790) basta el fallback a env var; en staging/producción
+En desarrollo (z4dev) basta el fallback a env var; en staging/producción
 las credenciales se entregan como Docker secret y ``<VAR>_FILE`` apunta al
 fichero, de modo que nunca quedan visibles en ``docker inspect`` ni en Portainer.
 """
