@@ -5,8 +5,7 @@ Fuente de verdad ÚNICA de qué está encendido. El apagado tiene DOS granularid
   - MÓDULO: enciende/apaga un módulo entero (todas sus funcionalidades).
   - FUNCIONALIDAD: override fino sobre una funcionalidad concreta, que puede quedar
     ON aunque su módulo esté OFF (p.ej. "Aprobación de socios" con Secretaría OFF) o
-    OFF aunque su módulo esté ON (p.ej. las funcionalidades económicas dentro de
-    Membresía/Actividades cuando Económico está fuera del MVP).
+    OFF aunque su módulo esté ON.
 
 Efecto (las 3 capas lo consultan a través de la columna `activa` de cada transacción,
 que el CatalogSyncService fija según esto, y de la PermissionMatrix que la respeta):
@@ -40,8 +39,8 @@ MODULOS: tuple[ModuloDef, ...] = (
     ModuloDef("membresia",       "Membresía",            activo=True),
     ModuloDef("contactos",       "Contactos (CRM)",      activo=True),
     ModuloDef("actividades",     "Actividades",          activo=True),
+    ModuloDef("economico",       "Económico",            activo=True),
     # ── MVP: apagados ────────────────────────────────────────────────────────
-    ModuloDef("economico",       "Económico",            activo=False),
     ModuloDef("secretaria",      "Secretaría",           activo=False),
     ModuloDef("presidencia",     "Presidencia",          activo=False),
     ModuloDef("proteccion_datos", "Protección de Datos", activo=False),
@@ -57,10 +56,6 @@ _POR_CODIGO = {m.codigo: m for m in MODULOS}
 FUNCIONALIDADES_OVERRIDE: dict[str, bool] = {
     # Secretaría OFF, pero la aprobación de socios entra al MVP:
     "APROBACION_SOCIOS": True,
-    # Económico fuera del MVP: sus funcionalidades quedan OFF aunque vivan en
-    # módulos encendidos (Membresía / Actividades).
-    "DATOS_ECONOMICOS_MIEMBRO": False,     # membresia (ON) — IBAN/cuota del socio
-    "FLUJO_PRESUPUESTO_CAMPANA": False,    # actividades (ON) — presupuesto de campaña
 }
 
 
