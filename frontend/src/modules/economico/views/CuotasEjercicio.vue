@@ -158,6 +158,25 @@
         </div>
       </div>
     </div>
+
+    <!-- Avisos de cuota pendiente del ejercicio (con enlace de pago online). -->
+    <div v-if="tienePermiso('ECO_RECIBO_NOTIFICAR_FALLIDOS')"
+      class="mt-6 bg-white border border-slate-200 rounded-xl p-5">
+      <h3 class="font-semibold text-slate-800 mb-1">Avisos de cuota pendiente</h3>
+      <p class="text-xs text-slate-500 mb-3">
+        Envía un email a los socios con la cuota de {{ ejercicio }} pendiente, con un
+        enlace para pagarla online. Los socios sin email se omiten.
+      </p>
+      <div class="flex flex-wrap items-center gap-4">
+        <label class="flex items-center gap-2 text-sm text-slate-600">
+          <input type="checkbox" v-model="avisoSoloSinDomiciliacion" />
+          Solo socios sin domiciliación
+        </label>
+        <button @click="avisarCuotaPendiente" :disabled="enviandoAvisos" class="btn-primary text-sm">
+          {{ enviandoAvisos ? 'Enviando…' : '✉ Enviar avisos' }}
+        </button>
+      </div>
+    </div>
   </AppLayout>
 </template>
 
@@ -169,6 +188,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
+import { usePermisos } from '@/composables/usePermisos'
 import {
   GET_CONFIG_CUOTA_EJERCICIO,
   CONFIGURAR_CUOTA_EJERCICIO,
@@ -176,12 +196,38 @@ import {
   PREVISUALIZAR_GENERACION_CUOTAS,
   GENERAR_CUOTAS_INDIVIDUALES,
 } from '@/graphql/queries/economico'
+import { ENVIAR_AVISOS_CUOTA_PENDIENTE } from '@/graphql/queries/socioGestion.js'
 
 const toast = useToast()
 const confirmDialog = useConfirm()
+const { tienePermiso } = usePermisos()
 
 const { query, mutation } = useGraphQL()
 const route = useRoute()
+
+const avisoSoloSinDomiciliacion = ref(true)
+const enviandoAvisos = ref(false)
+
+async function avisarCuotaPendiente() {
+  if (!(await confirmDialog({
+    titulo: 'Avisar de cuota pendiente',
+    mensaje: `¿Enviar el aviso de cuota ${ejercicio.value} pendiente` +
+      `${avisoSoloSinDomiciliacion.value ? ' a los socios sin domiciliación' : ' a todos los socios con cuota pendiente'}?`,
+    etiquetaConfirmar: 'Enviar avisos',
+  }))) return
+  enviandoAvisos.value = true
+  try {
+    const data = await mutation(ENVIAR_AVISOS_CUOTA_PENDIENTE, {
+      ejercicio: ejercicio.value,
+      soloSinDomiciliacion: avisoSoloSinDomiciliacion.value,
+    })
+    toast.success(`${data.enviarAvisosCuotaPendiente} aviso(s) de cuota pendiente enviados.`)
+  } catch (e) {
+    toast.error(e?.response?.errors?.[0]?.message || 'Error al enviar los avisos')
+  } finally {
+    enviandoAvisos.value = false
+  }
+}
 
 const anoActual = new Date().getFullYear()
 const _mes = new Date().getMonth() + 1
