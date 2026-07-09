@@ -99,4 +99,17 @@ reclamaciones de impago (4 modelos muertos; GSH tampoco lo tiene).
   el arranque). Severidad menor: /graphql va tras Authelia/VPN; el hueco es horizontal
   (cualquier usuario autenticado lista datos económicos aunque no tenga rol económico).
 
-### Buckets B, D — pendientes
+### Bucket B — parcialmente hecho
+- ✅ **Mutations de ciclo de vida del socio** (`vinculaciones_resolvers.py`):
+  - `suspender_socio` → `MEMBRESIA_MIEMBRO_SUSPENDER` (estado_socio='suspendido',
+    vinculación 'inactiva').
+  - `dar_de_baja_socio` → `MEMBRESIA_MIEMBRO_BAJA` (cierra vinculación + motivo de baja).
+  - `reactivar_socio` → `MEMBRESIA_MIEMBRO_BAJA` (reabre la última vinculación SOCIO).
+  - Todas con guard de ámbito territorial (`assert_miembro_en_ambito`).
+- ✅ **Conversión simpatizante → socio** (`convertir_simpatizante_en_socio`,
+  `MEMBRESIA_MIEMBRO_CREAR`): crea vinculación SOCIO + satélite y cierra la de
+  SIMPATIZANTE; valida IBAN. Equivale a `cambioSimpSocio` de GSH.
+- ⏳ Pendiente en B: resolvers de negocio de `SolicitudTraslado` (máquina de estados)
+  + relleno automático de `HistorialAgrupacion`.
+
+### Buckets D — pendiente

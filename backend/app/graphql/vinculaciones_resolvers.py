@@ -64,6 +64,21 @@ async def _vinculacion_activa(session, contacto_id: uuid.UUID, codigo: str):
     )).scalar_one_or_none()
 
 
+async def _ultima_vinculacion(session, contacto_id: uuid.UUID, codigo: str):
+    """Última vinculación del contacto para un tipo dado (esté vigente o cerrada),
+    por fecha_inicio descendente. Útil para reactivar una baja."""
+    return (await session.execute(
+        select(Vinculacion)
+        .join(TipoVinculacion, Vinculacion.tipo_vinculacion_id == TipoVinculacion.id)
+        .where(
+            Vinculacion.contacto_id == contacto_id,
+            TipoVinculacion.codigo == codigo,
+            Vinculacion.eliminado == False,  # noqa: E712
+        )
+        .order_by(Vinculacion.fecha_inicio.desc())
+    )).scalars().first()
+
+
 async def _fetch_vinculacion(session, vinculacion_id: uuid.UUID) -> Vinculacion:
     """Recarga una Vinculacion con sus relaciones selectin."""
     v = (await session.execute(
@@ -444,3 +459,125 @@ class VinculacionesMutation:
             vinc.socio.estado_socio = "baja"
         await session.commit()
         return await _fetch_vinculacion(session, vinc.id)
+
+    # ── Ciclo de vida del socio (suspender / baja / reactivar) ───────────────
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_SUSPENDER")])
+    async def suspender_socio(
+        self, info: strawberry.Info, contacto_id: uuid.UUID,
+    ) -> VinculacionType:
+        """Suspende temporalmente a un socio: su satélite pasa a estado_socio
+        'suspendido' y la vinculación a 'inactiva' (no se cierra). Se revierte con
+        `reactivar_socio`."""
+        session = info.context.session
+        vinc = await _vinculacion_activa(session, contacto_id, "SOCIO")
+        if vinc is None:
+            raise ValueError("El contacto no tiene una vinculación de socio vigente.")
+        usuario = info.context.user
+        if usuario:
+            await assert_miembro_en_ambito(session, usuario.id, contacto_id)
+        if vinc.socio is not None:
+            vinc.socio.estado_socio = "suspendido"
+        vinc.estado = "inactiva"
+        await session.commit()
+        return await _fetch_vinculacion(session, vinc.id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_BAJA")])
+    async def dar_de_baja_socio(
+        self, info: strawberry.Info, contacto_id: uuid.UUID,
+        fecha_baja: Optional[date] = None,
+        motivo_baja_id: Optional[uuid.UUID] = None,
+        motivo_baja_texto: Optional[str] = None,
+    ) -> VinculacionType:
+        """Da de baja a un socio: cierra su vinculación SOCIO (fecha_fin +
+        estado='cerrada') y marca el satélite como 'baja', registrando el motivo.
+        Atajo a nivel de socio sobre `cerrar_vinculacion` (que trabaja por id de
+        vinculación y no guarda motivo)."""
+        session = info.context.session
+        vinc = await _vinculacion_activa(session, contacto_id, "SOCIO")
+        if vinc is None:
+            raise ValueError("El contacto no tiene una vinculación de socio vigente.")
+        usuario = info.context.user
+        if usuario:
+            await assert_miembro_en_ambito(session, usuario.id, contacto_id)
+        vinc.fecha_fin = fecha_baja or date.today()
+        vinc.estado = "cerrada"
+        if vinc.socio is not None:
+            vinc.socio.estado_socio = "baja"
+            vinc.socio.motivo_baja_id = motivo_baja_id
+            vinc.socio.motivo_baja_texto = motivo_baja_texto
+        await session.commit()
+        return await _fetch_vinculacion(session, vinc.id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_BAJA")])
+    async def reactivar_socio(
+        self, info: strawberry.Info, contacto_id: uuid.UUID,
+    ) -> VinculacionType:
+        """Reactiva a un socio suspendido o de baja: reabre su última vinculación
+        SOCIO (estado='activa', fecha_fin=NULL) y pone el satélite en 'activo',
+        limpiando el motivo de baja. Operación inversa de suspender/baja."""
+        session = info.context.session
+        vinc = await _ultima_vinculacion(session, contacto_id, "SOCIO")
+        if vinc is None:
+            raise ValueError("El contacto no tiene ninguna vinculación de socio.")
+        usuario = info.context.user
+        if usuario:
+            await assert_miembro_en_ambito(session, usuario.id, contacto_id)
+        if vinc.estado == "activa" and vinc.fecha_fin is None:
+            raise ValueError("El socio ya está activo.")
+        vinc.estado = "activa"
+        vinc.fecha_fin = None
+        if vinc.socio is not None:
+            vinc.socio.estado_socio = "activo"
+            vinc.socio.motivo_baja_id = None
+            vinc.socio.motivo_baja_texto = None
+        await session.commit()
+        return await _fetch_vinculacion(session, vinc.id)
+
+    # ── Conversión simpatizante → socio ──────────────────────────────────────
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_CREAR")])
+    async def convertir_simpatizante_en_socio(
+        self, info: strawberry.Info, contacto_id: uuid.UUID,
+        numero_socio: Optional[str] = None,
+        cuota_mensual: Optional[float] = None,
+        iban: Optional[str] = None,
+        swift_bic: Optional[str] = None,
+        forma_pago_id: Optional[uuid.UUID] = None,
+        agrupacion_id: Optional[uuid.UUID] = None,
+    ) -> VinculacionType:
+        """Convierte a un simpatizante en socio: crea la vinculación SOCIO (+
+        satélite con sus datos económicos) y cierra la vinculación SIMPATIZANTE.
+        Equivale al `cambioSimpSocio` de GSH."""
+        session = info.context.session
+        simp = await _vinculacion_activa(session, contacto_id, "SIMPATIZANTE")
+        if simp is None:
+            raise ValueError("El contacto no tiene una vinculación de simpatizante vigente.")
+        if await _vinculacion_activa(session, contacto_id, "SOCIO") is not None:
+            raise ValueError("El contacto ya tiene una vinculación de socio vigente.")
+
+        from app.core.documento import normalizar_iban, validar_iban
+        if iban and not validar_iban(iban):
+            raise ValueError("El IBAN no es válido.")
+
+        socio_vinc = Vinculacion(
+            contacto_id=contacto_id,
+            tipo_vinculacion_id=await _tipo_vinc_id(session, "SOCIO"),
+            fecha_inicio=date.today(),
+            estado="activa",
+            agrupacion_id=agrupacion_id or simp.agrupacion_id,
+        )
+        session.add(socio_vinc)
+        await session.flush()
+        session.add(Socio(
+            vinculacion_id=socio_vinc.id,
+            numero_socio=numero_socio,
+            cuota_mensual=cuota_mensual,
+            iban=normalizar_iban(iban) or None,
+            swift_bic=(swift_bic or "").strip().upper() or None,
+            forma_pago_id=forma_pago_id,
+            estado_socio="activo",
+        ))
+        # El simpatizante pasa a socio: se cierra su vinculación de simpatizante.
+        simp.estado = "cerrada"
+        simp.fecha_fin = date.today()
+        await session.commit()
+        return await _fetch_vinculacion(session, socio_vinc.id)
