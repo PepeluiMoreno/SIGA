@@ -63,7 +63,14 @@ reclamaciones de impago (4 modelos muertos; GSH tampoco lo tiene).
 
 ## Progreso de implementación
 
-### Bucket A — en curso
+> **Estado global (2026-07-09): los 4 buckets implementados.** Todo pusheado en la
+> rama `claude/gsh-siga-membership-analysis-11otv9` y abierto como PR #11 (draft)
+> contra `master`. Verificación **estática** completa (compila, importa, el esquema
+> GraphQL construye con las versiones exactas de `uv.lock` — Python 3.13, strawchemy
+> 0.21.0, strawberry 0.315.3; el frontend builda). **Falta verificación en ejecución**
+> contra un backend vivo: ver "Checklist antes de merge" al final.
+
+### Bucket A — ✅ completo (pago online pendiente de sandbox)
 - ✅ **Validación IBAN mod-97** (`app/core/documento.py`: `validar_iban`, `normalizar_iban`).
 - ✅ **Auto-alta pública de socio con doble opt-in**:
   - `app/modules/membresia/services/solicitud_socio_publica_service.py` — crea
@@ -76,10 +83,11 @@ reclamaciones de impago (4 modelos muertos; GSH tampoco lo tiene).
   - `aprobar_solicitud_socio` ajustado para conservar el satélite del aspirante y
     fijar `numero_socio`/`estado_socio` al aprobar.
   - Router montado en `main.py`; limiters en `app/core/ratelimit.py`.
-- ⏳ Pendiente en A: pago de cuota online por el socio; estadísticas altas/bajas;
-  cambio simpatizante→socio.
+- (El pago de cuota online y su página front se detallan más abajo, en "Bucket A —
+  pago online". El cambio simpatizante→socio quedó en el Bucket B; las estadísticas
+  en el Bucket D.)
 
-### Bucket C — parcialmente hecho
+### Bucket C — ✅ completo
 - ✅ **RBAC del lado escritura** (bloqueante de producción): añadido `permission_classes`
   a todas las mutations económicas que estaban abiertas:
   - `registrar_apunte_caja`, `actualizar_metadatos_apunte_caja`, `anular_apunte_caja`
@@ -104,7 +112,7 @@ reclamaciones de impago (4 modelos muertos; GSH tampoco lo tiene).
   autenticación. **Esquema completo verificado** con python3.13 + versiones del
   lock: construye y todos los campos siguen en el SDL.
 
-### Bucket B — parcialmente hecho
+### Bucket B — ✅ completo
 - ✅ **Mutations de ciclo de vida del socio** (`vinculaciones_resolvers.py`):
   - `suspender_socio` → `MEMBRESIA_MIEMBRO_SUSPENDER` (estado_socio='suspendido',
     vinculación 'inactiva').
@@ -122,7 +130,7 @@ reclamaciones de impago (4 modelos muertos; GSH tampoco lo tiene).
   `HistorialAgrupacion` vigente y abre uno nuevo** en destino. Estado derivado de la
   doble aprobación (`_recalcular_estado_traslado`).
 
-### Bucket D — parcialmente hecho
+### Bucket D — ✅ completo
 - ✅ **Estadísticas de altas/bajas** (`MembresiaQuery.estadisticas_altas_bajas`,
   `MEMBRESIA_MIEMBRO_LISTAR`): altas (inicio de vinculación SOCIO) y bajas (cierre)
   por año y agrupación en un rango, con nombre de agrupación y neto. Cubre el hueco
@@ -165,3 +173,42 @@ reclamaciones de impago (4 modelos muertos; GSH tampoco lo tiene).
     monta los botones del SDK JS de PayPal contra los endpoints públicos y muestra
     los estados ya-pagada / completado / error. El `client-id` lo sirve el endpoint
     de info (es público por diseño del SDK). Build de Vite verificado.
+
+---
+
+## UI de back-office (para lo nuevo del backend)
+
+El pago de socio (`/pagar-cuota`) ya tiene su página pública. Falta la UI **interna**
+que consume las mutations/queries nuevas (se irá construyendo sobre la misma rama):
+
+- **Bandeja de solicitudes de socio** (auto-altas verificadas): listar
+  `solicitudes_socio_pendientes` y botones aprobar/rechazar.
+- **Detalle del socio**: acciones de ciclo de vida (suspender / reactivar / dar de
+  baja con motivo) y **convertir simpatizante→socio**.
+- **Traslados**: bandeja de `SolicitudTraslado` con las transiciones (solicitar,
+  aprobar origen/destino, rechazar, cancelar, ejecutar).
+- **Estadísticas de altas/bajas**: vista con filtro por rango de años y agrupación.
+- **Avisos de cobro**: acciones en tesorería (próximo cobro por remesa; cuota
+  pendiente por ejercicio).
+
+> Gate de rutas/botones por los permisos correspondientes
+> (`MEMBRESIA_MIEMBRO_VALIDAR/_SUSPENDER/_BAJA/_CREAR`, `MEMBRESIA_TRASLADO_*`,
+> `MEMBRESIA_MIEMBRO_LISTAR`, `ECO_REMESA_ENVIAR`, `ECO_RECIBO_NOTIFICAR_FALLIDOS`).
+
+---
+
+## Checklist antes de merge (PR #11)
+
+1. Arrancar stack dev y confirmar backend `healthy`.
+2. **Permisos (riesgo principal):** el rol TESORERO conserva los `ECO_*_LISTAR`
+   (re-sembrar si la BD es anterior a esos seeds) y sigue viendo
+   cuotas/remesas/recibos/donaciones; un usuario sin rol económico deja de verlos;
+   los formularios de membresía (formasPago, importesCuotaAnio) siguen funcionando.
+3. Auto-alta end-to-end (requiere SMTP): formulario → email → verificar → bandeja →
+   aprobar; IBAN inválido → 422.
+4. Ciclo de vida y traslado completo vía GraphQL (mueve `agrupacion_id` +
+   `HistorialAgrupacion`).
+5. Pago PayPal en sandbox (opcional; requiere `PAYPAL_CLIENT_ID/SECRET`).
+6. Tests (`backend/tests/`) y linter.
+7. Ejecutar el SQL de limpieza acumulado **solo** en el lote de migraciones del
+   equipo (no ad-hoc); ver `docs/modulo_membresia.md`.
