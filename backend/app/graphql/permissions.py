@@ -62,3 +62,23 @@ def RequireAnyTransaction(*transaction_ids: str) -> type:
     _Perm.__name__ = name
     _Perm.__qualname__ = name
     return _Perm
+
+
+def campo(*args, permission_classes=None, **kwargs):
+    """`strawchemy.field` con *default-deny*: todo listado exige al menos estar
+    autenticado salvo que declare sus propios `permission_classes`.
+
+    Motivación: los campos de strawchemy son públicos por defecto. Sin esta
+    envoltura, cualquier anónimo podía listar `usuarios`, `logsAuditoria`, toda la
+    estructura RBAC, etc. Aquí invertimos el defecto a *cerrado*: un campo nuevo
+    queda autenticado aunque quien lo añada olvide anotarlo. Los campos con RBAC
+    fino (p. ej. `RequireTransaction("ECO_CUOTA_LISTAR")`) pasan su lista tal cual.
+
+    Nota: se importa `strawchemy` de forma perezosa para evitar un ciclo de imports
+    (schema_simple → permissions → strawchemy singleton).
+    """
+    from . import strawchemy
+
+    if not permission_classes:
+        permission_classes = [RequireAuthenticated]
+    return strawchemy.field(*args, permission_classes=permission_classes, **kwargs)

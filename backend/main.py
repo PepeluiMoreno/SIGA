@@ -147,6 +147,14 @@ if _paypal_available:
 from app.api.publico.firmas import router as publico_firmas_router
 app.include_router(publico_firmas_router)
 
+# Router PÚBLICO — auto-alta de socios (formulario web externo, doble opt-in).
+from app.api.publico.socios import router as publico_socios_router
+app.include_router(publico_socios_router)
+
+# Router PÚBLICO — pago de cuota por el socio (enlace tokenizado + PayPal).
+from app.api.publico.pago_cuota import router as publico_pago_cuota_router
+app.include_router(publico_pago_cuota_router)
+
 
 MEDIA_DIR = Path("media/fotos")
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)

@@ -1,4 +1,5 @@
-"""Asigna las transacciones REM_*, RCB_* (flujos 3 y 4) al rol TESORERO.
+"""Asigna al rol TESORERO las transacciones de remesas y recibos (flujos 3 y 4)
+más las de tesorería, caja, contabilidad y presupuesto que ejerce el cargo.
 
 Idempotente: solo inserta las que aún no estén enlazadas.
 
@@ -23,7 +24,16 @@ TRANSACCIONES_TESORERO = [
     # Flujo 4 — Liquidación de remesa
     "ECO_REMESA_PROCESAR_RESPUESTA", "ECO_REMESA_REENVIAR",
     # Recibos asociados
-    "ECO_RECIBO_LISTAR", "ECO_RECIBO_NOTIFICAR_FALLIDOS",
+    "ECO_RECIBO_LISTAR", "ECO_RECIBO_NOTIFICAR_FALLIDOS", "ECO_RECIBO_MARCAR_COBRADO",
+    # Tesorería y caja: cuentas bancarias que concilia y apuntes de caja que registra.
+    # (`apuntesCaja`/`cuentasBancarias` y registrar/anular_apunte_caja.)
+    "ECO_CUENTA_LISTAR", "ECO_MOVIMIENTO_REGISTRAR",
+    # Cobro manual de la cuota cuyo flujo ya gestiona (registrar_pago_cuota_manual).
+    "ECO_CUOTA_REGISTRAR_PAGO",
+    # Contabilidad: confirmar/anular asientos (el tesorero lleva la contabilidad).
+    "ECO_ASIENTO_APROBAR",
+    # Presupuesto en solo lectura: el tesorero lo ejecuta, no lo aprueba.
+    "ECO_PRESUPUESTO_CONSULTAR",
 ]
 
 

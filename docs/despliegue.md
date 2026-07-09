@@ -10,7 +10,7 @@ runner.
 
 | Entorno     | Dónde         | Imagen      | Disparo                                            |
 |-------------|---------------|-------------|----------------------------------------------------|
-| Desarrollo  | optiplex-790  | build local | manual (`scripts/dev-up.sh`)                       |
+| Desarrollo  | z4dev  | build local | manual (`scripts/dev-up.sh`)                       |
 | Staging     | VPS2          | GHCR        | push a `master`                                    |
 | Producción  | VPS1          | GHCR        | tag `v*` o `workflow_dispatch` (deploy_production)  |
 
@@ -18,7 +18,7 @@ Regla base/override: `docker-compose.yml` es desarrollo (build local).
 Staging/producción superponen `docker-compose.prod.yml` (imagen GHCR +
 `pull_policy: always` + Docker secrets), con `-f docker-compose.yml -f docker-compose.prod.yml`.
 
-## Desarrollo (optiplex-790)
+## Desarrollo (z4dev)
 
 ```bash
 cp .env.example .env          # rellena los marcadores
@@ -26,7 +26,7 @@ cp .env.example .env          # rellena los marcadores
 ./scripts/dev-up.sh logs
 ./scripts/dev-up.sh down
 ```
-Acceso: `https://siga.optiplex-790`. En desarrollo las credenciales van por
+Acceso: `https://siga.z4dev`. En desarrollo las credenciales van por
 `.env` (env var); no se usan Docker secrets.
 
 ## Staging / Producción

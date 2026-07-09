@@ -64,6 +64,13 @@
           >Liquidar cobro</button>
 
           <button
+            v-if="tienePermiso('ECO_REMESA_ENVIAR') && ['Generada','Enviada'].includes(r.estado?.nombre)"
+            @click.stop="avisarProximoCobro(r)"
+            class="btn-secondary text-xs"
+            :disabled="ocupado"
+          >✉ Avisar próximo cobro</button>
+
+          <button
             v-if="['Procesada','Parcial'].includes(r.estado?.nombre)"
             @click.stop="abrirReenvio(r)"
             class="btn-secondary text-xs"
@@ -344,7 +351,12 @@ import { useGraphQL } from '@/composables/useGraphQL'
 import { useUnidadesOrganizativas } from '@/composables/useUnidadesOrganizativas'
 import { executeQuery } from '@/graphql/client'
 import { GET_REMESA_DETALLE } from '@/graphql/queries/economico'
+import { ENVIAR_AVISOS_PROXIMO_COBRO } from '@/graphql/queries/socioGestion.js'
+import { useToast } from '@/composables/useToast'
+import { usePermisos } from '@/composables/usePermisos'
 const confirmDialog = useConfirm()
+const toast = useToast()
+const { tienePermiso } = usePermisos()
 
 const { query: gqlQuery, mutation: gqlMutation, loading } = useGraphQL()
 const { unidades, cargarArbol: cargarUnidades } = useUnidadesOrganizativas()
@@ -632,6 +644,21 @@ const marcarEnviada = async (remesaId) => {
     seleccionada.value = remesas.value.find(r => r.id === remesaId) || null
   } catch (e) {
     error.value = e.message || 'Error al marcar como enviada'
+  } finally { ocupado.value = false }
+}
+
+const avisarProximoCobro = async (r) => {
+  if (!(await confirmDialog({
+    titulo: 'Avisar del próximo cobro',
+    mensaje: `¿Enviar un email a los socios domiciliados de la remesa ${r.referencia} avisando del cargo del ${fechaFmt(r.fechaCobro)}?`,
+    etiquetaConfirmar: 'Enviar avisos',
+  }))) return
+  ocupado.value = true
+  try {
+    const data = await gqlMutation(ENVIAR_AVISOS_PROXIMO_COBRO, { remesaId: r.id })
+    toast.success(`${data.enviarAvisosProximoCobro} aviso(s) de próximo cobro enviados.`)
+  } catch (e) {
+    error.value = e.message || 'Error al enviar los avisos'
   } finally { ocupado.value = false }
 }
 

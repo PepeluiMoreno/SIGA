@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Despliegue de SIGA en DESARROLLO (optiplex-790).
+# Despliegue de SIGA en DESARROLLO (z4dev).
 # Estándar de Ingeniería §2: build local en sitio, disparo manual, sin GHCR.
 # Combina el compose BASE (build local) con el override de desarrollo
-# (hot-reload: Vite + uvicorn --reload; Traefik en el optiplex).
+# (hot-reload: Vite + uvicorn --reload; Traefik en el z4dev).
 #
 #   ./scripts/dev-up.sh            arranque LIGERO: reusa imágenes, NO reconstruye.
 #                                  Es lo normal del día a día (hay hot-reload).
@@ -32,7 +32,7 @@ arrancar() {              # $@ = flags extra para 'up' (p. ej. --build)
   echo
   "${COMPOSE[@]}" ps
   echo
-  echo "SIGA dev en marcha → https://${APP_DEV_DOMAIN:-siga.optiplex-790}"
+  echo "SIGA dev en marcha → https://${APP_DEV_DOMAIN:-siga.z4dev}"
 }
 
 # Cadena de migraciones rota: el squash inicial crea TODO el esquema con

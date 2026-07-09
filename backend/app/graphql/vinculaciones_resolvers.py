@@ -19,7 +19,7 @@ frontend (fase de UI).
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import date, datetime
 from typing import List, Optional
 
 import strawberry
@@ -29,8 +29,12 @@ from app.modules.membresia.models.contacto import Contacto
 from app.modules.membresia.models.vinculacion import Vinculacion, Socio, Voluntario
 from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
 from app.modules.membresia.models.historial_nombramiento import HistorialNombramiento
+from app.modules.membresia.models.historial_agrupacion import HistorialAgrupacion
+from app.modules.membresia.models.traslados.modelos import SolicitudTraslado, EstadoTraslado
 from app.graphql.permissions import RequireTransaction
-from app.graphql.types_auto import VinculacionType, ContactoType, HistorialNombramientoType
+from app.graphql.types_auto import (
+    VinculacionType, ContactoType, HistorialNombramientoType, SolicitudTrasladoType,
+)
 from app.modules.acceso.services.ambito_territorial import (
     assert_unidad_en_ambito,
     assert_miembro_en_ambito,
@@ -64,6 +68,21 @@ async def _vinculacion_activa(session, contacto_id: uuid.UUID, codigo: str):
     )).scalar_one_or_none()
 
 
+async def _ultima_vinculacion(session, contacto_id: uuid.UUID, codigo: str):
+    """Última vinculación del contacto para un tipo dado (esté vigente o cerrada),
+    por fecha_inicio descendente. Útil para reactivar una baja."""
+    return (await session.execute(
+        select(Vinculacion)
+        .join(TipoVinculacion, Vinculacion.tipo_vinculacion_id == TipoVinculacion.id)
+        .where(
+            Vinculacion.contacto_id == contacto_id,
+            TipoVinculacion.codigo == codigo,
+            Vinculacion.eliminado == False,  # noqa: E712
+        )
+        .order_by(Vinculacion.fecha_inicio.desc())
+    )).scalars().first()
+
+
 async def _fetch_vinculacion(session, vinculacion_id: uuid.UUID) -> Vinculacion:
     """Recarga una Vinculacion con sus relaciones selectin."""
     v = (await session.execute(
@@ -72,6 +91,41 @@ async def _fetch_vinculacion(session, vinculacion_id: uuid.UUID) -> Vinculacion:
     if v is None:
         raise ValueError("Vinculación no encontrada.")
     return v
+
+
+async def _fetch_traslado(session, solicitud_id: uuid.UUID) -> SolicitudTraslado:
+    """Recarga una SolicitudTraslado por id."""
+    sol = await session.get(SolicitudTraslado, solicitud_id)
+    if sol is None:
+        raise ValueError("Solicitud de traslado no encontrada.")
+    return sol
+
+
+_ESTADOS_TRASLADO_EN_CURSO = frozenset({
+    EstadoTraslado.PENDIENTE, EstadoTraslado.APROBADO_ORIGEN,
+    EstadoTraslado.APROBADO_DESTINO, EstadoTraslado.APROBADO,
+})
+
+
+async def _traslado_en_curso(session, solicitud_id: uuid.UUID) -> SolicitudTraslado:
+    """Recarga una SolicitudTraslado y valida que sigue en un estado que admite
+    aprobación/rechazo/cancelación (no ejecutada ni ya cerrada)."""
+    sol = await _fetch_traslado(session, solicitud_id)
+    if sol.eliminado or sol.estado not in _ESTADOS_TRASLADO_EN_CURSO:
+        raise ValueError(f"La solicitud no admite cambios (estado: {sol.estado}).")
+    return sol
+
+
+def _recalcular_estado_traslado(sol: SolicitudTraslado) -> None:
+    """Deriva el estado a partir de las aprobaciones de origen y destino."""
+    if sol.aprobado_origen and sol.aprobado_destino:
+        sol.estado = EstadoTraslado.APROBADO
+    elif sol.aprobado_origen:
+        sol.estado = EstadoTraslado.APROBADO_ORIGEN
+    elif sol.aprobado_destino:
+        sol.estado = EstadoTraslado.APROBADO_DESTINO
+    else:
+        sol.estado = EstadoTraslado.PENDIENTE
 
 
 # ---------------------------------------------------------------------------
@@ -444,3 +498,280 @@ class VinculacionesMutation:
             vinc.socio.estado_socio = "baja"
         await session.commit()
         return await _fetch_vinculacion(session, vinc.id)
+
+    # ── Ciclo de vida del socio (suspender / baja / reactivar) ───────────────
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_SUSPENDER")])
+    async def suspender_socio(
+        self, info: strawberry.Info, contacto_id: uuid.UUID,
+    ) -> VinculacionType:
+        """Suspende temporalmente a un socio: su satélite pasa a estado_socio
+        'suspendido' y la vinculación a 'inactiva' (no se cierra). Se revierte con
+        `reactivar_socio`."""
+        session = info.context.session
+        vinc = await _vinculacion_activa(session, contacto_id, "SOCIO")
+        if vinc is None:
+            raise ValueError("El contacto no tiene una vinculación de socio vigente.")
+        usuario = info.context.user
+        if usuario:
+            await assert_miembro_en_ambito(session, usuario.id, contacto_id)
+        if vinc.socio is not None:
+            vinc.socio.estado_socio = "suspendido"
+        vinc.estado = "inactiva"
+        await session.commit()
+        return await _fetch_vinculacion(session, vinc.id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_BAJA")])
+    async def dar_de_baja_socio(
+        self, info: strawberry.Info, contacto_id: uuid.UUID,
+        fecha_baja: Optional[date] = None,
+        motivo_baja_id: Optional[uuid.UUID] = None,
+        motivo_baja_texto: Optional[str] = None,
+    ) -> VinculacionType:
+        """Da de baja a un socio: cierra su vinculación SOCIO (fecha_fin +
+        estado='cerrada') y marca el satélite como 'baja', registrando el motivo.
+        Atajo a nivel de socio sobre `cerrar_vinculacion` (que trabaja por id de
+        vinculación y no guarda motivo)."""
+        session = info.context.session
+        vinc = await _vinculacion_activa(session, contacto_id, "SOCIO")
+        if vinc is None:
+            raise ValueError("El contacto no tiene una vinculación de socio vigente.")
+        usuario = info.context.user
+        if usuario:
+            await assert_miembro_en_ambito(session, usuario.id, contacto_id)
+        vinc.fecha_fin = fecha_baja or date.today()
+        vinc.estado = "cerrada"
+        if vinc.socio is not None:
+            vinc.socio.estado_socio = "baja"
+            vinc.socio.motivo_baja_id = motivo_baja_id
+            vinc.socio.motivo_baja_texto = motivo_baja_texto
+        await session.commit()
+        return await _fetch_vinculacion(session, vinc.id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_BAJA")])
+    async def reactivar_socio(
+        self, info: strawberry.Info, contacto_id: uuid.UUID,
+    ) -> VinculacionType:
+        """Reactiva a un socio suspendido o de baja: reabre su última vinculación
+        SOCIO (estado='activa', fecha_fin=NULL) y pone el satélite en 'activo',
+        limpiando el motivo de baja. Operación inversa de suspender/baja."""
+        session = info.context.session
+        vinc = await _ultima_vinculacion(session, contacto_id, "SOCIO")
+        if vinc is None:
+            raise ValueError("El contacto no tiene ninguna vinculación de socio.")
+        usuario = info.context.user
+        if usuario:
+            await assert_miembro_en_ambito(session, usuario.id, contacto_id)
+        if vinc.estado == "activa" and vinc.fecha_fin is None:
+            raise ValueError("El socio ya está activo.")
+        vinc.estado = "activa"
+        vinc.fecha_fin = None
+        if vinc.socio is not None:
+            vinc.socio.estado_socio = "activo"
+            vinc.socio.motivo_baja_id = None
+            vinc.socio.motivo_baja_texto = None
+        await session.commit()
+        return await _fetch_vinculacion(session, vinc.id)
+
+    # ── Conversión simpatizante → socio ──────────────────────────────────────
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_CREAR")])
+    async def convertir_simpatizante_en_socio(
+        self, info: strawberry.Info, contacto_id: uuid.UUID,
+        numero_socio: Optional[str] = None,
+        cuota_mensual: Optional[float] = None,
+        iban: Optional[str] = None,
+        swift_bic: Optional[str] = None,
+        forma_pago_id: Optional[uuid.UUID] = None,
+        agrupacion_id: Optional[uuid.UUID] = None,
+    ) -> VinculacionType:
+        """Convierte a un simpatizante en socio: crea la vinculación SOCIO (+
+        satélite con sus datos económicos) y cierra la vinculación SIMPATIZANTE.
+        Equivale al `cambioSimpSocio` de GSH."""
+        session = info.context.session
+        simp = await _vinculacion_activa(session, contacto_id, "SIMPATIZANTE")
+        if simp is None:
+            raise ValueError("El contacto no tiene una vinculación de simpatizante vigente.")
+        if await _vinculacion_activa(session, contacto_id, "SOCIO") is not None:
+            raise ValueError("El contacto ya tiene una vinculación de socio vigente.")
+
+        from app.core.documento import normalizar_iban, validar_iban
+        if iban and not validar_iban(iban):
+            raise ValueError("El IBAN no es válido.")
+
+        socio_vinc = Vinculacion(
+            contacto_id=contacto_id,
+            tipo_vinculacion_id=await _tipo_vinc_id(session, "SOCIO"),
+            fecha_inicio=date.today(),
+            estado="activa",
+            agrupacion_id=agrupacion_id or simp.agrupacion_id,
+        )
+        session.add(socio_vinc)
+        await session.flush()
+        session.add(Socio(
+            vinculacion_id=socio_vinc.id,
+            numero_socio=numero_socio,
+            cuota_mensual=cuota_mensual,
+            iban=normalizar_iban(iban) or None,
+            swift_bic=(swift_bic or "").strip().upper() or None,
+            forma_pago_id=forma_pago_id,
+            estado_socio="activo",
+        ))
+        # El simpatizante pasa a socio: se cierra su vinculación de simpatizante.
+        simp.estado = "cerrada"
+        simp.fecha_fin = date.today()
+        await session.commit()
+        return await _fetch_vinculacion(session, socio_vinc.id)
+
+    # ── Traslados entre agrupaciones (máquina de estados) ────────────────────
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_SOLICITAR")])
+    async def solicitar_traslado(
+        self, info: strawberry.Info, miembro_id: uuid.UUID,
+        agrupacion_destino_id: uuid.UUID, motivo: str,
+        fecha_efectiva_deseada: Optional[date] = None,
+    ) -> SolicitudTrasladoType:
+        """Crea una solicitud de traslado (estado PENDIENTE). El origen se toma de
+        la agrupación actual del contacto. Requiere doble aprobación (origen y
+        destino) antes de poder ejecutarse."""
+        session = info.context.session
+        contacto = await session.get(Contacto, miembro_id)
+        if contacto is None:
+            raise ValueError("Contacto no encontrado.")
+        if contacto.agrupacion_id is None:
+            raise ValueError("El contacto no tiene agrupación de origen asignada.")
+        if contacto.agrupacion_id == agrupacion_destino_id:
+            raise ValueError("La agrupación de destino coincide con la de origen.")
+        pendiente = await session.scalar(
+            select(SolicitudTraslado).where(
+                SolicitudTraslado.miembro_id == miembro_id,
+                SolicitudTraslado.estado.in_([
+                    EstadoTraslado.PENDIENTE, EstadoTraslado.APROBADO_ORIGEN,
+                    EstadoTraslado.APROBADO_DESTINO, EstadoTraslado.APROBADO,
+                ]),
+                SolicitudTraslado.eliminado == False,  # noqa: E712
+            )
+        )
+        if pendiente is not None:
+            raise ValueError("Ya hay una solicitud de traslado en curso para este contacto.")
+        sol = SolicitudTraslado(
+            miembro_id=miembro_id,
+            agrupacion_origen_id=contacto.agrupacion_id,
+            agrupacion_destino_id=agrupacion_destino_id,
+            motivo=motivo,
+            estado=EstadoTraslado.PENDIENTE,
+            fecha_efectiva_deseada=fecha_efectiva_deseada,
+        )
+        session.add(sol)
+        await session.commit()
+        return await _fetch_traslado(session, sol.id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_APROBAR")])
+    async def aprobar_traslado_origen(
+        self, info: strawberry.Info, solicitud_id: uuid.UUID,
+        observaciones: Optional[str] = None,
+    ) -> SolicitudTrasladoType:
+        """Aprobación por el coordinador de ORIGEN. Cuando origen y destino han
+        aprobado, la solicitud pasa a APROBADO (lista para ejecutar)."""
+        session = info.context.session
+        sol = await _traslado_en_curso(session, solicitud_id)
+        usuario = info.context.user
+        if usuario:
+            await assert_unidad_en_ambito(session, usuario.id, sol.agrupacion_origen_id)
+        sol.aprobado_origen = True
+        sol.fecha_aprobacion_origen = datetime.now()
+        sol.coordinador_origen_id = usuario.id if usuario else None
+        sol.observaciones_origen = observaciones
+        _recalcular_estado_traslado(sol)
+        await session.commit()
+        return await _fetch_traslado(session, sol.id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_APROBAR")])
+    async def aprobar_traslado_destino(
+        self, info: strawberry.Info, solicitud_id: uuid.UUID,
+        observaciones: Optional[str] = None,
+    ) -> SolicitudTrasladoType:
+        """Aprobación por el coordinador de DESTINO."""
+        session = info.context.session
+        sol = await _traslado_en_curso(session, solicitud_id)
+        usuario = info.context.user
+        if usuario:
+            await assert_unidad_en_ambito(session, usuario.id, sol.agrupacion_destino_id)
+        sol.aprobado_destino = True
+        sol.fecha_aprobacion_destino = datetime.now()
+        sol.coordinador_destino_id = usuario.id if usuario else None
+        sol.observaciones_destino = observaciones
+        _recalcular_estado_traslado(sol)
+        await session.commit()
+        return await _fetch_traslado(session, sol.id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_RECHAZAR")])
+    async def rechazar_traslado(
+        self, info: strawberry.Info, solicitud_id: uuid.UUID, motivo: str,
+        lado: str = "origen",
+    ) -> SolicitudTrasladoType:
+        """Rechaza el traslado desde un lado ('origen' o 'destino'), con motivo."""
+        session = info.context.session
+        sol = await _traslado_en_curso(session, solicitud_id)
+        sol.estado = (EstadoTraslado.RECHAZADO_DESTINO if lado == "destino"
+                      else EstadoTraslado.RECHAZADO_ORIGEN)
+        sol.motivo_rechazo = motivo
+        await session.commit()
+        return await _fetch_traslado(session, sol.id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_SOLICITAR")])
+    async def cancelar_traslado(
+        self, info: strawberry.Info, solicitud_id: uuid.UUID,
+    ) -> SolicitudTrasladoType:
+        """El solicitante cancela un traslado que aún no se ha ejecutado."""
+        session = info.context.session
+        sol = await _traslado_en_curso(session, solicitud_id)
+        sol.estado = EstadoTraslado.CANCELADO
+        await session.commit()
+        return await _fetch_traslado(session, sol.id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_APROBAR")])
+    async def ejecutar_traslado(
+        self, info: strawberry.Info, solicitud_id: uuid.UUID,
+    ) -> SolicitudTrasladoType:
+        """Ejecuta un traslado APROBADO: mueve la agrupación del contacto y de su
+        vinculación SOCIO, cierra el tramo de HistorialAgrupacion vigente y abre
+        uno nuevo en la agrupación de destino."""
+        session = info.context.session
+        sol = await session.get(SolicitudTraslado, solicitud_id)
+        if sol is None or sol.eliminado:
+            raise ValueError("Solicitud de traslado no encontrada.")
+        if sol.estado != EstadoTraslado.APROBADO:
+            raise ValueError(
+                f"El traslado no está aprobado por ambos lados (estado: {sol.estado})."
+            )
+        contacto = await session.get(Contacto, sol.miembro_id)
+        if contacto is None:
+            raise ValueError("Contacto no encontrado.")
+
+        hoy = date.today()
+        # Cierra el tramo de historial vigente (fecha_fin NULL) del contacto.
+        tramo_abierto = await session.scalar(
+            select(HistorialAgrupacion).where(
+                HistorialAgrupacion.miembro_id == contacto.id,
+                HistorialAgrupacion.fecha_fin.is_(None),
+                HistorialAgrupacion.eliminado == False,  # noqa: E712
+            ).order_by(HistorialAgrupacion.fecha_inicio.desc())
+        )
+        if tramo_abierto is not None:
+            tramo_abierto.fecha_fin = hoy
+        # Abre el nuevo tramo en destino.
+        session.add(HistorialAgrupacion(
+            miembro_id=contacto.id, agrupacion_id=sol.agrupacion_destino_id,
+            fecha_inicio=hoy, motivo="Traslado",
+        ))
+
+        # Mueve la agrupación del contacto y de su vinculación SOCIO vigente.
+        contacto.agrupacion_id = sol.agrupacion_destino_id
+        socio_vinc = await _vinculacion_activa(session, contacto.id, "SOCIO")
+        if socio_vinc is not None:
+            socio_vinc.agrupacion_id = sol.agrupacion_destino_id
+
+        usuario = info.context.user
+        sol.estado = EstadoTraslado.EJECUTADO
+        sol.fecha_ejecucion = datetime.now()
+        sol.usuario_ejecutor_id = usuario.id if usuario else None
+        await session.commit()
+        return await _fetch_traslado(session, sol.id)

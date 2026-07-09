@@ -443,7 +443,7 @@ class FirmaPublicaService:
         # cláusula para el contacto, no duplicamos.
         ya = await self.session.scalar(
             select(Consentimiento.id).where(
-                Consentimiento.miembro_id == contacto.id,
+                Consentimiento.contacto_id == contacto.id,
                 Consentimiento.clausula_id == clausula_id,
                 Consentimiento.estado == "OTORGADO",
                 Consentimiento.eliminado.is_(False),
@@ -454,7 +454,7 @@ class FirmaPublicaService:
 
         self.session.add(
             Consentimiento(
-                miembro_id=contacto.id,
+                contacto_id=contacto.id,
                 clausula_id=clausula_id,
                 estado="OTORGADO",
                 fecha_otorgamiento=datetime.now(timezone.utc).replace(tzinfo=None),

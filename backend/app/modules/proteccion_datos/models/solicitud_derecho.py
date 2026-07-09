@@ -51,8 +51,9 @@ class SolicitudDerechoRGPD(BaseModel):
         String(20), nullable=False, default='PRESENTADA', index=True
     )
 
-    # Solicitante
-    miembro_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    # Solicitante. Columna renombrada miembro_id → contacto_id en la migración
+    # t5u6v7w8x9y0 (refactor miembros→contactos); el modelo debe reflejarlo.
+    contacto_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid, ForeignKey('contactos.id', ondelete='SET NULL'), nullable=True, index=True
     )
     usuario_id: Mapped[Optional[uuid.UUID]] = mapped_column(

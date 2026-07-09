@@ -21,7 +21,7 @@ from ..modules.economico.services.justificante_gasto_service import Justificante
 from ..modules.economico.services.donacion_service import DonacionService
 from ..modules.economico.models.tesoreria import TipoApunte, OrigenApunte, MetodoConciliacion
 from ..modules.economico.models.contabilidad import TipoAsientoContable
-from .permissions import RequireTransaction
+from .permissions import RequireAuthenticated, RequireTransaction
 
 
 async def _vinculacion_socio_de_contacto(session, contacto_id):
@@ -210,7 +210,7 @@ class EconomicoFlujosMutation:
 
     # ─── Tesorería ────────────────────────────────────────────────────────────
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_MOVIMIENTO_REGISTRAR")])
     async def registrar_apunte_caja(
         self,
         info: strawberry.Info,
@@ -305,7 +305,7 @@ class EconomicoFlujosMutation:
         await service.desmarcar_apunte_conciliado(apunte_id)
         return True
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_MOVIMIENTO_REGISTRAR")])
     async def actualizar_metadatos_apunte_caja(
         self,
         info: strawberry.Info,
@@ -358,7 +358,7 @@ class EconomicoFlujosMutation:
         )
         return str(apunte.id)
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_MOVIMIENTO_REGISTRAR")])
     async def anular_apunte_caja(
         self, info: strawberry.Info, apunte_id: UUID, motivo: str,
     ) -> str:
@@ -446,7 +446,7 @@ class EconomicoFlujosMutation:
 
     # ─── Contabilidad ─────────────────────────────────────────────────────────
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ASIENTO_APROBAR")])
     async def confirmar_asiento_contable(
         self, info: strawberry.Info, asiento_id: UUID
     ) -> bool:
@@ -456,7 +456,7 @@ class EconomicoFlujosMutation:
         await service.confirmar_asiento(asiento_id)
         return True
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ASIENTO_APROBAR")])
     async def anular_asiento_contable(
         self, info: strawberry.Info, asiento_id: UUID
     ) -> bool:
@@ -550,7 +550,7 @@ class EconomicoFlujosMutation:
             remesa_estado=res["remesa_estado"],
         )
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUOTA_REGISTRAR_PAGO")])
     async def registrar_pago_cuota_manual(
         self,
         info: strawberry.Info,
@@ -763,7 +763,7 @@ class EconomicoFlujosMutation:
         await session.commit()
         return r.rowcount or 0
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_REMESA_PROCESAR_RESPUESTA")])
     async def importar_fallidos_banco(
         self,
         info: strawberry.Info,
@@ -871,7 +871,7 @@ class EconomicoFlujosMutation:
         )
         return True
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_RECIBO_MARCAR_COBRADO")])
     async def marcar_recibo_fallido(
         self,
         info: strawberry.Info,
@@ -1119,7 +1119,9 @@ class EconomicoFlujosMutation:
 
     # ─── Solicitud de reducción de cuota ──────────────────────────────────────
 
-    @strawberry.mutation
+    # Autoservicio del socio (o de tesorería en su nombre): exige autenticación.
+    # TODO(ámbito): limitar a "sobre sí mismo o con permiso de tesorería".
+    @strawberry.mutation(permission_classes=[RequireAuthenticated])
     async def presentar_solicitud_reduccion_cuota(
         self,
         info: strawberry.Info,
@@ -1234,7 +1236,9 @@ class EconomicoFlujosMutation:
         await session.commit()
         return True
 
-    @strawberry.mutation
+    # Autoservicio del socio (retira su propia solicitud): exige autenticación.
+    # TODO(ámbito): limitar a "sobre sí mismo o con permiso de tesorería".
+    @strawberry.mutation(permission_classes=[RequireAuthenticated])
     async def anular_solicitud_reduccion_cuota(
         self,
         info: strawberry.Info,
@@ -1254,7 +1258,9 @@ class EconomicoFlujosMutation:
 
     # ─── Incremento voluntario de cuota ───────────────────────────────────────
 
-    @strawberry.mutation
+    # Autoservicio del socio (incremento voluntario sobre su cuota): exige autenticación.
+    # TODO(ámbito): limitar a "sobre sí mismo o con permiso de tesorería".
+    @strawberry.mutation(permission_classes=[RequireAuthenticated])
     async def modificar_incremento_cuota(
         self,
         info: strawberry.Info,
@@ -1630,3 +1636,121 @@ class EconomicoFlujosMutation:
             )
             for item in items
         ]
+
+    # ─── Avisos de cobro a socios (paridad GSH) ───────────────────────────────
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_REMESA_ENVIAR")])
+    async def enviar_avisos_proximo_cobro(
+        self,
+        info: strawberry.Info,
+        remesa_id: UUID,
+    ) -> int:
+        """Avisa por email a los socios domiciliados de una remesa del próximo
+        cargo en su cuenta (importe y fecha de cobro). Equivale al
+        `emailAvisarDomiciliadosProximoCobro` de GSH. Devuelve el nº de avisos
+        enviados; los socios sin email se omiten."""
+        from app.core.email_service import EmailService
+        from app.modules.economico.models.cuotas import CuotaAnual
+        from app.modules.economico.models.remesas import OrdenCobro, Remesa
+
+        session = info.context.session
+        remesa = await session.get(Remesa, remesa_id)
+        if remesa is None:
+            raise ValueError("Remesa no encontrada.")
+        ordenes = (await session.execute(
+            select(OrdenCobro).where(
+                OrdenCobro.remesa_id == remesa_id,
+                OrdenCobro.eliminado == False,  # noqa: E712
+            )
+        )).scalars().all()
+
+        email = EmailService(session)
+        enviados = 0
+        for orden in ordenes:
+            cuota = await session.get(CuotaAnual, orden.cuota_id)
+            vs = cuota.vinculacion_socio if cuota else None
+            contacto = vs.contacto if vs else None
+            if contacto is None or not contacto.email:
+                continue
+            try:
+                await email.enviar(
+                    destinatario=contacto.email,
+                    asunto=f"Aviso: próximo cobro de tu cuota {cuota.ejercicio}",
+                    cuerpo_html=(
+                        f"<p>Hola {contacto.nombre},</p>"
+                        f"<p>Te avisamos de que el <strong>{remesa.fecha_cobro:%d/%m/%Y}</strong> "
+                        f"se cargará en tu cuenta la cuota de socio de {cuota.ejercicio} "
+                        f"por importe de <strong>{orden.importe} €</strong>.</p>"
+                        f"<p>Si tus datos bancarios han cambiado, contacta con la organización "
+                        f"antes de esa fecha.</p>"
+                    ),
+                )
+                enviados += 1
+            except ValueError:
+                raise  # SMTP sin configurar: error global, se propaga a la UI
+            except Exception:  # noqa: BLE001 — un fallo puntual no corta el lote
+                continue
+        return enviados
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_RECIBO_NOTIFICAR_FALLIDOS")])
+    async def enviar_avisos_cuota_pendiente(
+        self,
+        info: strawberry.Info,
+        ejercicio: int,
+        solo_sin_domiciliacion: bool = True,
+    ) -> int:
+        """Avisa por email a los socios con cuota PENDIENTE del ejercicio,
+        incluyendo un ENLACE DE PAGO tokenizado (pago online público). Por defecto
+        solo a los que no tienen domiciliación (sin IBAN), como el
+        `emailAvisarCuotaNoCobradaSinCC` de GSH. Devuelve el nº de avisos."""
+        from app.core.config import get_settings
+        from app.core.email_service import EmailService
+        from app.modules.economico.models.cuotas import CuotaAnual
+        from app.modules.economico.services.pago_cuota_publica_service import (
+            firmar_token_pago,
+        )
+
+        session = info.context.session
+        cuotas = (await session.execute(
+            select(CuotaAnual).where(
+                CuotaAnual.ejercicio == ejercicio,
+                CuotaAnual.importe_pagado < CuotaAnual.importe,
+                CuotaAnual.eliminado == False,  # noqa: E712
+            )
+        )).scalars().all()
+
+        settings = get_settings()
+        base = (settings.app_url or settings.siga_api_url or "").rstrip("/")
+        email = EmailService(session)
+        enviados = 0
+        for cuota in cuotas:
+            vs = cuota.vinculacion_socio
+            contacto = vs.contacto if vs else None
+            if contacto is None or not contacto.email:
+                continue
+            socio = vs.socio if vs else None
+            if solo_sin_domiciliacion and socio is not None and socio.iban:
+                continue
+            token = firmar_token_pago(cuota.id)
+            enlace = f"{base}/pagar-cuota?token={token}"
+            pendiente = cuota.importe - cuota.importe_pagado
+            try:
+                await email.enviar(
+                    destinatario=contacto.email,
+                    asunto=f"Tu cuota de socio {ejercicio} está pendiente de pago",
+                    cuerpo_html=(
+                        f"<p>Hola {contacto.nombre},</p>"
+                        f"<p>Tu cuota de socio de {ejercicio} está pendiente de pago "
+                        f"(<strong>{pendiente} €</strong>).</p>"
+                        f'<p>Puedes pagarla online de forma segura aquí: '
+                        f'<a href="{enlace}">Pagar mi cuota</a></p>'
+                        f"<p>También puedes hacerlo por transferencia contactando con la "
+                        f"organización. Si ya la has pagado, ignora este mensaje.</p>"
+                    ),
+                )
+                enviados += 1
+            except ValueError:
+                raise
+            except Exception:  # noqa: BLE001
+                continue
+        return enviados

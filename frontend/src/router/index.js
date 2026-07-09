@@ -97,6 +97,14 @@ const routes = [
     name: 'Inicializacion',
     meta: { public: true }
   },
+  {
+    // Pago de cuota por el socio desde el enlace tokenizado del email de aviso.
+    // Pública a propósito: el token firmado es la autorización.
+    path: '/pagar-cuota',
+    component: () => import('@/views/PagarCuota.vue'),
+    name: 'PagarCuota',
+    meta: { public: true }
+  },
 
   // ─── ACCESO ───────────────────────────────────────────────────────────────
   {
@@ -153,6 +161,18 @@ const routes = [
     path: '/miembros',
     component: ListaMiembros,
     name: 'Miembros',
+    meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_MIEMBRO_LISTAR' }
+  },
+  {
+    path: '/traslados',
+    component: () => import('@/modules/membresia/views/BandejaTraslados.vue'),
+    name: 'BandejaTraslados',
+    meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_TRASLADO_APROBAR' }
+  },
+  {
+    path: '/estadisticas-socios',
+    component: () => import('@/modules/membresia/views/EstadisticasSocios.vue'),
+    name: 'EstadisticasSocios',
     meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_MIEMBRO_LISTAR' }
   },
   {

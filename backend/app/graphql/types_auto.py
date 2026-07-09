@@ -67,7 +67,11 @@ from ..modules.acceso.models import Usuario, UsuarioRol
 class TipoVinculacionType:
     pass
 
-@strawchemy.type(Usuario, exclude=["password_hash"], override=True)
+# Los secretos de autenticación (password_hash, reset_token*) se excluyen en el
+# propio modelo con info=PRIVATE (ver acceso/models/usuario.py), de modo que
+# strawchemy los omite en TODOS los DTOs: este tipo, los embebidos (UsuarioRolType,
+# SesionType…), los filtros y los order_by. No hace falta repetir el exclude aquí.
+@strawchemy.type(Usuario, include="all", override=True)
 class UsuarioType:
     pass
 

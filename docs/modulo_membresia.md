@@ -54,6 +54,25 @@ DROP TABLE IF EXISTS miembro_skills;
 ```
 Y borrar el archivo `backend/app/modules/membresia/models/skill.py`.
 
+### 4. Limpieza de la vista de segmentación legacy (2026-07-09)
+
+`miembro_segmentacion_view.py` (vista materializada `vista_miembros_segmentacion`)
+estaba construida sobre la tabla legacy `miembros`, que ya no es el modelo vivo
+(ahora Contacto/Vinculacion). **El archivo Python ya se ha borrado** (cero
+referencias en el código). Queda pendiente eliminar la vista y la tabla legacy
+en BD si existen:
+
+**SQL pendiente** (acumular con el siguiente lote):
+```sql
+DROP MATERIALIZED VIEW IF EXISTS vista_miembros_segmentacion;
+-- Solo si la tabla legacy 'miembros' sigue existiendo y nadie la referencia:
+-- DROP TABLE IF EXISTS miembros CASCADE;  -- revisar FKs antes
+```
+
+> `EstadoMiembro` (tabla `estados_miembro`) se conserva: tiene CRUD auto en el
+> esquema GraphQL y no rompe nada, aunque el estado vivo del socio sea
+> `Socio.estado_socio`.
+
 ---
 
 ## Principio de diseño: datos en su tabla de extensión

@@ -21,6 +21,11 @@
           class="h-8 px-3 text-sm font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
           Eliminar
         </button>
+        <!-- Ciclo de vida de la CONDICIÓN de socio (distinto del alta/baja del contacto):
+             suspender / reactivar / dar de baja / convertir simpatizante→socio.
+             Se autooculta si no hay acción aplicable o falta permiso. -->
+        <AccionesSocio v-if="!isCreate && route.params.id"
+          :contacto-id="route.params.id" @cambio="cargar" />
       </template>
     </template>
 
@@ -157,6 +162,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import AvatarImg from '@/components/common/AvatarImg.vue'
 import TabsNavigation from '@/components/common/TabsNavigation.vue'
 import HistorialVinculaciones from '@/components/miembros/HistorialVinculaciones.vue'
+import AccionesSocio from '@/components/miembros/AccionesSocio.vue'
 import HistorialActosContacto from '@/components/miembros/HistorialActosContacto.vue'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { useToast } from '@/composables/useToast'

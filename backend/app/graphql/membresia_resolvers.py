@@ -770,7 +770,14 @@ class MembresiaResolverMutation:
             select(Socio).where(Socio.vinculacion_id == vinc.id)
         )).scalar_one_or_none()
         if existe_socio is None:
-            session.add(Socio(vinculacion_id=vinc.id, numero_socio=numero_socio))
+            session.add(Socio(vinculacion_id=vinc.id, numero_socio=numero_socio,
+                              estado_socio="activo"))
+        else:
+            # Aspirante llegado por auto-alta pública: ya trae satélite con sus
+            # datos económicos (IBAN/forma de pago). Se conserva y se activa.
+            if numero_socio:
+                existe_socio.numero_socio = numero_socio
+            existe_socio.estado_socio = "activo"
         await session.commit()
         return await _fetch_miembro(session, contacto_id)
 
@@ -946,6 +953,22 @@ class VoluntarioAmbitoType:
     disponibilidad_viajar: bool
     activo: bool
     fecha_alta: Optional[date]
+
+
+@strawberry.type(name="EstadisticaAltasBajas")
+class EstadisticaAltasBajasType:
+    """Fila de estadística de altas/bajas de socios por año y agrupación.
+
+    - altas: vinculaciones SOCIO cuyo `fecha_inicio` cae en el año.
+    - bajas: vinculaciones SOCIO cuyo `fecha_fin` (cierre) cae en el año.
+    - neto:  altas − bajas.
+    """
+    anio: int
+    agrupacion_id: Optional[uuid.UUID]
+    agrupacion_nombre: Optional[str]
+    altas: int
+    bajas: int
+    neto: int
 
 
 @strawberry.type(name="ContactoCondiciones")
@@ -1317,3 +1340,71 @@ class MembresiaQuery:
             )
             for f in rows
         ]
+
+    @strawberry.field(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_LISTAR")])
+    async def estadisticas_altas_bajas(
+        self, info: strawberry.Info,
+        anio_desde: int, anio_hasta: int,
+        agrupacion_id: Optional[uuid.UUID] = None,
+    ) -> List[EstadisticaAltasBajasType]:
+        """Altas y bajas de socios por año y agrupación en el rango [desde, hasta].
+
+        Alta = inicio de una vinculación SOCIO en el año; baja = cierre (`fecha_fin`)
+        de una vinculación SOCIO en el año. Reemplaza los informes de altas/bajas de
+        GSH (que solo SIGA no tenía)."""
+        from sqlalchemy import func
+        from app.modules.core.geografico.direccion import UnidadOrganizativa
+        session = info.context.session
+
+        socio_tid = await _tipo_vinc_id(session, "SOCIO")
+        anio_ini = func.extract("year", Vinculacion.fecha_inicio)
+        anio_fin = func.extract("year", Vinculacion.fecha_fin)
+
+        def _filtros_base(col):
+            conds = [
+                Vinculacion.tipo_vinculacion_id == socio_tid,
+                Vinculacion.eliminado == False,  # noqa: E712
+                col >= anio_desde, col <= anio_hasta,
+            ]
+            if agrupacion_id is not None:
+                conds.append(Vinculacion.agrupacion_id == agrupacion_id)
+            return conds
+
+        altas_rows = (await session.execute(
+            select(anio_ini.label("anio"), Vinculacion.agrupacion_id, func.count().label("n"))
+            .where(*_filtros_base(anio_ini))
+            .group_by(anio_ini, Vinculacion.agrupacion_id)
+        )).all()
+        bajas_rows = (await session.execute(
+            select(anio_fin.label("anio"), Vinculacion.agrupacion_id, func.count().label("n"))
+            .where(Vinculacion.fecha_fin.is_not(None), *_filtros_base(anio_fin))
+            .group_by(anio_fin, Vinculacion.agrupacion_id)
+        )).all()
+
+        # Combina altas y bajas por (año, agrupación).
+        acc: dict[tuple[int, Optional[uuid.UUID]], list[int]] = {}
+        for anio, agr, n in altas_rows:
+            acc.setdefault((int(anio), agr), [0, 0])[0] = int(n)
+        for anio, agr, n in bajas_rows:
+            acc.setdefault((int(anio), agr), [0, 0])[1] = int(n)
+
+        # Nombres de agrupación para las que aparecen.
+        agr_ids = {agr for (_, agr) in acc if agr is not None}
+        nombres: dict[uuid.UUID, str] = {}
+        if agr_ids:
+            for aid, nom in (await session.execute(
+                select(UnidadOrganizativa.id, UnidadOrganizativa.nombre)
+                .where(UnidadOrganizativa.id.in_(agr_ids))
+            )).all():
+                nombres[aid] = nom
+
+        filas = [
+            EstadisticaAltasBajasType(
+                anio=anio, agrupacion_id=agr,
+                agrupacion_nombre=nombres.get(agr) if agr is not None else None,
+                altas=a, bajas=b, neto=a - b,
+            )
+            for (anio, agr), (a, b) in acc.items()
+        ]
+        filas.sort(key=lambda f: (f.anio, f.agrupacion_nombre or ""))
+        return filas
