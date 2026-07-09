@@ -28,8 +28,10 @@ class Consentimiento(BaseModel):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
 
-    # Interesado: o miembro / usuario interno, o externo identificado por email
-    miembro_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    # Interesado: o contacto / usuario interno, o externo identificado por email.
+    # La columna se renombró miembro_id → contacto_id en la migración
+    # t5u6v7w8x9y0 (refactor miembros→contactos); el modelo debe reflejarlo.
+    contacto_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid, ForeignKey('contactos.id', ondelete='SET NULL'), nullable=True, index=True
     )
     usuario_id: Mapped[Optional[uuid.UUID]] = mapped_column(

@@ -105,7 +105,7 @@ class ProteccionDatosMutation:
             codigo_interno=codigo,
             tipo=tipo,
             estado="PRESENTADA",
-            miembro_id=miembro_id,
+            contacto_id=miembro_id,
             usuario_id=usuario_id,
             nombre_solicitante=nombre_solicitante,
             documento_solicitante=documento_solicitante,

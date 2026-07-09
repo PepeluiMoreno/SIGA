@@ -20,7 +20,7 @@
         vacio-texto="No hay consentimientos registrados"
       >
         <template #cell-interesado="{ fila }">
-          <div class="text-sm text-slate-800">{{ fila.nombreExterno || fila.emailExterno || (fila.miembroId ? 'Miembro' : 'Usuario') }}</div>
+          <div class="text-sm text-slate-800">{{ fila.nombreExterno || fila.emailExterno || (fila.contactoId ? 'Miembro' : 'Usuario') }}</div>
           <div v-if="fila.emailExterno" class="text-[10px] text-slate-500">{{ fila.emailExterno }}</div>
         </template>
         <template #cell-clausula="{ fila }">
