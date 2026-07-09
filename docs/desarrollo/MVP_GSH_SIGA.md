@@ -123,12 +123,37 @@ reclamaciones de impago (4 modelos muertos; GSH tampoco lo tiene).
   por año y agrupación en un rango, con nombre de agrupación y neto. Cubre el hueco
   de informes de altas/bajas que GSH tenía (por agrupación/provincia/CCAA) y SIGA no.
   Tipo `EstadisticaAltasBajasType`.
-- ⏳ Pendiente en D: avisos de próximo cobro / cuota no cobrada; limpieza de legacy
-  (requiere migraciones — se deja para el flujo de migración por lotes del equipo,
-  no se ejecuta ad-hoc; ver `docs/modulo_membresia.md`).
+- ✅ **Avisos de cobro** (`economico_mutations.py`):
+  - `enviar_avisos_proximo_cobro(remesa_id)` → `ECO_REMESA_ENVIAR`: email a los
+    domiciliados de la remesa con importe y fecha de cargo (el
+    `emailAvisarDomiciliadosProximoCobro` de GSH).
+  - `enviar_avisos_cuota_pendiente(ejercicio, solo_sin_domiciliacion)` →
+    `ECO_RECIBO_NOTIFICAR_FALLIDOS`: email a socios con cuota pendiente
+    **con enlace de pago tokenizado** (el `emailAvisarCuotaNoCobradaSinCC` de GSH).
+- ✅ **Limpieza legacy** (solo lo seguro; SQL acumulado, no ejecutado):
+  - `models/economico/contabilidad.py` **borrado**: era código muerto inalcanzable
+    (el paquete `contabilidad/` lo eclipsaba en el import; verificado en runtime).
+  - `models/membresia/miembro_segmentacion_view.py` **borrado**: cero referencias,
+    construido sobre la tabla legacy `miembros`. SQL del `DROP MATERIALIZED VIEW`
+    acumulado en `docs/modulo_membresia.md` (convención del repo: no ejecutar ad-hoc).
+  - `services/membresia_service.py`: de placeholder vacío a punto de anclaje
+    documentado que re-exporta `SolicitudSocioPublicaService`.
+  - `EstadoMiembro` se conserva (CRUD auto en el esquema; quitarlo rompería types_auto).
 
-### Bucket A — pendiente restante
-- ⏳ **Pago de cuota online por el socio** (PayPal/transferencia): existe
-  `paypal_service` y `api/paypal.py` (create/capture/webhook), pero falta el endpoint
-  público "pagar mi cuota/recibo" ligado a `Recibo`/`CuotaAnual`. Requiere credenciales
-  PayPal y verificación en sandbox (no ejecutable en esta sesión).
+### Bucket A — pago online ✅ (pendiente de sandbox)
+- ✅ **Pago de cuota online por el socio** (paridad con `pagarCuotaSocio` /
+  `pagarCuotaSocioSinCC` de GSH):
+  - `economico/services/pago_cuota_publica_service.py`: enlace tokenizado (JWT
+    purpose `pago_cuota`, 30 días) → info de la cuota → `crear_orden` (el importe
+    lo deriva SIEMPRE el servidor del pendiente de la `CuotaAnual`) → `capturar`,
+    que registra el `Pago` de pasarela **y liquida la cuota** (importe_pagado,
+    modo PAYPAL, referencia=order_id, estado Cobrada al completarse) — la pieza
+    que faltaba en `registrar_pago_capturado`. Si `org.paypal_cuenta_bancaria_id`
+    está configurado, genera además ApunteCaja + asiento.
+  - `api/publico/pago_cuota.py`: `GET /api/publico/pago-cuota`, `POST …/crear-orden`,
+    `POST …/capturar`, con rate-limit por IP. Montado en `main.py`.
+  - ⚠️ **Verificar en sandbox PayPal antes de producción** (requiere
+    `PAYPAL_CLIENT_ID/SECRET`, no disponibles en esta sesión): crear orden,
+    aprobar como buyer, capturar y comprobar que la cuota queda Cobrada.
+  - El front debe servir una página `/pagar-cuota?token=…` que consuma estos
+    endpoints con el SDK JS de PayPal (el enlace de los avisos apunta ahí).

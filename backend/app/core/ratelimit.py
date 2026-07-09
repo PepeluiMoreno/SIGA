@@ -53,3 +53,6 @@ limiter_firmas_email = RateLimiter(max_eventos=5, ventana_seg=3600)
 # Límites para la auto-alta pública de socios (misma política que firmas).
 limiter_socios_ip = RateLimiter(max_eventos=10, ventana_seg=600)
 limiter_socios_email = RateLimiter(max_eventos=5, ventana_seg=3600)
+
+# Límite para el pago público de cuota (info + crear orden + capturar por IP).
+limiter_pago_cuota_ip = RateLimiter(max_eventos=20, ventana_seg=600)

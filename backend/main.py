@@ -151,6 +151,10 @@ app.include_router(publico_firmas_router)
 from app.api.publico.socios import router as publico_socios_router
 app.include_router(publico_socios_router)
 
+# Router PÚBLICO — pago de cuota por el socio (enlace tokenizado + PayPal).
+from app.api.publico.pago_cuota import router as publico_pago_cuota_router
+app.include_router(publico_pago_cuota_router)
+
 
 MEDIA_DIR = Path("media/fotos")
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
