@@ -117,4 +117,18 @@ reclamaciones de impago (4 modelos muertos; GSH tampoco lo tiene).
   `HistorialAgrupacion` vigente y abre uno nuevo** en destino. Estado derivado de la
   doble aprobación (`_recalcular_estado_traslado`).
 
-### Bucket D — pendiente
+### Bucket D — parcialmente hecho
+- ✅ **Estadísticas de altas/bajas** (`MembresiaQuery.estadisticas_altas_bajas`,
+  `MEMBRESIA_MIEMBRO_LISTAR`): altas (inicio de vinculación SOCIO) y bajas (cierre)
+  por año y agrupación en un rango, con nombre de agrupación y neto. Cubre el hueco
+  de informes de altas/bajas que GSH tenía (por agrupación/provincia/CCAA) y SIGA no.
+  Tipo `EstadisticaAltasBajasType`.
+- ⏳ Pendiente en D: avisos de próximo cobro / cuota no cobrada; limpieza de legacy
+  (requiere migraciones — se deja para el flujo de migración por lotes del equipo,
+  no se ejecuta ad-hoc; ver `docs/modulo_membresia.md`).
+
+### Bucket A — pendiente restante
+- ⏳ **Pago de cuota online por el socio** (PayPal/transferencia): existe
+  `paypal_service` y `api/paypal.py` (create/capture/webhook), pero falta el endpoint
+  público "pagar mi cuota/recibo" ligado a `Recibo`/`CuotaAnual`. Requiere credenciales
+  PayPal y verificación en sandbox (no ejecutable en esta sesión).
