@@ -166,6 +166,27 @@ export const DELETE_MOTIVO_BAJA = `
   }
 `
 
+export const GET_MOTIVOS_TRASLADO = `
+  query MotivosTraslado {
+    motivosTraslado { id codigo nombre descripcion orden activo }
+  }
+`
+export const CREATE_MOTIVO_TRASLADO = `
+  mutation CrearMotivoTraslado($data: MotivoTrasladoCreateInput!) {
+    crearMotivoTraslado(data: $data) { id nombre }
+  }
+`
+export const UPDATE_MOTIVO_TRASLADO = `
+  mutation ActualizarMotivoTraslado($data: MotivoTrasladoUpdateInput!) {
+    actualizarMotivoTraslado(data: $data) { id nombre }
+  }
+`
+export const DELETE_MOTIVO_TRASLADO = `
+  mutation EliminarMotivoTraslado($filter: MotivoTrasladoFilter!) {
+    eliminarMotivosTraslado(filter: $filter) { id }
+  }
+`
+
 // =============================================
 // FINANCIERO
 // =============================================

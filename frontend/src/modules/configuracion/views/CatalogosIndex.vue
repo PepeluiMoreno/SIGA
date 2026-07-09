@@ -101,6 +101,13 @@ const catalogos = [
     icono: '📝',
     ruta: '/parametrizacion/motivos-baja'
   },
+  {
+    categoria: 'Miembros',
+    nombre: 'Motivos de Traslado',
+    descripcion: 'Razones para trasladar un socio de agrupación',
+    icono: '🔀',
+    ruta: '/parametrizacion/motivos-traslado'
+  },
 
   // Económico
   {

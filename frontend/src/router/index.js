@@ -598,6 +598,12 @@ const routes = [
     meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_CATALOGO_GESTIONAR' }
   },
   {
+    path: '/parametrizacion/motivos-traslado',
+    component: () => import('@/modules/configuracion/views/catalogos/MotivosTraslado.vue'),
+    name: 'MotivosTraslado',
+    meta: { requiresAuth: true, requiredPermission: 'ACTIVIDAD_CATALOGO_GESTIONAR' }
+  },
+  {
     path: '/parametrizacion/estados-cuota',
     component: () => import('@/modules/configuracion/views/catalogos/EstadosCuota.vue'),
     name: 'EstadosCuota',

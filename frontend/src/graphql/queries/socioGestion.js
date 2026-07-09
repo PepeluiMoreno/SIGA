@@ -52,6 +52,7 @@ export const GET_SOLICITUDES_TRASLADO = `
       id
       estado
       motivo
+      motivoTraslado { id nombre }
       fechaSolicitud
       fechaEfectivaDeseada
       agrupacionOrigenId
@@ -64,9 +65,21 @@ export const GET_SOLICITUDES_TRASLADO = `
   }
 `
 
+export const GET_MOTIVOS_TRASLADO = `
+  query MotivosTraslado {
+    motivosTraslado { id codigo nombre activo orden }
+  }
+`
+
+export const GET_ESTADOS_TRASLADO = `
+  query EstadosTraslado {
+    estadosTraslado { id codigo nombre color orden esInicial esFinal }
+  }
+`
+
 export const SOLICITAR_TRASLADO = `
-  mutation SolicitarTraslado($miembroId: UUID!, $agrupacionDestinoId: UUID!, $motivo: String!, $fechaEfectivaDeseada: Date) {
-    solicitarTraslado(miembroId: $miembroId, agrupacionDestinoId: $agrupacionDestinoId, motivo: $motivo, fechaEfectivaDeseada: $fechaEfectivaDeseada) {
+  mutation SolicitarTraslado($miembroId: UUID!, $agrupacionDestinoId: UUID!, $motivoTrasladoId: UUID!, $detalle: String, $fechaEfectivaDeseada: Date) {
+    solicitarTraslado(miembroId: $miembroId, agrupacionDestinoId: $agrupacionDestinoId, motivoTrasladoId: $motivoTrasladoId, detalle: $detalle, fechaEfectivaDeseada: $fechaEfectivaDeseada) {
       id estado
     }
   }
