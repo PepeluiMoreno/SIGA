@@ -21,7 +21,7 @@ from ..modules.economico.services.justificante_gasto_service import Justificante
 from ..modules.economico.services.donacion_service import DonacionService
 from ..modules.economico.models.tesoreria import TipoApunte, OrigenApunte, MetodoConciliacion
 from ..modules.economico.models.contabilidad import TipoAsientoContable
-from .permissions import RequireTransaction
+from .permissions import RequireAuthenticated, RequireTransaction
 
 
 async def _vinculacion_socio_de_contacto(session, contacto_id):
@@ -210,7 +210,7 @@ class EconomicoFlujosMutation:
 
     # ─── Tesorería ────────────────────────────────────────────────────────────
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_MOVIMIENTO_REGISTRAR")])
     async def registrar_apunte_caja(
         self,
         info: strawberry.Info,
@@ -305,7 +305,7 @@ class EconomicoFlujosMutation:
         await service.desmarcar_apunte_conciliado(apunte_id)
         return True
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_MOVIMIENTO_REGISTRAR")])
     async def actualizar_metadatos_apunte_caja(
         self,
         info: strawberry.Info,
@@ -358,7 +358,7 @@ class EconomicoFlujosMutation:
         )
         return str(apunte.id)
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_MOVIMIENTO_REGISTRAR")])
     async def anular_apunte_caja(
         self, info: strawberry.Info, apunte_id: UUID, motivo: str,
     ) -> str:
@@ -446,7 +446,7 @@ class EconomicoFlujosMutation:
 
     # ─── Contabilidad ─────────────────────────────────────────────────────────
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ASIENTO_APROBAR")])
     async def confirmar_asiento_contable(
         self, info: strawberry.Info, asiento_id: UUID
     ) -> bool:
@@ -456,7 +456,7 @@ class EconomicoFlujosMutation:
         await service.confirmar_asiento(asiento_id)
         return True
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_ASIENTO_APROBAR")])
     async def anular_asiento_contable(
         self, info: strawberry.Info, asiento_id: UUID
     ) -> bool:
@@ -550,7 +550,7 @@ class EconomicoFlujosMutation:
             remesa_estado=res["remesa_estado"],
         )
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_CUOTA_REGISTRAR_PAGO")])
     async def registrar_pago_cuota_manual(
         self,
         info: strawberry.Info,
@@ -763,7 +763,7 @@ class EconomicoFlujosMutation:
         await session.commit()
         return r.rowcount or 0
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_REMESA_PROCESAR_RESPUESTA")])
     async def importar_fallidos_banco(
         self,
         info: strawberry.Info,
@@ -871,7 +871,7 @@ class EconomicoFlujosMutation:
         )
         return True
 
-    @strawberry.mutation
+    @strawberry.mutation(permission_classes=[RequireTransaction("ECO_RECIBO_MARCAR_COBRADO")])
     async def marcar_recibo_fallido(
         self,
         info: strawberry.Info,
@@ -1119,7 +1119,9 @@ class EconomicoFlujosMutation:
 
     # ─── Solicitud de reducción de cuota ──────────────────────────────────────
 
-    @strawberry.mutation
+    # Autoservicio del socio (o de tesorería en su nombre): exige autenticación.
+    # TODO(ámbito): limitar a "sobre sí mismo o con permiso de tesorería".
+    @strawberry.mutation(permission_classes=[RequireAuthenticated])
     async def presentar_solicitud_reduccion_cuota(
         self,
         info: strawberry.Info,
@@ -1234,7 +1236,9 @@ class EconomicoFlujosMutation:
         await session.commit()
         return True
 
-    @strawberry.mutation
+    # Autoservicio del socio (retira su propia solicitud): exige autenticación.
+    # TODO(ámbito): limitar a "sobre sí mismo o con permiso de tesorería".
+    @strawberry.mutation(permission_classes=[RequireAuthenticated])
     async def anular_solicitud_reduccion_cuota(
         self,
         info: strawberry.Info,
@@ -1254,7 +1258,9 @@ class EconomicoFlujosMutation:
 
     # ─── Incremento voluntario de cuota ───────────────────────────────────────
 
-    @strawberry.mutation
+    # Autoservicio del socio (incremento voluntario sobre su cuota): exige autenticación.
+    # TODO(ámbito): limitar a "sobre sí mismo o con permiso de tesorería".
+    @strawberry.mutation(permission_classes=[RequireAuthenticated])
     async def modificar_incremento_cuota(
         self,
         info: strawberry.Info,

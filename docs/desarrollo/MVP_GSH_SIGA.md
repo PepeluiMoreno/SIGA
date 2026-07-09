@@ -79,4 +79,24 @@ reclamaciones de impago (4 modelos muertos; GSH tampoco lo tiene).
 - ⏳ Pendiente en A: pago de cuota online por el socio; estadísticas altas/bajas;
   cambio simpatizante→socio.
 
-### Buckets B, C, D — pendientes
+### Bucket C — parcialmente hecho
+- ✅ **RBAC del lado escritura** (bloqueante de producción): añadido `permission_classes`
+  a todas las mutations económicas que estaban abiertas:
+  - `registrar_apunte_caja`, `actualizar_metadatos_apunte_caja`, `anular_apunte_caja`
+    → `ECO_MOVIMIENTO_REGISTRAR`.
+  - `confirmar_asiento_contable`, `anular_asiento_contable` → `ECO_ASIENTO_APROBAR`.
+  - `registrar_pago_cuota_manual` → `ECO_CUOTA_REGISTRAR_PAGO`.
+  - `importar_fallidos_banco` → `ECO_REMESA_PROCESAR_RESPUESTA`.
+  - `marcar_recibo_fallido` → `ECO_RECIBO_MARCAR_COBRADO`.
+  - `presentar/anular_solicitud_reduccion_cuota`, `modificar_incremento_cuota`
+    (autoservicio del socio) → `RequireAuthenticated` (con TODO de ámbito horizontal
+    self/tesorería).
+  - Verificado: ya no queda ninguna mutation pública económica sin RBAC.
+- ⏳ **Pendiente (lado lectura)**: los `ECO_*_LISTAR` no se aplican porque los
+  listados los sirve `strawchemy.field` en `schema_simple.py` sin control. La versión
+  moderna de strawchemy acepta `permission_classes=` en `field()`, pero **antes de
+  aplicarlo hay que confirmar la versión de strawchemy desplegada** (un skew rompería
+  el arranque). Severidad menor: /graphql va tras Authelia/VPN; el hueco es horizontal
+  (cualquier usuario autenticado lista datos económicos aunque no tenga rol económico).
+
+### Buckets B, D — pendientes
