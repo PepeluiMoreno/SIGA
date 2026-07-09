@@ -109,7 +109,12 @@ reclamaciones de impago (4 modelos muertos; GSH tampoco lo tiene).
 - ✅ **Conversión simpatizante → socio** (`convertir_simpatizante_en_socio`,
   `MEMBRESIA_MIEMBRO_CREAR`): crea vinculación SOCIO + satélite y cierra la de
   SIMPATIZANTE; valida IBAN. Equivale a `cambioSimpSocio` de GSH.
-- ⏳ Pendiente en B: resolvers de negocio de `SolicitudTraslado` (máquina de estados)
-  + relleno automático de `HistorialAgrupacion`.
+- ✅ **Traslados entre agrupaciones** (máquina de estados de `SolicitudTraslado`):
+  `solicitar_traslado` (SOLICITAR), `aprobar_traslado_origen`/`aprobar_traslado_destino`
+  (APROBAR, con guard de ámbito sobre origen/destino), `rechazar_traslado` (RECHAZAR),
+  `cancelar_traslado`, `ejecutar_traslado` (APROBAR). La ejecución mueve
+  `agrupacion_id` del contacto y de su vinculación SOCIO, **cierra el tramo de
+  `HistorialAgrupacion` vigente y abre uno nuevo** en destino. Estado derivado de la
+  doble aprobación (`_recalcular_estado_traslado`).
 
-### Buckets D — pendiente
+### Bucket D — pendiente

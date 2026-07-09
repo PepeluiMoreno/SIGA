@@ -19,7 +19,7 @@ frontend (fase de UI).
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import date, datetime
 from typing import List, Optional
 
 import strawberry
@@ -29,8 +29,12 @@ from app.modules.membresia.models.contacto import Contacto
 from app.modules.membresia.models.vinculacion import Vinculacion, Socio, Voluntario
 from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
 from app.modules.membresia.models.historial_nombramiento import HistorialNombramiento
+from app.modules.membresia.models.historial_agrupacion import HistorialAgrupacion
+from app.modules.membresia.models.traslados.modelos import SolicitudTraslado, EstadoTraslado
 from app.graphql.permissions import RequireTransaction
-from app.graphql.types_auto import VinculacionType, ContactoType, HistorialNombramientoType
+from app.graphql.types_auto import (
+    VinculacionType, ContactoType, HistorialNombramientoType, SolicitudTrasladoType,
+)
 from app.modules.acceso.services.ambito_territorial import (
     assert_unidad_en_ambito,
     assert_miembro_en_ambito,
@@ -87,6 +91,41 @@ async def _fetch_vinculacion(session, vinculacion_id: uuid.UUID) -> Vinculacion:
     if v is None:
         raise ValueError("Vinculación no encontrada.")
     return v
+
+
+async def _fetch_traslado(session, solicitud_id: uuid.UUID) -> SolicitudTraslado:
+    """Recarga una SolicitudTraslado por id."""
+    sol = await session.get(SolicitudTraslado, solicitud_id)
+    if sol is None:
+        raise ValueError("Solicitud de traslado no encontrada.")
+    return sol
+
+
+_ESTADOS_TRASLADO_EN_CURSO = frozenset({
+    EstadoTraslado.PENDIENTE, EstadoTraslado.APROBADO_ORIGEN,
+    EstadoTraslado.APROBADO_DESTINO, EstadoTraslado.APROBADO,
+})
+
+
+async def _traslado_en_curso(session, solicitud_id: uuid.UUID) -> SolicitudTraslado:
+    """Recarga una SolicitudTraslado y valida que sigue en un estado que admite
+    aprobación/rechazo/cancelación (no ejecutada ni ya cerrada)."""
+    sol = await _fetch_traslado(session, solicitud_id)
+    if sol.eliminado or sol.estado not in _ESTADOS_TRASLADO_EN_CURSO:
+        raise ValueError(f"La solicitud no admite cambios (estado: {sol.estado}).")
+    return sol
+
+
+def _recalcular_estado_traslado(sol: SolicitudTraslado) -> None:
+    """Deriva el estado a partir de las aprobaciones de origen y destino."""
+    if sol.aprobado_origen and sol.aprobado_destino:
+        sol.estado = EstadoTraslado.APROBADO
+    elif sol.aprobado_origen:
+        sol.estado = EstadoTraslado.APROBADO_ORIGEN
+    elif sol.aprobado_destino:
+        sol.estado = EstadoTraslado.APROBADO_DESTINO
+    else:
+        sol.estado = EstadoTraslado.PENDIENTE
 
 
 # ---------------------------------------------------------------------------
@@ -581,3 +620,158 @@ class VinculacionesMutation:
         simp.fecha_fin = date.today()
         await session.commit()
         return await _fetch_vinculacion(session, socio_vinc.id)
+
+    # ── Traslados entre agrupaciones (máquina de estados) ────────────────────
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_SOLICITAR")])
+    async def solicitar_traslado(
+        self, info: strawberry.Info, miembro_id: uuid.UUID,
+        agrupacion_destino_id: uuid.UUID, motivo: str,
+        fecha_efectiva_deseada: Optional[date] = None,
+    ) -> SolicitudTrasladoType:
+        """Crea una solicitud de traslado (estado PENDIENTE). El origen se toma de
+        la agrupación actual del contacto. Requiere doble aprobación (origen y
+        destino) antes de poder ejecutarse."""
+        session = info.context.session
+        contacto = await session.get(Contacto, miembro_id)
+        if contacto is None:
+            raise ValueError("Contacto no encontrado.")
+        if contacto.agrupacion_id is None:
+            raise ValueError("El contacto no tiene agrupación de origen asignada.")
+        if contacto.agrupacion_id == agrupacion_destino_id:
+            raise ValueError("La agrupación de destino coincide con la de origen.")
+        pendiente = await session.scalar(
+            select(SolicitudTraslado).where(
+                SolicitudTraslado.miembro_id == miembro_id,
+                SolicitudTraslado.estado.in_([
+                    EstadoTraslado.PENDIENTE, EstadoTraslado.APROBADO_ORIGEN,
+                    EstadoTraslado.APROBADO_DESTINO, EstadoTraslado.APROBADO,
+                ]),
+                SolicitudTraslado.eliminado == False,  # noqa: E712
+            )
+        )
+        if pendiente is not None:
+            raise ValueError("Ya hay una solicitud de traslado en curso para este contacto.")
+        sol = SolicitudTraslado(
+            miembro_id=miembro_id,
+            agrupacion_origen_id=contacto.agrupacion_id,
+            agrupacion_destino_id=agrupacion_destino_id,
+            motivo=motivo,
+            estado=EstadoTraslado.PENDIENTE,
+            fecha_efectiva_deseada=fecha_efectiva_deseada,
+        )
+        session.add(sol)
+        await session.commit()
+        return await _fetch_traslado(session, sol.id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_APROBAR")])
+    async def aprobar_traslado_origen(
+        self, info: strawberry.Info, solicitud_id: uuid.UUID,
+        observaciones: Optional[str] = None,
+    ) -> SolicitudTrasladoType:
+        """Aprobación por el coordinador de ORIGEN. Cuando origen y destino han
+        aprobado, la solicitud pasa a APROBADO (lista para ejecutar)."""
+        session = info.context.session
+        sol = await _traslado_en_curso(session, solicitud_id)
+        usuario = info.context.user
+        if usuario:
+            await assert_unidad_en_ambito(session, usuario.id, sol.agrupacion_origen_id)
+        sol.aprobado_origen = True
+        sol.fecha_aprobacion_origen = datetime.now()
+        sol.coordinador_origen_id = usuario.id if usuario else None
+        sol.observaciones_origen = observaciones
+        _recalcular_estado_traslado(sol)
+        await session.commit()
+        return await _fetch_traslado(session, sol.id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_APROBAR")])
+    async def aprobar_traslado_destino(
+        self, info: strawberry.Info, solicitud_id: uuid.UUID,
+        observaciones: Optional[str] = None,
+    ) -> SolicitudTrasladoType:
+        """Aprobación por el coordinador de DESTINO."""
+        session = info.context.session
+        sol = await _traslado_en_curso(session, solicitud_id)
+        usuario = info.context.user
+        if usuario:
+            await assert_unidad_en_ambito(session, usuario.id, sol.agrupacion_destino_id)
+        sol.aprobado_destino = True
+        sol.fecha_aprobacion_destino = datetime.now()
+        sol.coordinador_destino_id = usuario.id if usuario else None
+        sol.observaciones_destino = observaciones
+        _recalcular_estado_traslado(sol)
+        await session.commit()
+        return await _fetch_traslado(session, sol.id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_RECHAZAR")])
+    async def rechazar_traslado(
+        self, info: strawberry.Info, solicitud_id: uuid.UUID, motivo: str,
+        lado: str = "origen",
+    ) -> SolicitudTrasladoType:
+        """Rechaza el traslado desde un lado ('origen' o 'destino'), con motivo."""
+        session = info.context.session
+        sol = await _traslado_en_curso(session, solicitud_id)
+        sol.estado = (EstadoTraslado.RECHAZADO_DESTINO if lado == "destino"
+                      else EstadoTraslado.RECHAZADO_ORIGEN)
+        sol.motivo_rechazo = motivo
+        await session.commit()
+        return await _fetch_traslado(session, sol.id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_SOLICITAR")])
+    async def cancelar_traslado(
+        self, info: strawberry.Info, solicitud_id: uuid.UUID,
+    ) -> SolicitudTrasladoType:
+        """El solicitante cancela un traslado que aún no se ha ejecutado."""
+        session = info.context.session
+        sol = await _traslado_en_curso(session, solicitud_id)
+        sol.estado = EstadoTraslado.CANCELADO
+        await session.commit()
+        return await _fetch_traslado(session, sol.id)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_APROBAR")])
+    async def ejecutar_traslado(
+        self, info: strawberry.Info, solicitud_id: uuid.UUID,
+    ) -> SolicitudTrasladoType:
+        """Ejecuta un traslado APROBADO: mueve la agrupación del contacto y de su
+        vinculación SOCIO, cierra el tramo de HistorialAgrupacion vigente y abre
+        uno nuevo en la agrupación de destino."""
+        session = info.context.session
+        sol = await session.get(SolicitudTraslado, solicitud_id)
+        if sol is None or sol.eliminado:
+            raise ValueError("Solicitud de traslado no encontrada.")
+        if sol.estado != EstadoTraslado.APROBADO:
+            raise ValueError(
+                f"El traslado no está aprobado por ambos lados (estado: {sol.estado})."
+            )
+        contacto = await session.get(Contacto, sol.miembro_id)
+        if contacto is None:
+            raise ValueError("Contacto no encontrado.")
+
+        hoy = date.today()
+        # Cierra el tramo de historial vigente (fecha_fin NULL) del contacto.
+        tramo_abierto = await session.scalar(
+            select(HistorialAgrupacion).where(
+                HistorialAgrupacion.miembro_id == contacto.id,
+                HistorialAgrupacion.fecha_fin.is_(None),
+                HistorialAgrupacion.eliminado == False,  # noqa: E712
+            ).order_by(HistorialAgrupacion.fecha_inicio.desc())
+        )
+        if tramo_abierto is not None:
+            tramo_abierto.fecha_fin = hoy
+        # Abre el nuevo tramo en destino.
+        session.add(HistorialAgrupacion(
+            miembro_id=contacto.id, agrupacion_id=sol.agrupacion_destino_id,
+            fecha_inicio=hoy, motivo="Traslado",
+        ))
+
+        # Mueve la agrupación del contacto y de su vinculación SOCIO vigente.
+        contacto.agrupacion_id = sol.agrupacion_destino_id
+        socio_vinc = await _vinculacion_activa(session, contacto.id, "SOCIO")
+        if socio_vinc is not None:
+            socio_vinc.agrupacion_id = sol.agrupacion_destino_id
+
+        usuario = info.context.user
+        sol.estado = EstadoTraslado.EJECUTADO
+        sol.fecha_ejecucion = datetime.now()
+        sol.usuario_ejecutor_id = usuario.id if usuario else None
+        await session.commit()
+        return await _fetch_traslado(session, sol.id)
