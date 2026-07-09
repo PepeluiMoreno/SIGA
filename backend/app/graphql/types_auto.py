@@ -67,7 +67,14 @@ from ..modules.acceso.models import Usuario, UsuarioRol
 class TipoVinculacionType:
     pass
 
-@strawchemy.type(Usuario, exclude=["password_hash"], override=True)
+# Se excluyen los secretos de autenticación: nunca deben viajar por GraphQL.
+# `reset_token` permite tomar la cuenta (junto a su caducidad); junto a
+# `password_hash` no tienen ninguna razón de estar en el grafo de lectura.
+@strawchemy.type(
+    Usuario,
+    exclude=["password_hash", "reset_token", "reset_token_expira_en", "reset_token_solicitado_en"],
+    override=True,
+)
 class UsuarioType:
     pass
 
