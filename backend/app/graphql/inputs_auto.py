@@ -273,6 +273,7 @@ from ..modules.core.models import (
     EstadoRemesa,
     EstadoDonacion,
     EstadoNotificacion,
+    EstadoTrasladoCatalogo,
 )
 
 
@@ -525,7 +526,7 @@ class TemaUIFilter:
 # ============================================================================
 
 from ..modules.membresia.models import (
-    TipoMiembro, EstadoMiembro, MotivoBaja, Contacto,
+    TipoMiembro, EstadoMiembro, MotivoBaja, MotivoTraslado, Contacto,
     NivelEstudios, NivelHabilidad,
     CategoriaHabilidad, Habilidad, MiembroHabilidad, FranjaDisponibilidad,
     HistorialAgrupacion, SolicitudTraslado,
@@ -574,6 +575,31 @@ class MotivoBajaUpdateInput:
 
 @strawchemy.filter(MotivoBaja, include="all")
 class MotivoBajaFilter:
+    pass
+
+
+@strawchemy.input(MotivoTraslado, mode="create_input", include="all", exclude=get_exclude_fields(MotivoTraslado))
+class MotivoTrasladoCreateInput:
+    pass
+
+
+@strawchemy.input(MotivoTraslado, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(MotivoTraslado))
+class MotivoTrasladoUpdateInput:
+    pass
+
+
+@strawchemy.filter(MotivoTraslado, include="all")
+class MotivoTrasladoFilter:
+    pass
+
+
+@strawchemy.input(EstadoTrasladoCatalogo, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(EstadoTrasladoCatalogo))
+class EstadoTrasladoCatalogoUpdateInput:
+    pass
+
+
+@strawchemy.filter(EstadoTrasladoCatalogo, include="all")
+class EstadoTrasladoCatalogoFilter:
     pass
 
 

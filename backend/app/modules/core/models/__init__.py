@@ -25,6 +25,7 @@ from ...configuracion.models import (
     EstadoRemesa,
     EstadoDonacion,
     EstadoNotificacion,
+    EstadoTrasladoCatalogo,
     HistorialEstado,
 )
 from ...acceso.models import Sesion, HistorialSeguridad, IPBloqueada, IntentoAcceso
@@ -35,6 +36,7 @@ __all__ = [
     'Configuracion', 'ReglaValidacionConfig', 'HistorialConfiguracion',
     'EstadoBase', 'EstadoCuota', 'EstadoCampania', 'EstadoAccion', 'EstadoTarea',
     'EstadoActividad', 'EstadoParticipante', 'EstadoOrdenCobro',
-    'EstadoRemesa', 'EstadoDonacion', 'EstadoNotificacion', 'HistorialEstado',
+    'EstadoRemesa', 'EstadoDonacion', 'EstadoNotificacion',
+    'EstadoTrasladoCatalogo', 'HistorialEstado',
     'Sesion', 'HistorialSeguridad', 'IPBloqueada', 'IntentoAcceso',
 ]

@@ -145,6 +145,15 @@ class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionM
     actualizar_motivo_baja: MotivoBajaType = strawchemy.update_by_ids(MotivoBajaUpdateInput)
     eliminar_motivos_baja: list[MotivoBajaType] = strawchemy.delete(MotivoBajaFilter)
 
+    crear_motivo_traslado: MotivoTrasladoType = strawchemy.create(MotivoTrasladoCreateInput)
+    actualizar_motivo_traslado: MotivoTrasladoType = strawchemy.update_by_ids(MotivoTrasladoUpdateInput)
+    eliminar_motivos_traslado: list[MotivoTrasladoType] = strawchemy.delete(MotivoTrasladoFilter)
+
+    # Estados de traslado: catálogo de PRESENTACIÓN (workflow fijo). Solo se
+    # permite EDITAR color/etiqueta/orden; no crear/eliminar para no romper la
+    # máquina de estados.
+    actualizar_estado_traslado: EstadoTrasladoCatalogoType = strawchemy.update_by_ids(EstadoTrasladoCatalogoUpdateInput)
+
     # crear_miembro / actualizar_miembro → MembresiaResolverMutation (custom, incluye FK UUIDs)
     eliminar_contactos: list[ContactoType] = strawchemy.delete(ContactoFilter)
 

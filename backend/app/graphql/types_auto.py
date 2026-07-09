@@ -111,6 +111,7 @@ from ..modules.core.models import (
     EstadoRemesa,
     EstadoDonacion,
     EstadoNotificacion,
+    EstadoTrasladoCatalogo,
     HistorialEstado,
     Sesion,
     HistorialSeguridad,
@@ -144,6 +145,10 @@ class EstadoParticipanteType:
 
 @strawchemy.type(EstadoOrdenCobro, include="all", override=True)
 class EstadoOrdenCobroType:
+    pass
+
+@strawchemy.type(EstadoTrasladoCatalogo, include="all", override=True)
+class EstadoTrasladoCatalogoType:
     pass
 
 @strawchemy.type(EstadoRemesa, include="all", override=True)
@@ -456,7 +461,7 @@ class ReglaContableType:
 
 # === MIEMBROS ===
 from ..modules.membresia.models import (
-    TipoMiembro, Contacto, EstadoMiembro, MotivoBaja,
+    TipoMiembro, Contacto, EstadoMiembro, MotivoBaja, MotivoTraslado,
     NivelEstudios, NivelHabilidad,
     CategoriaHabilidad, Habilidad, MiembroHabilidad, FranjaDisponibilidad,
     HistorialAgrupacion, SolicitudTraslado,
@@ -473,6 +478,10 @@ class EstadoMiembroType:
 
 @strawchemy.type(MotivoBaja, include="all", override=True)
 class MotivoBajaType:
+    pass
+
+@strawchemy.type(MotivoTraslado, include="all", override=True)
+class MotivoTrasladoType:
     pass
 
 @strawchemy.type(JuntaDirectiva, include="all", override=True)

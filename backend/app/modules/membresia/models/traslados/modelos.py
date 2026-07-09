@@ -42,7 +42,12 @@ class SolicitudTraslado(BaseModel):
         Uuid, ForeignKey('unidades_organizativas.id'), nullable=False
     )
 
-    motivo: Mapped[str] = mapped_column(Text, nullable=False)
+    # Motivo del catálogo (motivos_traslado) + detalle libre opcional. `motivo`
+    # (texto) se conserva como detalle/observación; el catálogo es la clasificación.
+    motivo_traslado_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('motivos_traslado.id'), nullable=True, index=True
+    )
+    motivo: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     estado: Mapped[str] = mapped_column(String(30), default=EstadoTraslado.PENDIENTE, nullable=False, index=True)
     fecha_solicitud: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
     fecha_efectiva_deseada: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
@@ -74,6 +79,7 @@ class SolicitudTraslado(BaseModel):
 
     # Relaciones
     miembro = relationship('Contacto', lazy='selectin')
+    motivo_traslado = relationship('MotivoTraslado', lazy='selectin')
 
     def __repr__(self) -> str:
         return f"<SolicitudTraslado(miembro={self.miembro_id}, estado='{self.estado}')>"

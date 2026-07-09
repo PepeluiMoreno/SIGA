@@ -129,6 +129,19 @@ class EstadoDonacion(EstadoBase):
     # ANULADA: Donación anulada
 
 
+class EstadoTrasladoCatalogo(EstadoBase):
+    """Estados (catálogo con color) de las solicitudes de traslado de socios.
+
+    Es un catálogo de PRESENTACIÓN: la máquina de estados sigue usando el `codigo`
+    como clave estable; aquí se editan la etiqueta (`nombre`), el `color` y el orden.
+    Códigos: PENDIENTE, APROBADO_ORIGEN, APROBADO_DESTINO, APROBADO, EJECUTADO,
+    RECHAZADO_ORIGEN, RECHAZADO_DESTINO, CANCELADO.
+    """
+    __tablename__ = 'estados_traslado'
+
+    codigo: Mapped[str] = mapped_column(String(30), nullable=False, unique=True, index=True)
+
+
 class EstadoNotificacion(EstadoBase):
     """Estados para notificaciones."""
     __tablename__ = 'estados_notificacion'

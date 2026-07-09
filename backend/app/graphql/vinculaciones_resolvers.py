@@ -625,12 +625,14 @@ class VinculacionesMutation:
     @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_SOLICITAR")])
     async def solicitar_traslado(
         self, info: strawberry.Info, miembro_id: uuid.UUID,
-        agrupacion_destino_id: uuid.UUID, motivo: str,
+        agrupacion_destino_id: uuid.UUID, motivo_traslado_id: uuid.UUID,
+        detalle: Optional[str] = None,
         fecha_efectiva_deseada: Optional[date] = None,
     ) -> SolicitudTrasladoType:
         """Crea una solicitud de traslado (estado PENDIENTE). El origen se toma de
-        la agrupación actual del contacto. Requiere doble aprobación (origen y
-        destino) antes de poder ejecutarse."""
+        la agrupación actual del contacto. `motivo_traslado_id` es del catálogo
+        `motivos_traslado`; `detalle` es texto libre opcional. Requiere doble
+        aprobación (origen y destino) antes de poder ejecutarse."""
         session = info.context.session
         contacto = await session.get(Contacto, miembro_id)
         if contacto is None:
@@ -655,7 +657,8 @@ class VinculacionesMutation:
             miembro_id=miembro_id,
             agrupacion_origen_id=contacto.agrupacion_id,
             agrupacion_destino_id=agrupacion_destino_id,
-            motivo=motivo,
+            motivo_traslado_id=motivo_traslado_id,
+            motivo=(detalle or "").strip() or None,
             estado=EstadoTraslado.PENDIENTE,
             fecha_efectiva_deseada=fecha_efectiva_deseada,
         )

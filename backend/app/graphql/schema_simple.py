@@ -132,6 +132,8 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
     tiposMiembro: list[TipoMiembroType] = campo(filter_input=TipoMiembroFilter)
     estadosMiembro: list[EstadoMiembroType] = campo(filter_input=EstadoMiembroFilter)
     motivosBaja: list[MotivoBajaType] = campo(filter_input=MotivoBajaFilter)
+    motivosTraslado: list[MotivoTrasladoType] = campo(filter_input=MotivoTrasladoFilter)
+    estadosTraslado: list[EstadoTrasladoCatalogoType] = campo(filter_input=EstadoTrasladoCatalogoFilter)
     contactos: list[ContactoType] = campo(filter_input=ContactoFilter)
 
     # === JUNTA DIRECTIVA ===

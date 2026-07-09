@@ -17,6 +17,7 @@ from .estados import (
     EstadoReunion,
     EstadoActa,
     EstadoEjecucionAcuerdo,
+    EstadoTrasladoCatalogo,
     HistorialEstado,
 )
 __all__ = [
@@ -40,5 +41,6 @@ __all__ = [
     'EstadoReunion',
     'EstadoActa',
     'EstadoEjecucionAcuerdo',
+    'EstadoTrasladoCatalogo',
     'HistorialEstado',
 ]
