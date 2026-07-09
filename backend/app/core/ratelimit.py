@@ -49,3 +49,7 @@ class RateLimiter:
 # Por IP: 10 envíos / 10 min. Por email: 5 / hora (evita machacar a una persona).
 limiter_firmas_ip = RateLimiter(max_eventos=10, ventana_seg=600)
 limiter_firmas_email = RateLimiter(max_eventos=5, ventana_seg=3600)
+
+# Límites para la auto-alta pública de socios (misma política que firmas).
+limiter_socios_ip = RateLimiter(max_eventos=10, ventana_seg=600)
+limiter_socios_email = RateLimiter(max_eventos=5, ventana_seg=3600)

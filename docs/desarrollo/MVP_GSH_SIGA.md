@@ -1,0 +1,82 @@
+# MVP SIGA — Análisis GSH ↔ SIGA y plan de cierre de huecos
+
+> Comparativa funcional entre **GSH** (app PHP de Gestión de Socios de Europa Laica,
+> seudo-MVC por roles) y **SIGA** (FastAPI + Strawberry GraphQL, modelo CRM
+> Party-Role). Objetivo: cerrar los huecos que impiden que SIGA sustituya a GSH.
+
+## Arquitecturas
+
+- **GSH**: agrupa por rol (`cPresidente`, `cCoordinador`, `cTesorero`, `controladorSocios`,
+  `cAdmin`). Tablas planas `MIEMBRO`/`SOCIO`/`CUOTAANIOSOCIO`. Tesorería, remesas,
+  donaciones y PayPal cuelgan de "socios".
+- **SIGA**: por módulos (`membresia`, `economico`, `comunicacion`, `acceso`,
+  `organizaciones`). Modelo `Contacto` → `Vinculacion` tipada → satélites
+  `Socio`/`Voluntario`. La lógica vive en resolvers GraphQL (el service de membresía
+  estaba vacío).
+
+## Resumen del contraste
+
+- **Membresía**: GSH tiene piezas que a SIGA le faltan (auto-alta pública, estadísticas,
+  cambio simpatizante→socio…). SIGA tiene un CRM más rico (habilidades, voluntariado,
+  RGPD, traslados modelados).
+- **Económico**: **SIGA va muy por delante** (SEPA pain.008/pain.002/camt.054,
+  conciliación Norma 43, contabilidad PCESFL, cuentas anuales, Modelo 182, presupuestos,
+  justificantes de gasto, reducciones de cuota). Aquí los "huecos" son sobre todo
+  **piezas no cableadas y agujeros de seguridad dentro de SIGA**, no funciones que GSH
+  tenga y SIGA no.
+
+## Buckets del MVP (alcance confirmado: los 4)
+
+### Bucket A — Alta y cobro del socio
+1. **Auto-alta pública** del socio (web + API) + **confirmación doble opt-in**.
+   Hoy SIGA no crea `SOCIO_ASPIRANTE`; el flujo estaba hecho solo por el lado de
+   aprobar/rechazar.
+2. **Pago de cuota online por el socio** (PayPal/transferencia). SIGA tiene
+   `paypal_service` pero sin endpoint público "pagar mi recibo".
+3. **Estadísticas de altas/bajas** (agrupación/provincia/CCAA).
+4. **Cambio simpatizante → socio**.
+5. **Validación de IBAN (mod-97)** — ausente en toda SIGA.
+
+### Bucket B — Cablear piezas medio hechas (membresía)
+- **Traslados** (`SolicitudTraslado`): máquina de estados y RBAC modelados, **sin
+  resolvers**. `HistorialAgrupacion` no se rellena solo.
+- Mutations dedicadas **suspender / baja / reactivar** (transacciones declaradas sin resolver).
+
+### Bucket C — Cerrar RBAC económico (bloqueante de producción)
+- Mutations sin `permission_classes`: `registrar_pago_cuota_manual`,
+  `importar_fallidos_banco`, `marcar_recibo_fallido`, `registrar_apunte_caja`,
+  `anular_apunte_caja`, `confirmar/anular_asiento_contable`, etc.
+- `ECO_*_LISTAR` declarados pero no aplicados (listados por strawchemy sin control).
+
+### Bucket D — Reporting + limpieza
+- Estadísticas altas/bajas; avisos de próximo cobro / cuota no cobrada.
+- Limpieza legacy: `MiembroSegmentacion`/`EstadoMiembro` sobre la tabla huérfana
+  `miembros`; `models/contabilidad.py` duplica el paquete `contabilidad/`;
+  `services/membresia_service.py` vacío.
+
+### Fuera del MVP
+Cuaderno 19/CSB (GSH lo tiene desactivado), OCR de justificantes, dashboard financiero
+agregado, reversión contable de devoluciones PayPal, pain.001 de transferencias,
+reclamaciones de impago (4 modelos muertos; GSH tampoco lo tiene).
+
+---
+
+## Progreso de implementación
+
+### Bucket A — en curso
+- ✅ **Validación IBAN mod-97** (`app/core/documento.py`: `validar_iban`, `normalizar_iban`).
+- ✅ **Auto-alta pública de socio con doble opt-in**:
+  - `app/modules/membresia/services/solicitud_socio_publica_service.py` — crea
+    `Contacto` + `Vinculacion(SOCIO_ASPIRANTE, estado="pendiente_verificacion")` +
+    satélite `Socio` (conserva IBAN/forma de pago) y envía email con token JWT.
+    Al confirmar, la vinculación pasa a `"activa"` y entra en la bandeja
+    `solicitudes_socio_pendientes` (que ya existía) para aprobación de secretaría.
+  - `app/api/publico/socios.py` — `POST /api/publico/socios`, `GET …/verificar`,
+    `GET …/config`. Captcha + honeypot + rate-limit, calcado de `firmas.py`.
+  - `aprobar_solicitud_socio` ajustado para conservar el satélite del aspirante y
+    fijar `numero_socio`/`estado_socio` al aprobar.
+  - Router montado en `main.py`; limiters en `app/core/ratelimit.py`.
+- ⏳ Pendiente en A: pago de cuota online por el socio; estadísticas altas/bajas;
+  cambio simpatizante→socio.
+
+### Buckets B, C, D — pendientes

@@ -770,7 +770,14 @@ class MembresiaResolverMutation:
             select(Socio).where(Socio.vinculacion_id == vinc.id)
         )).scalar_one_or_none()
         if existe_socio is None:
-            session.add(Socio(vinculacion_id=vinc.id, numero_socio=numero_socio))
+            session.add(Socio(vinculacion_id=vinc.id, numero_socio=numero_socio,
+                              estado_socio="activo"))
+        else:
+            # Aspirante llegado por auto-alta pública: ya trae satélite con sus
+            # datos económicos (IBAN/forma de pago). Se conserva y se activa.
+            if numero_socio:
+                existe_socio.numero_socio = numero_socio
+            existe_socio.estado_socio = "activo"
         await session.commit()
         return await _fetch_miembro(session, contacto_id)
 
