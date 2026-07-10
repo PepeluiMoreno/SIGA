@@ -201,6 +201,18 @@ body { font-family: var(--font-main); color: var(--t-text-main); }
   }
 
   :where(textarea) { min-height: 5rem; resize: vertical; }
+
+  /* ───────────────────────────────────────────────────────────────────────
+     SUELO DE FORMULARIO — todo <form> lleva un fondo tenue tematizado para que
+     los campos de edición (blancos) resalten sobre él. Nivel base global:
+     cualquier utility de Tailwind en un form concreto lo sobreescribe.
+     ─────────────────────────────────────────────────────────────────────── */
+  form {
+    background-color: var(--t-form-bg, var(--t-50, #f5f3ff));
+    border: 1px solid var(--t-form-border, var(--t-200, #e2e8f0));
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
