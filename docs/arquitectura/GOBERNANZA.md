@@ -82,8 +82,13 @@ historial de la persona los emite como **eventos discretos** derivados de esas f
 
 **El territorio vive en el mandato, no en el cargo ni en el rol.**
 
-- `Cargo` es genérico («Presidencia», no «Presidencia de Madrid»).
-- `Mandato.agrupacion_id` lo instancia en un territorio.
+- `Cargo` es genérico («Presidencia», no «Presidencia de Madrid»). **No cuelga de
+  ningún órgano ni unidad en el catálogo**: es una plantilla reutilizable (así ya
+  es hoy en `acceso/models/cargo.py`).
+- **El MANDATO es quien lo instancia**: lo ata a una unidad (`agrupacion_id`) y,
+  opcionalmente, a un órgano concreto. La *composición del órgano* (§4) es solo una
+  plantilla que declara «qué cargos forman este órgano», no una atadura rígida del
+  cargo. Un mismo cargo (Coordinación) puede ejercerse en una unidad sin órgano.
 - Los `UsuarioRol` derivados heredan ese `agrupacion_id` = «restringe al subárbol».
 
 Una persona ejerce **cargos distintos en territorios distintos** = varios mandatos:
@@ -102,6 +107,25 @@ use `cargo_id` (hoy usa `rol_id`) y que se lea `CargoRol` para derivar los roles
 nombrar.
 
 ## 4. El órgano como agente de los flujos
+
+> **Requisito de dominio (DECIDIDO).** No hay una lista fija de cargos ni de
+> órganos que sembrar desde los estatutos. **Todo es configurable desde el módulo
+> de Configuración**: el usuario define y edita los tipos de órgano, su
+> **composición** (qué cargos lo forman) y su **jerarquía/orden protocolario**,
+> además del catálogo de cargos y sus `CargoRol`. El seed es solo una semilla por
+> defecto, editable, no la fuente de verdad. → La **UI de configuración de órganos
+> y cargos** es una pieza de primer nivel de esta implementación, no un accesorio.
+
+**Dos tipos de composición de órgano (DECIDIDO):**
+
+- **Por cargos** (Junta Directiva, comisiones): su membresía son los cargos que lo
+  forman, con orden protocolario. Tiene `CargoRol`. La «aprobación del órgano» es
+  el acto de sus cargos.
+- **Por pleno** (Asamblea General): órgano de **composición abierta**; su membresía
+  **no son cargos sino el pleno de socios con derecho a voto**. NO tiene `CargoRol`.
+  Como agente de flujos, «aprobación de la asamblea» = acuerdo del pleno (quórum +
+  votación), conectado con `Reunion`/`Acta`. El `TipoOrgano` debe marcar esta
+  distinción (p. ej. `composicion: CARGOS | PLENO`).
 
 Un órgano no solo tiene cargos: **decide**.
 
@@ -136,18 +160,37 @@ visible**.
 
 **`ambito` → no lo lee el motor.** `can()` es rol→transacción, sin territorio.
 **Agujero**: si Ana es presidenta local, `can()` le concede `MEMBRESIA_MIEMBRO_EDITAR`
-sin mirar sobre qué miembro. → Implementar en el motor: `can()` responde «¿puede *sobre
-esto*?». `TERRITORIAL` comprueba `agrupacion_id` contra el subárbol; `PROPIO`, el vínculo
-directo. Los 30 `assert_*` sueltos desaparecen.
+sin mirar sobre qué miembro.
 
-## 6. CONFIGURADOR
+**Principio fijado (DECIDIDO):** el ámbito **debe** entrar en la decisión de
+autorización. `TERRITORIAL` = solo sobre entidades del subárbol del `agrupacion_id`
+del `UsuarioRol` que concede el permiso; `PROPIO` = solo sobre la propia persona;
+`GLOBAL` = sin restricción territorial. Los ~30 `assert_*` manuales deben
+desaparecer, sustituidos por un mecanismo sistémico.
 
+**El CÓMO se diseña aparte → `MOTOR_TERRITORIAL.md`** (pendiente). Es la decisión
+de arquitectura más pesada del módulo (afecta a firma de `can()`, a todos los
+puntos de control y quizá a cómo se construyen las queries); no se cierra en este
+documento. Opciones a evaluar allí: (a) `can(roles, tx, objetivo)` centralizado;
+(b) guard/decorator por resolver; (c) filtrado row-level en las queries.
+
+## 6. CONFIGURADOR y break-glass
+
+**CONFIGURADOR:**
 - Rol de **sistema** (`sistema=true`), no eliminable (ni lógica ni físicamente), desde
   el seed. La protección `sistema` actúa **antes** de bifurcar soft/hard (verificado).
 - Accede a control de acceso + configuración.
 - Puede crear roles **por debajo** de los de sistema (regla de nivel).
 - Nota: se creó a mano con `nivel=0` (el formulario exige `nivel` como `Int!` y no lo
   explica → el seed debe fijarlo en 90).
+
+**Break-glass `superadmin` (DECIDIDO):** es la **única excepción** a «todo rol se
+otorga vía mandato». Recibe su rol global (`UsuarioRol` con `agrupacion_id = NULL`)
+**directamente en el bootstrap, sin mandato**, como acceso de arranque/emergencia.
+Justificado porque existe antes de que haya socios ni cargos, y es una cuenta
+técnica (no necesariamente un contacto/socio, y los mandatos apuntan a
+`contactos.id`). Todo lo demás —incluidos los roles de sistema otorgados a
+personas reales— va por mandato. La excepción se documenta y no se generaliza.
 
 ## 7. Estado real del código (punto de partida)
 
@@ -193,26 +236,30 @@ Cada paso verificable:
    (Fase de menos riesgo.)
 3. **`Rol.nivel` = autoridad**: migrar la escala; mover orden protocolario a la
    composición del órgano.
-4. **Órgano parametrizable**: `TipoOrgano` + `Organo` + composición; generalizar
-   `JuntaDirectiva`; jubilar `org.denominacion_organo_gobierno`.
-5. **Motor territorial**: diseño aparte (§5) — que `can()` lea el ámbito.
-6. **Seed unificado** `seed_gobernanza.py`.
+4. **Órgano parametrizable**: `TipoOrgano` (con `composicion: CARGOS | PLENO`) +
+   `Organo` + composición configurable; generalizar `JuntaDirectiva`; jubilar
+   `org.denominacion_organo_gobierno`. Incluye la **UI de configuración** de órganos
+   y cargos (pieza de primer nivel, §4).
+5. **Motor territorial**: diseño aparte → `MOTOR_TERRITORIAL.md` (§5) — que la
+   decisión de autorización lea el ámbito.
+6. **Seed unificado** `seed_gobernanza.py` (semilla por defecto, editable).
 7. **UI**: ficha de usuario muestra (solo lectura) cargos y roles derivados; el alta se
    hace nombrando para un cargo.
 
 ---
 
-## [PENDIENTE] — preguntas abiertas para el usuario
+## Decisiones cerradas y trabajo diferido
 
-1. **Lista de cargos de Europa Laica** (según estatutos): presidencia, vicepresidencia,
-   secretaría, tesorería, vocalía(s), coordinación territorial, ¿interventoría? ¿vocalías
-   temáticas? — bloquea el seed.
-2. ¿`Cargo` cuelga del **tipo de órgano** o de la **unidad**? (la coordinación territorial
-   parece cargo de unidad, sin órgano).
-3. ¿La **Asamblea General** se modela con composición de cargos o es el pleno de socios?
-4. **Break-glass `superadmin`**: ¿excepción técnica (rol global sin mandato) o mandato de
-   sistema?
-5. Estrategia de cableado del territorio en el motor (§5) — requiere su propio diseño.
+**Dominio — todo cerrado con el usuario:**
+- Nomenclatura: «Responsabilidad» en UI, `Cargo`/`CargoRol` en modelo/BD (sin migración ahora).
+- Cargos, composición y jerarquía de órganos → **100% configurables** desde el módulo de
+  Configuración. El seed es semilla editable, no fuente de verdad.
+- El cargo es **genérico**; el **mandato** lo instancia en unidad (`agrupacion_id`) y,
+  opcionalmente, en un órgano.
+- **Asamblea General** = órgano de composición **por PLENO** (socios con voto), sin `CargoRol`;
+  «Junta/comisión» = composición **por CARGOS**.
+- **Break-glass `superadmin`** = única excepción al «todo por mandato»: rol global directo en
+  el bootstrap, sin mandato.
 
-_(Resueltas: nomenclatura Responsabilidad→UI / Cargo interno; reconciliación de los
-dos borradores en este documento.)_
+**Diferido (no bloquea, pero requiere diseño propio antes de implementar):**
+- `MOTOR_TERRITORIAL.md` — cómo `can()`/el sistema aplica el ámbito TERRITORIAL (§5).
