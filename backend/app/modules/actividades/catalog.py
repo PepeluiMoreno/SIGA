@@ -61,10 +61,11 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
         FuncionalidadTransaccionDef("CAMPANA_ELIMINAR", AmbitoTransaccion.PROPIO),
         FuncionalidadTransaccionDef("CAMPANA_PUBLICAR", AmbitoTransaccion.PROPIO),
         FuncionalidadTransaccionDef("CAMPANA_PROPONER_PRESUPUESTO", AmbitoTransaccion.PROPIO),
-        FuncionalidadTransaccionDef("CAMPANA_LISTAR",   AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("GRUPO_LISTAR",             AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("GRUPO_CREAR",              AmbitoTransaccion.PROPIO),
+        FuncionalidadTransaccionDef("GRUPO_EDITAR",             AmbitoTransaccion.PROPIO),
         FuncionalidadTransaccionDef("GRUPO_ASIGNAR_MIEMBRO",    AmbitoTransaccion.PROPIO),
+        FuncionalidadTransaccionDef("GRUPO_CONVOCAR_REUNION",   AmbitoTransaccion.PROPIO),
     ],
 ))
 
@@ -89,6 +90,7 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
     modulo=MODULO,
     descripcion="Aprobación de propuestas y presupuestos de campaña por la junta",
     transacciones=[
+        FuncionalidadTransaccionDef("CAMPANA_APROBAR",              AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("CAMPANA_APROBAR_PRESUPUESTO",  AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("CAMPANA_RECHAZAR_PRESUPUESTO", AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("CAMPANA_CERRAR",               AmbitoTransaccion.TERRITORIAL),

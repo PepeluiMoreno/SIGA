@@ -257,16 +257,43 @@ class AccesoMutation:
         self,
         info: strawberry.Info,
         id: uuid.UUID,
+        hard: bool = False,
     ) -> bool:
-        """Elimina un rol, rechazando roles de sistema."""
+        """Elimina un rol, rechazando roles de sistema.
+
+        - `hard=False` (por defecto): **soft-delete** (a la papelera): marca
+          `eliminado` y desactiva; recuperable.
+        - `hard=True`: **borrado definitivo**. Solo se permite sobre un rol que
+          ya está en la papelera: el borrado lógico precede siempre al físico.
+          Limpia las asignaciones propias (usuarios, funcionalidades,
+          transacciones) y borra la fila.
+        """
         session = info.context.session
-        res = await session.execute(select(Rol).where(Rol.id == id, Rol.eliminado == False))
+        res = await session.execute(select(Rol).where(Rol.id == id))
         rol = res.scalar_one_or_none()
         if rol is None:
             raise ValueError("Rol no encontrado")
         if rol.sistema:
             raise ValueError(f"El rol «{rol.nombre}» es de sistema y no se puede eliminar")
 
+        if not hard:
+            if rol.eliminado:
+                raise ValueError(f"El rol «{rol.nombre}» ya está en la papelera")
+            rol.soft_delete(getattr(info.context.user, "id", None))
+            rol.activo = False
+            await session.commit()
+            return True
+
+        # Hard-delete: exige que el rol ya esté en la papelera.
+        if not rol.eliminado:
+            raise ValueError(
+                f"El rol «{rol.nombre}» debe enviarse a la papelera antes de "
+                "borrarlo definitivamente"
+            )
+
+        await session.execute(sa_delete(UsuarioRol).where(UsuarioRol.rol_id == id))
+        await session.execute(sa_delete(RolFuncionalidad).where(RolFuncionalidad.rol_id == id))
+        await session.execute(sa_delete(RolTransaccion).where(RolTransaccion.rol_id == id))
         await session.execute(sa_delete(Rol).where(Rol.id == id))
         await session.commit()
         return True

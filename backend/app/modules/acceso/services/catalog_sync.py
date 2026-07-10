@@ -28,11 +28,46 @@ class CatalogSyncService:
         self.session = session
 
     async def sync(self) -> None:
+        self._validar_sin_huerfanas()
         await self._sync_transacciones()
         await self._sync_funcionalidades()
         await self._sync_flujos()
         await self.session.commit()
         logger.info("Catálogo sincronizado correctamente")
+
+    # ------------------------------------------------------------------
+    # Validación del catálogo declarado
+    # ------------------------------------------------------------------
+
+    def _validar_sin_huerfanas(self) -> None:
+        """Toda transacción debe pertenecer al menos a una funcionalidad.
+
+        Los roles se componen agrupando funcionalidades, así que una transacción
+        huérfana es inasignable: ningún rol podría concederla salvo por permiso
+        directo. Es un error de catálogo, no de datos.
+
+        En desarrollo aborta el arranque para que se corrija de inmediato; en
+        producción se registra como error, porque tumbar el servicio por un fallo
+        de catálogo sería peor que arrancar con la transacción inaccesible.
+        """
+        from app.core.config import get_settings
+
+        huerfanas = sorted(
+            defn.codigo
+            for defn in ModuleCatalog.get_transacciones()
+            if not ModuleCatalog.get_funcionalidades_de_transaccion(defn.codigo)
+        )
+        if not huerfanas:
+            return
+
+        mensaje = (
+            f"{len(huerfanas)} transacciones no pertenecen a ninguna funcionalidad "
+            f"y son inasignables: {', '.join(huerfanas)}. "
+            "Añádelas a una FuncionalidadDef en el catalog.py de su módulo."
+        )
+        if get_settings().siga_env == "dev":
+            raise RuntimeError(mensaje)
+        logger.error(mensaje)
 
     # ------------------------------------------------------------------
     # Transacciones
