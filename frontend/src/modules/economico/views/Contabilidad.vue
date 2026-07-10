@@ -270,36 +270,39 @@
         <button @click="abrirNuevoAsiento" class="btn-primary">+ Nuevo asiento</button>
       </div>
 
-      <div v-if="asientosContables.length" class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Nº</th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Fecha</th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Glosa</th>
-              <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Tipo</th>
-              <th class="px-3 py-2 text-center text-xs font-medium text-gray-500">Estado</th>
-              <th class="px-3 py-2 text-center text-xs font-medium text-gray-500">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr v-for="a in asientosContables" :key="a.id" class="hover:bg-gray-50">
-              <td class="px-3 py-2 font-mono text-gray-500">{{ String(a.numeroAsiento).padStart(4, '0') }}</td>
-              <td class="px-3 py-2 text-gray-600 whitespace-nowrap">{{ fechaFmt(a.fecha) }}</td>
-              <td class="px-3 py-2 text-gray-900">{{ a.glosa }}</td>
-              <td class="px-3 py-2 text-xs text-gray-500">{{ tipoAsientoLabel(a.tipoAsiento) }}</td>
-              <td class="px-3 py-2 text-center">
-                <span class="text-xs rounded px-2 py-0.5" :class="badgeEstado(estadoLimpio(a.estado))">{{ estadoLabel(a.estado) }}</span>
-              </td>
-              <td class="px-3 py-2 text-center">
-                <button v-if="a.estado === 'BORRADOR'" @click="confirmarAsiento(a.id)"
-                  class="text-xs text-green-600 hover:underline mr-2">Confirmar</button>
-                <button v-if="a.estado !== 'ANULADO'" @click="anularAsiento(a.id)"
-                  class="text-xs text-red-500 hover:underline">Anular</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div v-if="asientosContables.length" class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <ResponsiveTable
+          :columnas="columnasAsientos"
+          :filas="asientosContables"
+          clave-fila="id"
+          :orden-inicial="{ key: 'numeroAsiento', dir: 'asc' }"
+          vacio-texto="No hay asientos">
+
+          <template #cell-numeroAsiento="{ fila: a }">
+            <span class="font-mono text-gray-500">{{ String(a.numeroAsiento).padStart(4, '0') }}</span>
+          </template>
+
+          <template #cell-fecha="{ fila: a }">
+            <span class="text-gray-600 whitespace-nowrap">{{ fechaFmt(a.fecha) }}</span>
+          </template>
+
+          <template #cell-tipoAsiento="{ fila: a }">
+            <span class="text-xs text-gray-500">{{ tipoAsientoLabel(a.tipoAsiento) }}</span>
+          </template>
+
+          <template #cell-estado="{ fila: a }">
+            <span class="text-xs rounded px-2 py-0.5" :class="badgeEstado(estadoLimpio(a.estado))">{{ estadoLabel(a.estado) }}</span>
+          </template>
+
+          <template #cell-acciones="{ fila: a }">
+            <div class="flex items-center justify-center gap-2">
+              <button v-if="a.estado === 'BORRADOR'" @click="confirmarAsiento(a.id)"
+                class="text-xs text-green-600 hover:underline">Confirmar</button>
+              <button v-if="a.estado !== 'ANULADO'" @click="anularAsiento(a.id)"
+                class="text-xs text-red-500 hover:underline">Anular</button>
+            </div>
+          </template>
+        </ResponsiveTable>
       </div>
       <p v-else class="text-center text-gray-400 py-8">No hay asientos para el ejercicio {{ filtroEjercicio }}.</p>
     </div>
@@ -580,10 +583,11 @@
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
-import { ref, reactive, computed, onMounted, provide, watch } from 'vue'
+import { ref, reactive, computed, onActivated, provide, watch } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import TabsNavigation from '@/components/common/TabsNavigation.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
+import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import ImputacionActividadPicker from '@/components/common/ImputacionActividadPicker.vue'
 import CuentaNode from './CuentaNode.vue'
@@ -604,6 +608,8 @@ import {
   ASIGNAR_CATEGORIA_MASIVA,
   CLASIFICAR_APUNTES_PENDIENTES,
 } from '@/graphql/queries/categorias_fiscales.js'
+
+defineOptions({ name: 'Contabilidad' })
 
 const toast = useToast()
 const confirmDialog = useConfirm()
@@ -626,8 +632,18 @@ const {
   anularAsientoContable,
 } = useContabilidad()
 
+// Columnas de la tabla de asientos contables (ResponsiveTable)
+const columnasAsientos = [
+  { key: 'numeroAsiento', label: 'Nº',     ordenable: true },
+  { key: 'fecha',         label: 'Fecha',  ordenable: true },
+  { key: 'glosa',         label: 'Glosa',  ordenable: true },
+  { key: 'tipoAsiento',   label: 'Tipo',   ordenable: true, valorOrden: a => tipoAsientoLabel(a.tipoAsiento) },
+  { key: 'estado',        label: 'Estado', align: 'center', ordenable: true },
+  { key: 'acciones',      align: 'center', esAcciones: true },
+]
+
 const activeTab = ref('plan')
-const contabilidadCompleja = ref(true)  // se carga en onMounted; true por defecto (no degrada la vista completa)
+const contabilidadCompleja = ref(true)  // se carga en onActivated; true por defecto (no degrada la vista completa)
 const subTabSimplificado = ref('categorias')  // categorias | reglas (solo modo simplificado)
 const filtroEjercicio = ref(new Date().getFullYear())
 const filtroEstado = ref('')
@@ -1320,7 +1336,10 @@ const totalHaberBalance = computed(() =>
 )
 const diferenciaBalance = computed(() => totalDebeBalance.value - totalHaberBalance.value)
 
-onMounted(async () => {
+// La vista está en <keep-alive>: no se desmonta al navegar, así que `onMounted`
+// solo correría una vez. `onActivated` cubre el primer montaje y cada regreso,
+// evitando mostrar datos obsoletos.
+onActivated(async () => {
   // Leer el modo de contabilidad para decidir qué estructura mostrar
   try {
     const cfg = await gqlQuery(`query { parametrosOrganizacion { contabilidadCompleja } }`)

@@ -362,7 +362,7 @@
 
 <script setup>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import { ref, computed, onMounted, h } from 'vue'
+import { ref, computed, onActivated, h } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
@@ -376,6 +376,8 @@ import { useGraphQL } from '@/composables/useGraphQL'
 import { usePermisos } from '@/composables/usePermisos'
 import { GET_ACTIVIDADES_PARA_GASTO } from '@/graphql/queries/economico'
 import { GET_CAMPANIAS } from '@/graphql/queries/campanias'
+
+defineOptions({ name: 'Tesoreria' })
 
 // ── Sub-componente Bloque (card con acción) ────────────────────────────────
 const Bloque = {
@@ -662,7 +664,10 @@ const abrirReglasContables = () => router.push('/economico/reglas-contables')
 const abrirCierre = () => router.push('/economico/cierre-ejercicio')
 
 // ── Lifecycle ───────────────────────────────────────────────────────────────
-onMounted(async () => {
+// La vista está en <keep-alive>: no se desmonta al navegar, así que `onMounted`
+// solo correría una vez. `onActivated` cubre el primer montaje y cada regreso,
+// evitando mostrar datos obsoletos.
+onActivated(async () => {
   await obtenerCuentasBancarias()
   if (cuentasBancarias.value.length) {
     cuentaActivaId.value = cuentasBancarias.value[0].id

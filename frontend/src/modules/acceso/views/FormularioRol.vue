@@ -266,6 +266,7 @@ import { GET_ROLES, CREAR_ROL, ACTUALIZAR_ROL, GET_FUNCIONALIDADES_TODAS } from 
 // GET_AGRUPACIONES_TERRITORIALES ya no se usa para niveles — los derivamos del config org
 import { MagnifyingGlassIcon, ChevronDownIcon, ChevronRightIcon, InformationCircleIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 import FormActions from '@/components/common/FormActions.vue'
+import { useCambiosSinGuardar } from '@/composables/useCambiosSinGuardar'
 const toast = useToast()
 
 const route  = useRoute()
@@ -347,6 +348,21 @@ const form = reactive({
   tipo: 'PERSONALIZADO', nivel: 0, activo: true,
   nivelTerritorial: '',
 })
+
+// ── Aviso de cambios sin guardar ────────────────────────────────────────────
+// Snapshot que abarca los atributos y las selecciones de funcionalidades/
+// transacciones. `marcarLimpio()` fija el punto de referencia tras cargar y tras
+// guardar; entre medias, cualquier divergencia dispara el aviso al salir.
+function instantanea() {
+  return JSON.stringify({
+    ...form,
+    funcs: [...selectedFuncIds.value].sort(),
+    txs: [...selectedTxIds.value].sort(),
+  })
+}
+let referenciaLimpia = instantanea()
+const marcarLimpio = () => { referenciaLimpia = instantanea() }
+useCambiosSinGuardar(() => instantanea() !== referenciaLimpia)
 
 // ── Árbol computado ───────────────────────────────────────────────────────────
 const funcsPorModulo = computed(() => {
@@ -519,6 +535,7 @@ async function guardar() {
         },
       })
       toast.success('Cambios guardados correctamente')
+      marcarLimpio()   // ya está persistido: no avisar al salir
       if (window.history.state?.back) router.back()
       else router.push('/roles')
     } else {
@@ -536,6 +553,7 @@ async function guardar() {
           transaccionIds:   selectedTxIds.value,
         },
       })
+      marcarLimpio()   // ya está persistido: no avisar al salir
       if (window.history.state?.back) router.back()
       else router.push('/roles')
     }
@@ -553,6 +571,8 @@ onMounted(async () => {
     cargarImplantacionOrg(),
     esEdicion.value ? cargarRol(route.params.id) : Promise.resolve(),
   ])
+  // El formulario ya refleja el estado persistido: fija aquí el punto «limpio».
+  marcarLimpio()
 })
 </script>
 

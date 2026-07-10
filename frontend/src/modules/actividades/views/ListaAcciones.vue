@@ -1,113 +1,145 @@
 <template>
-  <AppLayout title="Actividades" subtitle="Reuniones, asambleas, talleres y demás actividades de la organización">
+  <AppLayout title="Actividades" subtitle="Reuniones, asambleas, talleres y demás actividades de la organización" fluid>
 
-    <FilterBar
-      v-model="filtros"
-      v-model:search="filtroNombre"
-      search-placeholder="Buscar por nombre…"
-      :create-label="tienePermiso('ACTIVIDAD_CREAR') ? 'Nueva actividad' : ''"
-      create-route="/actividades/nueva"
-      :fields="camposFiltro"
-      :count-text="`${actividadesFiltradas.length} de ${actividades.length}`"
-    />
+    <!-- Acción principal en el topbar (estándar global) -->
+    <template v-if="tienePermiso('ACTIVIDAD_CREAR')" #actions>
+      <router-link to="/actividades/nueva"
+        class="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+        <span class="text-base leading-none">+</span>
+        Nueva actividad
+      </router-link>
+    </template>
 
-    <div v-if="loading" class="py-12 text-center text-sm text-slate-400">Cargando…</div>
+    <!-- Layout: filtro lateral colapsable (FilterRail) + resultados -->
+    <div class="flex flex-col lg:flex-row gap-4 items-start">
 
-    <div v-else-if="!actividadesFiltradas.length" class="py-12 text-center text-sm text-slate-400">
-      No hay actividades que mostrar.
-    </div>
+      <FilterRail storage-key="acciones">
+        <FilterBar
+          vertical
+          v-model="filtros"
+          v-model:search="filtroNombre"
+          search-placeholder="Buscar por nombre…"
+          :fields="camposFiltro"
+          @clear="limpiarFiltros"
+        />
+      </FilterRail>
 
-    <div v-else class="space-y-3 mt-3">
+      <!-- Columna de resultados -->
+      <div class="flex-1 min-w-0 w-full">
 
-      <!-- ── Acordeón 1: Actividades fuera de campaña (lista plana) ── -->
-      <AccordionPanel title="Fuera de campaña" :count="actividadesSinCampania.length" :default-open="true">
-        <div v-if="!actividadesSinCampania.length" class="px-5 py-8 text-center text-sm text-slate-400">
-          Ninguna actividad fuera de campaña con estos filtros.
+        <div v-if="loading" class="py-12 text-center text-sm text-slate-400">Cargando…</div>
+
+        <div v-else-if="!actividadesFiltradas.length" class="py-12 text-center text-sm text-slate-400">
+          No hay actividades que mostrar.
         </div>
-        <div v-else class="overflow-x-auto -mx-1"><table class="w-full text-sm">
-          <thead class="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th class="px-4 py-3 text-left font-medium text-slate-600">Nombre</th>
-              <th class="px-4 py-3 text-left font-medium text-slate-600">Tipo</th>
-              <th class="px-4 py-3 text-left font-medium text-slate-600">Carácter</th>
-              <th class="px-4 py-3 text-left font-medium text-slate-600">Estado</th>
-              <th class="px-4 py-3 text-left font-medium text-slate-600">Fecha</th>
-              <th class="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <FilaActividad
-              v-for="a in actividadesSinCampania"
-              :key="a.id"
-              :actividad="a"
-              @delete="(opts) => eliminarActividad(a, opts)"
-            />
-          </tbody>
-        </table></div>
-      </AccordionPanel>
 
-      <!-- ── Acordeón 2: Actividades de campaña (árbol campaña → actividad) ── -->
-      <AccordionPanel title="De campaña" :count="gruposCampania.length" :default-open="true">
-        <div v-if="!gruposCampania.length" class="px-5 py-8 text-center text-sm text-slate-400">
-          Ninguna actividad de campaña con estos filtros.
-        </div>
-        <div v-else class="overflow-x-auto -mx-1"><table class="w-full text-sm">
-          <tbody v-for="grupo in gruposCampania" :key="grupo.campania.id" class="divide-y divide-slate-100">
-            <!-- Cabecera de campaña (nivel 1 del árbol) — plegable -->
-            <tr class="bg-indigo-50/60 border-y border-indigo-100 cursor-pointer hover:bg-indigo-100/60"
-              @click="toggleCampania(grupo.campania.id)">
-              <td colspan="6" class="px-4 py-2">
-                <div class="flex items-center gap-2">
-                  <ChevronDownIcon class="w-4 h-4 text-indigo-400 shrink-0 transition-transform"
-                    :class="{ '-rotate-90': estaColapsada(grupo.campania.id) }" />
-                  <FolderIcon class="w-4 h-4 text-indigo-500 shrink-0" />
-                  <span class="font-semibold text-indigo-800">{{ grupo.campania.nombre }}</span>
-                  <span v-if="grupo.campania.estado"
-                    class="text-xs px-2 py-0.5 rounded-full bg-white border border-indigo-200 text-indigo-600">
-                    {{ grupo.campania.estado.nombre }}
-                  </span>
-                  <span class="text-xs text-slate-400">· {{ grupo.actividades.length }} actividad(es)</span>
+        <div v-else class="space-y-3">
+
+          <!-- ── Acordeón 1: Actividades fuera de campaña (lista plana) ── -->
+          <AccordionPanel title="Fuera de campaña" :count="actividadesSinCampania.length" :default-open="true">
+            <div v-if="!actividadesSinCampania.length" class="px-5 py-8 text-center text-sm text-slate-400">
+              Ninguna actividad fuera de campaña con estos filtros.
+            </div>
+            <ResponsiveTable
+              v-else
+              :columnas="columnas"
+              :filas="actividadesSinCampania"
+              :por-pagina="0"
+              vacio-texto="Ninguna actividad fuera de campaña con estos filtros">
+              <template #cell-nombre="{ fila: a }"><CeldaNombre :actividad="a" /></template>
+              <template #cell-tipo="{ fila: a }">{{ a.tipoActividad?.nombre || '—' }}</template>
+              <template #cell-caracter="{ fila: a }">{{ caracterLabel(a) }}</template>
+              <template #cell-estado="{ fila: a }"><CeldaEstado :actividad="a" /></template>
+              <template #cell-fecha="{ fila: a }">{{ a.fechaInicio || '—' }}</template>
+              <template #cell-acciones="{ fila: a }">
+                <RowActions
+                  :show-view="true"
+                  :show-edit="true"
+                  confirm-title="¿Eliminar esta actividad?"
+                  :confirm-text="`«${a.nombre}» será eliminada permanentemente.`"
+                  @view="abrir(a)"
+                  @edit="abrir(a)"
+                  @delete="(opts) => eliminarActividad(a, opts)"
+                />
+              </template>
+            </ResponsiveTable>
+          </AccordionPanel>
+
+          <!-- ── Acordeón 2: Actividades de campaña (árbol campaña → actividad) ── -->
+          <AccordionPanel title="De campaña" :count="gruposCampania.length" :default-open="true">
+            <div v-if="!gruposCampania.length" class="px-5 py-8 text-center text-sm text-slate-400">
+              Ninguna actividad de campaña con estos filtros.
+            </div>
+            <div v-else class="divide-y divide-slate-100">
+              <div v-for="grupo in gruposCampania" :key="grupo.campania.id">
+                <!-- Cabecera de campaña (nivel 1 del árbol) — plegable -->
+                <div class="bg-indigo-50/60 border-y border-indigo-100 cursor-pointer hover:bg-indigo-100/60 px-4 py-2"
+                  @click="toggleCampania(grupo.campania.id)">
+                  <div class="flex items-center gap-2">
+                    <ChevronDownIcon class="w-4 h-4 text-indigo-400 shrink-0 transition-transform"
+                      :class="{ '-rotate-90': estaColapsada(grupo.campania.id) }" />
+                    <FolderIcon class="w-4 h-4 text-indigo-500 shrink-0" />
+                    <span class="font-semibold text-indigo-800">{{ grupo.campania.nombre }}</span>
+                    <span v-if="grupo.campania.estado"
+                      class="text-xs px-2 py-0.5 rounded-full bg-white border border-indigo-200 text-indigo-600">
+                      {{ grupo.campania.estado.nombre }}
+                    </span>
+                    <span class="text-xs text-slate-400">· {{ grupo.actividades.length }} actividad(es)</span>
+                  </div>
                 </div>
-              </td>
-            </tr>
-            <!-- Cabecera de columnas: DEBAJO del nombre de campaña, solo si está desplegada -->
-            <tr v-show="!estaColapsada(grupo.campania.id)" class="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wide">
-              <th class="pl-10 pr-4 py-2 text-left font-medium text-slate-500">Nombre</th>
-              <th class="px-4 py-2 text-left font-medium text-slate-500">Tipo</th>
-              <th class="px-4 py-2 text-left font-medium text-slate-500">Carácter</th>
-              <th class="px-4 py-2 text-left font-medium text-slate-500">Estado</th>
-              <th class="px-4 py-2 text-left font-medium text-slate-500">Fecha</th>
-              <th class="px-4 py-2"></th>
-            </tr>
-            <!-- Actividades de la campaña (nivel 2 del árbol) -->
-            <FilaActividad
-              v-for="a in grupo.actividades"
-              v-show="!estaColapsada(grupo.campania.id)"
-              :key="a.id"
-              :actividad="a"
-              :indent="true"
-              @delete="(opts) => eliminarActividad(a, opts)"
-            />
-          </tbody>
-        </table></div>
-      </AccordionPanel>
+                <!-- Actividades de la campaña (nivel 2 del árbol) -->
+                <ResponsiveTable
+                  v-show="!estaColapsada(grupo.campania.id)"
+                  :columnas="columnas"
+                  :filas="grupo.actividades"
+                  :por-pagina="0"
+                  vacio-texto="Sin actividades">
+                  <template #cell-nombre="{ fila: a }"><CeldaNombre :actividad="a" indent /></template>
+                  <template #cell-tipo="{ fila: a }">{{ a.tipoActividad?.nombre || '—' }}</template>
+                  <template #cell-caracter="{ fila: a }">{{ caracterLabel(a) }}</template>
+                  <template #cell-estado="{ fila: a }"><CeldaEstado :actividad="a" /></template>
+                  <template #cell-fecha="{ fila: a }">{{ a.fechaInicio || '—' }}</template>
+                  <template #cell-acciones="{ fila: a }">
+                    <RowActions
+                      :show-view="true"
+                      :show-edit="true"
+                      confirm-title="¿Eliminar esta actividad?"
+                      :confirm-text="`«${a.nombre}» será eliminada permanentemente.`"
+                      @view="abrir(a)"
+                      @edit="abrir(a)"
+                      @delete="(opts) => eliminarActividad(a, opts)"
+                    />
+                  </template>
+                </ResponsiveTable>
+              </div>
+            </div>
+          </AccordionPanel>
 
-    </div>
+        </div>
+      </div><!-- /columna de resultados -->
+    </div><!-- /layout -->
   </AppLayout>
 </template>
 
 <script setup>
 import { useToast } from '@/composables/useToast'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, h, onActivated } from 'vue'
+import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
+import FilterRail from '@/components/common/FilterRail.vue'
+import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
+import RowActions from '@/components/common/RowActions.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
-import FilaActividad from './FilaActividad.vue'
 import { FolderIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import { graphqlClient } from '@/graphql/client'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_ACCIONES, GET_TIPOS_ACCION, GET_ESTADOS_ACCION, ELIMINAR_ACCION, SOFT_DELETE_ACCION } from '../graphql/queries.js'
+
+defineOptions({ name: 'ListaAcciones' })
+
 const toast = useToast()
+const router = useRouter()
 
 const { tienePermiso } = usePermisos()
 const loading = ref(true)
@@ -116,7 +148,49 @@ const tiposActividad = ref([])
 const estadosAccion = ref([])
 
 const filtroNombre = ref('')
-const filtros = ref({ ejercicio: '', caracter: '', estado: '', tipo: '' })
+const filtros = ref({ ejercicio: [], caracter: [], estado: [], tipo: [] })
+
+const columnas = [
+  { key: 'nombre',   label: 'Nombre',   ordenable: true, valorOrden: a => a.nombre },
+  { key: 'tipo',     label: 'Tipo',     ordenable: true, valorOrden: a => a.tipoActividad?.nombre },
+  { key: 'caracter', label: 'Carácter', ordenable: true, valorOrden: a => a.caracter },
+  { key: 'estado',   label: 'Estado',   ordenable: true, valorOrden: a => a.estado?.nombre },
+  { key: 'fecha',    label: 'Fecha',    ordenable: true, valorOrden: a => a.fechaInicio },
+  { key: 'acciones', label: '',         align: 'right',  esAcciones: true },
+]
+
+const abrir = (a) => router.push(`/actividades/${a.id}`)
+
+// Plantilla recurrente: caracter RECURRENTE sin padre. No es imputable y se marca.
+const esPlantilla = (a) => a.caracter === 'RECURRENTE' && !a.padreId
+
+function caracterLabel(a) {
+  const c = a.caracter
+  if (c === 'PERMANENTE') return 'Permanente'
+  if (c === 'PUNTUAL') return 'Puntual'
+  if (c === 'RECURRENTE') return esPlantilla(a) ? 'Recurrente (plantilla)' : 'Recurrente (instancia)'
+  return '—'
+}
+
+// Celdas de render enriquecido (badge de plantilla / estado con color), en línea
+// para poder pintarlas dentro de los slots de ResponsiveTable.
+const CeldaNombre = (props) => h('div', { class: props.indent ? 'pl-6 font-medium text-slate-900' : 'font-medium text-slate-900' }, [
+  props.actividad.nombre,
+  esPlantilla(props.actividad)
+    ? h('span', { class: 'ml-2 text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 align-middle' }, 'Plantilla')
+    : null,
+])
+CeldaNombre.props = ['actividad', 'indent']
+
+const CeldaEstado = (props) => {
+  const e = props.actividad.estado
+  if (!e) return h('span', { class: 'text-slate-400' }, '—')
+  return h('span', {
+    class: ['inline-flex items-center px-2 py-0.5 rounded text-xs font-medium', !e.color ? 'bg-slate-100 text-slate-600' : ''],
+    style: e.color ? `background-color: ${e.color}22; color: ${e.color}` : '',
+  }, e.nombre)
+}
+CeldaEstado.props = ['actividad']
 
 // Ejercicios (años) disponibles según la fecha de inicio de las actividades
 const ejerciciosDisponibles = computed(() => {
@@ -137,18 +211,19 @@ function toggleCampania(id) {
   expandidas.value = s
 }
 
+// Filtros con pocas opciones = multiselect (OR): p. ej. varios estados a la vez.
 const camposFiltro = computed(() => [
   {
     key: 'ejercicio',
     label: 'Ejercicio',
-    type: 'select',
+    type: 'multiselect',
     allLabel: 'Todos los años',
     options: ejerciciosDisponibles.value.map(y => ({ value: y, label: y })),
   },
   {
     key: 'caracter',
     label: 'Carácter',
-    type: 'select',
+    type: 'multiselect',
     allLabel: 'Todos los caracteres',
     options: [
       { value: 'PERMANENTE', label: 'Permanente' },
@@ -159,14 +234,14 @@ const camposFiltro = computed(() => [
   {
     key: 'estado',
     label: 'Estado',
-    type: 'select',
+    type: 'multiselect',
     allLabel: 'Todos los estados',
     options: estadosAccion.value.map(e => ({ value: e.id, label: e.nombre })),
   },
   {
     key: 'tipo',
     label: 'Tipo',
-    type: 'select',
+    type: 'multiselect',
     allLabel: 'Todos los tipos',
     options: tiposActividad.value.map(t => ({ value: t.id, label: t.nombre })),
   },
@@ -178,20 +253,25 @@ const actividadesFiltradas = computed(() => {
     const q = filtroNombre.value.toLowerCase()
     list = list.filter(a => (a.nombre || '').toLowerCase().includes(q))
   }
-  if (filtros.value.ejercicio) {
-    list = list.filter(a => String(a.fechaInicio || '').slice(0, 4) === filtros.value.ejercicio)
+  if (filtros.value.ejercicio.length) {
+    list = list.filter(a => filtros.value.ejercicio.includes(String(a.fechaInicio || '').slice(0, 4)))
   }
-  if (filtros.value.caracter) {
-    list = list.filter(a => a.caracter === filtros.value.caracter)
+  if (filtros.value.caracter.length) {
+    list = list.filter(a => filtros.value.caracter.includes(a.caracter))
   }
-  if (filtros.value.estado) {
-    list = list.filter(a => a.estado?.id === filtros.value.estado)
+  if (filtros.value.estado.length) {
+    list = list.filter(a => filtros.value.estado.includes(a.estado?.id))
   }
-  if (filtros.value.tipo) {
-    list = list.filter(a => a.tipoActividad?.id === filtros.value.tipo)
+  if (filtros.value.tipo.length) {
+    list = list.filter(a => filtros.value.tipo.includes(a.tipoActividad?.id))
   }
   return list
 })
+
+function limpiarFiltros() {
+  filtroNombre.value = ''
+  filtros.value = { ejercicio: [], caracter: [], estado: [], tipo: [] }
+}
 
 // Orden: de más reciente a más antigua (por fecha de inicio); sin fecha al final,
 // desempatando por nombre.
@@ -251,5 +331,8 @@ async function eliminarActividad(actividad, { hardDelete } = {}) {
   }
 }
 
-onMounted(cargar)
+// La vista está en <keep-alive>: no se desmonta al navegar, así que `onMounted`
+// solo correría una vez. `onActivated` cubre el primer montaje y cada regreso,
+// evitando mostrar datos obsoletos.
+onActivated(cargar)
 </script>

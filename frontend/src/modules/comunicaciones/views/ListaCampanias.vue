@@ -1,8 +1,16 @@
 <template>
-  <AppLayout title="Campañas" subtitle="Gestión de campañas y actividades">
+  <AppLayout title="Campañas" subtitle="Gestión de campañas y actividades" fluid>
+
+    <template v-if="tienePermiso('CAMPANA_CREAR')" #actions>
+      <router-link to="/campanias/nueva"
+        class="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+        <span class="text-base leading-none">+</span>
+        Nueva campaña
+      </router-link>
+    </template>
 
     <!-- KPI strip -->
-    <section v-if="allCampanias.length" class="mb-4 bg-white border border-slate-200 rounded-xl px-5 py-3 grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-2 text-sm">
+    <section v-if="allCampanias.length" class="mb-4 bg-white border border-slate-200 rounded-xl px-5 py-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-2 text-sm">
       <div class="flex flex-col gap-0.5">
         <span class="text-xs text-slate-400 font-medium uppercase tracking-wide">Total</span>
         <span class="text-2xl font-bold text-slate-800 tabular-nums">{{ allCampanias.length }}</span>
@@ -21,56 +29,21 @@
       </div>
     </section>
 
-    <!-- FilterBar -->
-    <FilterBar
-      v-model="filters"
-      v-model:search="searchQuery"
-      search-placeholder="Buscar por nombre o lema…"
-      :create-label="tienePermiso('CAMPANA_CREAR') ? 'Nueva campaña' : ''"
-      create-route="/campanias/nueva"
-      :fields="filterFields"
-      :lazy="false"
-      :loading="loading"
-      class="mb-4"
-    />
+    <!-- Patrón de lista: filtro lateral colapsable (FilterRail) + resultados -->
+    <div class="flex flex-col lg:flex-row gap-4 items-start">
+      <FilterRail storage-key="campanias">
+        <FilterBar
+          vertical
+          v-model="filters"
+          v-model:search="searchQuery"
+          search-placeholder="Buscar por nombre o lema…"
+          :fields="filterFields"
+          @clear="limpiarFiltros" />
+      </FilterRail>
 
-    <!-- Carga -->
-    <div v-if="loading" class="flex items-center justify-center py-20">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-    </div>
-
-    <!-- Error -->
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-xl p-6">
-      <p class="text-red-700 font-medium">Error al cargar campañas</p>
-      <p class="text-red-600 text-sm mt-1">{{ error }}</p>
-      <button @click="cargar" class="mt-3 text-red-600 hover:text-red-800 text-sm font-medium">Reintentar</button>
-    </div>
-
-    <template v-else>
-      <!-- Sin resultados -->
-      <div v-if="campaniasFiltradas.length === 0 && allCampanias.length > 0"
-        class="py-12 text-center text-slate-400">
-        <MagnifyingGlassIcon class="w-12 h-12 mx-auto mb-3 text-slate-300" />
-        <p class="text-base font-medium text-slate-600">Sin campañas con esos filtros</p>
-        <button @click="limpiarFiltros" class="mt-2 text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-          Limpiar filtros
-        </button>
-      </div>
-
-      <!-- Sin datos en absoluto -->
-      <div v-else-if="allCampanias.length === 0"
-        class="py-16 text-center text-slate-400">
-        <RectangleStackIcon class="w-12 h-12 mx-auto mb-3 text-slate-300" />
-        <p class="text-base font-medium text-slate-600">No hay campañas todavía</p>
-        <router-link v-if="tienePermiso('CAMPANA_CREAR')" to="/campanias/nueva"
-          class="mt-3 inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-          <PlusIcon class="w-4 h-4" /> Crear primera campaña
-        </router-link>
-      </div>
-
-      <!-- Cabecera de resultados -->
-      <div v-else class="space-y-4">
-        <div class="flex items-center justify-between text-sm">
+      <!-- Columna de resultados -->
+      <div class="flex-1 min-w-0 w-full">
+        <div class="flex items-center justify-between text-sm mb-3">
           <span class="text-slate-500">
             <strong class="text-slate-800">{{ campaniasFiltradas.length }}</strong>
             {{ campaniasFiltradas.length === 1 ? 'campaña' : 'campañas' }}
@@ -82,87 +55,102 @@
           </button>
         </div>
 
-        <!-- Grid de tarjetas -->
-        <div class="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div
-            v-for="c in campaniasFiltradas"
-            :key="c.id"
-            class="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer flex flex-col"
-            @click="router.push(`/campanias/${c.id}`)">
+        <!-- Carga -->
+        <div v-if="loading" class="flex items-center justify-center py-20">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>
 
-            <!-- Cabecera de tarjeta -->
-            <div class="px-5 pt-4 pb-3 flex items-start justify-between gap-2">
+        <!-- Error -->
+        <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-xl p-6">
+          <p class="text-red-700 font-medium">Error al cargar campañas</p>
+          <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+          <button @click="cargar" class="mt-3 text-red-600 hover:text-red-800 text-sm font-medium">Reintentar</button>
+        </div>
+
+        <!-- Sin datos en absoluto -->
+        <div v-else-if="allCampanias.length === 0"
+          class="py-16 text-center text-slate-400">
+          <RectangleStackIcon class="w-12 h-12 mx-auto mb-3 text-slate-300" />
+          <p class="text-base font-medium text-slate-600">No hay campañas todavía</p>
+          <router-link v-if="tienePermiso('CAMPANA_CREAR')" to="/campanias/nueva"
+            class="mt-3 inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+            <PlusIcon class="w-4 h-4" /> Crear primera campaña
+          </router-link>
+        </div>
+
+        <!-- Tabla -->
+        <div v-else class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+          <ResponsiveTable
+            :columnas="columnas"
+            :filas="campaniasFiltradas"
+            :orden-inicial="{ key: 'nombre', dir: 'asc' }"
+            vacio-texto="Sin campañas con esos filtros"
+            @row-click="router.push(`/campanias/${$event.id}`)">
+
+            <template #cell-nombre="{ fila: c }">
+              <div class="text-sm font-medium text-slate-900">{{ c.nombre }}</div>
+              <div v-if="c.lema" class="text-xs text-slate-400 italic truncate">"{{ c.lema }}"</div>
+            </template>
+
+            <template #cell-estado="{ fila: c }">
               <span
                 class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full border"
                 :style="estadoBadgeStyle(c.estado)">
                 {{ c.estado?.nombre ?? '—' }}
               </span>
+            </template>
+
+            <template #cell-tipo="{ fila: c }">
               <span v-if="c.tipoCampania"
-                class="shrink-0 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full">
+                class="text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full">
                 {{ c.tipoCampania.nombre }}
               </span>
-            </div>
+              <span v-else class="text-slate-400">—</span>
+            </template>
 
-            <!-- Cuerpo de tarjeta -->
-            <div class="px-5 pb-4 flex-1 flex flex-col gap-1.5">
-              <h3 class="text-sm font-semibold text-slate-900 leading-snug">{{ c.nombre }}</h3>
-              <p v-if="c.lema" class="text-xs text-slate-400 italic">"{{ c.lema }}"</p>
-              <p v-if="c.descripcionCorta" class="text-xs text-slate-500 line-clamp-2 mt-0.5">{{ c.descripcionCorta }}</p>
+            <template #cell-responsable="{ fila: c }">
+              <span v-if="c.responsable" class="text-slate-600">{{ c.responsable.nombre }} {{ c.responsable.apellido1 }}</span>
+              <span v-else class="text-slate-400">—</span>
+            </template>
 
-              <!-- Meta-info -->
-              <div class="mt-auto pt-3 space-y-1 text-xs text-slate-500">
-                <div v-if="c.responsable" class="flex items-center gap-1.5">
-                  <UserIcon class="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                  {{ c.responsable.nombre }} {{ c.responsable.apellido1 }}
-                </div>
-                <div v-if="c.fechaInicioPlan" class="flex items-center gap-1.5">
-                  <CalendarIcon class="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                  {{ fmtDate(c.fechaInicioPlan) }}
-                  <template v-if="c.fechaFinPlan"> – {{ fmtDate(c.fechaFinPlan) }}</template>
-                  <template v-else-if="c.periodicidad === 'permanente'">
-                    <span class="text-sky-600 font-medium">· Permanente</span>
-                  </template>
-                </div>
-                <div class="flex items-center gap-3">
-                  <span v-if="c.agrupacion" class="flex items-center gap-1">
-                    <MapPinIcon class="w-3.5 h-3.5 text-slate-400" />
-                    {{ c.agrupacion.nombre }}
-                  </span>
-                  <span v-if="c.actividades?.length" class="flex items-center gap-1">
-                    <BoltIcon class="w-3.5 h-3.5 text-slate-400" />
-                    {{ c.actividades.length }} {{ c.actividades.length === 1 ? 'actividad' : 'actividades' }}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <template #cell-fechas="{ fila: c }">
+              <span v-if="c.fechaInicioPlan" class="text-slate-600">
+                {{ fmtDate(c.fechaInicioPlan) }}
+                <template v-if="c.fechaFinPlan"> – {{ fmtDate(c.fechaFinPlan) }}</template>
+                <template v-else-if="c.periodicidad === 'permanente'">
+                  <span class="text-sky-600 font-medium">· Permanente</span>
+                </template>
+              </span>
+              <span v-else class="text-slate-400">—</span>
+            </template>
 
-            <!-- Pie de tarjeta -->
-            <div class="px-4 py-2.5 border-t border-slate-100 flex items-center justify-between">
-              <div class="flex items-center gap-1">
+            <template #cell-acciones="{ fila: c }">
+              <div class="flex items-center justify-end gap-1">
                 <button v-if="esEliminable(c) && tienePermiso('CAMPANA_ELIMINAR')"
                   @click.stop="campanaAEliminar = c"
-                  class="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                  class="p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
                   title="Eliminar">
                   <TrashIcon class="w-4 h-4" />
                 </button>
                 <router-link v-if="esEditable(c)"
                   :to="`/campanias/${c.id}/editar`"
-                  class="p-1.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                  class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
                   title="Editar"
                   @click.stop>
                   <PencilSquareIcon class="w-4 h-4" />
                 </router-link>
+                <router-link :to="`/campanias/${c.id}`"
+                  class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                  title="Ver ficha"
+                  @click.stop>
+                  <ArrowRightIcon class="w-4 h-4" />
+                </router-link>
               </div>
-              <router-link :to="`/campanias/${c.id}`"
-                class="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
-                @click.stop>
-                Ver ficha <ArrowRightIcon class="w-3.5 h-3.5" />
-              </router-link>
-            </div>
-          </div>
+            </template>
+          </ResponsiveTable>
         </div>
       </div>
-    </template>
+    </div>
 
   </AppLayout>
 
@@ -186,17 +174,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  TrashIcon, PencilSquareIcon, PlusIcon, ArrowRightIcon,
-  MagnifyingGlassIcon, RectangleStackIcon, UserIcon, CalendarIcon, MapPinIcon, BoltIcon,
+  TrashIcon, PencilSquareIcon, PlusIcon, ArrowRightIcon, RectangleStackIcon,
 } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
+import FilterRail from '@/components/common/FilterRail.vue'
+import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import { executeQuery, executeMutation } from '@/graphql/client'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_CAMPANIAS, GET_TIPOS_CAMPANIA, GET_ESTADOS_CAMPANIA } from '@/graphql/queries/campanias'
+
+defineOptions({ name: 'ListaCampanias' })
 
 const router = useRouter()
 const { tienePermiso } = usePermisos()
@@ -218,6 +209,15 @@ const eliminando       = ref(false)
 
 const searchQuery = ref('')
 const filters = ref({ estados: [], tipos: [], anios: [] })
+
+const columnas = [
+  { key: 'nombre',      label: 'Campaña',     ordenable: true, anchoMax: 'none' },
+  { key: 'estado',      label: 'Estado',      ordenable: true, valorOrden: c => c.estado?.nombre ?? '' },
+  { key: 'tipo',        label: 'Tipo',        ordenable: true, valorOrden: c => c.tipoCampania?.nombre ?? '' },
+  { key: 'responsable', label: 'Responsable', valorOrden: c => c.responsable?.apellido1 ?? '' },
+  { key: 'fechas',      label: 'Fechas',      ordenable: true, valorOrden: c => c.fechaInicioPlan ?? '' },
+  { key: 'acciones',    label: 'Acciones',    align: 'right', esAcciones: true },
+]
 
 // ── KPIs globales ─────────────────────────────────────────────────────────────
 const anioActual = new Date().getFullYear()
@@ -369,5 +369,8 @@ async function eliminarCampania() {
   }
 }
 
-onMounted(cargar)
+// La vista está en <keep-alive>: no se desmonta al navegar, así que `onMounted`
+// solo correría una vez. `onActivated` cubre el primer montaje y cada regreso,
+// evitando mostrar datos obsoletos.
+onActivated(cargar)
 </script>

@@ -2,7 +2,7 @@
 
 export const GET_ROLES = `
   query Roles {
-    roles {
+    roles(filter: { eliminado: { eq: false } }) {
       id
       codigo
       nombre
@@ -319,8 +319,8 @@ export const REVOCAR_ROL_USUARIO = `
 `
 
 export const ELIMINAR_ROL = `
-  mutation EliminarRol($id: UUID!) {
-    eliminarRol(id: $id)
+  mutation EliminarRol($id: UUID!, $hard: Boolean) {
+    eliminarRol(id: $id, hard: $hard)
   }
 `
 

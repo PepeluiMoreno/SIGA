@@ -460,7 +460,7 @@
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { useToast } from '@/composables/useToast'
 import { usePrompt } from '@/composables/useConfirm'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onActivated } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
@@ -477,6 +477,8 @@ import {
   GET_MIEMBROS_PARA_GASTO,
 } from '@/graphql/queries/economico'
 import { GET_CAMPANIAS } from '@/graphql/queries/campanias'
+
+defineOptions({ name: 'Donaciones' })
 
 const toast = useToast()
 
@@ -835,7 +837,10 @@ const badgeTipo = (t) => ({
   ESPECIE: 'bg-sky-100 text-sky-700',
 }[t] || 'bg-slate-100 text-slate-500')
 
-onMounted(async () => {
+// La vista está en <keep-alive>: no se desmonta al navegar, así que `onMounted`
+// solo correría una vez. `onActivated` cubre el primer montaje y cada regreso,
+// evitando mostrar datos obsoletos.
+onActivated(async () => {
   await Promise.all([cargar(), cargarAuxiliares()])
 })
 </script>

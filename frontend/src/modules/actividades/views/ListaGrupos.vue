@@ -1,129 +1,144 @@
 <template>
-  <AppLayout title="Grupos de Trabajo" subtitle="Gestión de grupos y equipos">
-    <!-- Filtros -->
-    <FilterBar
-      v-model="filters"
-      v-model:search="searchQuery"
-      search-placeholder="Buscar grupos…"
-      :create-label="tienePermiso('GRUPO_CREAR') ? 'Nuevo Grupo' : ''"
-      create-route="/grupos/nuevo"
-      :fields="filterFields"
-      :lazy="true"
-      :loading="loading"
-      class="mb-6"
-      @apply="aplicarFiltros"
-    />
+  <AppLayout title="Grupos de Trabajo" subtitle="Gestión de grupos y equipos" fluid>
 
-    <!-- Loading -->
-    <EstadoCarga v-if="loading" mensaje="Cargando grupos..." />
+    <!-- Acción principal en el topbar (estándar global) -->
+    <template v-if="tienePermiso('GRUPO_CREAR')" #actions>
+      <router-link to="/grupos/nuevo"
+        class="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+        <span class="text-base leading-none">+</span>
+        Nuevo Grupo
+      </router-link>
+    </template>
 
-    <!-- Error -->
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-      <div class="flex">
-        <span class="text-red-400 mr-3">⚠️</span>
-        <div>
-          <h3 class="text-sm font-medium text-red-800">Error al cargar grupos</h3>
-          <p class="text-sm text-red-700 mt-1">{{ error }}</p>
+    <!-- Layout: filtro lateral colapsable (FilterRail) + resultados -->
+    <div class="flex flex-col lg:flex-row gap-4 items-start">
+
+      <FilterRail storage-key="grupos">
+        <FilterBar
+          vertical
+          v-model="filters"
+          v-model:search="searchQuery"
+          search-placeholder="Buscar grupos…"
+          :fields="filterFields"
+          @clear="limpiarFiltros"
+        />
+      </FilterRail>
+
+      <!-- Columna de resultados -->
+      <div class="flex-1 min-w-0 w-full">
+
+        <!-- Estado carga / error -->
+        <EstadoCarga v-if="loading" mensaje="Cargando grupos…" />
+        <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
+          {{ error }}
+          <button @click="cargar" class="ml-3 underline font-medium hover:no-underline">Reintentar</button>
         </div>
-      </div>
-    </div>
 
-    <!-- Lista de grupos -->
-    <div v-else class="space-y-4">
-      <div v-if="!filtersApplied" class="bg-white rounded-lg shadow">
-        <EstadoPendiente />
-      </div>
-      <div v-else-if="gruposFiltrados.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
-        <span class="text-4xl">👥</span>
-        <h3 class="text-sm font-medium text-gray-900 mt-4">No hay grupos</h3>
-        <p class="text-sm text-gray-500 mt-1">Prueba con otros filtros.</p>
-      </div>
+        <!-- Tabla -->
+        <div v-else class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <ResponsiveTable
+            :columnas="columnas"
+            :filas="gruposFiltrados"
+            :orden-inicial="{ key: 'nombre', dir: 'asc' }"
+            vacio-texto="No hay grupos con los filtros seleccionados">
 
-      <div
-        v-for="grupo in gruposFiltrados"
-        :key="grupo.id"
-        class="bg-white rounded-lg shadow hover:shadow-md transition-shadow"
-      >
-        <div class="p-6">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div class="flex-1">
-              <div class="flex items-center space-x-3 mb-2">
-                <h3 class="text-lg font-semibold text-gray-900">{{ grupo.nombre }}</h3>
-                <span :class="getTipoClass(grupo.tipo?.nombre)">{{ grupo.tipo?.nombre }}</span>
-                <span v-if="!grupo.activo" class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
-                  Inactivo
-                </span>
+            <template #cell-nombre="{ fila: g }">
+              <div class="text-sm font-medium text-gray-900">{{ g.nombre }}</div>
+              <div v-if="g.descripcion" class="text-xs text-gray-400 truncate max-w-xs">{{ g.descripcion }}</div>
+            </template>
+
+            <template #cell-tipo="{ fila: g }">
+              <span :class="getTipoClass(g.tipo?.nombre)">{{ g.tipo?.nombre ?? '—' }}</span>
+            </template>
+
+            <template #cell-coordinador="{ fila: g }">
+              <span v-if="g.coordinador" class="text-sm text-gray-700">
+                {{ g.coordinador.nombre }} {{ g.coordinador.apellido1 }}
+              </span>
+              <span v-else class="text-xs text-gray-400 italic">Sin coordinador</span>
+            </template>
+
+            <template #cell-miembros="{ fila: g }">
+              {{ g.miembros?.length ?? 0 }}
+            </template>
+
+            <template #cell-fechaCreacion="{ fila: g }">
+              {{ g.fechaCreacion ? formatDate(g.fechaCreacion) : '—' }}
+            </template>
+
+            <template #cell-activo="{ fila: g }">
+              <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full"
+                :class="g.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'">
+                {{ g.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </template>
+
+            <template #cell-acciones="{ fila: g }">
+              <div class="flex items-center justify-end">
+                <RowActions
+                  :show-view="true"
+                  :show-edit="true"
+                  confirm-title="¿Eliminar este grupo?"
+                  :confirm-text="`«${g.nombre}» será eliminado permanentemente.`"
+                  @view="$router.push(`/grupos/${g.id}`)"
+                  @edit="$router.push(`/grupos/${g.id}`)"
+                  @delete="eliminarGrupo(g)"
+                />
               </div>
-              <p class="text-sm text-gray-600 mb-3">{{ grupo.descripcion }}</p>
-
-              <div class="flex flex-wrap gap-4 text-sm text-gray-500">
-                <div v-if="grupo.coordinador" class="flex items-center">
-                  <span class="mr-1">👤</span>
-                  <span>Coordinador: {{ grupo.coordinador.nombre }} {{ grupo.coordinador.apellido1 }}</span>
-                </div>
-                <div class="flex items-center">
-                  <span class="mr-1">👥</span>
-                  <span>{{ grupo.miembros?.length ?? 0 }} {{ orgConfig.miembros }}</span>
-                </div>
-                <div v-if="grupo.fechaCreacion" class="flex items-center">
-                  <span class="mr-1">📅</span>
-                  <span>Desde {{ formatDate(grupo.fechaCreacion) }}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-4 md:mt-0 md:ml-6">
-              <RowActions
-                :show-view="true"
-                :show-edit="true"
-                confirm-title="¿Eliminar este grupo?"
-                :confirm-text="`«${grupo.nombre}» será eliminado permanentemente.`"
-                @view="$router.push(`/grupos/${grupo.id}`)"
-                @edit="$router.push(`/grupos/${grupo.id}`)"
-                @delete="eliminarGrupo(grupo)"
-              />
-            </div>
-          </div>
+            </template>
+          </ResponsiveTable>
         </div>
-      </div>
-    </div>
+
+      </div><!-- /columna de resultados -->
+    </div><!-- /layout -->
+
   </AppLayout>
 </template>
 
 <script setup>
 import { useToast } from '@/composables/useToast'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onActivated } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
+import FilterRail from '@/components/common/FilterRail.vue'
 import RowActions from '@/components/common/RowActions.vue'
+import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import { graphqlClient, executeQuery } from '@/graphql/client'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { GET_GRUPOS, GET_TIPOS_GRUPO, ELIMINAR_GRUPO } from '@/graphql/queries/grupos.js'
-import { useOrgConfigStore } from '@/stores/orgConfig'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
-import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
-const toast = useToast()
 
-const orgConfig = useOrgConfigStore()
+defineOptions({ name: 'ListaGrupos' })
+
+const toast = useToast()
 const { tienePermiso } = usePermisos()
+
 const loading = ref(false)
 const error = ref('')
 const grupos = ref([])
 const tiposGrupo = ref([])
 const searchQuery = ref('')
-const filtersApplied = ref(false)
+const filters = ref({ tipo: [], activo: [] })
 
-const filters = ref({ tipo: '', activo: '' })
+const columnas = [
+  { key: 'nombre',       label: 'Nombre',      ordenable: true },
+  { key: 'tipo',         label: 'Tipo',        ordenable: true, valorOrden: g => g.tipo?.nombre ?? '' },
+  { key: 'coordinador',  label: 'Coordinador', valorOrden: g => g.coordinador?.apellido1 ?? '' },
+  { key: 'miembros',     label: 'Miembros',    align: 'center', ordenable: true,
+    valorOrden: g => g.miembros?.length ?? 0 },
+  { key: 'fechaCreacion', label: 'Desde',      align: 'center', ordenable: true },
+  { key: 'activo',       label: 'Estado',      align: 'center', ordenable: true },
+  { key: 'acciones',     label: '',            align: 'right', esAcciones: true },
+]
 
 const filterFields = computed(() => [
   {
-    key: 'tipo', label: 'Tipo', type: 'select', allLabel: 'Todos los tipos',
+    key: 'tipo', label: 'Tipo', type: 'multiselect', allLabel: 'Todos los tipos',
     options: tiposGrupo.value.map(t => ({ value: t.id, label: t.nombre })),
   },
   {
-    key: 'activo', label: 'Estado', type: 'select', allLabel: 'Todos',
+    key: 'activo', label: 'Estado', type: 'multiselect', allLabel: 'Todos',
     options: [{ value: 'true', label: 'Activos' }, { value: 'false', label: 'Inactivos' }],
-    isActive: (v) => v !== '',
   },
 ])
 
@@ -136,12 +151,11 @@ const gruposFiltrados = computed(() => {
       g.descripcion?.toLowerCase().includes(q)
     )
   }
-  if (filters.value.tipo) {
-    result = result.filter(g => g.tipo?.id === filters.value.tipo)
+  if (filters.value.tipo?.length) {
+    result = result.filter(g => filters.value.tipo.includes(g.tipo?.id))
   }
-  if (filters.value.activo !== '') {
-    const activo = filters.value.activo === 'true'
-    result = result.filter(g => g.activo === activo)
+  if (filters.value.activo?.length) {
+    result = result.filter(g => filters.value.activo.includes(String(g.activo)))
   }
   return result
 })
@@ -163,9 +177,9 @@ async function cargar() {
   }
 }
 
-async function aplicarFiltros() {
-  await cargar()
-  filtersApplied.value = true
+function limpiarFiltros() {
+  filters.value = { tipo: [], activo: [] }
+  searchQuery.value = ''
 }
 
 async function eliminarGrupo(grupo) {
@@ -190,5 +204,7 @@ function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })
 }
 
-onMounted(() => {})
+// La vista está en <keep-alive>: no se desmonta al navegar, así que `onMounted`
+// solo correría una vez. `onActivated` cubre el primer montaje y cada regreso.
+onActivated(cargar)
 </script>

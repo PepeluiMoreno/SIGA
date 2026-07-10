@@ -1,5 +1,14 @@
 <template>
-  <AppLayout title="Eventos" subtitle="Actos, jornadas y asambleas de Europa Laica">
+  <AppLayout title="Eventos" subtitle="Actos, jornadas y asambleas de Europa Laica" fluid>
+
+    <template #actions>
+      <router-link to="/eventos/nuevo"
+        class="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+        <span class="text-base leading-none">+</span>
+        Nuevo Evento
+      </router-link>
+    </template>
+
     <!-- Resumen -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div class="bg-purple-50 rounded-lg shadow p-4 border border-purple-100">
@@ -20,122 +29,114 @@
       </div>
     </div>
 
-    <!-- Filtros -->
-    <FilterBar
-      v-model="filters"
-      v-model:search="searchQuery"
-      search-placeholder="Buscar eventos…"
-      create-label="Nuevo Evento"
-      create-route="/eventos/nuevo"
-      :fields="filterFields"
-      :lazy="true"
-      :loading="loading"
-      class="mb-3"
-      @apply="aplicarFiltros"
-    />
+    <!-- Patrón de lista: filtro lateral colapsable (FilterRail) + resultados -->
+    <div class="flex flex-col lg:flex-row gap-4 items-start">
+      <FilterRail storage-key="eventos">
+        <FilterBar
+          vertical
+          v-model="filters"
+          v-model:search="searchQuery"
+          search-placeholder="Buscar eventos…"
+          :fields="filterFields"
+          @clear="limpiarFiltros" />
+      </FilterRail>
 
-    <!-- Toggle lista / calendario -->
-    <div class="flex justify-end mb-4">
-      <div class="flex rounded-lg overflow-hidden border border-gray-300 text-sm">
-        <button @click="vista = 'lista'"
-          :class="['px-4 py-1.5 flex items-center gap-1.5 font-medium transition-colors',
-            vista === 'lista' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
-          <Bars4Icon class="w-4 h-4" />
-          Lista
-        </button>
-        <button @click="vista = 'calendario'"
-          :class="['px-4 py-1.5 flex items-center gap-1.5 font-medium border-l border-gray-300 transition-colors',
-            vista === 'calendario' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
-          <CalendarIcon class="w-4 h-4" />
-          Calendario
-        </button>
-      </div>
-    </div>
-
-    <!-- Loading / Error -->
-    <EstadoCarga v-if="loading" />
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
-      {{ error }}
-    </div>
-
-    <!-- Vista Lista -->
-    <div v-else-if="vista === 'lista'" class="space-y-3">
-      <div v-if="!filtersApplied" class="bg-white rounded-lg shadow">
-        <EstadoPendiente />
-      </div>
-      <div v-else-if="eventosFiltrados.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
-        <p class="text-4xl mb-4">📅</p>
-        <p class="text-sm text-gray-500">No hay eventos con los filtros seleccionados.</p>
-      </div>
-
-      <div
-        v-for="e in eventosFiltrados"
-        :key="e.id"
-        class="bg-white rounded-lg shadow hover:shadow-md transition-shadow border border-gray-100"
-      >
-        <div class="p-5 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          <!-- Fecha -->
-          <div class="flex-shrink-0 w-16 text-center hidden md:block">
-            <div class="bg-purple-100 rounded-lg p-2">
-              <p class="text-xs text-purple-600 font-medium uppercase">{{ mesCorto(e.fechaInicio) }}</p>
-              <p class="text-2xl font-bold text-purple-800">{{ dia(e.fechaInicio) }}</p>
-            </div>
+      <!-- Columna de resultados -->
+      <div class="flex-1 min-w-0 w-full">
+        <!-- Toggle lista / calendario -->
+        <div class="flex justify-end mb-4">
+          <div class="flex rounded-lg overflow-hidden border border-gray-300 text-sm">
+            <button @click="vista = 'lista'"
+              :class="['px-4 py-1.5 flex items-center gap-1.5 font-medium transition-colors',
+                vista === 'lista' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
+              <Bars4Icon class="w-4 h-4" />
+              Lista
+            </button>
+            <button @click="vista = 'calendario'"
+              :class="['px-4 py-1.5 flex items-center gap-1.5 font-medium border-l border-gray-300 transition-colors',
+                vista === 'calendario' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50']">
+              <CalendarIcon class="w-4 h-4" />
+              Calendario
+            </button>
           </div>
+        </div>
 
-          <!-- Contenido -->
-          <div class="flex-1 min-w-0">
-            <div class="flex flex-wrap items-center gap-2 mb-1">
-              <h3 class="text-base font-semibold text-gray-900">{{ e.nombre }}</h3>
-              <span
-                v-if="e.tipoEvento"
-                class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800"
-              >{{ e.tipoEvento.nombre }}</span>
-              <span
-                v-if="e.estado"
-                class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full"
-                :style="e.estado.color
-                  ? `background:${e.estado.color}22;color:${e.estado.color}`
-                  : 'background:#f3f4f6;color:#374151'"
-              >{{ e.estado.nombre }}</span>
-            </div>
+        <!-- Loading / Error -->
+        <EstadoCarga v-if="loading" />
+        <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
+          {{ error }}
+        </div>
 
-            <p v-if="e.descripcionCorta" class="text-sm text-gray-600 mb-2 truncate">{{ e.descripcionCorta }}</p>
+        <!-- Vista Lista -->
+        <div v-else-if="vista === 'lista'" class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <ResponsiveTable
+            :columnas="columnas"
+            :filas="eventosFiltrados"
+            vacio-texto="No hay eventos con los filtros seleccionados.">
 
-            <div class="flex flex-wrap gap-4 text-xs text-gray-500">
-              <span v-if="e.lugar || e.ciudad">
-                📍 {{ [e.lugar, e.ciudad].filter(Boolean).join(', ') }}
-                <span v-if="e.esOnline" class="ml-1 text-blue-600">(también online)</span>
-              </span>
-              <span v-else-if="e.esOnline">🌐 Online</span>
-              <span>
-                🕐 {{ formatFecha(e.fechaInicio) }}
+            <template #cell-fecha="{ fila: e }">
+              <div class="text-center w-14">
+                <div class="bg-purple-100 rounded-lg py-1">
+                  <p class="text-xs text-purple-600 font-medium uppercase leading-none">{{ mesCorto(e.fechaInicio) }}</p>
+                  <p class="text-xl font-bold text-purple-800 leading-tight">{{ dia(e.fechaInicio) }}</p>
+                </div>
+              </div>
+            </template>
+
+            <template #cell-evento="{ fila: e }">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-sm font-semibold text-gray-900">{{ e.nombre }}</span>
+                <span
+                  v-if="e.tipoEvento"
+                  class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800"
+                >{{ e.tipoEvento.nombre }}</span>
+                <span
+                  v-if="e.estado"
+                  class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full"
+                  :style="e.estado.color
+                    ? `background:${e.estado.color}22;color:${e.estado.color}`
+                    : 'background:#f3f4f6;color:#374151'"
+                >{{ e.estado.nombre }}</span>
+              </div>
+              <p v-if="e.descripcionCorta" class="text-xs text-gray-500 mt-1 truncate">{{ e.descripcionCorta }}</p>
+              <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mt-1">
+                <span v-if="e.lugar || e.ciudad">
+                  📍 {{ [e.lugar, e.ciudad].filter(Boolean).join(', ') }}
+                  <span v-if="e.esOnline" class="ml-1 text-blue-600">(también online)</span>
+                </span>
+                <span v-else-if="e.esOnline">🌐 Online</span>
+                <span v-if="e.requiereInscripcion">
+                  🎟 {{ e.participantes?.length ?? 0 }} inscritos
+                  <template v-if="e.aforoMaximo"> / {{ e.aforoMaximo }}</template>
+                </span>
+                <span v-if="e.campania">🚩 {{ e.campania.nombre }}</span>
+              </div>
+            </template>
+
+            <template #cell-cuando="{ fila: e }">
+              <span class="text-xs text-gray-600">
+                {{ formatFecha(e.fechaInicio) }}
                 <template v-if="e.fechaFin && e.fechaFin !== e.fechaInicio"> → {{ formatFecha(e.fechaFin) }}</template>
                 <template v-if="!e.esTodoDia && e.horaInicio"> · {{ e.horaInicio }}</template>
               </span>
-              <span v-if="e.requiereInscripcion">
-                🎟 {{ e.participantes?.length ?? 0 }} inscritos
-                <template v-if="e.aforoMaximo"> / {{ e.aforoMaximo }}</template>
-              </span>
-              <span v-if="e.campania">🚩 {{ e.campania.nombre }}</span>
-            </div>
-          </div>
+            </template>
 
-          <!-- Acciones -->
-          <div class="flex items-center gap-1 flex-shrink-0">
-            <RowActions
-              :show-view="true"
-              :show-edit="true"
-              confirm-title="¿Eliminar permanentemente?"
-              confirm-title-soft="¿Mover a la papelera?"
-              :confirm-text="`«${e.nombre}» será eliminado.`"
-              @view="$router.push(`/eventos/${e.id}`)"
-              @edit="$router.push(`/eventos/${e.id}`)"
-              @delete="(opts) => eliminarEvento(e, opts)"
-            />
-          </div>
+            <template #cell-acciones="{ fila: e }">
+              <div class="flex items-center justify-end gap-1">
+                <RowActions
+                  :show-view="true"
+                  :show-edit="true"
+                  confirm-title="¿Eliminar permanentemente?"
+                  confirm-title-soft="¿Mover a la papelera?"
+                  :confirm-text="`«${e.nombre}» será eliminado.`"
+                  @view="$router.push(`/eventos/${e.id}`)"
+                  @edit="$router.push(`/eventos/${e.id}`)"
+                  @delete="(opts) => eliminarEvento(e, opts)"
+                />
+              </div>
+            </template>
+          </ResponsiveTable>
         </div>
-      </div>
-    </div>
 
     <!-- Vista Calendario -->
     <div v-else-if="vista === 'calendario'" class="bg-white rounded-lg shadow overflow-hidden">
@@ -229,6 +230,8 @@
         </div>
       </div>
     </div>
+      </div><!-- /columna de resultados -->
+    </div><!-- /layout lista -->
 
     <!-- Modal: detalle del día -->
     <Teleport to="body">
@@ -324,16 +327,20 @@
 </template>
 
 <script setup>
-import { XMarkIcon, ChevronRightIcon, CalendarIcon } from '@heroicons/vue/24/outline'
+import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon, CalendarIcon, Bars4Icon } from '@heroicons/vue/24/outline'
 import { useToast } from '@/composables/useToast'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onActivated } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
+import FilterRail from '@/components/common/FilterRail.vue'
+import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import RowActions from '@/components/common/RowActions.vue'
 import { graphqlClient, executeQuery } from '@/graphql/client'
 import { GET_EVENTOS, GET_TIPOS_EVENTO, GET_ESTADOS_EVENTO, ELIMINAR_EVENTO, SOFT_DELETE_EVENTO } from '@/graphql/queries/eventos.js'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
-import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
+
+defineOptions({ name: 'ListaEventos' })
+
 const toast = useToast()
 
 // ---------- datos ----------
@@ -345,16 +352,22 @@ const estadosEvento = ref([])
 
 // ---------- filtros ----------
 const searchQuery = ref('')
-const filtersApplied = ref(false)
-const filters = ref({ tipo: '', estado: '', periodo: '' })
+const filters = ref({ tipo: [], estado: [], periodo: '' })
+
+const columnas = [
+  { key: 'fecha',    label: '',        width: '4rem', ocultaEnMovil: true },
+  { key: 'evento',   label: 'Evento',  anchoMax: 'none' },
+  { key: 'cuando',   label: 'Cuándo' },
+  { key: 'acciones', label: 'Acciones', align: 'right', esAcciones: true },
+]
 
 const filterFields = computed(() => [
   {
-    key: 'tipo', label: 'Tipo', type: 'select', allLabel: 'Todos los tipos',
+    key: 'tipo', label: 'Tipo', type: 'multiselect', allLabel: 'Todos los tipos',
     options: tiposEvento.value.map(t => ({ value: t.id, label: t.nombre })),
   },
   {
-    key: 'estado', label: 'Estado', type: 'select', allLabel: 'Todos los estados',
+    key: 'estado', label: 'Estado', type: 'multiselect', allLabel: 'Todos los estados',
     options: estadosEvento.value.map(e => ({ value: e.id, label: e.nombre })),
   },
   {
@@ -409,11 +422,11 @@ const eventosFiltrados = computed(() => {
       e.ciudad?.toLowerCase().includes(q)
     )
   }
-  if (filters.value.tipo) {
-    result = result.filter(e => e.tipoEvento?.id === filters.value.tipo)
+  if (filters.value.tipo.length) {
+    result = result.filter(e => filters.value.tipo.includes(e.tipoEvento?.id))
   }
-  if (filters.value.estado) {
-    result = result.filter(e => e.estado?.id === filters.value.estado)
+  if (filters.value.estado.length) {
+    result = result.filter(e => filters.value.estado.includes(e.estado?.id))
   }
   if (filters.value.periodo === 'proximos') {
     result = result.filter(e => new Date(e.fechaInicio + 'T00:00:00') >= hoy)
@@ -548,9 +561,9 @@ async function cargar() {
   }
 }
 
-async function aplicarFiltros() {
-  await cargar()
-  filtersApplied.value = true
+function limpiarFiltros() {
+  searchQuery.value = ''
+  filters.value = { tipo: [], estado: [], periodo: '' }
 }
 
 async function eliminarEvento(evento, { hardDelete } = {}) {
@@ -566,15 +579,7 @@ async function eliminarEvento(evento, { hardDelete } = {}) {
   }
 }
 
-onMounted(async () => {
-  // Cargar solo los catálogos para los dropdowns; los eventos se cargan al pulsar Buscar
-  try {
-    const [dataTipos, dataEstados] = await Promise.all([
-      executeQuery(GET_TIPOS_EVENTO),
-      executeQuery(GET_ESTADOS_EVENTO),
-    ])
-    tiposEvento.value = (dataTipos?.tiposEvento || []).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-    estadosEvento.value = dataEstados.estadosEvento || []
-  } catch { /* ignore */ }
-})
+// La vista está en <keep-alive>: `cargar()` trae eventos + catálogos de una vez y
+// se ejecuta en cada entrada (primer montaje y regreso), sin esperar a «Buscar».
+onActivated(cargar)
 </script>

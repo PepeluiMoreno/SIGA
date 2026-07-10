@@ -30,7 +30,13 @@
 
       <!-- Columna de resultados -->
       <div class="flex-1 min-w-0 w-full">
-        <div class="flex items-center justify-end mb-3">
+        <div class="flex items-center justify-between mb-3">
+          <label v-if="contactosFiltrados.length" class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+            <input type="checkbox" :checked="todoSeleccionado" @change="toggleTodos"
+              class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+            Seleccionar todo
+          </label>
+          <span v-else />
           <span class="text-sm text-slate-500">{{ contactosFiltrados.length }} de {{ contactos.length }}</span>
         </div>
 
@@ -44,67 +50,58 @@
         <!-- Estados -->
         <div v-if="cargando" class="text-center py-12 text-slate-400 text-sm">Cargando contactos…</div>
         <div v-else-if="error" class="rounded-md bg-red-50 border border-red-200 p-4 text-sm text-red-800">{{ error }}</div>
-        <div v-else-if="!contactosFiltrados.length" class="text-center py-12 text-slate-400 text-sm">
-          No hay contactos que coincidan con el filtro.
-        </div>
 
         <!-- Tabla -->
-        <div v-else class="overflow-x-auto border border-slate-200 rounded-lg">
-          <table class="min-w-full divide-y divide-slate-200 text-sm">
-            <thead class="bg-slate-50">
-              <tr class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                <th class="px-3 py-3 w-8">
-                  <input type="checkbox" :checked="todoSeleccionado" @change="toggleTodos"
-                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-                </th>
-                <th class="px-4 py-3">Nombre / Razón social</th>
-                <th class="px-4 py-3">Ubicación</th>
-                <th class="px-4 py-3">Contacto</th>
-                <th class="px-4 py-3 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-              <tr v-for="c in contactosFiltrados" :key="c.id"
-                class="hover:bg-slate-50">
-                <td class="px-3 py-3">
-                  <input type="checkbox" :checked="seleccionados.has(c.id)" @change="toggleSel(c.id)"
-                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-                </td>
-                <td class="px-4 py-3">
-                  <div class="flex flex-wrap items-center gap-1.5">
-                    <span class="font-medium text-slate-800">{{ nombreMostrado(c) }}</span>
-                    <!-- Solo las personas jurídicas se etiquetan; las físicas no llevan badge de tipo -->
-                    <span v-if="c.tipo === 'PERSONA_JURIDICA'"
-                      class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Persona jurídica</span>
-                    <!-- Badges de vinculación + condiciones derivadas, tras el nombre -->
-                    <span
-                      v-for="v in vinculacionesVigentes(c)"
-                      :key="v.id"
-                      class="inline-block px-2 py-0.5 rounded text-xs font-medium"
-                      :class="colorVinculacion(v.tipoVinculacion && v.tipoVinculacion.codigo)"
-                    >{{ v.tipoVinculacion ? v.tipoVinculacion.nombre : '—' }}</span>
-                    <span v-if="condicionesDe(c.id).esParticipante" class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-sky-100 text-sky-700">Participante</span>
-                    <span v-if="condicionesDe(c.id).esDonante" class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Donante</span>
-                  </div>
-                </td>
-                <td class="px-4 py-3 text-slate-600">{{ ubicacionMostrada(c) }}</td>
-                <td class="px-4 py-3 text-slate-600">
-                  <div>{{ c.email || '—' }}</div>
-                  <div class="text-xs text-slate-400">{{ c.telefono || '' }}</div>
-                </td>
-                <td class="px-4 py-3">
-                  <div class="flex justify-end">
-                    <RowActions show-view
-                      :show-edit="tienePermiso('CONTACTO_EDITAR')"
-                      :show-delete="tienePermiso('CONTACTO_ELIMINAR')"
-                      @view="abrirFicha(c.id)"
-                      @edit="abrirFicha(c.id)"
-                      @delete="eliminarContacto(c)" />
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div v-else class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+          <ResponsiveTable
+            :columnas="columnas"
+            :filas="contactosFiltrados"
+            vacio-texto="No hay contactos que coincidan con el filtro.">
+
+            <!-- Casilla de selección múltiple (columna dedicada) -->
+            <template #cell-seleccion="{ fila: c }">
+              <input type="checkbox" :checked="seleccionados.has(c.id)" @click.stop @change="toggleSel(c.id)"
+                class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+            </template>
+
+            <template #cell-nombre="{ fila: c }">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="font-medium text-slate-800">{{ nombreMostrado(c) }}</span>
+                <!-- Solo las personas jurídicas se etiquetan; las físicas no llevan badge de tipo -->
+                <span v-if="c.tipo === 'PERSONA_JURIDICA'"
+                  class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Persona jurídica</span>
+                <!-- Badges de vinculación + condiciones derivadas, tras el nombre -->
+                <span
+                  v-for="v in vinculacionesVigentes(c)"
+                  :key="v.id"
+                  class="inline-block px-2 py-0.5 rounded text-xs font-medium"
+                  :class="colorVinculacion(v.tipoVinculacion && v.tipoVinculacion.codigo)"
+                >{{ v.tipoVinculacion ? v.tipoVinculacion.nombre : '—' }}</span>
+                <span v-if="condicionesDe(c.id).esParticipante" class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-sky-100 text-sky-700">Participante</span>
+                <span v-if="condicionesDe(c.id).esDonante" class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Donante</span>
+              </div>
+            </template>
+
+            <template #cell-ubicacion="{ fila: c }">
+              <span class="text-slate-600">{{ ubicacionMostrada(c) }}</span>
+            </template>
+
+            <template #cell-contacto="{ fila: c }">
+              <div class="text-slate-600">{{ c.email || '—' }}</div>
+              <div class="text-xs text-slate-400">{{ c.telefono || '' }}</div>
+            </template>
+
+            <template #cell-acciones="{ fila: c }">
+              <div class="flex justify-end">
+                <RowActions show-view
+                  :show-edit="tienePermiso('CONTACTO_EDITAR')"
+                  :show-delete="tienePermiso('CONTACTO_ELIMINAR')"
+                  @view="abrirFicha(c.id)"
+                  @edit="abrirFicha(c.id)"
+                  @delete="eliminarContacto(c)" />
+              </div>
+            </template>
+          </ResponsiveTable>
         </div>
       </div>
     </div>
@@ -116,12 +113,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import FilterRail from '@/components/common/FilterRail.vue'
 import RowActions from '@/components/common/RowActions.vue'
+import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
 import BulkActionsBar from '@/components/common/BulkActionsBar.vue'
 import ModalEnviarMensaje from '@/components/membresia/ModalEnviarMensaje.vue'
@@ -130,6 +128,8 @@ import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { graphqlClient } from '@/graphql/client.js'
 import { GET_CONTACTOS, GET_CONDICIONES_CONTACTOS, ELIMINAR_CONTACTO } from '@/graphql/queries/contactos.js'
+
+defineOptions({ name: 'ListaContactos' })
 
 // `colectivo` fija esta vista a un subconjunto del directorio (escisión de Contactos):
 //  - SOCIOS: contactos con vinculación SOCIO vigente (excluye aspirantes).
@@ -187,6 +187,17 @@ async function eliminarContacto(c) {
 const contactos = ref([])
 const cargando = ref(true)
 const error = ref('')
+
+// Columnas de ResponsiveTable. La primera (selección) es una casilla por fila; el
+// resto se pinta con slots #cell-<key>. Sin `ordenable` para no reordenar mientras
+// se seleccionan filas en lote.
+const columnas = [
+  { key: 'seleccion', label: '',                    align: 'center', width: '2.5rem' },
+  { key: 'nombre',    label: 'Nombre / Razón social', anchoMax: 'none' },
+  { key: 'ubicacion', label: 'Ubicación' },
+  { key: 'contacto',  label: 'Contacto' },
+  { key: 'acciones',  label: 'Acciones', align: 'right', esAcciones: true },
+]
 
 // ── Selección múltiple + acciones masivas ──────────────────────────────────────
 const seleccionados = ref(new Set())
@@ -417,5 +428,8 @@ async function cargarNombresGeo(ids) {
   } catch { /* si falla, se muestra la localidad como fallback */ }
 }
 
-onMounted(cargar)
+// La vista está en <keep-alive>: no se desmonta al navegar, así que `onMounted`
+// solo correría una vez. `onActivated` cubre el primer montaje y cada regreso,
+// evitando mostrar datos obsoletos.
+onActivated(cargar)
 </script>

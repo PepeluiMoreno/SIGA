@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="Agrupaciones" subtitle="Estructura territorial de la organización">
+  <AppLayout title="Agrupaciones" subtitle="Estructura territorial de la organización" fluid>
 
     <!-- Resumen por nivel -->
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -22,81 +22,71 @@
       </div>
     </div>
 
-    <!-- Filtros -->
-    <FilterBar
-      v-model="filters"
-      v-model:search="busqueda"
-      search-placeholder="Buscar por nombre o código…"
-      :fields="filterFields"
-      :lazy="true"
-      :count-text="filtersApplied ? `${agrupacionesFiltradas.length} de ${agrupaciones.length} agrupaciones` : ''"
-      class="mb-4"
-      @apply="aplicarFiltros"
-    />
+    <!-- Patrón de lista: filtro lateral colapsable (FilterRail) + resultados -->
+    <div class="flex flex-col lg:flex-row gap-4 items-start">
+      <FilterRail storage-key="agrupaciones">
+        <FilterBar
+          vertical
+          v-model="filters"
+          v-model:search="busqueda"
+          search-placeholder="Buscar por nombre o código…"
+          :fields="filterFields"
+          @clear="limpiarFiltros" />
+      </FilterRail>
 
-    <!-- Loading / Error -->
-    <EstadoCarga v-if="loading" mensaje="Cargando agrupaciones..." />
+      <!-- Columna de resultados -->
+      <div class="flex-1 min-w-0 w-full">
+        <div class="flex items-center justify-end text-sm mb-3">
+          <span class="text-slate-500">{{ agrupacionesFiltradas.length }} de {{ agrupaciones.length }} agrupaciones</span>
+        </div>
 
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
-      {{ error }}
-    </div>
+        <!-- Loading / Error -->
+        <EstadoCarga v-if="loading" mensaje="Cargando agrupaciones..." />
 
-    <!-- Tabla -->
-    <div v-else class="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
-      <EstadoPendiente v-if="!filtersApplied" />
-      <div v-else-if="agrupacionesFiltradas.length === 0" class="text-center py-12">
-        <MapPinIcon class="w-10 h-10 text-gray-300 mx-auto" />
-        <h3 class="text-sm font-medium text-gray-900 mt-2">No hay agrupaciones</h3>
-        <p class="text-sm text-gray-500 mt-1">No se encontraron agrupaciones con los filtros seleccionados.</p>
-      </div>
+        <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
+          {{ error }}
+        </div>
 
-      <div v-else-if="filtersApplied" class="overflow-x-auto -mx-1"><table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agrupación</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Depende de</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Contacto</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr
-            v-for="ag in agrupacionesFiltradas"
-            :key="ag.id"
-            class="hover:bg-gray-50 transition-colors"
-          >
-            <td class="px-6 py-4">
+        <!-- Tabla -->
+        <div v-else class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <ResponsiveTable
+            :columnas="columnas"
+            :filas="agrupacionesFiltradas"
+            vacio-texto="No se encontraron agrupaciones con los filtros seleccionados.">
+
+            <template #cell-agrupacion="{ fila: ag }">
               <div class="flex items-center">
-              <div
-                class="h-9 w-9 rounded-lg flex items-center justify-center mr-3 flex-shrink-0"
-                :class="tipoConfig(ag.tipoUnidad).iconBg"
-              >
-                <component :is="tipoConfig(ag.tipoUnidad).icon" class="w-4 h-4" :class="tipoConfig(ag.tipoUnidad).iconText" />
-              </div>
+                <div
+                  class="h-9 w-9 rounded-lg flex items-center justify-center mr-3 flex-shrink-0"
+                  :class="tipoConfig(ag.tipoUnidad).iconBg"
+                >
+                  <component :is="tipoConfig(ag.tipoUnidad).icon" class="w-4 h-4" :class="tipoConfig(ag.tipoUnidad).iconText" />
+                </div>
                 <div>
                   <p class="text-sm font-medium text-gray-900">{{ ag.nombre }}</p>
                   <p v-if="ag.nombreCorto && ag.nombreCorto !== ag.nombre" class="text-xs text-gray-500">{{ ag.nombreCorto }}</p>
                 </div>
               </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            </template>
+
+            <template #cell-tipo="{ fila: ag }">
               <span
                 class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
                 :class="tipoConfig(ag.tipoUnidad).badge"
               >
                 {{ tipoConfig(ag.tipoUnidad).label }}
               </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 hidden md:table-cell">
+            </template>
+
+            <template #cell-padre="{ fila: ag }">
               {{ nombrePadre(ag.agrupacionPadreId) || '—' }}
-            </td>
-            <td class="px-6 py-4 hidden lg:table-cell">
+            </template>
+
+            <template #cell-contacto="{ fila: ag }">
               <div class="text-sm text-gray-600 space-y-0.5">
                 <div v-if="ag.email" class="flex items-center gap-1">
                   <EnvelopeIcon class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                  <a :href="'mailto:' + ag.email" class="hover:text-purple-600 hover:underline">{{ ag.email }}</a>
+                  <a :href="'mailto:' + ag.email" class="hover:text-purple-600 hover:underline" @click.stop>{{ ag.email }}</a>
                 </div>
                 <div v-if="ag.telefono" class="flex items-center gap-1">
                   <PhoneIcon class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
@@ -104,21 +94,24 @@
                 </div>
                 <span v-if="!ag.email && !ag.telefono" class="text-gray-400">—</span>
               </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            </template>
+
+            <template #cell-estado="{ fila: ag }">
               <span
                 class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
                 :class="ag.activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'"
               >
                 {{ ag.activo ? 'Activa' : 'Inactiva' }}
               </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right">
+            </template>
+
+            <template #cell-acciones="{ fila: ag }">
               <div class="flex items-center justify-end gap-3">
                 <router-link
                   :to="{ path: '/miembros', query: { agrupacion: ag.id } }"
                   class="inline-flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 font-medium"
                   :title="'Ver miembros de ' + ag.nombre"
+                  @click.stop
                 >
                   <span>{{ conteoMiembros(ag.id) }}</span>
                   <span class="hidden sm:inline">miembros</span>
@@ -128,27 +121,26 @@
                   :to="`/agrupaciones/${ag.id}/junta`"
                   class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium border border-indigo-200 rounded px-2 py-0.5 hover:bg-indigo-50 transition"
                   :title="`Gestionar ${orgConfig.organoGobierno}`"
+                  @click.stop
                 >
                   {{ orgConfig.OrganoGobierno }}
                 </router-link>
               </div>
-            </td>
-          </tr>
-        </tbody>
-      </table></div>
-
-      <div v-if="agrupacionesFiltradas.length > 0" class="px-6 py-3 border-t border-gray-100 bg-gray-50 text-xs text-gray-500">
-        Mostrando {{ agrupacionesFiltradas.length }} de {{ agrupaciones.length }} agrupaciones
+            </template>
+          </ResponsiveTable>
+        </div>
       </div>
     </div>
   </AppLayout>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onActivated } from 'vue'
 import { gql } from 'graphql-request'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
+import FilterRail from '@/components/common/FilterRail.vue'
+import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import {
@@ -156,7 +148,8 @@ import {
   BuildingOffice2Icon, Squares2X2Icon, EnvelopeIcon, PhoneIcon,
 } from '@heroicons/vue/24/outline'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
-import EstadoPendiente from '@/components/common/EstadoPendiente.vue'
+
+defineOptions({ name: 'ListaAgrupaciones' })
 
 const orgConfig = useOrgConfigStore()
 
@@ -195,16 +188,24 @@ const loading = ref(false)
 const error = ref('')
 const agrupaciones = ref([])
 const miembros = ref([])
-const filtersApplied = ref(false)
 
 const busqueda = ref('')
-const filters = ref({ naturaleza: '', nivel: '', activo: 'true' })
+const filters = ref({ naturaleza: [], nivel: '', activo: ['true'] })
+
+const columnas = [
+  { key: 'agrupacion', label: 'Agrupación', anchoMax: 'none' },
+  { key: 'tipo',       label: 'Tipo' },
+  { key: 'padre',      label: 'Depende de', ocultaEnMovil: true },
+  { key: 'contacto',   label: 'Contacto', ocultaEnMovil: true },
+  { key: 'estado',     label: 'Estado' },
+  { key: 'acciones',   label: 'Acciones', align: 'right', esAcciones: true },
+]
 
 const filterFields = computed(() => [
   {
     key: 'naturaleza',
     label: 'Naturaleza',
-    type: 'select',
+    type: 'multiselect',
     allLabel: 'Todas las naturalezas',
     options: [
       { value: 'TERRITORIAL',    label: 'Territorial' },
@@ -227,13 +228,13 @@ const filterFields = computed(() => [
   {
     key: 'activo',
     label: 'Estado',
-    type: 'select',
+    type: 'multiselect',
     allLabel: 'Todos',
     options: [
-      { value: 'true',  label: 'Solo activas' },
-      { value: 'false', label: 'Solo inactivas' },
+      { value: 'true',  label: 'Activas' },
+      { value: 'false', label: 'Inactivas' },
     ],
-    isActive: (val) => val !== '',
+    isActive: (val) => val?.length > 0 && val.length < 2,
   },
 ])
 
@@ -260,9 +261,11 @@ const nivelesResumen = computed(() => {
 
 const agrupacionesFiltradas = computed(() => {
   let lista = [...agrupaciones.value]
-  if (filters.value.activo === 'true') lista = lista.filter((a) => a.activo)
-  if (filters.value.activo === 'false') lista = lista.filter((a) => !a.activo)
-  if (filters.value.naturaleza) lista = lista.filter((a) => a.tipoUnidad?.naturaleza === filters.value.naturaleza)
+  // 'activo' es multiselect: ['true','false'] (o vacío) muestra ambas; un solo
+  // valor filtra activas o inactivas.
+  const act = filters.value.activo
+  if (act.length === 1) lista = lista.filter((a) => act.includes('true') ? a.activo : !a.activo)
+  if (filters.value.naturaleza.length) lista = lista.filter((a) => filters.value.naturaleza.includes(a.tipoUnidad?.naturaleza))
   if (filters.value.nivel) lista = lista.filter((a) => String(a.tipoUnidad?.nivel) === filters.value.nivel)
   if (busqueda.value) {
     const q = busqueda.value.toLowerCase()
@@ -289,8 +292,9 @@ function conteoMiembros(agrupacionId) {
 }
 
 
-function aplicarFiltros() {
-  filtersApplied.value = true
+function limpiarFiltros() {
+  busqueda.value = ''
+  filters.value = { naturaleza: [], nivel: '', activo: ['true'] }
 }
 
 async function cargar() {
@@ -307,5 +311,8 @@ async function cargar() {
   }
 }
 
-onMounted(cargar)
+// La vista está en <keep-alive>: no se desmonta al navegar, así que `onMounted`
+// solo correría una vez. `onActivated` cubre el primer montaje y cada regreso,
+// evitando mostrar datos obsoletos.
+onActivated(cargar)
 </script>

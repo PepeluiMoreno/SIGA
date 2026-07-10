@@ -201,12 +201,12 @@
                 <td class="px-4 py-3 text-right">
                   <div class="flex items-center justify-end gap-0.5">
                     <button type="button" @click.stop="abrirFicha(fila.miembro, false)"
-                      class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                      class="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
                       title="Ver ficha">
                       <EyeIcon class="w-4 h-4" />
                     </button>
                     <button type="button" @click.stop="abrirFicha(fila.miembro, true)"
-                      class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                      class="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
                       title="Editar">
                       <PencilIcon class="w-4 h-4" />
                     </button>
@@ -227,7 +227,7 @@
 
 <script setup>
 import { useToast } from '@/composables/useToast'
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onActivated, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
@@ -242,6 +242,9 @@ import AmbitoTerritorialSelect from '@/components/common/AmbitoTerritorialSelect
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
 import BulkActionsBar from '@/components/common/BulkActionsBar.vue'
 import { useSeleccionMultiple } from '@/composables/useSeleccionMultiple.js'
+
+defineOptions({ name: 'ListaMiembros' })
+
 const toast = useToast()
 const router = useRouter()
 
@@ -885,8 +888,11 @@ const exportarExcel = async () => {
   }
 }
 
-// Montar — cargar catálogos y socios de inmediato (sin pantalla de espera).
-onMounted(async () => {
+// La vista está en <keep-alive>: no se desmonta al navegar, así que `onMounted`
+// solo correría una vez. `onActivated` cubre el primer montaje y cada regreso
+// (p. ej. al volver de editar un socio), evitando mostrar datos obsoletos.
+// `loadMiembros` lee `agrupaciones` para colapsar el árbol: el orden importa.
+onActivated(async () => {
   await loadCatalogos()
   await loadMiembros()
 })

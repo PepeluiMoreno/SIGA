@@ -3,6 +3,7 @@
 
 export { useToast }              from './useToast'
 export { useConfirm }            from './useConfirm'
+export { useCambiosSinGuardar }  from './useCambiosSinGuardar'
 export { useBreakpoint }         from './useBreakpoint'
 export { useGraphQL }            from './useGraphQL'
 export { usePermisos }           from './usePermisos'

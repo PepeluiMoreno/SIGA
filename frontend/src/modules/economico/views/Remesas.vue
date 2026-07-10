@@ -15,81 +15,96 @@
 
     <div v-if="loading" class="py-12 text-center text-slate-400 text-sm">Cargando…</div>
 
-    <div v-else-if="remesasFiltradas.length" class="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
-      <div
-        v-for="r in remesasFiltradas"
-        :key="r.id"
-        class="px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors"
-        :class="seleccionada?.id === r.id ? 'bg-indigo-50/50' : ''"
-        @click="seleccionada = seleccionada?.id === r.id ? null : r"
-      >
-        <div class="grid grid-cols-[minmax(0,1.4fr)_auto_minmax(0,2fr)_8rem_6rem] items-center gap-3">
-          <span
-            class="font-mono text-sm font-medium text-slate-800 truncate"
-            :title="r.referencia"
-          >{{ formatRef(r.referencia) }}</span>
-          <span class="text-[10px] uppercase tracking-wide rounded px-1.5 py-0.5 justify-self-start" :class="badgeTipo(r.tipoRemesa)">
+    <div v-else-if="remesasFiltradas.length" class="bg-white border border-slate-200 rounded-xl sm:overflow-hidden p-3 sm:p-0">
+      <ResponsiveTable
+        :columnas="columnasRemesas"
+        :filas="remesasFiltradas"
+        clave-fila="id"
+        :orden-inicial="{ key: 'cobro', dir: 'desc' }"
+        vacio-texto="No hay remesas con los filtros aplicados">
+
+        <template #cell-referencia="{ fila: r }">
+          <div class="font-mono text-sm font-medium text-slate-800 truncate" :title="r.referencia">
+            {{ formatRef(r.referencia) }}
+          </div>
+          <p v-if="r.observaciones" class="text-[10px] text-slate-500 italic truncate" :title="r.observaciones">
+            {{ r.observaciones }}
+          </p>
+        </template>
+
+        <template #cell-tipoRemesa="{ fila: r }">
+          <span class="text-[10px] uppercase tracking-wide rounded px-1.5 py-0.5" :class="badgeTipo(r.tipoRemesa)">
             {{ tipoLabel(r.tipoRemesa) }}
           </span>
-          <span class="text-xs text-slate-500 truncate">
-            Cobro {{ fechaFmt(r.fechaCobro) }} · {{ r.numOrdenes }} órdenes
+        </template>
+
+        <template #cell-cobro="{ fila: r }">
+          <span class="text-xs text-slate-500">
+            {{ fechaFmt(r.fechaCobro) }} · {{ r.numOrdenes }} órdenes
             <span v-if="r.agrupacion" class="ml-1 text-indigo-600">· {{ r.agrupacion.nombre }}</span>
           </span>
-          <span class="font-mono text-sm font-bold text-slate-900 text-right">{{ fmt(r.importeTotal) }}</span>
-          <span :class="badgeEstado(r.estado?.nombre)" class="text-xs px-2 py-0.5 rounded-full font-medium justify-self-end whitespace-nowrap">
+        </template>
+
+        <template #cell-importeTotal="{ fila: r }">
+          <span class="font-mono text-sm font-bold text-slate-900">{{ fmt(r.importeTotal) }}</span>
+        </template>
+
+        <template #cell-estado="{ fila: r }">
+          <span :class="badgeEstado(r.estado?.nombre)" class="text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
             {{ r.estado?.nombre || '—' }}
           </span>
-        </div>
+        </template>
 
-        <!-- Acciones por estado -->
-        <div v-if="seleccionada?.id === r.id" class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2">
-          <button
-            v-if="['Borrador','Generada','Enviada','Procesada','Parcial'].includes(r.estado?.nombre)"
-            @click.stop="descargarXml(r)"
-            class="btn-secondary text-xs"
-            :disabled="ocupado"
-          >↓ XML SEPA</button>
+        <!-- Acciones por estado (antes en el acordeón por fila) -->
+        <template #cell-acciones="{ fila: r }">
+          <div class="flex flex-wrap items-center justify-end gap-1.5">
+            <button
+              v-if="['Borrador','Generada','Enviada','Procesada','Parcial'].includes(r.estado?.nombre)"
+              @click.stop="descargarXml(r)"
+              class="btn-secondary text-xs"
+              :disabled="ocupado"
+            >↓ XML SEPA</button>
 
-          <button
-            v-if="r.estado?.nombre === 'Borrador' || r.estado?.nombre === 'Generada'"
-            @click.stop="marcarEnviada(r.id)"
-            class="btn-secondary text-xs"
-            :disabled="ocupado"
-          >Marcar enviada</button>
+            <button
+              v-if="r.estado?.nombre === 'Borrador' || r.estado?.nombre === 'Generada'"
+              @click.stop="marcarEnviada(r.id)"
+              class="btn-secondary text-xs"
+              :disabled="ocupado"
+            >Marcar enviada</button>
 
-          <button
-            v-if="r.estado?.nombre === 'Enviada'"
-            @click.stop="abrirModalLiquidar(r)"
-            class="btn-primary text-xs"
-          >Liquidar cobro</button>
+            <button
+              v-if="r.estado?.nombre === 'Enviada'"
+              @click.stop="abrirModalLiquidar(r)"
+              class="btn-primary text-xs"
+            >Liquidar cobro</button>
 
-          <button
-            v-if="tienePermiso('ECO_REMESA_ENVIAR') && ['Generada','Enviada'].includes(r.estado?.nombre)"
-            @click.stop="avisarProximoCobro(r)"
-            class="btn-secondary text-xs"
-            :disabled="ocupado"
-          >✉ Avisar próximo cobro</button>
+            <button
+              v-if="tienePermiso('ECO_REMESA_ENVIAR') && ['Generada','Enviada'].includes(r.estado?.nombre)"
+              @click.stop="avisarProximoCobro(r)"
+              class="btn-secondary text-xs"
+              :disabled="ocupado"
+            >✉ Avisar próximo cobro</button>
 
-          <button
-            v-if="['Procesada','Parcial'].includes(r.estado?.nombre)"
-            @click.stop="abrirReenvio(r)"
-            class="btn-secondary text-xs"
-            :disabled="ocupado"
-          >+ Remesa de reenvío</button>
+            <button
+              v-if="['Procesada','Parcial'].includes(r.estado?.nombre)"
+              @click.stop="abrirReenvio(r)"
+              class="btn-secondary text-xs"
+              :disabled="ocupado"
+            >+ Remesa de reenvío</button>
 
-          <button
-            v-if="['Borrador','Generada','Enviada'].includes(r.estado?.nombre)"
-            @click.stop="anularRemesa(r)"
-            class="btn-danger text-xs ml-auto"
-            :disabled="ocupado"
-          >Anular</button>
+            <button
+              v-if="['Borrador','Generada','Enviada'].includes(r.estado?.nombre)"
+              @click.stop="anularRemesa(r)"
+              class="btn-danger text-xs"
+              :disabled="ocupado"
+            >Anular</button>
 
-          <span v-if="r.estado?.nombre === 'Procesada'" class="text-xs text-green-600 self-center">
-            ✓ Cobro registrado
-          </span>
-          <p v-if="r.observaciones" class="w-full text-xs text-slate-500 mt-1 italic">{{ r.observaciones }}</p>
-        </div>
-      </div>
+            <span v-if="r.estado?.nombre === 'Procesada'" class="text-xs text-green-600 self-center whitespace-nowrap">
+              ✓ Cobro registrado
+            </span>
+          </div>
+        </template>
+      </ResponsiveTable>
     </div>
 
     <p v-else class="text-center text-slate-400 py-12 text-sm border border-dashed border-slate-200 rounded-xl">
@@ -342,9 +357,10 @@
 <script setup>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { useConfirm } from '@/composables/useConfirm'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onActivated } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
+import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import SelectorAgrupacion from '@/components/common/SelectorAgrupacion.vue'
 import ModalLiquidacionRemesa from './ModalLiquidacionRemesa.vue'
 import { useGraphQL } from '@/composables/useGraphQL'
@@ -354,6 +370,9 @@ import { GET_REMESA_DETALLE } from '@/graphql/queries/economico'
 import { ENVIAR_AVISOS_PROXIMO_COBRO } from '@/graphql/queries/socioGestion.js'
 import { useToast } from '@/composables/useToast'
 import { usePermisos } from '@/composables/usePermisos'
+
+defineOptions({ name: 'Remesas' })
+
 const confirmDialog = useConfirm()
 const toast = useToast()
 const { tienePermiso } = usePermisos()
@@ -368,6 +387,17 @@ const cuentasBancarias = ref([])
 const error = ref('')
 const ocupado = ref(false)
 const remesaParaLiquidar = ref(null)
+
+// Columnas de la tabla de remesas (ResponsiveTable). La referencia es la
+// cabecera de tarjeta en móvil; las acciones por estado van en su columna.
+const columnasRemesas = [
+  { key: 'referencia',  label: 'Referencia', ordenable: true },
+  { key: 'tipoRemesa',  label: 'Tipo',       align: 'center', ordenable: true, valorOrden: r => tipoLabel(r.tipoRemesa) },
+  { key: 'cobro',       label: 'Cobro',      ordenable: true, valorOrden: r => r.fechaCobro, anchoMax: 'none' },
+  { key: 'importeTotal',label: 'Importe',    align: 'right', ordenable: true },
+  { key: 'estado',      label: 'Estado',     align: 'center', ordenable: true, valorOrden: r => r.estado?.nombre },
+  { key: 'acciones',    align: 'right', esAcciones: true },
+]
 
 // ── FilterBar ─────────────────────────────────────────────────────────────────
 const filtros = ref({ ejercicio: null, tipo: [], estado: [], agrupacionId: null })
@@ -728,7 +758,10 @@ const badgeEstado = (nombre) => ({
   'Anulada':   'bg-slate-100 text-slate-400',
 }[nombre] || 'bg-slate-100 text-slate-500')
 
-onMounted(async () => {
+// La vista está en <keep-alive>: no se desmonta al navegar, así que `onMounted`
+// solo correría una vez. `onActivated` cubre el primer montaje y cada regreso,
+// evitando mostrar datos obsoletos.
+onActivated(async () => {
   // cargarUnidades: sin esto, el selector de agrupación del asistente de remesa queda
   // vacío (la lista `unidades` del composable no se puebla sola).
   await Promise.all([cargarRemesas(), cargarCuentas(), cargarUnidades()])
