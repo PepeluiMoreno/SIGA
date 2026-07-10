@@ -612,7 +612,9 @@ class HistorialAgrupacionType:
 
 @strawchemy.type(SolicitudTraslado, include="all", override=True)
 class SolicitudTrasladoType:
-    pass
+    # motivo_traslado_id es nullable (solicitudes legacy sin catálogo); la relación
+    # debe ser opcional o strawchemy la marca no-nulable y revienta al resolver null.
+    motivo_traslado: Optional['MotivoTrasladoType'] = None
 
 
 # === CAMPAÑAS ===
