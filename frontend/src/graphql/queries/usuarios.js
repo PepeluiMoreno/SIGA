@@ -47,6 +47,12 @@ export const DESACTIVAR_USUARIO = `
   }
 `
 
+export const ACTIVAR_USUARIO = `
+  mutation ActivarUsuario($id: UUID!) {
+    activarUsuario(id: $id)
+  }
+`
+
 // Eliminar usuario: soft-delete (papelera) por defecto, o hard-delete si hard=true.
 // El hard-delete se deniega por motivos de auditoría si el usuario creó/modificó
 // registros; en ese caso el backend devuelve un error explicativo.
@@ -60,6 +66,7 @@ export const GET_TIPOS_VINCULACION = `
   query TiposVinculacion {
     tiposVinculacion {
       id
+      codigo
       nombre
       requiereSatelite
       permiteCuenta

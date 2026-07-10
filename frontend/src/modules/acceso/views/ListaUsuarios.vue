@@ -1,259 +1,185 @@
 <template>
-  <AppLayout title="Usuarios" subtitle="Usuarios con acceso a la aplicación">
+  <AppLayout title="Usuarios" subtitle="Usuarios con acceso a la aplicación" fluid>
 
-    <!-- Filtros -->
-    <FilterBar
-      v-model="filters"
-      v-model:search="searchQuery"
-      search-placeholder="Buscar por nombre, apellido o email…"
-      :create-label="tienePermiso('ACCESO_USUARIO_CREAR') ? 'Nuevo usuario' : ''"
-      create-route="/usuarios/crear"
-      :fields="filterFields"
-      description="usuarios con acceso a SIGA"
-      :lazy="true"
-      :loading="loading"
-      class="mb-4"
-      @apply="applyClientFilters"
-      @clear="limpiarFiltros"
-    />
+    <!-- Acción principal en el topbar (estándar global) -->
+    <template v-if="tienePermiso('ACCESO_USUARIO_CREAR')" #actions>
+      <router-link to="/usuarios/crear"
+        class="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+        <span class="text-base leading-none">+</span>
+        Nuevo usuario
+      </router-link>
+    </template>
 
-    <!-- Loading -->
-    <EstadoCarga v-if="loading" mensaje="Cargando usuarios…" />
+    <!-- Layout: filtro lateral colapsable (FilterRail) + resultados -->
+    <div class="flex flex-col lg:flex-row gap-4 items-start">
 
-    <!-- Error -->
-    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-6">
-      <p class="text-red-700 font-medium">Error al cargar datos</p>
-      <p class="text-red-600 text-sm mt-1">{{ error.message || error }}</p>
-    </div>
-
-    <!-- Sin resultados -->
-    <div v-else-if="usuariosFiltrados.length === 0"
-      class="bg-white border border-gray-200 rounded-lg p-12 text-center text-gray-500">
-      <UsersIcon class="w-16 h-16 mx-auto mb-4 text-gray-300" />
-      <p class="text-lg">No hay usuarios con los filtros seleccionados</p>
-    </div>
-
-    <!-- Tabla jerárquica -->
-    <TablaJerarquica
-      v-else
-      :items="usuariosFiltrados"
-      :agrupaciones="agrupaciones"
-      descripcion="usuarios con acceso a la app"
-      item-label="usuario"
-      items-label="usuarios"
-      :colspan="5"
-      @limpiar="limpiarFiltros"
-    >
-      <template #row="{ item, depth }">
-        <!-- Nombre miembro -->
-        <td class="py-3 pr-4" :style="{ paddingLeft: (depth * 20 + 16) + 'px' }">
-          <div class="flex items-center gap-3">
-            <div class="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-white text-xs font-medium bg-purple-500">
-              {{ getInitials(item.nombre, item.apellido1) }}
-            </div>
+      <FilterRail storage-key="usuarios">
+        <FilterBar
+          vertical
+          v-model="filters"
+          v-model:search="searchQuery"
+          search-placeholder="Buscar por nombre, apellido o email…"
+          :fields="filterFields"
+          @clear="limpiarFiltros"
+        >
+          <!-- Filtro por agrupación: buscador de texto (escribes el nombre y
+               filtra), no un desplegable. Mismo componente que el panel de roles. -->
+          <template #filters-prefix>
             <div>
-              <div class="text-sm font-medium text-gray-900">
-                {{ item.apellido1 }}{{ item.apellido2 ? ' ' + item.apellido2 : '' }}, {{ item.nombre }}
-              </div>
-              <div class="flex items-center gap-2 mt-0.5">
-                <span v-if="item.tipoMiembro" class="text-xs text-gray-400">{{ item.tipoMiembro.nombre }}</span>
-              </div>
+              <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Agrupación</span>
+              <SelectorAgrupacion v-model="filters.agrupacion" :agrupaciones="agrupaciones" />
             </div>
-          </div>
-        </td>
+          </template>
+        </FilterBar>
+      </FilterRail>
 
-        <!-- Email + activo -->
-        <td class="px-4 py-3">
-          <div class="text-sm text-gray-800">{{ item.usuario?.email || item.email || '—' }}</div>
-          <span class="inline-flex mt-1 px-2 py-0.5 text-xs font-medium rounded-full"
-            :class="item.usuario?.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'">
-            {{ item.usuario?.activo ? 'Activo' : 'Inactivo' }}
-          </span>
-        </td>
+      <!-- Columna de resultados -->
+      <div class="flex-1 min-w-0 w-full">
 
-        <!-- Roles -->
-        <td class="px-4 py-3">
-          <div class="flex flex-wrap gap-1">
-            <span v-for="ur in (item.usuario?.roles ?? []).filter(r => r.activo !== false)" :key="ur.id"
-              class="inline-flex items-center px-1.5 py-0.5 text-xs rounded-full border"
-              :class="TIPO_ROL_BADGE[ur.rol?.tipo] ?? 'bg-gray-50 text-gray-600 border-gray-200'"
-              :title="ur.rol?.nombre">
-              {{ ur.rol?.nombre }}
-            </span>
-            <span v-if="!(item.usuario?.roles?.filter(r => r.activo !== false).length)" class="text-xs text-gray-400 italic">Sin roles</span>
-          </div>
-        </td>
+        <!-- Estado carga / error -->
+        <EstadoCarga v-if="loading" mensaje="Cargando usuarios…" />
+        <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
+          {{ error.message || error }}
+          <button @click="cargar" class="ml-3 underline font-medium hover:no-underline">Reintentar</button>
+        </div>
 
-        <!-- Último acceso -->
-        <td class="px-4 py-3 text-sm text-gray-500">{{ formatFecha(item.usuario?.ultimoAcceso) }}</td>
+        <!-- Tabla -->
+        <div v-else class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <ResponsiveTable
+            :columnas="columnas"
+            :filas="usuariosFiltrados"
+            :orden-inicial="{ key: 'nombre', dir: 'asc' }"
+            vacio-texto="No hay usuarios con los filtros seleccionados">
 
-        <!-- Acciones -->
-        <td class="px-4 py-3 text-right">
-          <div class="inline-flex items-center gap-1.5">
-            <button @click="abrirPanel(item)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors"
-              :class="panelMiembro?.id === item.id
-                ? 'bg-purple-600 text-white border-purple-600'
-                : 'text-purple-700 border-purple-200 bg-purple-50 hover:bg-purple-100'">
-              <ShieldCheckIcon class="w-3.5 h-3.5" />
-              Roles
-            </button>
-            <template v-if="puedeEliminar(item.usuario)">
-              <button v-if="item.usuario.activo"
-                @click="desactivarUsuario(item.usuario)"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors">
-                <NoSymbolIcon class="w-3.5 h-3.5" />
-                Desactivar
-              </button>
-              <RowActions
-                :show-edit="false"
-                confirm-title="¿Eliminar usuario permanentemente?"
-                confirm-title-soft="¿Mover usuario a la papelera?"
-                :confirm-text="`Usuario: ${item.usuario.email || item.usuario.username || ''}`"
-                @delete="(opts) => eliminarUsuario(item.usuario, opts)" />
+            <!-- Miembro -->
+            <template #cell-nombre="{ fila: item }">
+              <div class="flex items-center gap-3">
+                <div class="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-white text-xs font-medium bg-purple-500">
+                  {{ getInitials(item.nombre, item.apellido1) }}
+                </div>
+                <div class="min-w-0">
+                  <div class="text-sm font-medium text-gray-900 truncate">
+                    {{ item.apellido1 }}{{ item.apellido2 ? ' ' + item.apellido2 : '' }}, {{ item.nombre }}
+                  </div>
+                  <div v-if="item.tipoMiembro" class="text-xs text-gray-400 truncate">{{ item.tipoMiembro.nombre }}</div>
+                </div>
+              </div>
             </template>
-          </div>
-        </td>
-      </template>
-    </TablaJerarquica>
 
-    <!-- ── Modal centrado: gestión de roles ─────────────────────────────── -->
-    <Transition name="modal">
-      <div v-if="panelMiembro"
-        class="fixed inset-0 z-40 flex items-center justify-center p-4"
-        @click.self="cerrarPanel">
-      <div class="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-white rounded-xl shadow-2xl border border-gray-200">
+            <!-- Email (el estado activo/inactivo va en la columna «Acceso») -->
+            <template #cell-email="{ fila: item }">
+              <div class="text-sm text-gray-800 truncate">{{ item.usuario?.email || item.email || '—' }}</div>
+            </template>
 
-        <!-- Cabecera -->
-        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50 flex-shrink-0">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="h-9 w-9 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-              <span class="text-sm font-semibold text-purple-700">{{ getInitials(panelMiembro.nombre, panelMiembro.apellido1) }}</span>
-            </div>
-            <div class="min-w-0">
-              <p class="text-sm font-semibold text-gray-900 truncate">{{ panelMiembro.apellido1 }} {{ panelMiembro.apellido2 || '' }}, {{ panelMiembro.nombre }}</p>
-              <p class="text-xs text-gray-500 truncate">{{ panelMiembro.usuario?.email }}</p>
-            </div>
-          </div>
-          <button @click="cerrarPanel" class="p-1.5 rounded-lg hover:bg-gray-200 transition-colors text-gray-400 hover:text-gray-600">
-            <XMarkIcon class="w-5 h-5" />
-          </button>
-        </div>
-
-        <!-- Buscador roles -->
-        <div class="px-4 py-2.5 border-b border-gray-100 flex-shrink-0">
-          <div class="relative">
-            <MagnifyingGlassIcon class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2   text-gray-400 pointer-events-none" />
-            <input v-model="busquedaRol" type="text" placeholder="Buscar rol…"
-              class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-purple-500 focus:border-purple-500 focus:outline-none" />
-          </div>
-        </div>
-
-        <!-- Error panel -->
-        <div v-if="errorPanel"
-          class="mx-4 mt-3 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700 flex-shrink-0">
-          {{ errorPanel }}
-        </div>
-
-        <!-- Lista de roles -->
-        <div v-if="cargandoPanel" class="flex-1 flex items-center justify-center">
-          <div class="h-6 w-6 rounded-full border-4 border-purple-500 border-t-transparent animate-spin"></div>
-        </div>
-
-        <div v-else class="flex-1 overflow-y-auto">
-          <div v-for="grupo in rolesPorTipo" :key="grupo.tipo" class="mb-1">
-            <div class="sticky top-0 z-10 flex items-center gap-2 px-4 py-1.5 bg-gray-50 border-b border-gray-100">
-              <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full"
-                :class="TIPO_ROL_BADGE[grupo.tipo] ?? 'bg-gray-100 text-gray-600 border border-gray-200'">
-                {{ TIPO_ROL_LABEL[grupo.tipo] ?? grupo.tipo }}
+            <!-- Vinculación (la vigente del contacto). La etiqueta del tipo SOCIO
+                 deriva de la denominación configurable de la membresía. -->
+            <template #cell-vinculacion="{ fila: item }">
+              <span v-if="item.vinculacionNombre"
+                class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                {{ etiquetaVinculacion(item) }}
               </span>
-              <span class="text-xs text-gray-400 ml-auto">{{ grupo.roles.length }} roles</span>
-            </div>
+              <span v-else class="text-xs text-gray-400">—</span>
+            </template>
 
-            <div v-for="rol in grupo.roles" :key="rol.id"
-              class="flex items-start gap-3 px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors">
-
-              <div class="flex items-center pt-0.5">
-                <button @click="toggleRol(rol)"
-                  :disabled="pendienteRolId === rol.id"
-                  class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none flex-shrink-0"
-                  :class="estaAsignado(rol.id) ? 'bg-purple-600' : 'bg-gray-200'"
-                  :title="estaAsignado(rol.id) ? 'Revocar rol' : 'Asignar rol'">
-                  <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform"
-                    :class="estaAsignado(rol.id) ? 'translate-x-4' : 'translate-x-0.5'"></span>
-                  <span v-if="pendienteRolId === rol.id"
-                    class="absolute inset-0 flex items-center justify-center">
-                    <span class="h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin"></span>
-                  </span>
-                </button>
+            <!-- Roles -->
+            <template #cell-roles="{ fila: item }">
+              <div class="flex flex-wrap gap-1">
+                <span v-for="ur in (item.usuario?.roles ?? []).filter(r => r.activo !== false)" :key="ur.id"
+                  class="inline-flex items-center px-1.5 py-0.5 text-xs rounded-full border"
+                  :class="TIPO_ROL_BADGE[ur.rol?.tipo] ?? 'bg-gray-50 text-gray-600 border-gray-200'"
+                  :title="ur.rol?.nombre">
+                  {{ ur.rol?.nombre }}
+                </span>
+                <span v-if="!(item.usuario?.roles?.filter(r => r.activo !== false).length)" class="text-xs text-gray-400 italic">Sin roles</span>
               </div>
+            </template>
 
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                  <span class="text-sm font-medium text-gray-900">{{ rol.nombre }}</span>
-                  <code class="text-xs font-mono text-gray-400">{{ rol.codigo }}</code>
-                </div>
-                <p v-if="rol.descripcion" class="text-xs text-gray-500 mt-0.5 truncate">{{ rol.descripcion }}</p>
+            <!-- Último acceso -->
+            <template #cell-ultimoAcceso="{ fila: item }">
+              <span class="text-sm text-gray-500">{{ formatFecha(item.usuario?.ultimoAcceso) }}</span>
+            </template>
 
-                <!-- Selector de territorio para roles TERRITORIAL -->
-                <div v-if="estaAsignado(rol.id) && rol.tipo === 'TERRITORIAL' && agrupaciones.length > 0" class="mt-2">
-                  <label class="block text-xs text-gray-500 mb-1">Territorio de aplicación</label>
-                  <SelectorAgrupacion
-                    :model-value="agrupacionDeRolAsignado(rol.id)"
-                    :agrupaciones="agrupaciones"
-                    placeholder="Todos los territorios (buscar para acotar)…"
-                    @update:model-value="cambiarAgrupacion(rol, $event)" />
-                </div>
+            <!-- Acceso: toggle deslizante (muestra el estado y lo alterna), mismo
+                 patrón que la columna «Activo» de ListaRoles. -->
+            <template #cell-acceso="{ fila: item }">
+              <button v-if="puedeEliminar(item.usuario)"
+                @click.stop="toggleActivoUsuario(item.usuario)"
+                :disabled="toggling === item.usuario.id"
+                :title="item.usuario.activo ? 'Desactivar acceso' : 'Reactivar acceso'"
+                class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none"
+                :class="[item.usuario.activo ? 'bg-green-500' : 'bg-gray-300', toggling === item.usuario.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer']">
+                <span class="sr-only">{{ item.usuario.activo ? 'Activo' : 'Inactivo' }}</span>
+                <span :class="item.usuario.activo ? 'translate-x-5' : 'translate-x-1'"
+                  class="inline-block h-3 w-3 transform rounded-full bg-white transition-transform shadow-sm"></span>
+              </button>
+              <!-- Cuentas protegidas (superadmin / propia): estado en texto, sin toggle -->
+              <span v-else class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full"
+                :class="item.usuario?.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'">
+                {{ item.usuario?.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </template>
 
-                <div v-else-if="estaAsignado(rol.id) && agrupacionDeRolAsignado(rol.id)" class="mt-1">
-                  <span class="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded">
-                    <MapPinIcon class="w-3 h-3" />
-                    {{ agrupacionNombre(agrupacionDeRolAsignado(rol.id)) }}
-                  </span>
-                </div>
+            <!-- Acciones: iconos con tooltip, siempre visibles -->
+            <template #cell-acciones="{ fila: item }">
+              <div class="inline-flex items-center justify-end gap-1">
+                <!-- Ver la ficha de la cuenta (página de detalle) -->
+                <router-link :to="`/usuarios/${item.id}`" @click.stop
+                  class="p-1.5 rounded-md transition-colors text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 inline-flex"
+                  title="Ver ficha de la cuenta">
+                  <EyeIcon class="w-4 h-4" />
+                </router-link>
+
+                <RowActions v-if="puedeEliminar(item.usuario)"
+                  :show-edit="false"
+                  confirm-title="¿Eliminar usuario permanentemente?"
+                  confirm-title-soft="¿Mover usuario a la papelera?"
+                  :confirm-text="`Usuario: ${item.usuario.email || item.usuario.username || ''}`"
+                  @delete="(opts) => eliminarUsuario(item.usuario, opts)" />
               </div>
-            </div>
-          </div>
-
-          <div v-if="rolesPorTipo.length === 0" class="text-center py-8 text-sm text-gray-400">
-            No hay roles disponibles
-          </div>
+            </template>
+          </ResponsiveTable>
         </div>
 
-      </div><!-- /inner modal box -->
-      </div>
-    </Transition>
-
-    <!-- Overlay -->
-    <Transition name="fade">
-      <div v-if="panelMiembro" class="fixed inset-0 z-30 bg-black/40" @click="cerrarPanel"></div>
-    </Transition>
+      </div><!-- /columna de resultados -->
+    </div><!-- /layout -->
 
   </AppLayout>
 </template>
 
 <script setup>
-import { XMarkIcon, MagnifyingGlassIcon, NoSymbolIcon } from '@heroicons/vue/24/outline'
-import { ref, computed, onMounted, watch } from 'vue'
+import { EyeIcon } from '@heroicons/vue/24/outline'
+import { ref, computed, onActivated } from 'vue'
 import AppLayout from '@/components/common/AppLayout.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
-import TablaJerarquica from '@/components/common/TablaJerarquica.vue'
+import FilterRail from '@/components/common/FilterRail.vue'
+import ResponsiveTable from '@/components/common/ResponsiveTable.vue'
 import RowActions from '@/components/common/RowActions.vue'
 import SelectorAgrupacion from '@/components/common/SelectorAgrupacion.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { usePermisos } from '@/composables/usePermisos.js'
 import { useGraphQL } from '@/composables/useGraphQL.js'
+import { useOrgConfigStore } from '@/stores/orgConfig'
+import { nombreTipoVinculacion } from '@/utils/tipoVinculacion.js'
 import { useToast } from '@/composables/useToast'
 import { GET_CUENTAS_ACCESO, GET_AGRUPACIONES } from '@/graphql/queries/miembros.js'
-import { GET_ROLES, ASIGNAR_ROL_USUARIO, REVOCAR_ROL_USUARIO } from '@/graphql/queries/administracion.js'
-import { GET_TIPOS_VINCULACION, ELIMINAR_USUARIO, DESACTIVAR_USUARIO } from '@/graphql/queries/usuarios.js'
+import { GET_TIPOS_VINCULACION, ELIMINAR_USUARIO, DESACTIVAR_USUARIO, ACTIVAR_USUARIO } from '@/graphql/queries/usuarios.js'
 import EstadoCarga from '@/components/common/EstadoCarga.vue'
+
+defineOptions({ name: 'ListaUsuarios' })
 
 const { tienePermiso } = usePermisos()
 const { loading, error, query } = useGraphQL()
+const orgConfig = useOrgConfigStore()
 const toast = useToast()
 
-// ── Estilos de roles ─────────────────────────────────────────────────────────
+// Etiqueta del tipo de vinculación derivando la denominación de la membresía
+// (SOCIO → «Socio»/«Asociado»/…). El backend proyecta `vinculacionTipoCodigo`.
+const etiquetaVinculacion = (m) =>
+  m.vinculacionTipoCodigo
+    ? nombreTipoVinculacion(m.vinculacionTipoCodigo, orgConfig, m.vinculacionNombre)
+    : m.vinculacionNombre
+
+// Badge de rol en la columna «Roles» (la gestión de roles vive en DetalleUsuario)
 const TIPO_ROL_BADGE = {
   SISTEMA:       'bg-red-50 text-red-700 border border-red-200',
   FUNCIONAL:     'bg-purple-50 text-purple-700 border border-purple-200',
@@ -261,65 +187,39 @@ const TIPO_ROL_BADGE = {
   ORGANIZACION:  'bg-blue-50 text-blue-700 border border-blue-200',
   PERSONALIZADO: 'bg-gray-50 text-gray-600 border border-gray-200',
 }
-const TIPO_ROL_LABEL = {
-  SISTEMA: 'Sistema', FUNCIONAL: 'Funcional', TERRITORIAL: 'Territorial',
-  ORGANIZACION: 'Organización', PERSONALIZADO: 'Personalizado',
-}
-const TIPO_ROL_ORDEN = ['SISTEMA', 'FUNCIONAL', 'TERRITORIAL', 'ORGANIZACION', 'PERSONALIZADO']
 
 // ── Datos ─────────────────────────────────────────────────────────────────────
 const allMiembros      = ref([])   // todos los miembros con usuario
-const agrupaciones     = ref([])   // árbol territorial
-const todosRoles       = ref([])   // catálogo de roles para el panel
-const tiposVinculacion = ref([])   // catálogo de tipos de vinculación
+const agrupaciones     = ref([])   // árbol territorial (filtro por agrupación)
+const tiposVinculacion = ref([])   // catálogo de tipos de vinculación (filtro)
 
 // ── UI ────────────────────────────────────────────────────────────────────────
 const searchQuery = ref('')
-const filters     = ref({ activo: false, agrupacion: '', tipoVinculacion: '' })
+const filters     = ref({ activo: false, agrupacion: '', tiposVinculacion: [] })
 
-// Panel
-const panelMiembro   = ref(null)
-const panelRoles     = ref([])
-const cargandoPanel  = ref(false)
-const errorPanel     = ref('')
-const busquedaRol    = ref('')
-const pendienteRolId = ref(null)
-
-// ── Computed: filtros ─────────────────────────────────────────────────────────
-const agrupacionesJerarquicas = computed(() => {
-  const lista = agrupaciones.value
-  if (!lista.length) return []
-  const buildTree = (padreId = null, nivel = 0) => {
-    const hijos = lista
-      .filter(a => a.agrupacionPadreId === padreId)
-      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-    const resultado = []
-    for (const ag of hijos) {
-      const indent = '  '.repeat(nivel)
-      resultado.push({ ...ag, displayNombre: indent + ag.nombre })
-      resultado.push(...buildTree(ag.id, nivel + 1))
-    }
-    return resultado
-  }
-  return buildTree(null, 0)
-})
+// ── Tabla ───────────────────────────────────────────────────────────────────
+const columnas = [
+  { key: 'nombre',       label: 'Nombre',         ordenable: true, anchoMax: 'none',
+    valorOrden: m => `${m.apellido1 ?? ''} ${m.apellido2 ?? ''} ${m.nombre ?? ''}`.trim() },
+  { key: 'email',        label: 'Email',          ordenable: true,
+    valorOrden: m => m.usuario?.email || m.email || '' },
+  { key: 'vinculacion',  label: 'Vinculación',    ordenable: true,
+    valorOrden: m => m.vinculacionNombre || '' },
+  { key: 'roles',        label: 'Roles' },
+  { key: 'ultimoAcceso', label: 'Último acceso',  ordenable: true,
+    valorOrden: m => m.usuario?.ultimoAcceso || '' },
+  { key: 'acceso',       label: 'Acceso',         align: 'center', ordenable: true,
+    valorOrden: m => (m.usuario?.activo ? 1 : 0) },
+  { key: 'acciones',     align: 'right', esAcciones: true },
+]
 
 const filterFields = computed(() => [
   {
-    key: 'agrupacion',
-    label: 'Agrupación',
-    type: 'select',
-    options: agrupacionesJerarquicas.value.map(a => ({ value: a.id, label: a.displayNombre })),
-    allLabel: 'Todas las agrupaciones',
-    width: 'w-72',
-  },
-  {
-    key: 'tipoVinculacion',
+    key: 'tiposVinculacion',
     label: 'Tipo de vinculación',
-    type: 'select',
+    type: 'multiselect',
     options: tiposVinculacion.value.map(t => ({ value: t.id, label: t.nombre })),
     allLabel: 'Todos los tipos',
-    width: 'w-64',
   },
   {
     key: 'activo',
@@ -362,8 +262,8 @@ const usuariosFiltrados = computed(() => {
     list = list.filter(m => m.agrupacion?.id && ids.has(m.agrupacion.id))
   }
 
-  if (filters.value.tipoVinculacion) {
-    list = list.filter(m => m.usuario?.tipoVinculacion?.id === filters.value.tipoVinculacion)
+  if (filters.value.tiposVinculacion?.length) {
+    list = list.filter(m => filters.value.tiposVinculacion.includes(m.vinculacionTipoId))
   }
 
   return list
@@ -380,130 +280,30 @@ function formatFecha(iso) {
   return isNaN(d.getTime()) ? '—' : d.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })
 }
 
-function agrupacionNombre(id) {
-  if (!id) return ''
-  return agrupaciones.value.find(a => a.id === id)?.nombre ?? id.slice(0, 8) + '…'
-}
-
-function estaAsignado(rolId) {
-  return panelRoles.value.some(ur => ur.rol?.id === rolId)
-}
-
-function agrupacionDeRolAsignado(rolId) {
-  return panelRoles.value.find(ur => ur.rol?.id === rolId)?.agrupacionId ?? null
-}
-
-// ── Panel de roles ────────────────────────────────────────────────────────────
-const rolesPorTipo = computed(() => {
-  const q = busquedaRol.value.trim().toLowerCase()
-  const agrupados = {}
-  for (const rol of todosRoles.value) {
-    if (!rol.activo) continue
-    if (q && !rol.nombre.toLowerCase().includes(q) && !rol.codigo.toLowerCase().includes(q)) continue
-    const tipo = rol.tipo ?? 'PERSONALIZADO'
-    if (!agrupados[tipo]) agrupados[tipo] = []
-    agrupados[tipo].push(rol)
-  }
-  return TIPO_ROL_ORDEN.filter(t => agrupados[t]?.length).map(t => ({ tipo: t, roles: agrupados[t] }))
-})
-
-async function abrirPanel(miembro) {
-  if (panelMiembro.value?.id === miembro.id) { cerrarPanel(); return }
-  panelMiembro.value  = miembro
-  panelRoles.value    = [...(miembro.usuario?.roles ?? [])]
-  busquedaRol.value   = ''
-  errorPanel.value    = ''
-  pendienteRolId.value = null
-
-  if (!todosRoles.value.length) {
-    cargandoPanel.value = true
-    try {
-      const data = await graphqlClient.request(GET_ROLES)
-      todosRoles.value = data.roles ?? []
-    } finally {
-      cargandoPanel.value = false
-    }
-  }
-}
-
-function cerrarPanel() {
-  panelMiembro.value = null
-  panelRoles.value   = []
-}
-
-async function toggleRol(rol) {
-  if (pendienteRolId.value) return
-  errorPanel.value    = ''
-  pendienteRolId.value = rol.id
-  const usuarioId = panelMiembro.value.usuario?.id
-  if (!usuarioId) { pendienteRolId.value = null; return }
-
-  try {
-    if (estaAsignado(rol.id)) {
-      await graphqlClient.request(REVOCAR_ROL_USUARIO, { usuarioId, rolId: rol.id })
-      panelRoles.value = panelRoles.value.filter(ur => ur.rol?.id !== rol.id)
-    } else {
-      const res = await graphqlClient.request(ASIGNAR_ROL_USUARIO, { usuarioId, rolId: rol.id, agrupacionId: null })
-      panelRoles.value.push({ id: res.asignarRolUsuario, agrupacionId: null, rol })
-    }
-    sincronizarMiembroLocal(panelMiembro.value.id)
-  } catch (e) {
-    errorPanel.value = e?.response?.errors?.[0]?.message ?? 'Error al cambiar el rol'
-  } finally {
-    pendienteRolId.value = null
-  }
-}
-
-async function cambiarAgrupacion(rol, agrupacionId) {
-  if (pendienteRolId.value) return
-  errorPanel.value    = ''
-  pendienteRolId.value = rol.id
-  const usuarioId = panelMiembro.value.usuario?.id
-  if (!usuarioId) { pendienteRolId.value = null; return }
-
-  try {
-    await graphqlClient.request(REVOCAR_ROL_USUARIO, { usuarioId, rolId: rol.id })
-    const res = await graphqlClient.request(ASIGNAR_ROL_USUARIO, { usuarioId, rolId: rol.id, agrupacionId: agrupacionId || null })
-    panelRoles.value = panelRoles.value.filter(ur => ur.rol?.id !== rol.id)
-    panelRoles.value.push({ id: res.asignarRolUsuario, agrupacionId: agrupacionId || null, rol })
-    sincronizarMiembroLocal(panelMiembro.value.id)
-  } catch (e) {
-    errorPanel.value = e?.response?.errors?.[0]?.message ?? 'Error al cambiar territorio'
-  } finally {
-    pendienteRolId.value = null
-  }
-}
-
-function sincronizarMiembroLocal(miembroId) {
-  const idx = allMiembros.value.findIndex(m => m.id === miembroId)
-  if (idx !== -1) {
-    allMiembros.value[idx] = {
-      ...allMiembros.value[idx],
-      usuario: { ...allMiembros.value[idx].usuario, roles: [...panelRoles.value] },
-    }
-  }
-}
-
 // ── Limpia filtros ────────────────────────────────────────────────────────────
 function limpiarFiltros() {
-  filters.value  = { activo: false, agrupacion: '', tipoVinculacion: '' }
+  filters.value  = { activo: false, agrupacion: '', tiposVinculacion: [] }
   searchQuery.value = ''
 }
-
-function applyClientFilters() {}
 
 // ── Desactivar / eliminar usuario ─────────────────────────────────────────────
 function puedeEliminar(usuario) {
   return !!usuario && usuario.username !== 'superadmin' && tienePermiso('ACCESO_USUARIO_ELIMINAR')
 }
 
-async function desactivarUsuario(usuario) {
+const toggling = ref(null)   // id del usuario cuyo acceso se está alternando
+async function toggleActivoUsuario(usuario) {
+  if (toggling.value) return
+  const activando = !usuario.activo
+  toggling.value = usuario.id
   try {
-    await graphqlClient.request(DESACTIVAR_USUARIO, { id: usuario.id })
-    toast.success('Usuario desactivado')
+    await graphqlClient.request(activando ? ACTIVAR_USUARIO : DESACTIVAR_USUARIO, { id: usuario.id })
+    toast.success(activando ? 'Acceso reactivado' : 'Acceso desactivado')
     await cargar()
   } catch (e) {
-    toast.error(e?.response?.errors?.[0]?.message || 'No se pudo desactivar')
+    toast.error(e?.response?.errors?.[0]?.message || (activando ? 'No se pudo reactivar' : 'No se pudo desactivar'))
+  } finally {
+    toggling.value = null
   }
 }
 
@@ -520,24 +320,30 @@ async function eliminarUsuario(usuario, opts) {
 // ── Carga inicial ─────────────────────────────────────────────────────────────
 async function cargar() {
   try {
-    const [miembrosData, agrupData, rolesData, vinculData] = await Promise.all([
+    const [miembrosData, agrupData, vinculData] = await Promise.all([
       query(GET_CUENTAS_ACCESO),
       query(GET_AGRUPACIONES),
-      graphqlClient.request(GET_ROLES),
       graphqlClient.request(GET_TIPOS_VINCULACION),
     ])
     // cuentasAcceso ya devuelve solo cuentas de acceso (todas tienen usuario); el
     // filtro se mantiene como salvaguarda inocua.
     allMiembros.value      = (miembrosData?.miembros ?? []).filter(m => m.usuario != null)
     agrupaciones.value     = agrupData?.unidadesOrganizativas ?? []
-    todosRoles.value       = rolesData?.roles ?? []
-    tiposVinculacion.value = (vinculData?.tiposVinculacion ?? []).filter(t => t.activo)
+    // Solo los tipos que pueden tener cuenta (SOCIO, VOLUNTARIO, EMPLEADO…): a un
+    // donante o simpatizante no se le crea usuario, así que ofrecerlos como filtro
+    // de usuarios no tiene sentido —ninguna fila casaría—. Mismo criterio que
+    // CrearUsuario (`permiteCuenta`).
+    tiposVinculacion.value = (vinculData?.tiposVinculacion ?? [])
+      .filter(t => t.activo && t.permiteCuenta)
   } catch (e) {
     console.error('Error al cargar usuarios:', e)
   }
 }
 
-onMounted(cargar)
+// La vista está en <keep-alive>: no se desmonta al navegar, así que `onMounted`
+// solo correría una vez. `onActivated` cubre el primer montaje y cada regreso,
+// evitando mostrar datos obsoletos.
+onActivated(cargar)
 </script>
 
 <style scoped>

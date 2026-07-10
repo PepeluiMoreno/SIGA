@@ -15,6 +15,7 @@ from typing import Optional, List
 
 import strawberry
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 
 from app.modules.membresia.models.contacto import Contacto
 from app.modules.membresia.models.vinculacion import Vinculacion, Socio, Voluntario
@@ -127,6 +128,15 @@ class SocioVistaType:
     disponibilidad_viajar: bool = False
 
     tiene_acceso: bool = False
+
+    # Vinculación vigente del contacto (la de fecha_fin nula). El vínculo persona↔
+    # organización vive en `vinculaciones`, no en `usuarios`: se proyecta aquí para
+    # que la lista de usuarios muestre y filtre por él.
+    vinculacion_nombre: Optional[str] = None
+    vinculacion_tipo_id: Optional[uuid.UUID] = None
+    # Código del tipo (clave estable). El front lo usa para derivar la etiqueta de
+    # los tipos ligados a la membresía (SOCIO→denominación configurable).
+    vinculacion_tipo_codigo: Optional[str] = None
 
     # Relaciones (objetos ORM resueltos por sus tipos strawchemy)
     tipo_miembro: Optional[TipoMiembroType] = None
@@ -537,6 +547,24 @@ class SociosQuery:
                 select(UnidadOrganizativa).where(UnidadOrganizativa.id.in_(agr_ids))
             )).scalars().all()}
 
+        # Vinculación vigente (fecha_fin NULL) de cada contacto, en un solo lote,
+        # con su TipoVinculacion. Si un contacto tiene varias vigentes nos quedamos
+        # con la primera: la columna solo muestra una etiqueta representativa.
+        cont_ids = {u.contacto.id for u in usuarios if u.contacto}
+        vinc_por_contacto = {}
+        if cont_ids:
+            vincs = (await session.execute(
+                select(Vinculacion)
+                .options(selectinload(Vinculacion.tipo_vinculacion))
+                .where(
+                    Vinculacion.contacto_id.in_(cont_ids),
+                    Vinculacion.fecha_fin.is_(None),
+                    Vinculacion.eliminado == False,  # noqa: E712
+                )
+            )).scalars().all()
+            for v in vincs:
+                vinc_por_contacto.setdefault(v.contacto_id, v)
+
         filas: List[SocioVistaType] = []
         for u in usuarios:
             c = u.contacto
@@ -557,6 +585,20 @@ class SociosQuery:
                 tiene_acceso=True,
                 agrupacion=(agrupaciones.get(c.agrupacion_id) if c else None),
                 usuario=u,
+                vinculacion_nombre=(
+                    v.tipo_vinculacion.nombre
+                    if (v := vinc_por_contacto.get(c.id if c else None)) and v.tipo_vinculacion
+                    else None
+                ),
+                vinculacion_tipo_id=(
+                    vinc_por_contacto[c.id].tipo_vinculacion_id
+                    if c and c.id in vinc_por_contacto else None
+                ),
+                vinculacion_tipo_codigo=(
+                    v.tipo_vinculacion.codigo
+                    if (v := vinc_por_contacto.get(c.id if c else None)) and v.tipo_vinculacion
+                    else None
+                ),
             ))
 
         # Orden estable por apellidos / nombre / username.

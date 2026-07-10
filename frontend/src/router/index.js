@@ -120,6 +120,13 @@ const routes = [
     meta: { requiresAuth: true, requiredPermission: 'ACCESO_USUARIO_CREAR' }
   },
   {
+    // Ficha de la cuenta (detrás de /crear para que no la capture como :id)
+    path: '/usuarios/:id',
+    component: () => import('@/modules/acceso/views/DetalleUsuario.vue'),
+    name: 'DetalleUsuario',
+    meta: { requiresAuth: true, requiredPermission: 'ACCESO_USUARIO_LISTAR' }
+  },
+  {
     path: '/roles',
     component: () => import('@/modules/acceso/views/ListaRoles.vue'),
     name: 'Roles',
@@ -135,12 +142,6 @@ const routes = [
     path: '/roles/:id/editar',
     component: () => import('@/modules/acceso/views/FormularioRol.vue'),
     name: 'EditarRol',
-    meta: { requiresAuth: true, requiredPermission: 'ACCESO_ROL_EDITAR' }
-  },
-  {
-    path: '/roles/:id/permisos',
-    component: () => import('@/modules/acceso/views/PermisosRol.vue'),
-    name: 'PermisosRol',
     meta: { requiresAuth: true, requiredPermission: 'ACCESO_ROL_EDITAR' }
   },
   {

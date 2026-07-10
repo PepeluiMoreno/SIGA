@@ -236,6 +236,23 @@ class AuthMutation:
         return True
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ACCESO_USUARIO_ELIMINAR")])
+    async def activar_usuario(
+        self,
+        info: strawberry.Info,
+        id: uuid.UUID,
+    ) -> bool:
+        """Reactiva un usuario (`activo=True`). Inverso de `desactivar_usuario`."""
+        session = info.context.session
+        usuario = (
+            await session.execute(select(Usuario).where(Usuario.id == id))
+        ).scalar_one_or_none()
+        if usuario is None:
+            raise ValueError("Usuario no encontrado")
+        usuario.activo = True
+        await session.commit()
+        return True
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACCESO_USUARIO_ELIMINAR")])
     async def eliminar_usuario(
         self,
         info: strawberry.Info,

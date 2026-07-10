@@ -78,12 +78,15 @@ export const GET_CUENTAS_ACCESO = `
       fotoUrl
       email
       telefono
+      vinculacionNombre
+      vinculacionTipoId
+      vinculacionTipoCodigo
       usuario {
         id
+        username
         email
         activo
         ultimoAcceso
-        tipoVinculacionId
         roles {
           id
           activo
