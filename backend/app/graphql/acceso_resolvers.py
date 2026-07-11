@@ -19,6 +19,7 @@ from app.modules.acceso.models.rol import Rol, TipoRol
 from app.modules.acceso.models.funcionalidad import RolFuncionalidad
 from app.modules.acceso.models.rol_transaccion import RolTransaccion
 from app.modules.acceso.models.usuario import UsuarioRol
+from app.modules.acceso.models.organo import TipoOrganoCargo
 from app.graphql.permissions import RequireTransaction
 
 
@@ -53,6 +54,13 @@ class ActualizarRolInput:
     nivel_territorial: Optional[str] = None
     funcionalidad_ids: Optional[List[uuid.UUID]] = None
     transaccion_ids: Optional[List[uuid.UUID]] = None
+
+
+@strawberry.input
+class CargoOrdenInput:
+    """Un cargo dentro de la composición de un órgano, con su orden protocolario."""
+    cargo_id: uuid.UUID
+    orden_protocolario: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -316,4 +324,30 @@ class AccesoMutation:
         if ur:
             await session.delete(ur)
             await session.commit()
+        return True
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_CONFIGURACION_EDITAR")])
+    async def establecer_composicion_organo(
+        self,
+        info: strawberry.Info,
+        tipo_organo_id: uuid.UUID,
+        cargos: List[CargoOrdenInput],
+    ) -> bool:
+        """Reemplaza la composición-plantilla de un tipo de órgano de una vez.
+
+        Borra las filas `tipos_organo_cargos` del tipo y las recrea con los cargos
+        y el orden dados. El input autogenerado de strawchemy no incluye las FKs
+        (`tipo_organo_id`/`cargo_id`), de ahí este resolver manual.
+        """
+        session = info.context.session
+        await session.execute(
+            sa_delete(TipoOrganoCargo).where(TipoOrganoCargo.tipo_organo_id == tipo_organo_id)
+        )
+        for c in cargos:
+            session.add(TipoOrganoCargo(
+                tipo_organo_id=tipo_organo_id,
+                cargo_id=c.cargo_id,
+                orden_protocolario=c.orden_protocolario,
+            ))
+        await session.commit()
         return True
