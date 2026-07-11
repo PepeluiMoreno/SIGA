@@ -571,6 +571,12 @@ const routes = [
     meta: { requiresAuth: true, requiredPermission: 'CFG_CONFIGURACION_LEER' }
   },
   {
+    path: '/configuracion/estructura',
+    component: () => import('@/modules/configuracion/views/EstructuraOrganizativa.vue'),
+    name: 'EstructuraOrganizativa',
+    meta: { requiresAuth: true, requiredPermission: 'CFG_CONFIGURACION_LEER' }
+  },
+  {
     path: '/parametrizacion',
     redirect: '/parametrizacion/catalogos',
   },

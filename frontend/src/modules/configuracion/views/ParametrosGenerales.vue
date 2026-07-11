@@ -86,14 +86,8 @@
                 <input v-model="form.web" type="url" class="input" placeholder="https://www.organización.org" />
               </div>
             </div>
-          </div>
-        </AccordionPanel>
-
-        <!-- 2. Estructura organizativa -->
-        <AccordionPanel title="Estructura organizativa" :default-open="true">
-          <div class="px-5 pt-4 space-y-5">
-            <!-- General: tipo de entidad + modelo de estructura territorial -->
-            <div class="flex flex-col lg:flex-row gap-4 lg:items-start">
+            <!-- Tipo de entidad + nomenclatura de la membresía -->
+            <div class="flex flex-col lg:flex-row gap-4 lg:items-start pt-1">
               <div class="w-full lg:w-44 flex-shrink-0">
                 <label class="label">Tipo entidad</label>
                 <select v-model="form.tipo_entidad" class="input">
@@ -102,55 +96,15 @@
                 </select>
               </div>
               <div class="flex-1 min-w-0">
-                <label class="label">Modelo de estructura territorial</label>
-                <div class="flex flex-col sm:flex-row gap-2.5">
-                  <label class="flex-1 flex items-start gap-2.5 rounded-lg border p-2.5 cursor-pointer transition-colors"
-                    :class="!estructuraDistribuida ? 'border-indigo-400 bg-indigo-50/60 ring-1 ring-indigo-200' : 'border-slate-200 hover:bg-slate-50'">
-                    <input type="radio" class="mt-0.5 accent-indigo-600" :checked="!estructuraDistribuida" @change="editorRef?.setDistribuida(false)" />
-                    <span class="min-w-0">
-                      <span class="block text-sm font-medium text-slate-800">Centralizada</span>
-                      <span class="block text-xs text-slate-500 leading-snug mt-0.5">La estructura interna se define aquí, igual para todas las unidades.</span>
-                    </span>
-                  </label>
-                  <label class="flex-1 flex items-start gap-2.5 rounded-lg border p-2.5 cursor-pointer transition-colors"
-                    :class="estructuraDistribuida ? 'border-indigo-400 bg-indigo-50/60 ring-1 ring-indigo-200' : 'border-slate-200 hover:bg-slate-50'">
-                    <input type="radio" class="mt-0.5 accent-indigo-600" :checked="estructuraDistribuida" @change="editorRef?.setDistribuida(true)" />
-                    <span class="min-w-0">
-                      <span class="block text-sm font-medium text-slate-800">Distribuida</span>
-                      <span class="block text-xs text-slate-500 leading-snug mt-0.5">Cada unidad define su propia subestructura.</span>
-                    </span>
-                  </label>
+                <label class="label">Denominación de la membresía (singular / plural)</label>
+                <div class="flex items-center gap-2">
+                  <input v-model="form.denominacion_miembro" type="text" class="input w-0 flex-1" placeholder="socio" maxlength="30" />
+                  <span class="text-slate-400 text-sm flex-shrink-0">/</span>
+                  <input v-model="form.denominacion_miembro_plural" type="text" class="input w-0 flex-1" placeholder="socios" maxlength="30" />
                 </div>
+                <p class="mt-1 text-[11px] text-slate-400">p.ej. socio/socios · afiliado/afiliados · miembro/miembros</p>
               </div>
             </div>
-
-            <!-- Nomenclatura -->
-            <fieldset class="rounded-xl border border-slate-200 px-4 pt-2 pb-4">
-              <legend class="px-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Nomenclatura</legend>
-              <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-5 gap-y-3 mt-1">
-                <div>
-                  <label class="label">Denominación de la membresía (singular / plural)</label>
-                  <div class="flex items-center gap-2">
-                    <input v-model="form.denominacion_miembro" type="text" class="input w-0 flex-1" placeholder="socio" maxlength="30" />
-                    <span class="text-slate-400 text-sm flex-shrink-0">/</span>
-                    <input v-model="form.denominacion_miembro_plural" type="text" class="input w-0 flex-1" placeholder="socios" maxlength="30" />
-                  </div>
-                  <p class="mt-1 text-[11px] text-slate-400">p.ej. socio/socios · afiliado/afiliados · miembro/miembros</p>
-                </div>
-                <div>
-                  <label class="label">Denominación del Órgano de Gobierno (singular / plural)</label>
-                  <div class="flex items-center gap-2">
-                    <input v-model="form.denominacion_organo_gobierno" type="text" class="input w-0 flex-1" placeholder="junta directiva" maxlength="40" />
-                    <span class="text-slate-400 text-sm flex-shrink-0">/</span>
-                    <input v-model="form.denominacion_organo_gobierno_plural" type="text" class="input w-0 flex-1" placeholder="juntas directivas" maxlength="40" />
-                  </div>
-                  <p class="mt-1 text-[11px] text-slate-400">p.ej. junta directiva · patronato · comité ejecutivo</p>
-                </div>
-              </div>
-            </fieldset>
-          </div>
-          <div class="px-5 pb-4">
-            <EstructuraOrganizativaEditor ref="editorRef" :mostrar-radiogroup="false" />
           </div>
         </AccordionPanel>
 
@@ -551,12 +505,11 @@
 <script setup>
 import { useToast } from '@/composables/useToast'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import { ref, reactive, computed, watch, watchEffect, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import AccordionPanel from '@/components/common/AccordionPanel.vue'
 import AccordionGroup from '@/components/common/AccordionGroup.vue'
-import EstructuraOrganizativaEditor from '@/components/configuracion/EstructuraOrganizativaEditor.vue'
 import EntidadGeograficaSelect from '@/components/common/EntidadGeograficaSelect.vue'
 import { graphqlClient } from '@/graphql/client.js'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
@@ -565,12 +518,6 @@ const toast = useToast()
 
 const router = useRouter()
 const orgConfigStore = useOrgConfigStore()
-
-const editorRef = ref(null)
-// Espejo reactivo del modelo centralizada/distribuida que expone el editor,
-// para que el radiogroup (que vive aquí, junto a Tipo entidad) se actualice.
-const estructuraDistribuida = ref(false)
-watchEffect(() => { estructuraDistribuida.value = !!editorRef.value?.distribuida })
 
 // Probar conexión con Indico (valida la URL + token guardados contra /api/user/)
 const PROBAR_CONEXION_INDICO = `
@@ -624,8 +571,6 @@ const form = reactive({
   numero_registro: '',
   denominacion_miembro: 'miembro',
   denominacion_miembro_plural: 'miembros',
-  denominacion_organo_gobierno: 'junta directiva',
-  denominacion_organo_gobierno_plural: 'juntas directivas',
   auth_modo: 'LOCAL',
   auth_authelia_url: '',
   auth_oidc_issuer: '',
@@ -760,7 +705,6 @@ const QUERY_PARAMETROS = `
       telefono email web
       rrssTwitter rrssFacebook rrssInstagram rrssLinkedin rrssYoutube rrssTelegram
       logo denominacionMiembro denominacionMiembroPlural
-      denominacionOrganoGobierno denominacionOrganoGobiernoPlural
       authModo authAutheliaUrl authOidcIssuer
       sessionInactividadMinutos sessionMaximoMinutos
       smtpHost smtpPort smtpUsuario smtpPassword smtpFrom smtpTls smtpSsl
@@ -842,8 +786,6 @@ onMounted(async () => {
     form.logo                            = p.logo                             ?? ''
     form.denominacion_miembro            = p.denominacionMiembro              ?? 'miembro'
     form.denominacion_miembro_plural     = p.denominacionMiembroPlural        ?? 'miembros'
-    form.denominacion_organo_gobierno    = p.denominacionOrganoGobierno       ?? 'junta directiva'
-    form.denominacion_organo_gobierno_plural = p.denominacionOrganoGobiernoPlural ?? 'juntas directivas'
     orgConfigStore.miembro               = form.denominacion_miembro
     orgConfigStore.miembros              = form.denominacion_miembro_plural
     form.auth_modo                       = p.authModo                         ?? 'LOCAL'
@@ -918,8 +860,6 @@ async function guardar() {
         logo:                            form.logo,
         denominacionMiembro:             form.denominacion_miembro,
         denominacionMiembroPlural:       form.denominacion_miembro_plural,
-        denominacionOrganoGobierno:      form.denominacion_organo_gobierno,
-        denominacionOrganoGobiernoPlural: form.denominacion_organo_gobierno_plural,
         authModo:                        form.auth_modo,
         authAutheliaUrl:                 form.auth_authelia_url,
         authOidcIssuer:                  form.auth_oidc_issuer,

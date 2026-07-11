@@ -421,6 +421,12 @@
                     </router-link>
                   </li>
                   <li v-if="tienePermiso('CFG_CONFIGURACION_LEER')">
+                    <router-link to="/configuracion/estructura" class="nav-item"
+                      :class="$route.path.startsWith('/configuracion/estructura') ? 'active' : 'inactive'">
+                      <BuildingLibraryIcon class="nav-icon" /><span>Estructura y órganos</span>
+                    </router-link>
+                  </li>
+                  <li v-if="tienePermiso('CFG_CONFIGURACION_LEER')">
                     <router-link to="/configuracion/general" class="nav-item"
                       :class="$route.path.startsWith('/configuracion/general') ? 'active' : 'inactive'">
                       <BuildingOffice2Icon class="nav-icon" /><span>Parámetros Generales</span>
