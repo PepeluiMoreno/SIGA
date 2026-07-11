@@ -45,7 +45,7 @@ from ..modules.membresia.models import (
     Contacto, TipoEntidadJuridica, TipoVinculacion, Vinculacion, Socio, Voluntario,
     Participacion, Membresia,
     TipoMiembro, EstadoMiembro, MotivoBaja,
-    JuntaDirectiva, HistorialNombramiento, CoordinacionTerritorial,
+    HistorialNombramiento, CoordinacionTerritorial,
     Habilidad, MiembroHabilidad, FranjaDisponibilidad,
     HistorialAgrupacion, SolicitudTraslado, EstadoTraslado,
     CategoriaCompetencia, Competencia, NivelCompetencia, MiembroCompetencia,

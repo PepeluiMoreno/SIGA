@@ -78,6 +78,7 @@ from ..modules.acceso.models import (
 # TipoVinculacion es ahora el catálogo CRM canónico (módulo membresía).
 from ..modules.membresia.models import TipoVinculacion
 from ..modules.acceso.models.cargo import Cargo, CargoRol
+from ..modules.acceso.models.organo import TipoOrgano, TipoOrganoCargo, Organo
 
 
 @strawchemy.input(Cargo, mode="create_input", include="all", exclude=get_exclude_fields(Cargo))
@@ -102,6 +103,52 @@ class CargoRolCreateInput:
 
 @strawchemy.filter(CargoRol, include="all")
 class CargoRolFilter:
+    pass
+
+
+# ── Órganos de gobierno ──────────────────────────────────────────────────────
+@strawchemy.input(TipoOrgano, mode="create_input", include="all", exclude=get_exclude_fields(TipoOrgano))
+class TipoOrganoCreateInput:
+    pass
+
+
+@strawchemy.input(TipoOrgano, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TipoOrgano))
+class TipoOrganoUpdateInput:
+    pass
+
+
+@strawchemy.filter(TipoOrgano, include="all")
+class TipoOrganoFilter:
+    pass
+
+
+@strawchemy.input(TipoOrganoCargo, mode="create_input", include="all", exclude=get_exclude_fields(TipoOrganoCargo))
+class TipoOrganoCargoCreateInput:
+    pass
+
+
+@strawchemy.input(TipoOrganoCargo, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TipoOrganoCargo))
+class TipoOrganoCargoUpdateInput:
+    pass
+
+
+@strawchemy.filter(TipoOrganoCargo, include="all")
+class TipoOrganoCargoFilter:
+    pass
+
+
+@strawchemy.input(Organo, mode="create_input", include="all", exclude=get_exclude_fields(Organo))
+class OrganoCreateInput:
+    pass
+
+
+@strawchemy.input(Organo, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(Organo))
+class OrganoUpdateInput:
+    pass
+
+
+@strawchemy.filter(Organo, include="all")
+class OrganoFilter:
     pass
 
 
@@ -208,25 +255,10 @@ class TipoVinculacionFilter:
 
 
 # ============================================================================
-# MEMBRESIA - Junta directiva y nombramientos
+# MEMBRESIA - Nombramientos
 # ============================================================================
 
-from ..modules.membresia.models import JuntaDirectiva, HistorialNombramiento, CoordinacionTerritorial
-
-
-@strawchemy.input(JuntaDirectiva, mode="create_input", include="all", exclude=get_exclude_fields(JuntaDirectiva))
-class JuntaDirectivaCreateInput:
-    pass
-
-
-@strawchemy.input(JuntaDirectiva, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(JuntaDirectiva))
-class JuntaDirectivaUpdateInput:
-    pass
-
-
-@strawchemy.filter(JuntaDirectiva, include="all")
-class JuntaDirectivaFilter:
-    pass
+from ..modules.membresia.models import HistorialNombramiento, CoordinacionTerritorial
 
 
 @strawchemy.input(HistorialNombramiento, mode="create_input", include="all", exclude=get_exclude_fields(HistorialNombramiento))

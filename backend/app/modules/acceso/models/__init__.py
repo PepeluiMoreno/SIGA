@@ -14,6 +14,7 @@ from .auditoria import LogAuditoria, TipoAccion
 from .usuario import Usuario, UsuarioRol
 from .seguridad import Sesion, HistorialSeguridad, IPBloqueada, IntentoAcceso
 from .cargo import Cargo, CargoRol
+from .organo import TipoOrgano, TipoOrganoCargo, Organo, ComposicionOrgano
 
 __all__ = [
     'Transaccion',
@@ -35,4 +36,8 @@ __all__ = [
     'IntentoAcceso',
     'Cargo',
     'CargoRol',
+    'TipoOrgano',
+    'TipoOrganoCargo',
+    'Organo',
+    'ComposicionOrgano',
 ]

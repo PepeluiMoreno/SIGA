@@ -21,8 +21,7 @@ from sqlalchemy import select, and_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ....core.security import hash_password
-from ....core.events import event_bus, CargoAssigned, CargoRevoked, JuntaReconfigured
-from ...membresia.models.junta import JuntaDirectiva
+from ....core.events import event_bus, CargoAssigned, CargoRevoked
 from ...membresia.models.historial_nombramiento import HistorialNombramiento
 from ...acceso.models.usuario import Usuario, UsuarioRol
 from ...acceso.models.rol import TipoRol
@@ -71,56 +70,6 @@ class AccesoService:
         self.session.add(usuario)
         await self.session.flush()
         return usuario
-
-    # ------------------------------------------------------------------
-    # Juntas directivas
-    # ------------------------------------------------------------------
-
-    async def constituir_junta(
-        self,
-        agrupacion_id: UUID,
-        nombre: str,
-        fecha_constitucion: date,
-        observaciones: Optional[str] = None,
-    ) -> JuntaDirectiva:
-        """Constituye una nueva junta directiva para una agrupación.
-
-        Desactiva la junta activa anterior (si existe) y la nueva queda activa.
-        Emite JuntaReconfigured para que la PermissionMatrix se reconstruya.
-        """
-        await self.session.execute(
-            update(JuntaDirectiva)
-            .where(
-                JuntaDirectiva.agrupacion_id == agrupacion_id,
-                JuntaDirectiva.activa == True,
-                JuntaDirectiva.eliminado == False,
-            )
-            .values(activa=False, fecha_disolucion=fecha_constitucion)
-        )
-
-        junta = JuntaDirectiva(
-            agrupacion_id=agrupacion_id,
-            nombre=nombre,
-            fecha_constitucion=fecha_constitucion,
-            activa=True,
-            observaciones=observaciones,
-        )
-        self.session.add(junta)
-        await self.session.flush()
-
-        await event_bus.publish(JuntaReconfigured(agrupacion_id=str(agrupacion_id)))
-        return junta
-
-    async def obtener_junta_activa(self, agrupacion_id: UUID) -> Optional[JuntaDirectiva]:
-        """Devuelve la junta directiva activa de una agrupación, o None."""
-        result = await self.session.execute(
-            select(JuntaDirectiva).where(
-                JuntaDirectiva.agrupacion_id == agrupacion_id,
-                JuntaDirectiva.activa == True,
-                JuntaDirectiva.eliminado == False,
-            )
-        )
-        return result.scalars().first()
 
     # ------------------------------------------------------------------
     # Nombramientos (cargo = rol organizacional)
@@ -295,13 +244,3 @@ class AccesoService:
         )
         return list(result.scalars().all())
 
-    # ------------------------------------------------------------------
-    # Helpers privados
-    # ------------------------------------------------------------------
-
-    async def _get_agrupacion_junta(self, junta_id: UUID) -> Optional[UUID]:
-        result = await self.session.execute(
-            select(JuntaDirectiva.agrupacion_id).where(JuntaDirectiva.id == junta_id)
-        )
-        row = result.first()
-        return row[0] if row else None

@@ -73,7 +73,6 @@ from .membresia.models import (
     MotivoBaja,
     NivelEstudios,
     NivelHabilidad,
-    JuntaDirectiva,
     HistorialNombramiento,
     CoordinacionTerritorial,
     CategoriaHabilidad,
@@ -202,7 +201,7 @@ __all__ = [
     # Membresía
     'TipoMiembro', 'EstadoMiembro', 'MotivoBaja', 'Miembro',
     'NivelEstudios', 'NivelHabilidad',
-    'JuntaDirectiva', 'HistorialNombramiento', 'CoordinacionTerritorial',
+    'HistorialNombramiento', 'CoordinacionTerritorial',
     'CategoriaHabilidad', 'Habilidad', 'MiembroHabilidad', 'FranjaDisponibilidad',
     'HistorialAgrupacion', 'SolicitudTraslado', 'EstadoTraslado',
     'CategoriaCompetencia', 'Competencia', 'NivelCompetencia', 'MiembroCompetencia',

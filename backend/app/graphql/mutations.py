@@ -64,6 +64,17 @@ class Mutation(AuthMutation, EconomicoFlujosMutation, ConfiguracionOrganizacionM
     crear_cargo_rol: CargoRolType = strawchemy.create(CargoRolCreateInput)
     eliminar_cargos_roles: list[CargoRolType] = strawchemy.delete(CargoRolFilter)
 
+    # === ÓRGANOS DE GOBIERNO ===
+    crear_tipo_organo: TipoOrganoType = strawchemy.create(TipoOrganoCreateInput)
+    actualizar_tipo_organo: TipoOrganoType = strawchemy.update_by_ids(TipoOrganoUpdateInput)
+    eliminar_tipos_organo: list[TipoOrganoType] = strawchemy.delete(TipoOrganoFilter)
+    crear_tipo_organo_cargo: TipoOrganoCargoType = strawchemy.create(TipoOrganoCargoCreateInput)
+    actualizar_tipo_organo_cargo: TipoOrganoCargoType = strawchemy.update_by_ids(TipoOrganoCargoUpdateInput)
+    eliminar_tipos_organo_cargos: list[TipoOrganoCargoType] = strawchemy.delete(TipoOrganoCargoFilter)
+    crear_organo: OrganoType = strawchemy.create(OrganoCreateInput)
+    actualizar_organo: OrganoType = strawchemy.update_by_ids(OrganoUpdateInput)
+    eliminar_organos: list[OrganoType] = strawchemy.delete(OrganoFilter)
+
     # === NOMBRAMIENTOS ===
     crear_historial_nombramiento: HistorialNombramientoType = strawchemy.create(HistorialNombramientoCreateInput)
     actualizar_historial_nombramiento: HistorialNombramientoType = strawchemy.update_by_ids(HistorialNombramientoUpdateInput)

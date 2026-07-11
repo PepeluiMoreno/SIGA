@@ -39,6 +39,9 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
     roles: list[RolType] = campo(filter_input=RolFilter)
     cargos: list[CargoType] = campo(filter_input=CargoFilter)
     cargos_roles: list[CargoRolType] = campo(filter_input=CargoRolFilter)
+    tipos_organo: list[TipoOrganoType] = campo(filter_input=TipoOrganoFilter)
+    tipos_organo_cargos: list[TipoOrganoCargoType] = campo(filter_input=TipoOrganoCargoFilter)
+    organos: list[OrganoType] = campo(filter_input=OrganoFilter)
     transacciones: list[TransaccionType] = campo(filter_input=TransaccionFilter)
     rolesTransacciones: list[RolTransaccionType] = campo(filter_input=RolTransaccionFilter)
     logsAuditoria: list[LogAuditoriaType] = campo()
@@ -135,9 +138,6 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
     motivosTraslado: list[MotivoTrasladoType] = campo(filter_input=MotivoTrasladoFilter)
     estadosTraslado: list[EstadoTrasladoCatalogoType] = campo(filter_input=EstadoTrasladoCatalogoFilter)
     contactos: list[ContactoType] = campo(filter_input=ContactoFilter)
-
-    # === JUNTA DIRECTIVA ===
-    juntasDirectivas: list[JuntaDirectivaType] = campo(filter_input=JuntaDirectivaFilter)
 
     # === COORDINACIONES TERRITORIALES ===
     coordinacionesTerritoriales: list[CoordinacionTerritorialType] = campo(filter_input=CoordinacionTerritorialFilter)

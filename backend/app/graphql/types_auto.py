@@ -24,6 +24,7 @@ from ..modules.acceso.models import (
     FlujoAprobacion,
 )
 from ..modules.acceso.models.cargo import Cargo, CargoRol
+from ..modules.acceso.models.organo import TipoOrgano, TipoOrganoCargo, Organo
 
 @strawchemy.type(Transaccion, include="all", override=True)
 class TransaccionType:
@@ -88,6 +89,20 @@ class CargoRolType:
 class CargoType:
     roles_sistema: list['CargoRolType'] = strawberry.field(default_factory=list)
     cargo_aprobador: Optional['CargoType'] = None
+
+
+# ── Órganos de gobierno ──────────────────────────────────────────────────────
+@strawchemy.type(TipoOrganoCargo, include="all", override=True)
+class TipoOrganoCargoType:
+    cargo: Optional['CargoType'] = None
+
+@strawchemy.type(TipoOrgano, include="all", override=True)
+class TipoOrganoType:
+    composicion_cargos: list['TipoOrganoCargoType'] = strawberry.field(default_factory=list)
+
+@strawchemy.type(Organo, include="all", override=True)
+class OrganoType:
+    tipo_organo: Optional['TipoOrganoType'] = None
 
 
 from ..modules.configuracion.models.tema_ui import TemaUI
@@ -465,7 +480,7 @@ from ..modules.membresia.models import (
     NivelEstudios, NivelHabilidad,
     CategoriaHabilidad, Habilidad, MiembroHabilidad, FranjaDisponibilidad,
     HistorialAgrupacion, SolicitudTraslado,
-    JuntaDirectiva, HistorialNombramiento, CoordinacionTerritorial,
+    HistorialNombramiento, CoordinacionTerritorial,
 )
 
 @strawchemy.type(TipoMiembro, include="all", override=True)
@@ -482,10 +497,6 @@ class MotivoBajaType:
 
 @strawchemy.type(MotivoTraslado, include="all", override=True)
 class MotivoTrasladoType:
-    pass
-
-@strawchemy.type(JuntaDirectiva, include="all", override=True)
-class JuntaDirectivaType:
     pass
 
 @strawchemy.type(HistorialNombramiento, include="all", override=True)

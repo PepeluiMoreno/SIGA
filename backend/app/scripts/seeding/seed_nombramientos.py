@@ -22,7 +22,6 @@ from app.modules.acceso.models.rol import Rol, TipoRol
 from app.modules.acceso.models.usuario import Usuario, UsuarioRol
 from app.modules.membresia.models.historial_nombramiento import HistorialNombramiento
 from app.modules.membresia.models.miembro import Miembro
-from app.modules.membresia.models.junta import JuntaDirectiva
 from app.modules.core.geografico.unidad_organizativa_view import UnidadOrganizativaVista as UnidadOrganizativa
 
 

@@ -304,31 +304,6 @@ class AuthMutation:
                 "Usa la desactivación (soft-delete)."
             )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_JUNTA_CONFIGURAR")])
-    async def constituir_junta(
-        self,
-        info: strawberry.Info,
-        agrupacion_id: uuid.UUID,
-        nombre: str,
-        fecha_constitucion: date,
-        observaciones: Optional[str] = None,
-    ) -> uuid.UUID:
-        """Constituye una nueva junta directiva para una agrupación.
-
-        Devuelve el ID de la nueva JuntaDirectiva.
-        Desactiva la junta activa anterior si existiera.
-        """
-        session = info.context.session
-        svc = AccesoService(session)
-        junta = await svc.constituir_junta(
-            agrupacion_id=agrupacion_id,
-            nombre=nombre,
-            fecha_constitucion=fecha_constitucion,
-            observaciones=observaciones,
-        )
-        await session.commit()
-        return junta.id
-
     @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_CARGO_ASIGNAR")])
     async def asignar_nombramiento(
         self,

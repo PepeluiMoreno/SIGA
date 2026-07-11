@@ -39,7 +39,6 @@ from app.modules.acceso.models.rol import Rol, TipoRol
 from app.modules.acceso.models.cargo import Cargo, CargoRol
 from app.modules.membresia.models.miembro import Miembro, TipoMiembro
 from app.modules.membresia.models.estado_miembro import EstadoMiembro
-from app.modules.membresia.models.junta import JuntaDirectiva
 from app.modules.membresia.models.historial_nombramiento import HistorialNombramiento
 
 
@@ -296,22 +295,12 @@ async def _ensure_miembros(s: AsyncSession, unidades, niveles, tipo_miembro, est
 
 
 async def _ensure_juntas_y_nombramientos(s: AsyncSession, unidades, niveles, miembros_por_agr, cargos, roles) -> None:
-    juntas_creadas = nombr_creados = 0
+    nombr_creados = 0
     nivel_provincial = niveles[3].id
     for u in unidades:
-        # Solo nacional + autonómicas tienen junta directiva en la demo
+        # Solo nacional + autonómicas reciben nombramientos en la demo
         if u.tipo_id == nivel_provincial:
             continue
-        junta = (await s.execute(
-            select(JuntaDirectiva).where(JuntaDirectiva.agrupacion_id == u.id, JuntaDirectiva.eliminado == False)
-        )).scalars().first()
-        if junta is None:
-            junta = JuntaDirectiva(id=uuid.uuid4(), agrupacion_id=u.id,
-                                   nombre=f"Junta Directiva — {u.nombre}",
-                                   fecha_constitucion=date(2024, 1, 15), activa=True)
-            s.add(junta)
-            await s.flush()
-            juntas_creadas += 1
 
         # Nombramientos: asigna miembros de esa agrupación a los cargos
         candidatos = list(miembros_por_agr.get(u.id, []))
@@ -342,9 +331,9 @@ async def _ensure_juntas_y_nombramientos(s: AsyncSession, unidades, niveles, mie
                 motivo="Nombramiento de demostración",
             ))
             nombr_creados += 1
-    if juntas_creadas or nombr_creados:
+    if nombr_creados:
         await s.flush()
-        print(f"[demo] Juntas: +{juntas_creadas} · Nombramientos: +{nombr_creados}")
+        print(f"[demo] Nombramientos: +{nombr_creados}")
 
 
 async def main() -> None:
