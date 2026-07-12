@@ -1,17 +1,32 @@
-# Gobernanza — diseño del modelo de responsabilidades, mandatos y órganos
+# Gobernanza — modelo de responsabilidades, mandatos y órganos
 
-> **Estado: diseño consolidado, pendiente de aprobación final.** Documento único de
-> gobernanza (reconcilia los dos borradores previos). Recoge el modelo cerrado con
-> el usuario y el mapa del código verificado contra el stack. Las decisiones aún
-> abiertas van marcadas **[PENDIENTE]**.
+> **Estado: IMPLEMENTADO en su núcleo** (backend, rama `claude/gobernanza`), salvo
+> lo marcado **[PENDIENTE]**. Ver §10 para qué está hecho y verificado.
 >
 > **Nomenclatura (decidida):** el concepto se llama **Responsabilidad** de cara al
 > usuario y la UI (abarca puestos protocolarios y encargos funcionales). El modelo
 > técnico y la BD siguen usando **`Cargo`/`CargoRol`** por ahora — sin migración de
 > nombres en esta fase; solo cambia la etiqueta mostrada. A lo largo del documento,
 > «cargo» y «responsabilidad» designan lo mismo.
->
-> **No se toca el motor de permisos ni el modelo de datos hasta aprobar el diseño.**
+
+## La regla que lo vertebra todo
+
+**Un nombramiento no nace de un botón: nace de un ACUERDO de un ÓRGANO, reflejado
+en un ACTA.**
+
+```
+Órgano (con su composición real)
+  └─ se reúne → adopta un Acuerdo (votado, APROBADO)
+        └─ consta en un Acta APROBADA
+              └─ al ejecutarse produce el MANDATO (HistorialNombramiento)
+                    └─ que DERIVA los UsuarioRol vía CargoRol,
+                       heredando el territorio del mandato
+```
+
+Los roles **no se asignan a una cuenta**: se derivan del cargo que la persona
+ejerce por un mandato legítimo. Y quien **aprueba** es un **órgano** (colegiado) o
+un **cargo** (unipersonal) — **nunca un rol**: un rol es un haz de permisos, no un
+sujeto que decide.
 
 ## 0. Por qué existe
 
@@ -292,3 +307,64 @@ Cada paso verificable:
 
 **Diferido (no bloquea, pero requiere diseño propio antes de implementar):**
 - `MOTOR_TERRITORIAL.md` — cómo `can()`/el sistema aplica el ámbito TERRITORIAL (§5).
+
+---
+
+## 10. Qué está IMPLEMENTADO y verificado
+
+Backend completo en la rama `claude/gobernanza`. Todo verificado end-to-end contra
+la API real (no solo build).
+
+**Órganos (entidad de primera clase, antes inexistente):**
+- `TipoOrgano` (catálogo configurable, con `composicion: CARGOS | PLENO`),
+  `NivelOrgano`/`NivelOrganoCargo` (la gobernanza se configura **por nivel**
+  territorial), `Organo`/`OrganoCargo` (la instancia real en una agrupación).
+- `OrganoService.instanciar_organos`: materializa en una agrupación los órganos que
+  su nivel configura, copiando la composición. Idempotente.
+- **Secretaría y gobernanza hablan del mismo órgano**: `TipoReunion.tipo_organo_id`
+  (antes un string libre) y `Reunion.organo_id`.
+
+**El acuerdo produce el mandato (el eslabón que da sentido a todo):**
+- `sec_tipos_acuerdo` (NOMBRAMIENTO, CESE, APROBACION_CUENTAS…, con
+  `produce_efecto`) y `sec_acuerdos_nombramiento` (payload: a quién, qué cargo, qué
+  agrupación, fechas). Antes un acuerdo era **solo texto libre**.
+- `AcuerdoEjecucionService.ejecutar_nombramiento`: exige acuerdo **APROBADO** y
+  **acta APROBADA**; crea el mandato con `cargo_id` (no `rol_id`), con
+  `tipo_origen='ACUERDO'` + `origen_id`; y **deriva** los `UsuarioRol` vía `CargoRol`
+  heredando el territorio. Idempotente (no se nombra dos veces).
+
+**Aprobador polimórfico** en `FlujoAprobacion`: **órgano** o **cargo** (XOR), nunca
+un rol. Esto arregló el bug que mantenía `flujos_aprobacion` **vacía**: el catálogo
+declaraba `rol_aprobador="JUNTA_DIRECTIVA"` —un órgano metido donde solo caben
+roles—, no existía, y el sync lo descartaba con un `warning` silencioso. Ahora ese
+fallo es un **error explícito** (RuntimeError en dev).
+
+**Secretaría, ejecutable por primera vez.** `Acuerdo` cuelga de un `PuntoOrdenDia`
+(NOT NULL) y **no existía mutación para crear uno**: `registrarAcuerdo` estaba
+muerto y por eso la BD tenía 0 reuniones, 0 actas, 0 acuerdos. Los servicios ya
+existían; solo faltaba exponerlos (`agregarPuntoOrdenDia`, `registrarAsistente…`).
+Los módulos **Secretaría y Presidencia** se han **encendido** (estaban `activo=False`):
+si el nombramiento nace de un acuerdo en acta, la secretaría no es un extra.
+
+**La prueba de que funciona** — la app ya responde a la pregunta de negocio:
+
+> *«¿En qué acta consta que Ana es tesorera?»*
+> → En el **Acta nº1/2026 (APROBADA)**, de la reunión de la **Junta Directiva**,
+>   donde se adoptó el **Acuerdo nº1** («Se nombra Tesorero/a a Ana García»,
+>   APROBADO). El mandato derivó el **rol Tesorero @ Europa Laica**.
+
+Intentar ejecutar el acuerdo **sin acta aprobada se rechaza** (probado).
+
+## 11. Qué falta
+
+- **Frontend**: editor de reunión (orden del día + asistentes + acuerdos), creación
+  y ejecución de acuerdos desde `Acuerdos.vue`, vista del órgano («esta es la Junta
+  de Madrid y estos son sus miembros»), y **retirar `GestionJunta.vue`** (usa
+  mutaciones del modelo `JuntaDirectiva` ya eliminado: **peta en runtime**).
+- **Cese**: el tipo de acuerdo `CESE` existe en el catálogo, pero su ejecución
+  (cerrar el mandato y desactivar los roles derivados) aún no está escrita.
+- **Jubilar las mutaciones legacy** de nombramiento que usan `rol_id` y permiten
+  crear mandatos saltándose el acuerdo: `asignarNombramiento` (`auth.py`),
+  `revocarNombramiento`, `crearNombramiento` (`vinculaciones_resolvers.py`).
+- **Motor territorial** (`MOTOR_TERRITORIAL.md`): que el ámbito entre en la decisión
+  de autorización. Hoy `can()` sigue siendo rol→transacción sin territorio.
