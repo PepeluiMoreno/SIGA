@@ -184,6 +184,14 @@ class ConfiguracionService:
             valor = input_dict.get(attr)
             if valor is None:
                 continue  # omitir secretos sin cambio
+            # Blindaje: un campo REQUERIDO (nombre/NIF/tel/email) que llega vacío pero
+            # ya tenía valor NO se pisa. Evita que un guardado mal formado
+            # «des-inicialice» la app (dejaría appInitialized=False y bloquearía el
+            # acceso). Un vacío solo se acepta si el campo aún no tenía valor.
+            if clave in _REQUIRED_KEYS and isinstance(valor, str) and valor.strip() == '':
+                prev = existing.get(clave)
+                if prev is not None and (prev.valor or '') != '':
+                    continue
             str_valor = str(valor).lower() if tipo_dato == 'bool' else str(valor)
 
             if clave in existing:

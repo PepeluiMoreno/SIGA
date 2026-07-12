@@ -80,7 +80,13 @@ export const useOrgConfigStore = defineStore('orgConfig', {
       await this.fetchConfig()
     },
     async checkInitialized() {
-      if (this.initialized !== null) return this.initialized
+      // Solo cacheamos el `true`: una app inicializada no se des-inicializa en uso
+      // normal, así que es estable. Un `false` (o `null`) puede quedar obsoleto en
+      // cuanto se completa la configuración; en ese caso revalidamos contra el
+      // backend para no dejar al usuario atrapado en /inicializacion con el estado
+      // viejo en memoria.
+      if (this.initialized === true) return true
+      this.loaded = false            // fuerza que fetchConfig vuelva a preguntar
       await this.fetchConfig()
       return this.initialized ?? true
     },
