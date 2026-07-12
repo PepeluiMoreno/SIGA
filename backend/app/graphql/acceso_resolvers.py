@@ -19,7 +19,7 @@ from app.modules.acceso.models.rol import Rol, TipoRol
 from app.modules.acceso.models.funcionalidad import RolFuncionalidad
 from app.modules.acceso.models.rol_transaccion import RolTransaccion
 from app.modules.acceso.models.usuario import UsuarioRol
-from app.modules.acceso.models.organo import TipoOrganoCargo
+from app.modules.acceso.models.organo import TipoOrgano, TipoOrganoCargo, Organo, OrganoCargo
 from app.graphql.permissions import RequireTransaction
 
 
@@ -351,3 +351,137 @@ class AccesoMutation:
             ))
         await session.commit()
         return True
+
+    # ── Órganos de una agrupación ────────────────────────────────────────────
+    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_CONFIGURACION_EDITAR")])
+    async def crear_organo_en_agrupacion(
+        self,
+        info: strawberry.Info,
+        tipo_organo_id: uuid.UUID,
+        agrupacion_id: uuid.UUID,
+        nombre: Optional[str] = None,
+        fecha_constitucion: Optional[str] = None,
+    ) -> uuid.UUID:
+        """Crea un órgano en una agrupación, copiando la composición-plantilla de su tipo.
+
+        La plantilla (`TipoOrganoCargo`) es el punto de partida: la composición real
+        (`OrganoCargo`) queda copiada y la agrupación puede ajustarla después.
+        Los tipos de composición PLENO (asamblea) no llevan cargos.
+        """
+        from datetime import date as _date
+        session = info.context.session
+
+        tipo = (await session.execute(
+            select(TipoOrgano).where(TipoOrgano.id == tipo_organo_id)
+        )).scalar_one_or_none()
+        if tipo is None:
+            raise ValueError("Tipo de órgano no encontrado")
+
+        organo = Organo(
+            tipo_organo_id=tipo_organo_id,
+            agrupacion_id=agrupacion_id,
+            nombre=(nombre or tipo.nombre),
+            fecha_constitucion=(
+                _date.fromisoformat(fecha_constitucion) if fecha_constitucion else _date.today()
+            ),
+            activo=True,
+        )
+        session.add(organo)
+        await session.flush()   # necesitamos organo.id
+
+        # Copiar la plantilla del tipo (solo si se compone por CARGOS).
+        if tipo.composicion.value == "CARGOS":
+            plantilla = (await session.execute(
+                select(TipoOrganoCargo).where(TipoOrganoCargo.tipo_organo_id == tipo_organo_id)
+            )).scalars().all()
+            for tc in plantilla:
+                session.add(OrganoCargo(
+                    organo_id=organo.id,
+                    cargo_id=tc.cargo_id,
+                    orden_protocolario=tc.orden_protocolario,
+                ))
+
+        await session.commit()
+        return organo.id
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_CONFIGURACION_EDITAR")])
+    async def establecer_composicion_de_organo(
+        self,
+        info: strawberry.Info,
+        organo_id: uuid.UUID,
+        cargos: List[CargoOrdenInput],
+    ) -> bool:
+        """Reemplaza la composición REAL de un órgano concreto (la de una agrupación)."""
+        session = info.context.session
+        await session.execute(
+            sa_delete(OrganoCargo).where(OrganoCargo.organo_id == organo_id)
+        )
+        for c in cargos:
+            session.add(OrganoCargo(
+                organo_id=organo_id,
+                cargo_id=c.cargo_id,
+                orden_protocolario=c.orden_protocolario,
+            ))
+        await session.commit()
+        return True
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_CONFIGURACION_EDITAR")])
+    async def replicar_organos_en_agrupacion(
+        self,
+        info: strawberry.Info,
+        agrupacion_origen_id: uuid.UUID,
+        agrupacion_destino_id: uuid.UUID,
+    ) -> int:
+        """Replica los órganos (y su composición) de una agrupación en otra.
+
+        Pensado para el modelo territorial DISTRIBUIDO: al crear una agrupación hija
+        no se hereda nada en silencio; se pregunta al usuario y, si acepta, se llama
+        aquí. Omite los tipos de órgano que la agrupación destino ya tenga.
+        Devuelve cuántos órganos se crearon.
+        """
+        from datetime import date as _date
+        session = info.context.session
+
+        origen = (await session.execute(
+            select(Organo).where(
+                Organo.agrupacion_id == agrupacion_origen_id,
+                Organo.eliminado == False,  # noqa: E712
+            )
+        )).scalars().all()
+
+        ya_tiene = {
+            o.tipo_organo_id for o in (await session.execute(
+                select(Organo).where(
+                    Organo.agrupacion_id == agrupacion_destino_id,
+                    Organo.eliminado == False,  # noqa: E712
+                )
+            )).scalars().all()
+        }
+
+        creados = 0
+        for o in origen:
+            if o.tipo_organo_id in ya_tiene:
+                continue
+            nuevo = Organo(
+                tipo_organo_id=o.tipo_organo_id,
+                agrupacion_id=agrupacion_destino_id,
+                nombre=o.nombre,
+                fecha_constitucion=_date.today(),
+                activo=True,
+            )
+            session.add(nuevo)
+            await session.flush()
+
+            comp = (await session.execute(
+                select(OrganoCargo).where(OrganoCargo.organo_id == o.id)
+            )).scalars().all()
+            for oc in comp:
+                session.add(OrganoCargo(
+                    organo_id=nuevo.id,
+                    cargo_id=oc.cargo_id,
+                    orden_protocolario=oc.orden_protocolario,
+                ))
+            creados += 1
+
+        await session.commit()
+        return creados

@@ -128,6 +128,37 @@ class Organo(BaseModel):
 
     tipo_organo: Mapped["TipoOrgano"] = relationship(back_populates="organos", lazy="selectin")
     agrupacion = relationship("UnidadOrganizativa", lazy="selectin")
+    composicion: Mapped[List["OrganoCargo"]] = relationship(
+        back_populates="organo", lazy="selectin", cascade="all, delete-orphan",
+        order_by="OrganoCargo.orden_protocolario",
+    )
 
     def __repr__(self) -> str:
         return f"<Organo(tipo={self.tipo_organo_id}, agrupacion={self.agrupacion_id}, activo={self.activo})>"
+
+
+class OrganoCargo(BaseModel):
+    """Composición REAL de un órgano concreto: qué cargos lo forman, con su orden.
+
+    Se inicializa copiando la plantilla del tipo (`TipoOrganoCargo`) al crear el
+    órgano, pero cada agrupación puede ajustarla después (añadir una vocalía,
+    quitar un cargo…). La plantilla es el punto de partida, no una atadura.
+    """
+
+    __tablename__ = "organos_cargos"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+
+    organo_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("organos.id", ondelete="CASCADE"), nullable=False, index=True,
+    )
+    cargo_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("cargos.id", ondelete="CASCADE"), nullable=False, index=True,
+    )
+    orden_protocolario: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    organo: Mapped["Organo"] = relationship(back_populates="composicion", lazy="selectin")
+    cargo: Mapped["Cargo"] = relationship(lazy="selectin")  # noqa: F821
+
+    def __repr__(self) -> str:
+        return f"<OrganoCargo(organo={self.organo_id}, cargo={self.cargo_id}, orden={self.orden_protocolario})>"

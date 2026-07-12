@@ -24,7 +24,7 @@ from ..modules.acceso.models import (
     FlujoAprobacion,
 )
 from ..modules.acceso.models.cargo import Cargo, CargoRol
-from ..modules.acceso.models.organo import TipoOrgano, TipoOrganoCargo, Organo
+from ..modules.acceso.models.organo import TipoOrgano, TipoOrganoCargo, Organo, OrganoCargo
 
 @strawchemy.type(Transaccion, include="all", override=True)
 class TransaccionType:
@@ -100,9 +100,14 @@ class TipoOrganoCargoType:
 class TipoOrganoType:
     composicion_cargos: list['TipoOrganoCargoType'] = strawberry.field(default_factory=list)
 
+@strawchemy.type(OrganoCargo, include="all", override=True)
+class OrganoCargoType:
+    cargo: Optional['CargoType'] = None
+
 @strawchemy.type(Organo, include="all", override=True)
 class OrganoType:
     tipo_organo: Optional['TipoOrganoType'] = None
+    composicion: list['OrganoCargoType'] = strawberry.field(default_factory=list)
 
 
 from ..modules.configuracion.models.tema_ui import TemaUI
