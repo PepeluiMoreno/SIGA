@@ -24,7 +24,13 @@ from ..modules.acceso.models import (
     FlujoAprobacion,
 )
 from ..modules.acceso.models.cargo import Cargo, CargoRol
-from ..modules.acceso.models.organo import TipoOrgano, TipoOrganoCargo, Organo, OrganoCargo
+from ..modules.acceso.models.organo import (
+    TipoOrgano,
+    NivelOrgano,
+    NivelOrganoCargo,
+    Organo,
+    OrganoCargo,
+)
 
 @strawchemy.type(Transaccion, include="all", override=True)
 class TransaccionType:
@@ -92,13 +98,19 @@ class CargoType:
 
 
 # ── Órganos de gobierno ──────────────────────────────────────────────────────
-@strawchemy.type(TipoOrganoCargo, include="all", override=True)
-class TipoOrganoCargoType:
-    cargo: Optional['CargoType'] = None
-
 @strawchemy.type(TipoOrgano, include="all", override=True)
 class TipoOrganoType:
-    composicion_cargos: list['TipoOrganoCargoType'] = strawberry.field(default_factory=list)
+    pass
+
+# La composición-plantilla vive en el NIVEL, no en el tipo.
+@strawchemy.type(NivelOrganoCargo, include="all", override=True)
+class NivelOrganoCargoType:
+    cargo: Optional['CargoType'] = None
+
+@strawchemy.type(NivelOrgano, include="all", override=True)
+class NivelOrganoType:
+    tipo_organo: Optional['TipoOrganoType'] = None
+    composicion: list['NivelOrganoCargoType'] = strawberry.field(default_factory=list)
 
 @strawchemy.type(OrganoCargo, include="all", override=True)
 class OrganoCargoType:

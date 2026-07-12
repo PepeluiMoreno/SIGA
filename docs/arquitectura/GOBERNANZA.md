@@ -116,6 +116,35 @@ nombrar.
 > defecto, editable, no la fuente de verdad. → La **UI de configuración de órganos
 > y cargos** es una pieza de primer nivel de esta implementación, no un accesorio.
 
+> **CONFIGURACIÓN vs POBLAMIENTO (DECIDIDO — distinción capital).**
+> En **Configuración** solo hay **modelos y parámetros**, nunca instancias. El modelo
+> organizativo se define **por NIVEL territorial**, no por agrupación concreta:
+>
+> ```
+> CONFIGURACIÓN (por nivel)          POBLAMIENTO (por agrupación)
+> ─────────────────────────          ───────────────────────────
+> Nivel «Delegación»                 Delegación de Madrid
+>   ├ Junta Directiva                  ├ su Junta Directiva
+>   │   Presidencia (1)                │    Presidencia → Ana
+>   │   Secretaría  (2)                │    Secretaría  → Luis
+>   │   Tesorería   (3)                │    Tesorería   → (vacante)
+>   └ Asamblea (pleno)                 └ su Asamblea
+> ```
+>
+> - **`TipoOrgano`** = catálogo puro (Junta Directiva, Asamblea…) con su modo de
+>   composición (CARGOS|PLENO). **No lleva composición**: la misma «Junta Directiva»
+>   se compone distinto en una Delegación que en un Grupo Local.
+> - **`NivelOrgano`** = qué órganos tiene un nivel. **`NivelOrganoCargo`** = su
+>   composición en ese nivel (cargos + orden protocolario). Esto es **configuración**.
+> - **`Organo`/`OrganoCargo`** = las **instancias** de cada agrupación, creadas a partir
+>   del modelo de su nivel y ajustables. Se consultan y gestionan en la **ficha de la
+>   agrupación**, nunca en Configuración.
+> - **Estructura distribuida**: `NivelOrganizativo.estructura_distribuida` es **por nivel
+>   y recursivo** («cada nivel decide cómo se organiza lo que cuelga de él»), y
+>   `unidad_id = NULL` marca la plantilla global de los primeros niveles. Por eso la
+>   configuración inicial aplica al **primer nivel**, y los inferiores **no heredan en
+>   silencio**: replicar es una acción **explícita** con confirmación.
+
 **Dos tipos de composición de órgano (DECIDIDO):**
 
 - **Por cargos** (Junta Directiva, comisiones): su membresía son los cargos que lo

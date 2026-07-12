@@ -19,7 +19,14 @@ from app.modules.acceso.models.rol import Rol, TipoRol
 from app.modules.acceso.models.funcionalidad import RolFuncionalidad
 from app.modules.acceso.models.rol_transaccion import RolTransaccion
 from app.modules.acceso.models.usuario import UsuarioRol
-from app.modules.acceso.models.organo import TipoOrgano, TipoOrganoCargo, Organo, OrganoCargo
+from app.modules.acceso.models.organo import (
+    TipoOrgano,
+    NivelOrgano,
+    NivelOrganoCargo,
+    Organo,
+    OrganoCargo,
+)
+from app.modules.core.geografico.direccion import UnidadOrganizativa
 from app.graphql.permissions import RequireTransaction
 
 
@@ -326,29 +333,65 @@ class AccesoMutation:
             await session.commit()
         return True
 
+    # ── Configuración: el modelo organizativo de cada NIVEL ──────────────────
+
     @strawberry.mutation(permission_classes=[RequireTransaction("CFG_CONFIGURACION_EDITAR")])
-    async def establecer_composicion_organo(
+    async def establecer_composicion_nivel_organo(
         self,
         info: strawberry.Info,
-        tipo_organo_id: uuid.UUID,
+        nivel_organo_id: uuid.UUID,
         cargos: List[CargoOrdenInput],
     ) -> bool:
-        """Reemplaza la composición-plantilla de un tipo de órgano de una vez.
+        """Reemplaza la composición-plantilla del órgano de un nivel, de una vez.
 
-        Borra las filas `tipos_organo_cargos` del tipo y las recrea con los cargos
-        y el orden dados. El input autogenerado de strawchemy no incluye las FKs
-        (`tipo_organo_id`/`cargo_id`), de ahí este resolver manual.
+        Borra las filas `niveles_organos_cargos` de ese `NivelOrgano` y las recrea
+        con los cargos y el orden dados. El input autogenerado de strawchemy no
+        incluye las FKs (`nivel_organo_id`/`cargo_id`), de ahí este resolver manual.
         """
         session = info.context.session
         await session.execute(
-            sa_delete(TipoOrganoCargo).where(TipoOrganoCargo.tipo_organo_id == tipo_organo_id)
+            sa_delete(NivelOrganoCargo).where(
+                NivelOrganoCargo.nivel_organo_id == nivel_organo_id
+            )
         )
         for c in cargos:
-            session.add(TipoOrganoCargo(
-                tipo_organo_id=tipo_organo_id,
+            session.add(NivelOrganoCargo(
+                nivel_organo_id=nivel_organo_id,
                 cargo_id=c.cargo_id,
                 orden_protocolario=c.orden_protocolario,
             ))
+        await session.commit()
+        return True
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_CONFIGURACION_EDITAR")])
+    async def establecer_organos_de_nivel(
+        self,
+        info: strawberry.Info,
+        nivel_id: uuid.UUID,
+        tipo_organo_ids: List[uuid.UUID],
+    ) -> bool:
+        """Fija qué órganos tiene un nivel territorial.
+
+        Reemplaza el conjunto de `NivelOrgano` del nivel: borra los que ya no están
+        y crea los nuevos. Los que se mantienen NO se tocan, para no perder su
+        composición (`NivelOrganoCargo`).
+        """
+        session = info.context.session
+
+        actuales = (await session.execute(
+            select(NivelOrgano).where(NivelOrgano.nivel_id == nivel_id)
+        )).scalars().all()
+
+        deseados = set(tipo_organo_ids)
+        existentes = {no.tipo_organo_id for no in actuales}
+
+        for no in actuales:
+            if no.tipo_organo_id not in deseados:
+                await session.delete(no)   # cascade borra su composición
+
+        for tid in deseados - existentes:
+            session.add(NivelOrgano(nivel_id=nivel_id, tipo_organo_id=tid, activo=True))
+
         await session.commit()
         return True
 
@@ -362,11 +405,13 @@ class AccesoMutation:
         nombre: Optional[str] = None,
         fecha_constitucion: Optional[str] = None,
     ) -> uuid.UUID:
-        """Crea un órgano en una agrupación, copiando la composición-plantilla de su tipo.
+        """Crea un órgano en una agrupación, copiando la composición-plantilla de su NIVEL.
 
-        La plantilla (`TipoOrganoCargo`) es el punto de partida: la composición real
-        (`OrganoCargo`) queda copiada y la agrupación puede ajustarla después.
-        Los tipos de composición PLENO (asamblea) no llevan cargos.
+        La plantilla vive en el nivel territorial de la agrupación (`NivelOrgano` /
+        `NivelOrganoCargo`): es el punto de partida, y la composición real
+        (`OrganoCargo`) queda copiada y ajustable por esa agrupación.
+        Los tipos de composición PLENO (asamblea) no llevan cargos. Si el nivel no
+        tiene ese órgano configurado, el órgano se crea sin composición.
         """
         from datetime import date as _date
         session = info.context.session
@@ -376,6 +421,12 @@ class AccesoMutation:
         )).scalar_one_or_none()
         if tipo is None:
             raise ValueError("Tipo de órgano no encontrado")
+
+        agrupacion = (await session.execute(
+            select(UnidadOrganizativa).where(UnidadOrganizativa.id == agrupacion_id)
+        )).scalar_one_or_none()
+        if agrupacion is None:
+            raise ValueError("Agrupación no encontrada")
 
         organo = Organo(
             tipo_organo_id=tipo_organo_id,
@@ -389,17 +440,27 @@ class AccesoMutation:
         session.add(organo)
         await session.flush()   # necesitamos organo.id
 
-        # Copiar la plantilla del tipo (solo si se compone por CARGOS).
-        if tipo.composicion.value == "CARGOS":
-            plantilla = (await session.execute(
-                select(TipoOrganoCargo).where(TipoOrganoCargo.tipo_organo_id == tipo_organo_id)
-            )).scalars().all()
-            for tc in plantilla:
-                session.add(OrganoCargo(
-                    organo_id=organo.id,
-                    cargo_id=tc.cargo_id,
-                    orden_protocolario=tc.orden_protocolario,
-                ))
+        # Copiar la plantilla del NIVEL de la agrupación (solo si se compone por CARGOS).
+        # `UnidadOrganizativa.tipo_id` es su nivel organizativo.
+        if tipo.composicion.value == "CARGOS" and agrupacion.tipo_id is not None:
+            nivel_organo = (await session.execute(
+                select(NivelOrgano).where(
+                    NivelOrgano.nivel_id == agrupacion.tipo_id,
+                    NivelOrgano.tipo_organo_id == tipo_organo_id,
+                )
+            )).scalars().first()
+            if nivel_organo is not None:
+                plantilla = (await session.execute(
+                    select(NivelOrganoCargo).where(
+                        NivelOrganoCargo.nivel_organo_id == nivel_organo.id
+                    ).order_by(NivelOrganoCargo.orden_protocolario)
+                )).scalars().all()
+                for nc in plantilla:
+                    session.add(OrganoCargo(
+                        organo_id=organo.id,
+                        cargo_id=nc.cargo_id,
+                        orden_protocolario=nc.orden_protocolario,
+                    ))
 
         await session.commit()
         return organo.id

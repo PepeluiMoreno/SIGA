@@ -78,7 +78,7 @@ from ..modules.acceso.models import (
 # TipoVinculacion es ahora el catálogo CRM canónico (módulo membresía).
 from ..modules.membresia.models import TipoVinculacion
 from ..modules.acceso.models.cargo import Cargo, CargoRol
-from ..modules.acceso.models.organo import TipoOrgano, TipoOrganoCargo, Organo
+from ..modules.acceso.models.organo import TipoOrgano, NivelOrgano, NivelOrganoCargo, Organo
 
 
 @strawchemy.input(Cargo, mode="create_input", include="all", exclude=get_exclude_fields(Cargo))
@@ -122,18 +122,33 @@ class TipoOrganoFilter:
     pass
 
 
-@strawchemy.input(TipoOrganoCargo, mode="create_input", include="all", exclude=get_exclude_fields(TipoOrganoCargo))
-class TipoOrganoCargoCreateInput:
+@strawchemy.input(NivelOrgano, mode="create_input", include="all", exclude=get_exclude_fields(NivelOrgano))
+class NivelOrganoCreateInput:
     pass
 
 
-@strawchemy.input(TipoOrganoCargo, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(TipoOrganoCargo))
-class TipoOrganoCargoUpdateInput:
+@strawchemy.input(NivelOrgano, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(NivelOrgano))
+class NivelOrganoUpdateInput:
     pass
 
 
-@strawchemy.filter(TipoOrganoCargo, include="all")
-class TipoOrganoCargoFilter:
+@strawchemy.filter(NivelOrgano, include="all")
+class NivelOrganoFilter:
+    pass
+
+
+@strawchemy.input(NivelOrganoCargo, mode="create_input", include="all", exclude=get_exclude_fields(NivelOrganoCargo))
+class NivelOrganoCargoCreateInput:
+    pass
+
+
+@strawchemy.input(NivelOrganoCargo, mode="update_by_pk_input", include="all", exclude=get_exclude_fields(NivelOrganoCargo))
+class NivelOrganoCargoUpdateInput:
+    pass
+
+
+@strawchemy.filter(NivelOrganoCargo, include="all")
+class NivelOrganoCargoFilter:
     pass
 
 

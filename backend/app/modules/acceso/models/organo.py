@@ -1,20 +1,29 @@
-"""Órganos de gobierno: tipo (catálogo + composición) e instancia por unidad.
+"""Órganos de gobierno: catálogo de tipos, modelo por NIVEL, e instancias.
 
-Modelo de gobernanza (ver docs/arquitectura/GOBERNANZA.md):
+Modelo de gobernanza (ver docs/arquitectura/GOBERNANZA.md). Distingue con nitidez
+lo que es **configuración** (el modelo organizativo) de lo que es **poblamiento**
+(las instancias reales de cada agrupación):
 
-- `TipoOrgano`   — catálogo configurable de tipos de órgano (Junta Directiva,
-                   Asamblea General, Comisión…). Cada tipo declara su modo de
-                   composición: por CARGOS (junta, comisión) o por PLENO (asamblea,
-                   cuya membresía es el conjunto de socios con voto, sin cargos).
-- `TipoOrganoCargo` — composición-plantilla de un tipo de órgano por CARGOS: qué
-                   cargos lo forman y en qué orden protocolario. El orden vive aquí,
-                   no en `Rol.nivel` (que pasa a ser autoridad pura).
-- `Organo`       — instancia concreta de un tipo de órgano en una unidad, con su
-                   periodo. Generaliza la antigua `JuntaDirectiva`.
+CONFIGURACIÓN — se define por NIVEL territorial, no por agrupación concreta:
+- `TipoOrgano`      — catálogo puro de tipos (Junta Directiva, Asamblea, Comisión).
+                      Declara su modo de composición: CARGOS (junta, comisión) o
+                      PLENO (asamblea: su membresía es el pleno de socios con voto).
+                      NO lleva composición: la misma «Junta Directiva» se compone
+                      distinto en una Delegación que en un Grupo Local.
+- `NivelOrgano`     — qué órganos tiene un NIVEL («el nivel Delegación tiene una
+                      Junta Directiva y una Asamblea»).
+- `NivelOrganoCargo`— composición de ese órgano EN ESE NIVEL: qué cargos lo forman
+                      y en qué orden protocolario. El orden vive aquí, no en
+                      `Rol.nivel` (que pasa a ser autoridad pura).
 
-El cargo es genérico y la composición cuelga del TIPO (plantilla reutilizable); el
-territorio lo instancia el mandato (`HistorialNombramiento.agrupacion_id`), no el
-órgano ni el cargo.
+POBLAMIENTO — instancias reales, se ven en la ficha de la agrupación:
+- `Organo`          — el órgano concreto de una agrupación («la Junta de Madrid»),
+                      con su periodo. Generaliza la antigua `JuntaDirectiva`.
+- `OrganoCargo`     — su composición real, inicializada desde el modelo del nivel y
+                      ajustable por esa agrupación.
+
+El cargo es genérico; el territorio lo instancia el mandato
+(`HistorialNombramiento.agrupacion_id`), no el órgano ni el cargo.
 """
 
 import enum
@@ -66,11 +75,6 @@ class TipoOrgano(BaseModel):
     sistema: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
-    # Composición-plantilla (solo para composicion=CARGOS)
-    composicion_cargos: Mapped[List["TipoOrganoCargo"]] = relationship(
-        back_populates="tipo_organo", lazy="selectin", cascade="all, delete-orphan",
-        order_by="TipoOrganoCargo.orden_protocolario",
-    )
     organos: Mapped[List["Organo"]] = relationship(
         back_populates="tipo_organo", lazy="noload",
     )
@@ -79,15 +83,52 @@ class TipoOrgano(BaseModel):
         return f"<TipoOrgano('{self.nombre}', {self.composicion.value})>"
 
 
-class TipoOrganoCargo(BaseModel):
-    """Un cargo dentro de la composición de un tipo de órgano, con su orden protocolario."""
+# ── CONFIGURACIÓN: el modelo organizativo de cada NIVEL ──────────────────────
 
-    __tablename__ = "tipos_organo_cargos"
+class NivelOrgano(BaseModel):
+    """Un órgano que corresponde a un NIVEL territorial.
+
+    «El nivel *Delegación* tiene una Junta Directiva y una Asamblea». Es
+    configuración, no poblamiento: no habla de agrupaciones concretas. Al crear una
+    agrupación de ese nivel se instancian sus órganos con esta composición.
+    """
+
+    __tablename__ = "niveles_organos"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
 
+    nivel_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("niveles_organizativos.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
     tipo_organo_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("tipos_organo.id", ondelete="CASCADE"), nullable=False, index=True,
+    )
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    tipo_organo: Mapped["TipoOrgano"] = relationship(lazy="selectin")
+    composicion: Mapped[List["NivelOrganoCargo"]] = relationship(
+        back_populates="nivel_organo", lazy="selectin", cascade="all, delete-orphan",
+        order_by="NivelOrganoCargo.orden_protocolario",
+    )
+
+    def __repr__(self) -> str:
+        return f"<NivelOrgano(nivel={self.nivel_id}, tipo={self.tipo_organo_id})>"
+
+
+class NivelOrganoCargo(BaseModel):
+    """Composición del órgano de un nivel: qué cargos lo forman, con su orden.
+
+    La misma «Junta Directiva» puede componerse distinto en una Delegación que en un
+    Grupo Local; por eso la composición cuelga del NIVEL, no del tipo.
+    """
+
+    __tablename__ = "niveles_organos_cargos"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+
+    nivel_organo_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("niveles_organos.id", ondelete="CASCADE"), nullable=False, index=True,
     )
     cargo_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("cargos.id", ondelete="CASCADE"), nullable=False, index=True,
@@ -95,11 +136,11 @@ class TipoOrganoCargo(BaseModel):
     # Orden protocolario dentro del órgano (0 = primero). Antes vivía —mal— en Rol.nivel.
     orden_protocolario: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
-    tipo_organo: Mapped["TipoOrgano"] = relationship(back_populates="composicion_cargos", lazy="selectin")
+    nivel_organo: Mapped["NivelOrgano"] = relationship(back_populates="composicion", lazy="selectin")
     cargo: Mapped["Cargo"] = relationship(lazy="selectin")  # noqa: F821
 
     def __repr__(self) -> str:
-        return f"<TipoOrganoCargo(tipo={self.tipo_organo_id}, cargo={self.cargo_id}, orden={self.orden_protocolario})>"
+        return f"<NivelOrganoCargo(nivel_organo={self.nivel_organo_id}, cargo={self.cargo_id}, orden={self.orden_protocolario})>"
 
 
 class Organo(BaseModel):
