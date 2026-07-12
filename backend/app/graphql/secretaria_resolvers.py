@@ -699,11 +699,13 @@ class SecretariaResolverMutation:
         fecha_inicio: date,
         agrupacion_id: Optional[uuid.UUID] = None,
         fecha_fin: Optional[date] = None,
+        tipo_codigo: str = 'NOMBRAMIENTO',
     ) -> uuid.UUID:
-        """Adjunta a un acuerdo el payload de nombramiento: a quién, qué cargo, dónde.
+        """Adjunta a un acuerdo el payload de nombramiento o cese: a quién, qué cargo.
 
         Sin esto el acuerdo es solo texto y no se puede ejecutar: la máquina no sabe
-        a quién nombra. Devuelve el id del payload.
+        a quién nombra (o cesa). `tipo_codigo`: NOMBRAMIENTO | CESE.
+        Devuelve el id del payload.
         """
         session = info.context.session
         acuerdo = (await session.execute(
@@ -712,12 +714,15 @@ class SecretariaResolverMutation:
         if acuerdo is None:
             raise ValueError("Acuerdo no encontrado")
 
-        # Marcar el acuerdo como de tipo NOMBRAMIENTO si no lo estaba.
+        if tipo_codigo not in ('NOMBRAMIENTO', 'CESE'):
+            raise ValueError("tipo_codigo debe ser NOMBRAMIENTO o CESE")
+
         tipo = (await session.execute(
-            select(TipoAcuerdo).where(TipoAcuerdo.codigo == 'NOMBRAMIENTO')
+            select(TipoAcuerdo).where(TipoAcuerdo.codigo == tipo_codigo)
         )).scalar_one_or_none()
-        if tipo is not None:
-            acuerdo.tipo_acuerdo_id = tipo.id
+        if tipo is None:
+            raise ValueError(f"Tipo de acuerdo {tipo_codigo} no existe en el catálogo")
+        acuerdo.tipo_acuerdo_id = tipo.id
 
         existente = (await session.execute(
             select(AcuerdoNombramiento).where(AcuerdoNombramiento.acuerdo_id == acuerdo_id)
@@ -742,18 +747,22 @@ class SecretariaResolverMutation:
         return payload.id
 
     @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_CARGO_ASIGNAR")])
-    async def ejecutar_acuerdo_nombramiento(
+    async def ejecutar_acuerdo(
         self,
         info: strawberry.Info,
         acuerdo_id: uuid.UUID,
         exigir_acta_aprobada: bool = True,
     ) -> uuid.UUID:
-        """Ejecuta un acuerdo de nombramiento aprobado: produce el MANDATO.
+        """Ejecuta un acuerdo aprobado: le da efecto según su TIPO.
 
-        Valida que el acuerdo esté APROBADO y conste en acta aprobada; crea el
-        `HistorialNombramiento` (con `cargo_id`, no `rol_id`) apuntando al acuerdo que
-        lo originó, y **deriva** los `UsuarioRol` vía `CargoRol` heredando el
-        territorio. Devuelve el id del mandato.
+        - NOMBRAMIENTO → produce el mandato (`HistorialNombramiento` con `cargo_id`,
+          no `rol_id`) apuntando al acuerdo que lo originó, y **deriva** los
+          `UsuarioRol` vía `CargoRol` heredando el territorio.
+        - CESE → cierra el mandato vigente (FINALIZADO, con fecha_fin) y desactiva
+          los roles que derivaban de él.
+
+        Exige que el acuerdo esté APROBADO y conste en acta APROBADA. Devuelve el id
+        del mandato creado o cerrado.
         """
         from app.modules.secretaria.services.acuerdo_ejecucion_service import (
             AcuerdoEjecucionService,
@@ -761,12 +770,31 @@ class SecretariaResolverMutation:
 
         session = info.context.session
         usuario_id = info.context.user.id if info.context.user else None
+
+        acuerdo = (await session.execute(
+            select(Acuerdo).where(Acuerdo.id == acuerdo_id, Acuerdo.eliminado == False)  # noqa: E712
+        )).scalar_one_or_none()
+        if acuerdo is None:
+            raise ValueError("Acuerdo no encontrado")
+
+        codigo = acuerdo.tipo_acuerdo.codigo if acuerdo.tipo_acuerdo else None
+        if codigo not in ('NOMBRAMIENTO', 'CESE'):
+            raise ValueError(
+                f"Este acuerdo (tipo: {codigo or 'sin tipo'}) no es ejecutable. "
+                "Solo los de tipo NOMBRAMIENTO o CESE producen efecto automático."
+            )
+
         svc = AcuerdoEjecucionService(session)
-        mandato = await svc.ejecutar_nombramiento(
-            acuerdo_id,
-            ejecutado_por_id=usuario_id,
-            exigir_acta_aprobada=exigir_acta_aprobada,
-        )
+        if codigo == 'NOMBRAMIENTO':
+            mandato = await svc.ejecutar_nombramiento(
+                acuerdo_id, ejecutado_por_id=usuario_id,
+                exigir_acta_aprobada=exigir_acta_aprobada,
+            )
+        else:
+            mandato = await svc.ejecutar_cese(
+                acuerdo_id, ejecutado_por_id=usuario_id,
+                exigir_acta_aprobada=exigir_acta_aprobada,
+            )
         await session.commit()
         return mandato.id
 

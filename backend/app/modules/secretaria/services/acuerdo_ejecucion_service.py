@@ -110,6 +110,87 @@ class AcuerdoEjecucionService:
 
         return mandato
 
+    async def ejecutar_cese(
+        self,
+        acuerdo_id: uuid.UUID,
+        *,
+        ejecutado_por_id: Optional[uuid.UUID] = None,
+        exigir_acta_aprobada: bool = True,
+    ) -> HistorialNombramiento:
+        """Ejecuta un acuerdo de CESE: cierra el mandato y retira los roles derivados.
+
+        Simétrico del nombramiento. El cese no borra el mandato —es historia, y debe
+        constar— sino que lo **finaliza**: le pone `fecha_fin`, lo pasa a FINALIZADO
+        y desactiva los `UsuarioRol` que derivaban de él (los permisos se van con el
+        cargo, que es justo el sentido de derivarlos).
+
+        El payload (`AcuerdoNombramiento`) identifica a quién se cesa y de qué cargo;
+        se busca su mandato vigente.
+        """
+        acuerdo = (await self.session.execute(
+            select(Acuerdo).where(
+                Acuerdo.id == acuerdo_id,
+                Acuerdo.eliminado == False,  # noqa: E712
+            )
+        )).scalar_one_or_none()
+        if acuerdo is None:
+            raise ValueError("Acuerdo no encontrado")
+
+        payload: Optional[AcuerdoNombramiento] = acuerdo.nombramiento
+        if payload is None:
+            raise ValueError(
+                "El acuerdo no lleva datos de cese (a quién se cesa, de qué cargo)."
+            )
+        if not acuerdo.es_aprobado:
+            raise ValueError(
+                f"El acuerdo no está aprobado (resultado: {acuerdo.resultado or '—'}). "
+                "Un acuerdo no aprobado no produce efectos."
+            )
+        if payload.ya_ejecutado:
+            raise ValueError("Este acuerdo ya se ejecutó.")
+        if exigir_acta_aprobada:
+            await self._exigir_acta_aprobada(acuerdo)
+
+        # El mandato vigente de esa persona en ese cargo (y territorio).
+        mandato = (await self.session.execute(
+            select(HistorialNombramiento).where(
+                HistorialNombramiento.miembro_id == payload.miembro_id,
+                HistorialNombramiento.cargo_id == payload.cargo_id,
+                HistorialNombramiento.agrupacion_id == payload.agrupacion_id,
+                HistorialNombramiento.estado == 'ACTIVO',
+                HistorialNombramiento.fecha_fin.is_(None),
+                HistorialNombramiento.eliminado == False,  # noqa: E712
+            )
+        )).scalar_one_or_none()
+        if mandato is None:
+            raise ValueError(
+                "No hay un mandato vigente de esa persona en ese cargo: nada que cesar."
+            )
+
+        # Cerrar el mandato. No se borra: es historia y debe constar.
+        # Fecha de efecto del cese: `fecha_fin` si se indicó; si no, la `fecha_inicio`
+        # del payload (en un acuerdo de CESE, esa fecha ES la de efecto); si tampoco,
+        # hoy.
+        mandato.fecha_fin = payload.fecha_fin or payload.fecha_inicio or date.today()
+        mandato.estado = 'FINALIZADO'
+        mandato.observaciones = (
+            f"{mandato.observaciones + ' | ' if mandato.observaciones else ''}"
+            f"Cesado por acuerdo nº {acuerdo.numero}"
+        )
+
+        # Retirar los roles que derivaban de ese mandato: el permiso se va con el cargo.
+        roles_derivados = (await self.session.execute(
+            select(UsuarioRol).where(
+                UsuarioRol.nombramiento_id == mandato.id,
+                UsuarioRol.activo == True,  # noqa: E712
+            )
+        )).scalars().all()
+        for ur in roles_derivados:
+            ur.activo = False
+
+        payload.nombramiento_id = mandato.id   # traza qué mandato cerró (e impide repetir)
+        return mandato
+
     async def _exigir_acta_aprobada(self, acuerdo: Acuerdo) -> None:
         """Un acuerdo solo es ejecutable si consta en un acta aprobada."""
         reunion_id = (await self.session.execute(

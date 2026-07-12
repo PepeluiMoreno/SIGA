@@ -302,34 +302,6 @@ async def _ocultar_iban_vinculaciones(info, session, vincs):
 @strawberry.type
 class VinculacionesMutation:
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_CARGO_ASIGNAR")])
-    async def crear_nombramiento(
-        self, info: strawberry.Info,
-        miembro_id: uuid.UUID, rol_id: uuid.UUID, agrupacion_id: uuid.UUID,
-        fecha_inicio: date, fecha_fin: Optional[date] = None,
-        observaciones: Optional[str] = None, estado: str = "ACTIVO",
-    ) -> HistorialNombramientoType:
-        """Registra un cargo (nombramiento) con FKs planas.
-
-        El input autogenerado de strawchemy excluye las FK, así que la creación de
-        nombramientos con titular/rol/agrupación se hace por esta mutación.
-        """
-        session = info.context.session
-        # Fase 2: solo se registran cargos en unidades del propio ámbito (global ⇒ libre).
-        usuario = info.context.user
-        if usuario:
-            await assert_unidad_en_ambito(session, usuario.id, agrupacion_id)
-        n = HistorialNombramiento(
-            miembro_id=miembro_id, rol_id=rol_id, agrupacion_id=agrupacion_id,
-            fecha_inicio=fecha_inicio, fecha_fin=fecha_fin,
-            observaciones=observaciones, estado=estado,
-        )
-        session.add(n)
-        await session.commit()
-        return (await session.execute(
-            select(HistorialNombramiento).where(HistorialNombramiento.id == n.id)
-        )).scalar_one()
-
     @strawberry.mutation(permission_classes=[RequireTransaction("CONTACTO_CREAR")])
     async def crear_contacto(self, info: strawberry.Info, data: ContactoCreateInput) -> ContactoType:
         """Crea un Contacto (persona física o jurídica) sin vinculación inicial."""

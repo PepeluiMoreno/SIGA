@@ -1,4 +1,10 @@
-"""Resolvers de autenticación, gestión de usuarios y juntas directivas."""
+"""Resolvers de autenticación y gestión de usuarios.
+
+Los nombramientos NO se hacen aquí: un mandato nace de un acuerdo de un órgano
+reflejado en un acta (ver `secretaria_resolvers.ejecutar_acuerdo` y GOBERNANZA.md).
+Las mutaciones `asignar_nombramiento`/`revocar_nombramiento` se retiraron: creaban
+mandatos con `rol_id` saltándose el acuerdo, el acta y todo control.
+"""
 
 import secrets
 import uuid
@@ -304,34 +310,6 @@ class AuthMutation:
                 "Usa la desactivación (soft-delete)."
             )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_CARGO_ASIGNAR")])
-    async def asignar_nombramiento(
-        self,
-        info: strawberry.Info,
-        usuario_id: uuid.UUID,
-        rol_id: uuid.UUID,
-        fecha_inicio: date,
-        agrupacion_id: Optional[uuid.UUID] = None,
-        motivo: Optional[str] = None,
-        tipo_origen: Optional[str] = None,
-    ) -> uuid.UUID:
-        """Asigna un cargo (rol organizacional) a un usuario.
-
-        Crea UsuarioRol activo + registro en HistorialNombramiento.
-        Devuelve el ID del UsuarioRol creado.
-        """
-        session = info.context.session
-        svc = AccesoService(session)
-        nombramiento = await svc.asignar_nombramiento(
-            usuario_id=usuario_id,
-            rol_id=rol_id,
-            fecha_inicio=fecha_inicio,
-            agrupacion_id=agrupacion_id,
-            motivo=motivo,
-            tipo_origen=tipo_origen,
-        )
-        await session.commit()
-        return nombramiento.id
 
     # ── Reset de contraseña ──────────────────────────────────────────────────
 
@@ -395,29 +373,3 @@ class AuthMutation:
         await session.commit()
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_CARGO_REVOCAR")])
-    async def revocar_nombramiento(
-        self,
-        info: strawberry.Info,
-        usuario_id: uuid.UUID,
-        rol_id: uuid.UUID,
-        fecha_fin: date,
-        motivo: Optional[str] = None,
-        agrupacion_id: Optional[uuid.UUID] = None,
-    ) -> uuid.UUID:
-        """Revoca un nombramiento (cargo) activo.
-
-        Desactiva UsuarioRol + cierra HistorialNombramiento.
-        Devuelve el ID del UsuarioRol desactivado.
-        """
-        session = info.context.session
-        svc = AccesoService(session)
-        nombramiento = await svc.revocar_nombramiento(
-            usuario_id=usuario_id,
-            rol_id=rol_id,
-            fecha_fin=fecha_fin,
-            motivo=motivo,
-            agrupacion_id=agrupacion_id,
-        )
-        await session.commit()
-        return nombramiento.id
