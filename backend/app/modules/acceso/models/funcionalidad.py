@@ -10,7 +10,7 @@ import enum
 import uuid
 from typing import List, Optional
 
-from sqlalchemy import String, Boolean, Uuid, ForeignKey, Enum, UniqueConstraint, Text, Integer
+from sqlalchemy import String, Boolean, Uuid, ForeignKey, Enum, UniqueConstraint, Text, Integer, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ....infrastructure.base_model import BaseModel
@@ -135,15 +135,28 @@ class FuncionalidadTransaccion(BaseModel):
 
 
 class FlujoAprobacion(BaseModel):
-    """Capa 3: cadena de aprobación entre roles.
+    """Capa 3: cadena de aprobación. Quién aprueba qué.
 
-    Ejemplo: el rol DISENADOR_CAMPANA ejecuta PROPONER_PRESUPUESTO_CAMPANA
-    que queda en estado pendiente hasta que el rol JUNTA_DIRECTIVA ejecuta
-    APROBAR_PRESUPUESTO_CAMPANA (o RECHAZAR_PRESUPUESTO_CAMPANA).
+    Una transacción de inicio deja el objeto pendiente hasta que el APROBADOR
+    ejecuta la transacción de aprobación (o la de rechazo).
+
+    El aprobador es **polimórfico**: un ÓRGANO colegiado o un CARGO individual.
+    Nunca un rol (un rol es un haz de permisos, no un sujeto que decide).
+      - Órgano: decisiones que exigen deliberación y acuerdo. Los NOMBRAMIENTOS de
+        cargos van siempre por aquí — los protagoniza el colegiado, y el acuerdo
+        queda reflejado en acta.
+        Ej.: la Junta Directiva aprueba el presupuesto de una campaña.
+      - Cargo: aprobaciones unipersonales (un gasto menor, un alta…).
 
     El campo `entidad` identifica el aggregate raíz afectado por el flujo.
     """
     __tablename__ = 'flujos_aprobacion'
+    __table_args__ = (
+        CheckConstraint(
+            '(tipo_organo_aprobador_id IS NOT NULL) != (cargo_aprobador_id IS NOT NULL)',
+            name='ck_flujo_aprobador_organo_xor_cargo',
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
 
@@ -168,10 +181,24 @@ class FlujoAprobacion(BaseModel):
         nullable=True,
     )
 
-    rol_aprobador_id: Mapped[uuid.UUID] = mapped_column(
+    # El aprobador es POLIMÓRFICO: un ÓRGANO colegiado o un CARGO individual.
+    #   - Órgano  → decisiones que exigen deliberación y acuerdo. Los NOMBRAMIENTOS
+    #               de cargos van siempre por aquí: los protagoniza el colegiado.
+    #   - Cargo   → aprobaciones unipersonales (un gasto menor, un alta…).
+    # Nunca un ROL: el rol es un haz de permisos, no un sujeto que decide.
+    # Se referencia el TIPO de órgano competente; la instancia concreta se resuelve
+    # por la agrupación del objeto a aprobar.
+    # Exactamente uno de los dos debe estar informado (CheckConstraint abajo).
+    tipo_organo_aprobador_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid,
-        ForeignKey('roles.id', ondelete='RESTRICT'),
-        nullable=False,
+        ForeignKey('tipos_organo.id', ondelete='RESTRICT'),
+        nullable=True,
+        index=True,
+    )
+    cargo_aprobador_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid,
+        ForeignKey('cargos.id', ondelete='RESTRICT'),
+        nullable=True,
         index=True,
     )
 
@@ -189,8 +216,11 @@ class FlujoAprobacion(BaseModel):
     transaccion_rechazo: Mapped[Optional["Transaccion"]] = relationship(
         foreign_keys=[transaccion_rechazo_id], lazy="selectin"
     )
-    rol_aprobador: Mapped["Rol"] = relationship(
-        foreign_keys=[rol_aprobador_id], lazy="selectin"
+    tipo_organo_aprobador: Mapped[Optional["TipoOrgano"]] = relationship(  # noqa: F821
+        foreign_keys=[tipo_organo_aprobador_id], lazy="selectin"
+    )
+    cargo_aprobador: Mapped[Optional["Cargo"]] = relationship(  # noqa: F821
+        foreign_keys=[cargo_aprobador_id], lazy="selectin"
     )
 
     def __repr__(self) -> str:

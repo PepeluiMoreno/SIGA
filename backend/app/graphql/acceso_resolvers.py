@@ -447,3 +447,23 @@ class AccesoMutation:
         await session.commit()
         return copiados
 
+    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_CONFIGURACION_EDITAR")])
+    async def instanciar_organos_agrupacion(
+        self,
+        info: strawberry.Info,
+        agrupacion_id: uuid.UUID,
+    ) -> int:
+        """Materializa en una agrupación los órganos que su NIVEL tiene configurados.
+
+        La gobernanza se configura por nivel («el nivel Delegación tiene una Junta
+        Directiva con estos cargos»); esto la instancia en una agrupación concreta,
+        copiando la composición. Idempotente: omite los órganos que ya existan.
+        Devuelve cuántos se crearon.
+        """
+        from app.modules.acceso.services.organo_service import OrganoService
+
+        session = info.context.session
+        creados = await OrganoService(session).instanciar_organos(agrupacion_id)
+        await session.commit()
+        return len(creados)
+

@@ -31,16 +31,32 @@ class FuncionalidadTransaccionDef:
 
 @dataclass(frozen=True)
 class FlujoAprobacionDef:
-    """Declaración de un flujo de aprobación en el catálogo."""
+    """Declaración de un flujo de aprobación en el catálogo.
+
+    El aprobador es POLIMÓRFICO — órgano colegiado o cargo individual, nunca un
+    rol. Declara **exactamente uno** de los dos:
+      - `tipo_organo_aprobador_nombre`: nombre del tipo de órgano (`tipos_organo.nombre`).
+        Obligatorio para los flujos de nombramiento: los acuerda un colegiado.
+      - `cargo_aprobador_nombre`: nombre del cargo (`cargos.nombre`), para
+        aprobaciones unipersonales.
+    """
     codigo: str
     nombre: str
     transaccion_inicio_codigo: str
     transaccion_aprobacion_codigo: str
-    rol_aprobador_codigo: str
     entidad: str
+    tipo_organo_aprobador_nombre: Optional[str] = None
+    cargo_aprobador_nombre: Optional[str] = None
     transaccion_rechazo_codigo: Optional[str] = None
     descripcion: Optional[str] = None
     sistema: bool = True
+
+    def __post_init__(self) -> None:
+        if bool(self.tipo_organo_aprobador_nombre) == bool(self.cargo_aprobador_nombre):
+            raise ValueError(
+                f"FlujoAprobacion '{self.codigo}': declara exactamente UN aprobador "
+                "(tipo_organo_aprobador_nombre o cargo_aprobador_nombre)"
+            )
 
 
 @dataclass

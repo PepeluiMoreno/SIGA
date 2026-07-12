@@ -26,10 +26,13 @@ class TipoReunion(InmutableMixin, BaseModel):
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     descripcion: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
-    # Configuración legal
-    organo: Mapped[str] = mapped_column(
-        String(50), nullable=False
-    )  # ASAMBLEA_GENERAL | JUNTA_DIRECTIVA | COMISION
+    # Órgano de gobierno que se reúne. FK al catálogo REAL de tipos de órgano
+    # (`tipos_organo`, módulo acceso), no un string libre: es el mismo órgano que
+    # configura la gobernanza, para que un acuerdo sepa quién lo adoptó.
+    tipo_organo_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('tipos_organo.id', ondelete='RESTRICT'),
+        nullable=False, index=True,
+    )
 
     # Quórum por defecto (puede sobreescribirse en cada reunión)
     quorum_primera_convocatoria: Mapped[Optional[int]] = mapped_column(
@@ -49,9 +52,10 @@ class TipoReunion(InmutableMixin, BaseModel):
 
     # Relaciones
     reuniones = relationship('Reunion', back_populates='tipo_reunion', lazy='selectin')
+    tipo_organo = relationship('TipoOrgano', lazy='selectin')
 
     def __repr__(self) -> str:
-        return f"<TipoReunion(nombre='{self.nombre}', organo='{self.organo}')>"
+        return f"<TipoReunion(nombre='{self.nombre}', tipo_organo_id='{self.tipo_organo_id}')>"
 
 
 class Reunion(BaseModel):
@@ -70,6 +74,13 @@ class Reunion(BaseModel):
     agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid, ForeignKey('unidades_organizativas.id'), nullable=True, index=True,
         comment="Agrupación que celebra la reunión (null = organización central)"
+    )
+    # El órgano CONCRETO que se reúne (p. ej. «la Junta Directiva de Madrid»), con
+    # su composición real. Es quien adopta los acuerdos: sin esto, un acuerdo no
+    # sabe quién lo tomó. Nullable durante la transición (reuniones sin órgano
+    # instanciado); el objetivo es que siempre esté informado.
+    organo_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('organos.id', ondelete='RESTRICT'), nullable=True, index=True,
     )
 
     # Convocatoria
@@ -130,6 +141,7 @@ class Reunion(BaseModel):
     # Relaciones
     tipo_reunion = relationship('TipoReunion', back_populates='reuniones', lazy='selectin')
     agrupacion = relationship('UnidadOrganizativa', lazy='selectin')
+    organo = relationship('Organo', lazy='selectin')
     asistentes = relationship('AsistenteReunionSecretaria', back_populates='reunion', lazy='selectin')
     puntos_orden_dia = relationship(
         'PuntoOrdenDia', back_populates='reunion',

@@ -123,6 +123,10 @@ ModuleCatalog.register_flujo(FlujoAprobacionDef(
     transaccion_inicio_codigo="CAMPANA_PROPONER_PRESUPUESTO",
     transaccion_aprobacion_codigo="CAMPANA_APROBAR_PRESUPUESTO",
     transaccion_rechazo_codigo="CAMPANA_RECHAZAR_PRESUPUESTO",
-    rol_aprobador_codigo="JUNTA_DIRECTIVA",
+    # Lo aprueba un ÓRGANO colegiado, no un rol. Antes declaraba
+    # `rol_aprobador_codigo="JUNTA_DIRECTIVA"`, un rol que no existía (ni debía):
+    # la junta es un colegiado. Por eso el flujo se descartaba en cada arranque y
+    # `flujos_aprobacion` llevaba 0 filas.
+    tipo_organo_aprobador_nombre="Junta Directiva",
     entidad="PropuestaPresupuestoCampana",
 ))

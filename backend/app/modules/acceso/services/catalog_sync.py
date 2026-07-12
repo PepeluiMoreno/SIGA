@@ -8,6 +8,7 @@ solo añade o actualiza las definiciones del catálogo.
 from __future__ import annotations
 
 import logging
+import os
 from typing import Optional
 import uuid
 
@@ -17,6 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..models.transaccion import Transaccion
 from ..models.funcionalidad import Funcionalidad, FuncionalidadTransaccion, FlujoAprobacion
 from ..models.rol import Rol
+from ..models.cargo import Cargo
+from ..models.organo import TipoOrgano
 from .registry import ModuleCatalog
 
 logger = logging.getLogger(__name__)
@@ -185,13 +188,38 @@ class CatalogSyncService:
 
             t_inicio = await self._get_transaccion(defn.transaccion_inicio_codigo)
             t_aprobacion = await self._get_transaccion(defn.transaccion_aprobacion_codigo)
-            rol_aprobador = await self._get_rol(defn.rol_aprobador_codigo)
             t_rechazo: Optional[Transaccion] = None
             if defn.transaccion_rechazo_codigo:
                 t_rechazo = await self._get_transaccion(defn.transaccion_rechazo_codigo)
 
-            if not (t_inicio and t_aprobacion and rol_aprobador):
-                logger.warning("FlujoAprobacion '%s' omitido: faltan referencias", defn.codigo)
+            # Aprobador polimórfico: órgano colegiado o cargo individual.
+            organo_aprobador = (
+                await self._get_tipo_organo(defn.tipo_organo_aprobador_nombre)
+                if defn.tipo_organo_aprobador_nombre else None
+            )
+            cargo_aprobador = (
+                await self._get_cargo(defn.cargo_aprobador_nombre)
+                if defn.cargo_aprobador_nombre else None
+            )
+            aprobador = organo_aprobador or cargo_aprobador
+
+            if not (t_inicio and t_aprobacion and aprobador):
+                # Un flujo mal declarado NO puede pasar desapercibido: un `warning`
+                # silencioso mantuvo `flujos_aprobacion` vacía sin que nadie lo viera.
+                faltan = [
+                    n for n, v in (
+                        (defn.transaccion_inicio_codigo, t_inicio),
+                        (defn.transaccion_aprobacion_codigo, t_aprobacion),
+                        (defn.tipo_organo_aprobador_nombre or defn.cargo_aprobador_nombre, aprobador),
+                    ) if not v
+                ]
+                msg = (
+                    f"FlujoAprobacion '{defn.codigo}' no se puede materializar: "
+                    f"no existen las referencias {faltan}"
+                )
+                if os.getenv("SIGA_ENV") == "dev":
+                    raise RuntimeError(msg)
+                logger.error(msg)
                 continue
 
             if obj is None:
@@ -203,7 +231,8 @@ class CatalogSyncService:
                     transaccion_inicio_id=t_inicio.id,
                     transaccion_aprobacion_id=t_aprobacion.id,
                     transaccion_rechazo_id=t_rechazo.id if t_rechazo else None,
-                    rol_aprobador_id=rol_aprobador.id,
+                    tipo_organo_aprobador_id=organo_aprobador.id if organo_aprobador else None,
+                    cargo_aprobador_id=cargo_aprobador.id if cargo_aprobador else None,
                     entidad=defn.entidad,
                     activo=True,
                     sistema=defn.sistema,
@@ -214,6 +243,10 @@ class CatalogSyncService:
                 obj.nombre = defn.nombre
                 obj.descripcion = defn.descripcion
                 obj.sistema = defn.sistema
+                # El aprobador también se resincroniza: si el catálogo lo cambia
+                # (p. ej. de un cargo a un órgano), la BD debe seguirlo.
+                obj.tipo_organo_aprobador_id = organo_aprobador.id if organo_aprobador else None
+                obj.cargo_aprobador_id = cargo_aprobador.id if cargo_aprobador else None
 
     async def _get_transaccion(self, codigo: str) -> Optional[Transaccion]:
         result = await self.session.execute(
@@ -224,5 +257,17 @@ class CatalogSyncService:
     async def _get_rol(self, codigo: str) -> Optional[Rol]:
         result = await self.session.execute(
             select(Rol).where(Rol.codigo == codigo)
+        )
+        return result.scalar_one_or_none()
+
+    async def _get_tipo_organo(self, nombre: str) -> Optional[TipoOrgano]:
+        result = await self.session.execute(
+            select(TipoOrgano).where(TipoOrgano.nombre == nombre)
+        )
+        return result.scalar_one_or_none()
+
+    async def _get_cargo(self, nombre: str) -> Optional[Cargo]:
+        result = await self.session.execute(
+            select(Cargo).where(Cargo.nombre == nombre)
         )
         return result.scalar_one_or_none()
