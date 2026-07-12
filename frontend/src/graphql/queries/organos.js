@@ -70,6 +70,46 @@ export const ESTABLECER_COMPOSICION_NIVEL_ORGANO = `
 `
 
 // =============================================
+// ÓRGANOS DE UNA AGRUPACIÓN (las INSTANCIAS reales)
+// =============================================
+
+/** Los órganos REALES de una agrupación, con su composición de cargos ya
+ *  ordenada por orden protocolario. El orden protocolario vive AQUÍ
+ *  (OrganoCargo.ordenProtocolario), no en Rol.nivel. */
+export const GET_ORGANOS_AGRUPACION = `
+  query OrganosAgrupacion($agrupacionId: UUID!) {
+    organos(filter: { agrupacionId: { eq: $agrupacionId }, eliminado: { eq: false } }) {
+      id
+      nombre
+      agrupacionId
+      activo
+      fechaConstitucion
+      tipoOrgano {
+        id
+        nombre
+        composicion
+      }
+      composicion {
+        id
+        ordenProtocolario
+        cargo {
+          id
+          nombre
+        }
+      }
+    }
+  }
+`
+
+/** Materializa en la agrupación los órganos que su NIVEL tiene configurados,
+ *  copiando la composición. Idempotente. Devuelve cuántos órganos creó. */
+export const INSTANCIAR_ORGANOS_AGRUPACION = `
+  mutation InstanciarOrganosAgrupacion($agrupacionId: UUID!) {
+    instanciarOrganosAgrupacion(agrupacionId: $agrupacionId)
+  }
+`
+
+// =============================================
 // TIPOS DE ÓRGANO (catálogo)
 // =============================================
 

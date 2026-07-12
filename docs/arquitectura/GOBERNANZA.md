@@ -355,16 +355,52 @@ si el nombramiento nace de un acuerdo en acta, la secretaría no es un extra.
 
 Intentar ejecutar el acuerdo **sin acta aprobada se rechaza** (probado).
 
-## 11. Qué falta
+## 11. El cese, y la puerta trasera cerrada
 
-- **Frontend**: editor de reunión (orden del día + asistentes + acuerdos), creación
-  y ejecución de acuerdos desde `Acuerdos.vue`, vista del órgano («esta es la Junta
-  de Madrid y estos son sus miembros»), y **retirar `GestionJunta.vue`** (usa
-  mutaciones del modelo `JuntaDirectiva` ya eliminado: **peta en runtime**).
-- **Cese**: el tipo de acuerdo `CESE` existe en el catálogo, pero su ejecución
-  (cerrar el mandato y desactivar los roles derivados) aún no está escrita.
-- **Jubilar las mutaciones legacy** de nombramiento que usan `rol_id` y permiten
-  crear mandatos saltándose el acuerdo: `asignarNombramiento` (`auth.py`),
-  `revocarNombramiento`, `crearNombramiento` (`vinculaciones_resolvers.py`).
-- **Motor territorial** (`MOTOR_TERRITORIAL.md`): que el ámbito entre en la decisión
-  de autorización. Hoy `can()` sigue siendo rol→transacción sin territorio.
+**Cese** (simétrico del nombramiento): `AcuerdoEjecucionService.ejecutar_cese` cierra
+el mandato vigente (`FINALIZADO`, con fecha de efecto y la traza «Cesado por acuerdo
+nº N» — **no se borra: es historia y debe constar**) y **desactiva los `UsuarioRol`
+que derivaban de él**. El permiso se va con el cargo: esa es la virtud de derivar los
+roles en vez de asignarlos a mano. Una sola mutación, `ejecutarAcuerdo`, mira el tipo
+del acuerdo y aplica el efecto que corresponde.
+
+**Jubiladas las 3 mutaciones legacy** que creaban mandatos con `rol_id` **saltándose
+el acuerdo, el acta y todo control** (`crearNombramiento` permitía incluso meter
+`estado='ACTIVO'` a mano): `asignarNombramiento`, `revocarNombramiento` (`auth.py`) y
+`crearNombramiento` (`vinculaciones_resolvers.py`).
+→ **Ya no hay atajo: todo nombramiento pasa por un acuerdo.**
+
+## 12. Frontend
+
+- **`DetalleReunion.vue`** (`/secretaria/reuniones/:id`): la pieza central que faltaba.
+  Orden del día + asistentes + acuerdos, y en cada acuerdo aprobado las acciones de
+  **fijar nombramiento/cese** y **ejecutar el acuerdo**. Los errores del backend se
+  muestran íntegros: *«La reunión no tiene acta»* es información valiosa, no un fallo
+  que esconder.
+- **Retirado `GestionJunta.vue`**: usaba `constituirJunta`/`asignarCargo`, del modelo
+  `JuntaDirectiva` ya eliminado. **Petaba en runtime.** Con él, dos enlaces rotos (uno
+  apuntaba a `/membresia/junta`, ruta que **nunca existió**).
+- **`DetalleAgrupacion`**: su alta de cargos usaba la mutación jubilada. Ahora avisa de
+  que los cargos nacen de un acuerdo del órgano y remite a Reuniones.
+
+**Bugs preexistentes descubiertos y corregidos por el camino:**
+- `asistentesReunion` estaba **eclipsada**: `schema_simple.Query` ya declaraba ese
+  nombre (asistentes de **grupos de trabajo**) y anulaba por MRO el resolver de
+  secretaría → la lista de asistentes era **inalcanzable**. Renombrada a
+  `asistentesDeReunion`.
+- `GET_TIPOS_REUNION` pedía `organo`, campo eliminado al unificar el órgano.
+- Las mutaciones de acuerdo pedían `estadoEjecucion` (es `estadoEjecucionCodigo`):
+  tenían **rota la bandeja de Acuerdos**.
+
+## 13. Qué falta
+
+- **Motor territorial** (`MOTOR_TERRITORIAL.md`): que el ámbito entre en la decisión de
+  autorización. Hoy `can()` sigue siendo rol→transacción **sin territorio**: si Ana es
+  presidenta del grupo local, `can()` le concede `MEMBRESIA_MIEMBRO_EDITAR` **sin mirar
+  sobre qué miembro**. Es el agujero de fondo que queda.
+- **`Rol.nivel` sigue con doble semántica**: el orden protocolario ya vive en la
+  composición del órgano (`OrganoCargo.ordenProtocolario`), pero falta migrar la escala
+  de autoridad y limpiar los consumidores del significado viejo.
+- **Otros efectos de acuerdo**: `APROBACION_CUENTAS`, `APROBACION_PRESUPUESTO` y
+  `ADMISION_SOCIO` están en el catálogo con `produce_efecto=false`. La maquinaria para
+  darles efecto ya existe (el patrón de `AcuerdoNombramiento`); falta escribir cada uno.

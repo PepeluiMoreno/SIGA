@@ -254,62 +254,124 @@
         </div>
       </section>
 
-      <!-- ══ JUNTA DIRECTIVA ═══════════════════════════════════════════════ -->
+      <!-- ══ ÓRGANOS DE GOBIERNO ═══════════════════════════════════════════ -->
+      <!-- El panel muestra los ÓRGANOS REALES de esta agrupación (instancias del
+           modelo que define su NIVEL) y su composición. El orden protocolario vive
+           en OrganoCargo.ordenProtocolario, NO en Rol.nivel. -->
       <section :class="cardCls">
         <button type="button" @click="togglePanel('junta')" :class="accordionBtn(open.junta)">
           <span class="flex items-center gap-3">
             <span class="shrink-0 w-1.5 h-5 rounded-full bg-amber-500"></span>
             <h2 :class="titleCls">{{ orgConfig.OrganoGobierno }}</h2>
-            <span v-if="composicionJunta.length"
+            <span v-if="organos.length"
               class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold rounded-full tabular-nums">
-              {{ composicionJunta.length }}
+              {{ organos.length }}
             </span>
           </span>
           <ChevronDownIcon :class="chevronCls(open.junta)" />
         </button>
-        <div v-show="open.junta" class="px-5 pb-4 pt-2">
+        <div v-show="open.junta" class="px-5 pb-4 pt-2 space-y-5">
+
+          <!-- Sin órganos instanciados: el nivel no los tiene configurados, o no se
+               han materializado todavía en esta agrupación. -->
+          <div v-if="!organos.length" class="py-8 text-center">
+            <p class="text-xs text-slate-400 italic">
+              Esta unidad no tiene órganos constituidos: o su nivel
+              «{{ agrupacion.tipoUnidad?.nombre || '—' }}» no tiene órganos configurados,
+              o aún no se han materializado.
+            </p>
+            <button v-if="tienePermiso('CFG_CONFIGURACION_EDITAR')" type="button"
+              @click="instanciarOrganos" :disabled="instanciando"
+              class="mt-3 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50">
+              <span v-if="instanciando" class="animate-spin inline-block h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
+              <PlusIcon v-else class="w-4 h-4" />
+              Instanciar órganos
+            </button>
+            <ErrorAlert v-if="organosError" :message="organosError" class="mt-3 text-left" />
+          </div>
+
+          <!-- Un órgano por sección: nombre, tipo y composición. -->
+          <div v-for="org in organos" :key="org.id">
+            <div class="flex items-baseline justify-between gap-3 mb-2">
+              <p class="text-sm font-semibold text-slate-800">{{ org.nombre }}</p>
+              <span class="shrink-0 px-2 py-0.5 bg-slate-100 text-slate-600 text-[11px] font-semibold rounded-full">
+                {{ org.tipoOrgano?.nombre || '—' }}
+              </span>
+            </div>
+
+            <!-- PLENO (p.ej. la Asamblea): no tiene cargos, su membresía es el pleno. -->
+            <div v-if="org.tipoOrgano?.composicion === 'PLENO'"
+              class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-600">
+              <strong>Composición abierta:</strong> el pleno de {{ orgConfig.miembros }} con derecho a voto.
+            </div>
+
+            <!-- CARGOS: los puestos que componen el órgano, en orden protocolario. -->
+            <div v-else class="overflow-x-auto -mx-1"><table class="w-full">
+              <thead>
+                <tr class="border-b border-slate-100">
+                  <th class="pb-2 text-left text-xs font-semibold text-slate-400">Cargo</th>
+                  <th class="pb-2 text-left text-xs font-semibold text-slate-400">Titular</th>
+                  <th class="pb-2 text-left text-xs font-semibold text-slate-400 hidden sm:table-cell">Desde</th>
+                  <th class="w-16"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="oc in cargosDeOrgano(org)" :key="oc.id"
+                  class="group border-b border-slate-50 last:border-0 hover:bg-amber-50/40 transition-colors">
+                  <td class="py-2.5 pr-3">
+                    <span class="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full">
+                      {{ oc.cargo?.nombre || '—' }}
+                    </span>
+                  </td>
+                  <template v-if="titularDe(oc.cargo?.id)">
+                    <td class="py-2.5 pr-3 text-sm font-medium text-slate-800">
+                      {{ nombreCompleto(titularDe(oc.cargo?.id).miembro) }}
+                    </td>
+                    <td class="py-2.5 pr-3 text-sm text-slate-500 hidden sm:table-cell">
+                      {{ fmtFecha(titularDe(oc.cargo?.id).fechaInicio) }}
+                    </td>
+                    <td class="py-2.5 text-right">
+                      <div class="inline-flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
+                        <button v-if="editMode && tienePermiso('MEMBRESIA_CARGO_ASIGNAR')" type="button"
+                          @click="abrirRegistro(titularDe(oc.cargo?.id))"
+                          class="p-1 rounded text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                          title="Editar los datos del mandato">
+                          <PencilIcon class="w-4 h-4" />
+                        </button>
+                        <button v-if="titularDe(oc.cargo?.id).miembro?.id" type="button"
+                          @click="verFicha(titularDe(oc.cargo?.id).miembro.id)"
+                          class="p-1 rounded text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                          :title="`Ver ficha del ${orgConfig.miembro}`">
+                          <EyeIcon class="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </template>
+                  <template v-else>
+                    <td class="py-2.5 pr-3 text-sm text-slate-400 italic">Vacante</td>
+                    <td class="py-2.5 pr-3 text-sm text-slate-300 hidden sm:table-cell">—</td>
+                    <td></td>
+                  </template>
+                </tr>
+                <tr v-if="!cargosDeOrgano(org).length">
+                  <td colspan="4" class="py-6 text-center text-xs text-slate-400 italic">
+                    Este órgano no tiene cargos definidos en la composición de su nivel.
+                  </td>
+                </tr>
+              </tbody>
+            </table></div>
+          </div>
+
           <!-- Un cargo no se registra a mano: nace de un acuerdo del órgano, adoptado
                en reunión y reflejado en acta (ver GOBERNANZA.md). -->
           <div v-if="editMode && tienePermiso('MEMBRESIA_CARGO_ASIGNAR')"
-            class="mb-3 rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 text-xs text-amber-800">
+            class="rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 text-xs text-amber-800">
             Los cargos se nombran por <strong>acuerdo del órgano</strong>, en una reunión y
             reflejado en acta.
             <router-link to="/secretaria/reuniones" class="underline font-medium hover:no-underline">
               Ir a Reuniones
             </router-link>.
           </div>
-          <div v-if="!composicionJunta.length" class="py-8 text-center text-xs text-slate-400 italic">
-            Sin cargos electos en esta unidad.<template v-if="!editMode"> Entra en modo edición para registrarlos.</template>
-          </div>
-          <div v-else class="overflow-x-auto -mx-1"><table class="w-full">
-            <thead>
-              <tr class="border-b border-slate-100">
-                <th class="pb-2 text-left text-xs font-semibold text-slate-400">Cargo</th>
-                <th class="pb-2 text-left text-xs font-semibold text-slate-400">Titular</th>
-                <th class="pb-2 text-left text-xs font-semibold text-slate-400 hidden sm:table-cell">Desde</th>
-                <th class="w-10"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="c in composicionJunta" :key="c.id"
-                class="group border-b border-slate-50 last:border-0 hover:bg-amber-50/40 transition-colors">
-                <td class="py-2.5 pr-3">
-                  <span class="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full">{{ tituloCargo(c.rol) }}</span>
-                </td>
-                <td class="py-2.5 pr-3 text-sm font-medium text-slate-800">
-                  {{ c.miembro?.apellido1 }}{{ c.miembro?.apellido2 ? ' ' + c.miembro.apellido2 : '' }}, {{ c.miembro?.nombre }}
-                </td>
-                <td class="py-2.5 pr-3 text-sm text-slate-500 hidden sm:table-cell">{{ fmtFecha(c.fechaInicio) }}</td>
-                <td class="py-2.5 text-right">
-                  <button v-if="c.miembro?.id" type="button" @click="verFicha(c.miembro.id)"
-                    class="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors opacity-0 group-hover:opacity-100"
-                    :title="`Ver ficha del ${orgConfig.miembro}`">
-                    <EyeIcon class="w-4 h-4" />
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table></div>
         </div>
       </section>
 
@@ -488,7 +550,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ChevronDownIcon, ChevronLeftIcon,
-  PlusIcon, EyeIcon,
+  PlusIcon, EyeIcon, PencilIcon,
 } from '@heroicons/vue/24/outline'
 import AppLayout from '@/components/common/AppLayout.vue'
 import EstructuraOrganizativaEditor from '@/components/configuracion/EstructuraOrganizativaEditor.vue'
@@ -497,10 +559,13 @@ import SelectorAgrupacion from '@/components/common/SelectorAgrupacion.vue'
 import FormActions from '@/components/common/FormActions.vue'
 import { hoyISO } from '@/utils/fecha.js'
 import { usePermisos } from '@/composables/usePermisos.js'
+import { useToast } from '@/composables/useToast'
 import { useOrgConfigStore } from '@/stores/orgConfig.js'
 import { executeQuery, executeMutation } from '@/graphql/client.js'
+import { GET_ORGANOS_AGRUPACION, INSTANCIAR_ORGANOS_AGRUPACION } from '@/graphql/queries/organos.js'
 const confirmDialog = useConfirm()
 const { tienePermiso, tieneAlguno } = usePermisos()
+const toast = useToast()
 const orgConfig = useOrgConfigStore()
 
 const route = useRoute()
@@ -721,6 +786,34 @@ const rolesTerritoriales  = ref([])   // roles organizacionales territoriales
 const miembros            = ref([])   // miembros para el buscador
 const unidadesDestino     = ref([])   // todas las unidades activas (selector de traslado)
 const trasladoModal       = reactive({ visible: false, socio: null, destinoId: '', guardando: false, error: null })
+const organos             = ref([])   // órganos REALES de esta agrupación (+ composición)
+const instanciando        = ref(false)
+const organosError        = ref(null)
+
+// Materializa en esta agrupación los órganos que su NIVEL tiene configurados.
+// Es idempotente: una segunda llamada crea 0.
+async function instanciarOrganos() {
+  instanciando.value = true
+  organosError.value = null
+  try {
+    const r = await executeMutation(INSTANCIAR_ORGANOS_AGRUPACION, { agrupacionId: agrupacionId.value })
+    const n = r.instanciarOrganosAgrupacion ?? 0
+    if (!n) toast.info('No se ha creado ningún órgano: el nivel de esta unidad no tiene órganos configurados.')
+    else toast.success(n === 1 ? 'Se ha constituido 1 órgano.' : `Se han constituido ${n} órganos.`)
+    await cargarOrganos()
+  } catch (e) {
+    organosError.value = e?.response?.errors?.[0]?.message || 'No se pudieron instanciar los órganos.'
+  } finally {
+    instanciando.value = false
+  }
+}
+
+async function cargarOrganos() {
+  try {
+    const r = await executeQuery(GET_ORGANOS_AGRUPACION, { agrupacionId: agrupacionId.value })
+    organos.value = r.organos ?? []
+  } catch { organos.value = [] }
+}
 
 // ── Edición de datos generales / contacto / ubicación ───────────────────────
 const paises         = ref([])
@@ -746,12 +839,22 @@ const municipioNombre = computed(() => municipios.value.find(m => m.id === agrup
 const esDistribuida = computed(() => !!agrupacion.value?.tipoUnidad?.estructuraDistribuida)
 // Datos jurídicos solo para entidades con personalidad propia (FILIAL / FEDERADA)
 const esEntidadJuridica = computed(() => ['FILIAL', 'FEDERADA'].includes(agrupacion.value?.tipoUnidad?.vinculo))
-// Composición del órgano de gobierno: cargos electos activos de esta unidad
-const composicionJunta = computed(() =>
-  [...nombramientos.value].sort((a, b) =>
-    (a.rol?.nivel ?? 99) - (b.rol?.nivel ?? 99) ||
-    (a.rol?.nombre || '').localeCompare(b.rol?.nombre || '', 'es'))
-)
+
+// ── Órganos de gobierno de esta agrupación ──────────────────────────────────
+// El orden protocolario NO sale de `Rol.nivel` (ahí `nivel` es autoridad): vive en
+// la composición del órgano (OrganoCargo.ordenProtocolario).
+const cargosDeOrgano = (org) =>
+  [...(org?.composicion ?? [])].sort((a, b) =>
+    (a.ordenProtocolario ?? 99) - (b.ordenProtocolario ?? 99) ||
+    (a.cargo?.nombre || '').localeCompare(b.cargo?.nombre || '', 'es'))
+
+// Quién ocupa un cargo: se cruza con los mandatos ACTIVOS de esta agrupación por
+// cargoId. Sin mandato ⇒ el puesto está vacante.
+const titularDe = (cargoId) =>
+  cargoId ? nombramientos.value.find(n => n.cargoId === cargoId) ?? null : null
+
+const nombreCompleto = (m) =>
+  m ? [[m.apellido1, m.apellido2].filter(Boolean).join(' '), m.nombre].filter(Boolean).join(', ') : '—'
 
 function sincronizarForm() {
   const a = agrupacion.value
@@ -882,11 +985,14 @@ const Q_ROLES_TERRITORIALES = `
     }
   }
 `
+// Un mandato ACTIVO se ancla a un CARGO (cargoId): así se cruza con la composición
+// del órgano. `rol` se mantiene porque los badges de la lista de socios aún lo usan.
 const Q_NOMBRAMIENTOS = `
   query Nombramientos($agrupacionId: UUID!) {
-    historialNombramientos(filter: { agrupacionId: { eq: $agrupacionId }, estado: { eq: "ACTIVO" } }) {
-      id rolId estado fechaInicio fechaFin observaciones
+    historialNombramientos(filter: { agrupacionId: { eq: $agrupacionId }, estado: { eq: "ACTIVO" }, eliminado: { eq: false } }) {
+      id rolId cargoId estado fechaInicio fechaFin observaciones
       miembro { id nombre apellido1 apellido2 }
+      cargo { id nombre }
       rol { id codigo nombre nivel esTerritorial }
       agrupacion { id nombre }
     }
@@ -950,7 +1056,7 @@ async function cargar() {
   loading.value = true
   error.value = null
   try {
-    const [rAgr, rRoles, rNombr, rHijos, rMbs, rPaises, rProvs, rUni, rCand] = await Promise.allSettled([
+    const [rAgr, rRoles, rNombr, rHijos, rMbs, rPaises, rProvs, rUni, rCand, rOrg] = await Promise.allSettled([
       executeQuery(Q_AGRUPACION, { id: agrupacionId.value }),
       executeQuery(Q_ROLES_TERRITORIALES),
       executeQuery(Q_NOMBRAMIENTOS, { agrupacionId: agrupacionId.value }),
@@ -960,7 +1066,9 @@ async function cargar() {
       provincias.value.length ? Promise.resolve(null) : executeQuery(Q_PROVINCIAS),
       executeQuery(Q_TODAS_UNIDADES),
       executeQuery(Q_TODOS_SOCIOS),
+      executeQuery(GET_ORGANOS_AGRUPACION, { agrupacionId: agrupacionId.value }),
     ])
+    organos.value = rOrg.status === 'fulfilled' ? (rOrg.value.organos ?? []) : []
     if (rUni.status === 'fulfilled')
       todasUnidades.value = rUni.value.unidadesOrganizativas ?? []
     if (rCand.status === 'fulfilled')
