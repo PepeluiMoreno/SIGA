@@ -248,6 +248,15 @@ class Acuerdo(BaseModel):
     # Contenido
     descripcion: Mapped[str] = mapped_column(Text, nullable=False)
 
+    # QUÉ es este acuerdo (nombramiento, cese, aprobación de cuentas…). Sin esto, un
+    # acuerdo es solo texto libre y la máquina no puede darle efecto: no sabe que
+    # «se nombra Tesorera a Ana» ES un nombramiento. Nullable: hay acuerdos que no
+    # producen efecto alguno (declarativos, informativos).
+    tipo_acuerdo_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('sec_tipos_acuerdo.id', ondelete='RESTRICT'),
+        nullable=True, index=True,
+    )
+
     # Tipo de mayoría requerida
     tipo_mayoria: Mapped[str] = mapped_column(
         String(30), nullable=False, default='SIMPLE'
@@ -277,6 +286,18 @@ class Acuerdo(BaseModel):
     votacion = relationship('VotacionAcuerdo', back_populates='acuerdo', uselist=False, lazy='selectin')
     responsable = relationship('Contacto', foreign_keys=[responsable_id], lazy='selectin')
     certificados = relationship('CertificadoAcuerdo', back_populates='acuerdo', lazy='selectin')
+    tipo_acuerdo = relationship('TipoAcuerdo', lazy='selectin')
+    # Payload del acuerdo de nombramiento (a quién, para qué cargo…). 1:1, presente
+    # solo si el tipo de acuerdo es NOMBRAMIENTO/CESE.
+    nombramiento = relationship(
+        'AcuerdoNombramiento', back_populates='acuerdo', uselist=False, lazy='selectin',
+        cascade='all, delete-orphan',
+    )
+
+    @property
+    def es_aprobado(self) -> bool:
+        """Un acuerdo solo produce efectos si fue APROBADO."""
+        return self.resultado == 'APROBADO'
 
     def __repr__(self) -> str:
         return f"<Acuerdo(numero={self.numero}, resultado='{self.resultado}')>"
@@ -309,3 +330,89 @@ class VotacionAcuerdo(BaseModel):
 
     def __repr__(self) -> str:
         return f"<VotacionAcuerdo(favor={self.votos_favor}, contra={self.votos_contra})>"
+
+
+class TipoAcuerdo(InmutableMixin, BaseModel):
+    """Catálogo: QUÉ clase de acuerdo es, y por tanto qué efecto produce.
+
+    Sin esto, un acuerdo es solo texto libre: nadie puede saber que «se nombra
+    Tesorera a Ana» ES un nombramiento y debe generar un mandato.
+
+    `produce_efecto` distingue los acuerdos que la máquina puede **ejecutar**
+    (NOMBRAMIENTO, CESE…) de los meramente declarativos (aprobar un informe).
+    """
+
+    __tablename__ = 'sec_tipos_acuerdo'
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+
+    codigo: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
+    nombre: Mapped[str] = mapped_column(String(150), nullable=False)
+    descripcion: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+
+    # True si el acuerdo, una vez aprobado, se puede EJECUTAR y transformar algo.
+    produce_efecto: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
+    orden: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<TipoAcuerdo(codigo='{self.codigo}')>"
+
+
+class AcuerdoNombramiento(BaseModel):
+    """Payload estructurado de un acuerdo de NOMBRAMIENTO o CESE.
+
+    El acuerdo genérico solo tiene texto; aquí vive lo que la máquina necesita para
+    **ejecutarlo**: a quién se nombra, para qué cargo, en qué agrupación y desde
+    cuándo. Es una tabla satélite (1:1) para no ensuciar `sec_acuerdos` con campos
+    nullable de un tipo concreto de acuerdo.
+
+    Al ejecutarse produce el `HistorialNombramiento` (el mandato), que a su vez
+    deriva los `UsuarioRol` vía `CargoRol`. Ver GOBERNANZA.md.
+    """
+
+    __tablename__ = 'sec_acuerdos_nombramiento'
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+
+    acuerdo_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('sec_acuerdos.id', ondelete='CASCADE'),
+        nullable=False, unique=True, index=True,
+    )
+
+    # A quién se nombra (o cesa) y para qué cargo.
+    miembro_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('contactos.id', ondelete='RESTRICT'), nullable=False, index=True,
+    )
+    cargo_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('cargos.id', ondelete='RESTRICT'), nullable=False, index=True,
+    )
+    # Territorio donde ejerce. NULL = cargo global (sin ámbito territorial).
+    agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('unidades_organizativas.id', ondelete='RESTRICT'),
+        nullable=True, index=True,
+    )
+
+    fecha_inicio: Mapped[date] = mapped_column(Date, nullable=False)
+    fecha_fin: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+
+    # Se rellena al EJECUTAR el acuerdo: el mandato que produjo. Cierra el círculo
+    # (y evita ejecutarlo dos veces).
+    nombramiento_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('historial_nombramientos.id', ondelete='SET NULL'),
+        nullable=True, index=True,
+    )
+
+    # Relaciones
+    acuerdo = relationship('Acuerdo', back_populates='nombramiento')
+    miembro = relationship('Contacto', foreign_keys=[miembro_id], lazy='selectin')
+    cargo = relationship('Cargo', foreign_keys=[cargo_id], lazy='selectin')
+    agrupacion = relationship('UnidadOrganizativa', foreign_keys=[agrupacion_id], lazy='selectin')
+
+    @property
+    def ya_ejecutado(self) -> bool:
+        return self.nombramiento_id is not None
+
+    def __repr__(self) -> str:
+        return f"<AcuerdoNombramiento(miembro={self.miembro_id}, cargo={self.cargo_id})>"

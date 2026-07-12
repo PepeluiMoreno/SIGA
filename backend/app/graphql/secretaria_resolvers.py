@@ -13,7 +13,8 @@ import strawberry
 from sqlalchemy import select
 
 from app.modules.secretaria.models.reunion import (
-    TipoReunion, Reunion, AsistenteReunionSecretaria, PuntoOrdenDia, Acuerdo, VotacionAcuerdo
+    TipoReunion, Reunion, AsistenteReunionSecretaria, PuntoOrdenDia, Acuerdo, VotacionAcuerdo,
+    TipoAcuerdo, AcuerdoNombramiento,
 )
 from app.modules.secretaria.models.acta import Acta, CertificadoAcuerdo
 from app.modules.secretaria.models.libro_socios import LibroSociosSnapshot
@@ -683,6 +684,91 @@ class SecretariaResolverMutation:
             creado_por_id=usuario_id,
         )
         return AcuerdoGQL.from_model(acuerdo)
+
+    # ── El acuerdo produce el mandato ─────────────────────────────────────────
+    # El eslabón que da sentido a la gobernanza: un nombramiento no nace de un
+    # botón, nace de un acuerdo de un órgano reflejado en un acta.
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("SEC_ACUERDO_CREAR")])
+    async def fijar_nombramiento_de_acuerdo(
+        self,
+        info: strawberry.Info,
+        acuerdo_id: uuid.UUID,
+        miembro_id: uuid.UUID,
+        cargo_id: uuid.UUID,
+        fecha_inicio: date,
+        agrupacion_id: Optional[uuid.UUID] = None,
+        fecha_fin: Optional[date] = None,
+    ) -> uuid.UUID:
+        """Adjunta a un acuerdo el payload de nombramiento: a quién, qué cargo, dónde.
+
+        Sin esto el acuerdo es solo texto y no se puede ejecutar: la máquina no sabe
+        a quién nombra. Devuelve el id del payload.
+        """
+        session = info.context.session
+        acuerdo = (await session.execute(
+            select(Acuerdo).where(Acuerdo.id == acuerdo_id, Acuerdo.eliminado == False)  # noqa: E712
+        )).scalar_one_or_none()
+        if acuerdo is None:
+            raise ValueError("Acuerdo no encontrado")
+
+        # Marcar el acuerdo como de tipo NOMBRAMIENTO si no lo estaba.
+        tipo = (await session.execute(
+            select(TipoAcuerdo).where(TipoAcuerdo.codigo == 'NOMBRAMIENTO')
+        )).scalar_one_or_none()
+        if tipo is not None:
+            acuerdo.tipo_acuerdo_id = tipo.id
+
+        existente = (await session.execute(
+            select(AcuerdoNombramiento).where(AcuerdoNombramiento.acuerdo_id == acuerdo_id)
+        )).scalar_one_or_none()
+        if existente is not None:
+            if existente.nombramiento_id is not None:
+                raise ValueError("El acuerdo ya se ejecutó: su nombramiento no se puede cambiar")
+            existente.miembro_id = miembro_id
+            existente.cargo_id = cargo_id
+            existente.agrupacion_id = agrupacion_id
+            existente.fecha_inicio = fecha_inicio
+            existente.fecha_fin = fecha_fin
+            await session.commit()
+            return existente.id
+
+        payload = AcuerdoNombramiento(
+            acuerdo_id=acuerdo_id, miembro_id=miembro_id, cargo_id=cargo_id,
+            agrupacion_id=agrupacion_id, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin,
+        )
+        session.add(payload)
+        await session.commit()
+        return payload.id
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_CARGO_ASIGNAR")])
+    async def ejecutar_acuerdo_nombramiento(
+        self,
+        info: strawberry.Info,
+        acuerdo_id: uuid.UUID,
+        exigir_acta_aprobada: bool = True,
+    ) -> uuid.UUID:
+        """Ejecuta un acuerdo de nombramiento aprobado: produce el MANDATO.
+
+        Valida que el acuerdo esté APROBADO y conste en acta aprobada; crea el
+        `HistorialNombramiento` (con `cargo_id`, no `rol_id`) apuntando al acuerdo que
+        lo originó, y **deriva** los `UsuarioRol` vía `CargoRol` heredando el
+        territorio. Devuelve el id del mandato.
+        """
+        from app.modules.secretaria.services.acuerdo_ejecucion_service import (
+            AcuerdoEjecucionService,
+        )
+
+        session = info.context.session
+        usuario_id = info.context.user.id if info.context.user else None
+        svc = AcuerdoEjecucionService(session)
+        mandato = await svc.ejecutar_nombramiento(
+            acuerdo_id,
+            ejecutado_por_id=usuario_id,
+            exigir_acta_aprobada=exigir_acta_aprobada,
+        )
+        await session.commit()
+        return mandato.id
 
     @strawberry.mutation(permission_classes=[RequireTransaction("SEC_ACUERDO_SEGUIMIENTO")])
     async def actualizar_seguimiento_acuerdo(
