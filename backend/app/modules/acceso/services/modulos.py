@@ -40,9 +40,13 @@ MODULOS: tuple[ModuloDef, ...] = (
     ModuloDef("contactos",       "Contactos (CRM)",      activo=True),
     ModuloDef("actividades",     "Actividades",          activo=True),
     ModuloDef("economico",       "Económico",            activo=True),
+    # ── Gobernanza: el acuerdo del órgano es el acto que legitima ────────────
+    # Secretaría no es un extra: un nombramiento nace de un acuerdo adoptado en
+    # reunión y reflejado en acta. Sin ella, la gobernanza no tiene dónde constar.
+    # Presidencia expone el seguimiento de acuerdos y los mandatos vigentes.
+    ModuloDef("secretaria",      "Secretaría",           activo=True),
+    ModuloDef("presidencia",     "Presidencia",          activo=True),
     # ── MVP: apagados ────────────────────────────────────────────────────────
-    ModuloDef("secretaria",      "Secretaría",           activo=False),
-    ModuloDef("presidencia",     "Presidencia",          activo=False),
     ModuloDef("proteccion_datos", "Protección de Datos", activo=False),
 )
 

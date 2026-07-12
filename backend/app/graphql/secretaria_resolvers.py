@@ -33,7 +33,9 @@ from app.graphql.permissions import RequireTransaction
 class TipoReunionGQL:
     id: uuid.UUID
     nombre: str
-    organo: str
+    # El órgano ya no es un string libre: apunta al catálogo real (`tipos_organo`).
+    tipo_organo_id: uuid.UUID
+    tipo_organo_nombre: Optional[str]
     descripcion: Optional[str]
     quorum_primera_convocatoria: Optional[int]
     quorum_segunda_convocatoria: Optional[int]
@@ -44,7 +46,9 @@ class TipoReunionGQL:
     @staticmethod
     def from_model(m: TipoReunion) -> 'TipoReunionGQL':
         return TipoReunionGQL(
-            id=m.id, nombre=m.nombre, organo=m.organo,
+            id=m.id, nombre=m.nombre,
+            tipo_organo_id=m.tipo_organo_id,
+            tipo_organo_nombre=(m.tipo_organo.nombre if m.tipo_organo else None),
             descripcion=m.descripcion,
             quorum_primera_convocatoria=m.quorum_primera_convocatoria,
             quorum_segunda_convocatoria=m.quorum_segunda_convocatoria,
@@ -58,6 +62,8 @@ class ReunionGQL:
     id: uuid.UUID
     tipo_reunion_id: uuid.UUID
     agrupacion_id: Optional[uuid.UUID]
+    # El órgano CONCRETO que se reúne y adopta los acuerdos.
+    organo_id: Optional[uuid.UUID]
     numero_convocatoria: int
     anio: int
     fecha_convocatoria: date
@@ -82,6 +88,7 @@ class ReunionGQL:
         return ReunionGQL(
             id=m.id, tipo_reunion_id=m.tipo_reunion_id,
             agrupacion_id=m.agrupacion_id,
+            organo_id=m.organo_id,
             numero_convocatoria=m.numero_convocatoria, anio=m.anio,
             fecha_convocatoria=m.fecha_convocatoria,
             fecha_celebracion=m.fecha_celebracion,
@@ -123,6 +130,41 @@ class AcuerdoGQL:
             fecha_limite_ejecucion=m.fecha_limite_ejecucion,
             estado_ejecucion_codigo=m.estado_ejecucion_codigo, estado_ejecucion_id=m.estado_ejecucion_id,
             observaciones_ejecucion=m.observaciones_ejecucion,
+        )
+
+
+@strawberry.type
+class PuntoOrdenDiaGQL:
+    id: uuid.UUID
+    reunion_id: uuid.UUID
+    orden: int
+    titulo: str
+    descripcion: Optional[str]
+    tipo: str
+
+    @staticmethod
+    def from_model(m: PuntoOrdenDia) -> 'PuntoOrdenDiaGQL':
+        return PuntoOrdenDiaGQL(
+            id=m.id, reunion_id=m.reunion_id, orden=m.orden,
+            titulo=m.titulo, descripcion=m.descripcion, tipo=m.tipo,
+        )
+
+
+@strawberry.type
+class AsistenteReunionGQL:
+    id: uuid.UUID
+    reunion_id: uuid.UUID
+    miembro_id: uuid.UUID
+    tipo_asistencia: str
+    representado_por_id: Optional[uuid.UUID]
+    cargo: Optional[str]
+
+    @staticmethod
+    def from_model(m: AsistenteReunionSecretaria) -> 'AsistenteReunionGQL':
+        return AsistenteReunionGQL(
+            id=m.id, reunion_id=m.reunion_id, miembro_id=m.miembro_id,
+            tipo_asistencia=m.tipo_asistencia,
+            representado_por_id=m.representado_por_id, cargo=m.cargo,
         )
 
 
@@ -390,6 +432,48 @@ class SecretariaQuery:
         )
         return [ReunionGQL.from_model(r) for r in items]
 
+    @strawberry.field(permission_classes=[RequireTransaction("SEC_REUNION_LISTAR")])
+    async def puntos_orden_dia(
+        self, info: strawberry.Info, reunion_id: uuid.UUID
+    ) -> List[PuntoOrdenDiaGQL]:
+        """Orden del día de una reunión, en orden."""
+        result = await info.context.session.execute(
+            select(PuntoOrdenDia).where(
+                PuntoOrdenDia.reunion_id == reunion_id,
+                PuntoOrdenDia.eliminado == False,  # noqa: E712
+            ).order_by(PuntoOrdenDia.orden)
+        )
+        return [PuntoOrdenDiaGQL.from_model(p) for p in result.scalars()]
+
+    @strawberry.field(permission_classes=[RequireTransaction("SEC_REUNION_LISTAR")])
+    async def asistentes_reunion(
+        self, info: strawberry.Info, reunion_id: uuid.UUID
+    ) -> List[AsistenteReunionGQL]:
+        """Asistentes registrados nominalmente en una reunión."""
+        result = await info.context.session.execute(
+            select(AsistenteReunionSecretaria).where(
+                AsistenteReunionSecretaria.reunion_id == reunion_id,
+                AsistenteReunionSecretaria.eliminado == False,  # noqa: E712
+            )
+        )
+        return [AsistenteReunionGQL.from_model(a) for a in result.scalars()]
+
+    @strawberry.field(permission_classes=[RequireTransaction("SEC_ACUERDO_LISTAR")])
+    async def acuerdos_de_reunion(
+        self, info: strawberry.Info, reunion_id: uuid.UUID
+    ) -> List[AcuerdoGQL]:
+        """Acuerdos adoptados en una reunión (vía sus puntos del orden del día)."""
+        result = await info.context.session.execute(
+            select(Acuerdo)
+            .join(PuntoOrdenDia, PuntoOrdenDia.id == Acuerdo.punto_orden_dia_id)
+            .where(
+                PuntoOrdenDia.reunion_id == reunion_id,
+                Acuerdo.eliminado == False,  # noqa: E712
+            )
+            .order_by(PuntoOrdenDia.orden, Acuerdo.numero)
+        )
+        return [AcuerdoGQL.from_model(a) for a in result.scalars()]
+
     @strawberry.field(permission_classes=[RequireTransaction("SEC_ACUERDO_LISTAR")])
     async def acuerdos_pendientes(
         self,
@@ -529,6 +613,54 @@ class SecretariaResolverMutation:
             reunion_id=reunion_id, motivo=motivo, modificado_por_id=usuario_id
         )
         return ReunionGQL.from_model(reunion)
+
+    # ── Orden del día y asistentes ────────────────────────────────────────────
+    # Sin estas dos, el flujo de secretaría era inejecutable: `Acuerdo` cuelga de
+    # un `PuntoOrdenDia` (NOT NULL) y no había forma de crear uno desde la API, así
+    # que `registrarAcuerdo` estaba muerto. Los servicios ya existían; solo faltaba
+    # exponerlos. Es la razón de que la BD tuviera 0 reuniones, 0 actas, 0 acuerdos.
+
+    # OJO: el nombre GraphQL no admite «ñ» (`Names must only contain [_a-zA-Z0-9]`),
+    # de ahí `agregar_` y no `añadir_` (el servicio sí conserva su nombre en español).
+    @strawberry.mutation(permission_classes=[RequireTransaction("SEC_REUNION_EDITAR")])
+    async def agregar_punto_orden_dia(
+        self,
+        info: strawberry.Info,
+        reunion_id: uuid.UUID,
+        titulo: str,
+        descripcion: Optional[str] = None,
+        orden: Optional[int] = None,
+        tipo: str = 'ORDINARIO',
+    ) -> PuntoOrdenDiaGQL:
+        """Añade un punto al orden del día. Sin orden explícito, se añade al final."""
+        svc = ReunionService(info.context.session)
+        usuario_id = info.context.user.id if info.context.user else None
+        punto = await svc.añadir_punto_orden_dia(
+            reunion_id=reunion_id, titulo=titulo, orden=orden,
+            descripcion=descripcion, tipo=tipo, creado_por_id=usuario_id,
+        )
+        return PuntoOrdenDiaGQL.from_model(punto)
+
+    @strawberry.mutation(permission_classes=[RequireTransaction("SEC_REUNION_REGISTRAR_ASIST")])
+    async def registrar_asistente_reunion(
+        self,
+        info: strawberry.Info,
+        reunion_id: uuid.UUID,
+        miembro_id: uuid.UUID,
+        tipo_asistencia: str = 'PRESENCIAL',
+        representado_por_id: Optional[uuid.UUID] = None,
+        cargo: Optional[str] = None,
+    ) -> AsistenteReunionGQL:
+        """Registra nominalmente la asistencia de un miembro a la reunión."""
+        svc = ReunionService(info.context.session)
+        usuario_id = info.context.user.id if info.context.user else None
+        asistente = await svc.registrar_asistente(
+            reunion_id=reunion_id, miembro_id=miembro_id,
+            tipo_asistencia=tipo_asistencia,
+            representado_por_id=representado_por_id, cargo=cargo,
+            creado_por_id=usuario_id,
+        )
+        return AsistenteReunionGQL.from_model(asistente)
 
     @strawberry.mutation(permission_classes=[RequireTransaction("SEC_ACUERDO_CREAR")])
     async def registrar_acuerdo(
