@@ -446,11 +446,15 @@ class SecretariaQuery:
         )
         return [PuntoOrdenDiaGQL.from_model(p) for p in result.scalars()]
 
+    # OJO: no llamar a esto `asistentes_reunion`. `schema_simple.Query` ya declara un
+    # `asistentesReunion` (asistentes de GRUPOS DE TRABAJO, CRUD autogenerado) que lo
+    # eclipsaría por MRO: el campo del esquema sería el otro y esta query quedaría
+    # inalcanzable. De ahí el nombre explícito.
     @strawberry.field(permission_classes=[RequireTransaction("SEC_REUNION_LISTAR")])
-    async def asistentes_reunion(
+    async def asistentes_de_reunion(
         self, info: strawberry.Info, reunion_id: uuid.UUID
     ) -> List[AsistenteReunionGQL]:
-        """Asistentes registrados nominalmente en una reunión."""
+        """Asistentes registrados nominalmente en una reunión de secretaría."""
         result = await info.context.session.execute(
             select(AsistenteReunionSecretaria).where(
                 AsistenteReunionSecretaria.reunion_id == reunion_id,

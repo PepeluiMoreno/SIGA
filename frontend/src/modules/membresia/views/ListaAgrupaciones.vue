@@ -117,10 +117,13 @@
                   <span class="hidden sm:inline">miembros</span>
                   <span>→</span>
                 </router-link>
+                <!-- Antes enlazaba a GestionJunta.vue (modelo JuntaDirectiva, eliminado).
+                     La composición del órgano y sus cargos vigentes se ven en la ficha
+                     de la agrupación. -->
                 <router-link
-                  :to="`/agrupaciones/${ag.id}/junta`"
+                  :to="`/agrupaciones/${ag.id}`"
                   class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium border border-indigo-200 rounded px-2 py-0.5 hover:bg-indigo-50 transition"
-                  :title="`Gestionar ${orgConfig.organoGobierno}`"
+                  :title="`Ver ${orgConfig.organoGobierno} y cargos`"
                   @click.stop
                 >
                   {{ orgConfig.OrganoGobierno }}

@@ -46,6 +46,7 @@ import PresidenciaSeguimiento from '@/modules/presidencia/views/SeguimientoAcuer
 
 // === Módulo: SECRETARIA ===
 import Reuniones from '@/modules/secretaria/views/Reuniones.vue'
+import DetalleReunion from '@/modules/secretaria/views/DetalleReunion.vue'
 import Actas from '@/modules/secretaria/views/Actas.vue'
 import Acuerdos from '@/modules/secretaria/views/Acuerdos.vue'
 import LibroSocios from '@/modules/secretaria/views/LibroSocios.vue'
@@ -246,12 +247,10 @@ const routes = [
     name: 'DetalleAgrupacion',
     meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_AGRUPACION_EDITAR' }
   },
-  {
-    path: '/agrupaciones/:id/junta',
-    component: () => import('@/modules/acceso/views/GestionJunta.vue'),
-    name: 'GestionJunta',
-    meta: { requiresAuth: true, requiredPermission: 'MEMBRESIA_CARGO_ASIGNAR' }
-  },
+  // /agrupaciones/:id/junta retirada: GestionJunta.vue usaba el modelo JuntaDirectiva
+  // (constituirJunta, asignarCargo…), eliminado del backend. La composición de un
+  // órgano se configura en Configuración › Estructura y órganos, y sus miembros salen
+  // de los mandatos, que nacen de acuerdos en acta (ver GOBERNANZA.md).
 
   // ─── ACTIVIDADES / GRUPOS ─────────────────────────────────────────────────
   {
@@ -475,6 +474,14 @@ const routes = [
     path: '/secretaria/reuniones',
     component: Reuniones,
     name: 'Reuniones',
+    meta: { requiresAuth: true, requiredPermission: 'SEC_REUNION_LISTAR' }
+  },
+  {
+    // Detalle de una reunión: orden del día, asistentes y acuerdos. Es una página
+    // con ruta (no un drawer): desde aquí se fija y se ejecuta un nombramiento.
+    path: '/secretaria/reuniones/:id',
+    component: DetalleReunion,
+    name: 'DetalleReunion',
     meta: { requiresAuth: true, requiredPermission: 'SEC_REUNION_LISTAR' }
   },
   {

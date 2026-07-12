@@ -80,6 +80,13 @@
           </div>
 
           <div class="flex-shrink-0 flex items-center gap-2">
+            <!-- El ojo navega a la PÁGINA de detalle (orden del día, asistentes,
+                 acuerdos): allí vive el flujo de secretaría, no en un panel. -->
+            <router-link :to="`/secretaria/reuniones/${r.id}`"
+              class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-md transition-colors"
+              title="Ver la reunión: orden del día, asistentes y acuerdos">
+              <EyeIcon class="w-4 h-4" />
+            </router-link>
             <button v-if="r.estadoCodigo === 'CONVOCADA' && tienePermiso('SEC_REUNION_REGISTRAR_ASIST')"
               @click="abrirCelebracion(r)"
               class="text-xs px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 font-medium transition-colors">
@@ -292,7 +299,7 @@ import {
 } from '@/graphql/queries/secretaria.js'
 import {
   CalendarDaysIcon, CalendarIcon, ClockIcon, MapPinIcon, PlusIcon, XMarkIcon,
-  CheckCircleIcon, XCircleIcon,
+  CheckCircleIcon, XCircleIcon, EyeIcon,
 } from '@heroicons/vue/24/outline'
 import { ClockIcon as ClockOutlineIcon } from '@heroicons/vue/24/outline'
 

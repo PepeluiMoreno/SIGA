@@ -8,7 +8,8 @@ export const GET_TIPOS_REUNION = `
     tiposReunion {
       id
       nombre
-      organo
+      tipoOrganoId
+      tipoOrganoNombre
       descripcion
       quorumPrimeraConvocatoria
       quorumSegundaConvocatoria
@@ -64,6 +65,7 @@ export const GET_REUNIONES = `
       id
       tipoReunionId
       agrupacionId
+      organoId
       numeroConvocatoria
       anio
       fechaConvocatoria
@@ -124,7 +126,100 @@ export const CANCELAR_REUNION = `
   }
 `
 
+// ── ORDEN DEL DÍA ────────────────────────────────────────────────────────────
+
+export const GET_PUNTOS_ORDEN_DIA = `
+  query PuntosOrdenDia($reunionId: UUID!) {
+    puntosOrdenDia(reunionId: $reunionId) {
+      id
+      reunionId
+      orden
+      titulo
+      descripcion
+      tipo
+    }
+  }
+`
+
+export const AGREGAR_PUNTO_ORDEN_DIA = `
+  mutation AgregarPuntoOrdenDia($reunionId: UUID!, $titulo: String!, $descripcion: String, $orden: Int, $tipo: String!) {
+    agregarPuntoOrdenDia(reunionId: $reunionId, titulo: $titulo, descripcion: $descripcion, orden: $orden, tipo: $tipo) {
+      id
+      reunionId
+      orden
+      titulo
+      descripcion
+      tipo
+    }
+  }
+`
+
+// ── ASISTENTES ───────────────────────────────────────────────────────────────
+
+export const GET_ASISTENTES_REUNION = `
+  query AsistentesReunion($reunionId: UUID!) {
+    asistentesDeReunion(reunionId: $reunionId) {
+      id
+      reunionId
+      miembroId
+      tipoAsistencia
+      representadoPorId
+      cargo
+    }
+  }
+`
+
+export const REGISTRAR_ASISTENTE_REUNION = `
+  mutation RegistrarAsistenteReunion($reunionId: UUID!, $miembroId: UUID!, $tipoAsistencia: String!, $representadoPorId: UUID, $cargo: String) {
+    registrarAsistenteReunion(reunionId: $reunionId, miembroId: $miembroId, tipoAsistencia: $tipoAsistencia, representadoPorId: $representadoPorId, cargo: $cargo) {
+      id
+      reunionId
+      miembroId
+      tipoAsistencia
+      representadoPorId
+      cargo
+    }
+  }
+`
+
 // ── ACUERDOS ─────────────────────────────────────────────────────────────────
+
+export const GET_ACUERDOS_DE_REUNION = `
+  query AcuerdosDeReunion($reunionId: UUID!) {
+    acuerdosDeReunion(reunionId: $reunionId) {
+      id
+      puntoOrdenDiaId
+      numero
+      descripcion
+      tipoMayoria
+      resultado
+      responsableId
+      fechaLimiteEjecucion
+      estadoEjecucionCodigo
+      observacionesEjecucion
+    }
+  }
+`
+
+// El acuerdo produce el mandato: primero se le adjunta a QUIÉN nombra/cesa y para
+// qué cargo (fijar), y después se le da efecto (ejecutar).
+export const FIJAR_NOMBRAMIENTO_DE_ACUERDO = `
+  mutation FijarNombramientoDeAcuerdo(
+    $acuerdoId: UUID!, $miembroId: UUID!, $cargoId: UUID!, $fechaInicio: Date!,
+    $agrupacionId: UUID, $fechaFin: Date, $tipoCodigo: String!
+  ) {
+    fijarNombramientoDeAcuerdo(
+      acuerdoId: $acuerdoId, miembroId: $miembroId, cargoId: $cargoId, fechaInicio: $fechaInicio,
+      agrupacionId: $agrupacionId, fechaFin: $fechaFin, tipoCodigo: $tipoCodigo
+    )
+  }
+`
+
+export const EJECUTAR_ACUERDO = `
+  mutation EjecutarAcuerdo($acuerdoId: UUID!, $exigirActaAprobada: Boolean!) {
+    ejecutarAcuerdo(acuerdoId: $acuerdoId, exigirActaAprobada: $exigirActaAprobada)
+  }
+`
 
 export const GET_ACUERDOS_PENDIENTES = `
   query AcuerdosPendientes($agrupacionId: UUID) {
@@ -148,10 +243,12 @@ export const REGISTRAR_ACUERDO = `
   mutation RegistrarAcuerdo($data: RegistrarAcuerdoInput!) {
     registrarAcuerdo(data: $data) {
       id
+      puntoOrdenDiaId
       numero
       descripcion
+      tipoMayoria
       resultado
-      estadoEjecucion
+      estadoEjecucionCodigo
     }
   }
 `
@@ -160,7 +257,7 @@ export const ACTUALIZAR_SEGUIMIENTO = `
   mutation ActualizarSeguimientoAcuerdo($data: ActualizarSeguimientoInput!) {
     actualizarSeguimientoAcuerdo(data: $data) {
       id
-      estadoEjecucion
+      estadoEjecucionCodigo
       observacionesEjecucion
     }
   }

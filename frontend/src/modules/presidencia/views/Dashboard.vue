@@ -110,9 +110,11 @@
       <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-8">
         <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <h2 class="font-semibold text-gray-900">Mandatos vigentes</h2>
-          <router-link to="/membresia/junta"
+          <!-- /membresia/junta no existía (enlace roto). Los mandatos vigentes viven en
+               /presidencia/mandatos; los nuevos nacen de acuerdos en acta. -->
+          <router-link to="/presidencia/mandatos"
             class="text-xs text-purple-600 hover:text-purple-800 font-medium transition-colors">
-            Gestionar →
+            Ver todos →
           </router-link>
         </div>
         <div v-if="mandatos.length === 0" class="px-5 py-8 text-center text-sm text-gray-400">
@@ -313,8 +315,8 @@ const alertas = computed(() => {
       id: 'mandatos-proximos',
       icono: '🏛️',
       titulo: `Mandato${mandatosProx.length > 1 ? 's' : ''} próximo${mandatosProx.length > 1 ? 's' : ''} a vencer: ${nombres}`,
-      detalle: 'Convoca renovación o tramita los nombramientos correspondientes.',
-      ruta: '/membresia/junta',
+      detalle: 'Convoca renovación: los nombramientos se acuerdan en reunión del órgano.',
+      ruta: '/presidencia/mandatos',
       clase: 'bg-blue-50 border-blue-200 text-blue-800',
     })
   }

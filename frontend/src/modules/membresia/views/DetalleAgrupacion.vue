@@ -268,11 +268,15 @@
           <ChevronDownIcon :class="chevronCls(open.junta)" />
         </button>
         <div v-show="open.junta" class="px-5 pb-4 pt-2">
-          <div v-if="editMode && tienePermiso('MEMBRESIA_CARGO_ASIGNAR')" class="flex justify-end mb-3">
-            <button type="button" @click="abrirRegistro(null)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition-colors">
-              <PlusIcon class="w-3.5 h-3.5" /> Registrar cargo
-            </button>
+          <!-- Un cargo no se registra a mano: nace de un acuerdo del órgano, adoptado
+               en reunión y reflejado en acta (ver GOBERNANZA.md). -->
+          <div v-if="editMode && tienePermiso('MEMBRESIA_CARGO_ASIGNAR')"
+            class="mb-3 rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 text-xs text-amber-800">
+            Los cargos se nombran por <strong>acuerdo del órgano</strong>, en una reunión y
+            reflejado en acta.
+            <router-link to="/secretaria/reuniones" class="underline font-medium hover:no-underline">
+              Ir a Reuniones
+            </router-link>.
           </div>
           <div v-if="!composicionJunta.length" class="py-8 text-center text-xs text-slate-400 italic">
             Sin cargos electos en esta unidad.<template v-if="!editMode"> Entra en modo edición para registrarlos.</template>
@@ -324,13 +328,8 @@
         </button>
         <div v-show="open.cargos" class="px-5 pb-4 pt-2">
 
-          <!-- Barra de acción (solo en modo edición y con permiso de cargos) -->
-          <div v-if="editMode && tienePermiso('MEMBRESIA_CARGO_ASIGNAR')" class="flex justify-end mb-3">
-            <button type="button" @click="abrirRegistro(null)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 transition-colors">
-              <PlusIcon class="w-3.5 h-3.5" /> Registrar cargo
-            </button>
-          </div>
+          <!-- El alta de cargos se retiró: nacen de un acuerdo, no de un formulario. -->
+
 
           <div v-if="!miembros.length"
             class="py-8 text-center text-xs text-slate-400 italic">
@@ -1069,35 +1068,25 @@ async function guardarRegistro() {
   modal.guardando = true
   modal.error = null
   try {
-    if (modal.editandoId) {
-      // El update input de strawchemy excluye las FK: en edición solo cambian escalares.
-      await executeMutation(
-        `mutation ActualizarRegistro($data: HistorialNombramientoUpdateInput!) {
-           actualizarHistorialNombramiento(data: $data) { id }
-         }`,
-        { data: {
-            id: modal.editandoId,
-            fechaInicio: modal.fechaInicio,
-            fechaFin: modal.fechaFin || null,
-            observaciones: modal.observaciones || null,
-        } }
-      )
-    } else {
-      // Alta: mutación custom con FKs planas (el create input autogenerado no las acepta).
-      await executeMutation(
-        `mutation CrearNombramiento($miembroId: UUID!, $rolId: UUID!, $agrupacionId: UUID!, $fechaInicio: Date!, $fechaFin: Date, $observaciones: String) {
-           crearNombramiento(miembroId: $miembroId, rolId: $rolId, agrupacionId: $agrupacionId, fechaInicio: $fechaInicio, fechaFin: $fechaFin, observaciones: $observaciones) { id }
-         }`,
-        {
-          miembroId: modal.miembroId,
-          rolId: modal.rolId,
-          agrupacionId: agrupacionId.value,
+    // Solo EDICIÓN. El alta de un cargo se retiró: un mandato nace de un acuerdo del
+    // órgano reflejado en acta, no de un formulario (ver GOBERNANZA.md). Aquí solo se
+    // corrigen los datos de un mandato ya existente (fechas, observaciones).
+    if (!modal.editandoId) {
+      modal.error = 'Los cargos se nombran por acuerdo del órgano, en una reunión reflejada en acta.'
+      return
+    }
+    // El update input de strawchemy excluye las FK: en edición solo cambian escalares.
+    await executeMutation(
+      `mutation ActualizarRegistro($data: HistorialNombramientoUpdateInput!) {
+         actualizarHistorialNombramiento(data: $data) { id }
+       }`,
+      { data: {
+          id: modal.editandoId,
           fechaInicio: modal.fechaInicio,
           fechaFin: modal.fechaFin || null,
           observaciones: modal.observaciones || null,
-        }
-      )
-    }
+      } }
+    )
     modal.visible = false
     await recargarNombramientos()
   } catch (e) {
