@@ -33,7 +33,9 @@ _TRANSACCIONES = [
     TransaccionDef("MEMBRESIA_VOLUNTARIO_GESTIONAR", "Gestionar perfil de voluntario",    "MUTACION"),
     TransaccionDef("MEMBRESIA_CARGO_ASIGNAR",        "Asignar cargo en junta",            "MUTACION"),
     TransaccionDef("MEMBRESIA_CARGO_REVOCAR",        "Revocar cargo en junta",            "MUTACION"),
-    TransaccionDef("MEMBRESIA_JUNTA_CONFIGURAR",     "Configurar junta directiva",        "MUTACION"),
+    # MEMBRESIA_JUNTA_CONFIGURAR retirada: su resolver (`constituir_junta`) se eliminó
+    # con el modelo `JuntaDirectiva`. Hoy la configuración de órganos vive en el módulo
+    # de configuración y se protege con CFG_CONFIGURACION_EDITAR.
 ]
 
 for _t in _TRANSACCIONES:
@@ -150,7 +152,6 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
     descripcion="Configuración, asignación y revocación de cargos en juntas",
     sistema=True,
     transacciones=[
-        FuncionalidadTransaccionDef("MEMBRESIA_JUNTA_CONFIGURAR", AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("MEMBRESIA_CARGO_ASIGNAR",    AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("MEMBRESIA_CARGO_REVOCAR",    AmbitoTransaccion.TERRITORIAL),
     ],

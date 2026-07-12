@@ -102,8 +102,13 @@ class ReunionService:
             tipo_actividad_id=tipo_actividad.id,
             estado_id=estado.id,
             campania_id=None,               # Actividad interna, no de campaña
-            es_recurrente=tipo_actividad.es_actividad_gobierno and tipo_actividad.periodicidad == 'anual',
-            periodicidad=tipo_actividad.periodicidad if tipo_actividad.es_actividad_gobierno else None,
+            # Una reunión concreta es un acto PUNTUAL (ocurre una vez, con fecha).
+            # La recurrencia («junta mensual») es del calendario de convocatorias, no
+            # de la actividad que genera cada reunión celebrada.
+            # (Antes se leía `tipo_actividad.periodicidad`, campo que NO existe en
+            #  TipoActividad — AttributeError latente, oculto tras el early-return.)
+            es_recurrente=False,
+            periodicidad=None,
             fecha_inicio=reunion.fecha_convocatoria,
             fecha_fin=(
                 reunion.fecha_celebracion.date()
