@@ -395,154 +395,55 @@ class AccesoMutation:
         await session.commit()
         return True
 
-    # ── Órganos de una agrupación ────────────────────────────────────────────
     @strawberry.mutation(permission_classes=[RequireTransaction("CFG_CONFIGURACION_EDITAR")])
-    async def crear_organo_en_agrupacion(
+    async def heredar_modelo_de_nivel(
         self,
         info: strawberry.Info,
-        tipo_organo_id: uuid.UUID,
-        agrupacion_id: uuid.UUID,
-        nombre: Optional[str] = None,
-        fecha_constitucion: Optional[str] = None,
-    ) -> uuid.UUID:
-        """Crea un órgano en una agrupación, copiando la composición-plantilla de su NIVEL.
-
-        La plantilla vive en el nivel territorial de la agrupación (`NivelOrgano` /
-        `NivelOrganoCargo`): es el punto de partida, y la composición real
-        (`OrganoCargo`) queda copiada y ajustable por esa agrupación.
-        Los tipos de composición PLENO (asamblea) no llevan cargos. Si el nivel no
-        tiene ese órgano configurado, el órgano se crea sin composición.
-        """
-        from datetime import date as _date
-        session = info.context.session
-
-        tipo = (await session.execute(
-            select(TipoOrgano).where(TipoOrgano.id == tipo_organo_id)
-        )).scalar_one_or_none()
-        if tipo is None:
-            raise ValueError("Tipo de órgano no encontrado")
-
-        agrupacion = (await session.execute(
-            select(UnidadOrganizativa).where(UnidadOrganizativa.id == agrupacion_id)
-        )).scalar_one_or_none()
-        if agrupacion is None:
-            raise ValueError("Agrupación no encontrada")
-
-        organo = Organo(
-            tipo_organo_id=tipo_organo_id,
-            agrupacion_id=agrupacion_id,
-            nombre=(nombre or tipo.nombre),
-            fecha_constitucion=(
-                _date.fromisoformat(fecha_constitucion) if fecha_constitucion else _date.today()
-            ),
-            activo=True,
-        )
-        session.add(organo)
-        await session.flush()   # necesitamos organo.id
-
-        # Copiar la plantilla del NIVEL de la agrupación (solo si se compone por CARGOS).
-        # `UnidadOrganizativa.tipo_id` es su nivel organizativo.
-        if tipo.composicion.value == "CARGOS" and agrupacion.tipo_id is not None:
-            nivel_organo = (await session.execute(
-                select(NivelOrgano).where(
-                    NivelOrgano.nivel_id == agrupacion.tipo_id,
-                    NivelOrgano.tipo_organo_id == tipo_organo_id,
-                )
-            )).scalars().first()
-            if nivel_organo is not None:
-                plantilla = (await session.execute(
-                    select(NivelOrganoCargo).where(
-                        NivelOrganoCargo.nivel_organo_id == nivel_organo.id
-                    ).order_by(NivelOrganoCargo.orden_protocolario)
-                )).scalars().all()
-                for nc in plantilla:
-                    session.add(OrganoCargo(
-                        organo_id=organo.id,
-                        cargo_id=nc.cargo_id,
-                        orden_protocolario=nc.orden_protocolario,
-                    ))
-
-        await session.commit()
-        return organo.id
-
-    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_CONFIGURACION_EDITAR")])
-    async def establecer_composicion_de_organo(
-        self,
-        info: strawberry.Info,
-        organo_id: uuid.UUID,
-        cargos: List[CargoOrdenInput],
-    ) -> bool:
-        """Reemplaza la composición REAL de un órgano concreto (la de una agrupación)."""
-        session = info.context.session
-        await session.execute(
-            sa_delete(OrganoCargo).where(OrganoCargo.organo_id == organo_id)
-        )
-        for c in cargos:
-            session.add(OrganoCargo(
-                organo_id=organo_id,
-                cargo_id=c.cargo_id,
-                orden_protocolario=c.orden_protocolario,
-            ))
-        await session.commit()
-        return True
-
-    @strawberry.mutation(permission_classes=[RequireTransaction("CFG_CONFIGURACION_EDITAR")])
-    async def replicar_organos_en_agrupacion(
-        self,
-        info: strawberry.Info,
-        agrupacion_origen_id: uuid.UUID,
-        agrupacion_destino_id: uuid.UUID,
+        nivel_origen_id: uuid.UUID,
+        nivel_destino_id: uuid.UUID,
     ) -> int:
-        """Replica los órganos (y su composición) de una agrupación en otra.
+        """Copia el modelo organizativo de un nivel a otro (órganos + composición).
 
-        Pensado para el modelo territorial DISTRIBUIDO: al crear una agrupación hija
-        no se hereda nada en silencio; se pregunta al usuario y, si acepta, se llama
-        aquí. Omite los tipos de órgano que la agrupación destino ya tenga.
-        Devuelve cuántos órganos se crearon.
+        Se usa al crear un nivel hijo: se le propone heredar el modelo del padre,
+        que luego puede ajustar. Salta los órganos que el destino ya tenga (no pisa
+        su composición). Devuelve cuántos órganos se copiaron.
         """
-        from datetime import date as _date
         session = info.context.session
 
         origen = (await session.execute(
-            select(Organo).where(
-                Organo.agrupacion_id == agrupacion_origen_id,
-                Organo.eliminado == False,  # noqa: E712
-            )
+            select(NivelOrgano).where(NivelOrgano.nivel_id == nivel_origen_id)
         )).scalars().all()
 
         ya_tiene = {
-            o.tipo_organo_id for o in (await session.execute(
-                select(Organo).where(
-                    Organo.agrupacion_id == agrupacion_destino_id,
-                    Organo.eliminado == False,  # noqa: E712
-                )
+            no.tipo_organo_id
+            for no in (await session.execute(
+                select(NivelOrgano).where(NivelOrgano.nivel_id == nivel_destino_id)
             )).scalars().all()
         }
 
-        creados = 0
-        for o in origen:
-            if o.tipo_organo_id in ya_tiene:
+        copiados = 0
+        for no in origen:
+            if no.tipo_organo_id in ya_tiene:
                 continue
-            nuevo = Organo(
-                tipo_organo_id=o.tipo_organo_id,
-                agrupacion_id=agrupacion_destino_id,
-                nombre=o.nombre,
-                fecha_constitucion=_date.today(),
+            nuevo = NivelOrgano(
+                nivel_id=nivel_destino_id,
+                tipo_organo_id=no.tipo_organo_id,
                 activo=True,
             )
             session.add(nuevo)
             await session.flush()
 
             comp = (await session.execute(
-                select(OrganoCargo).where(OrganoCargo.organo_id == o.id)
+                select(NivelOrganoCargo).where(NivelOrganoCargo.nivel_organo_id == no.id)
             )).scalars().all()
-            for oc in comp:
-                session.add(OrganoCargo(
-                    organo_id=nuevo.id,
-                    cargo_id=oc.cargo_id,
-                    orden_protocolario=oc.orden_protocolario,
+            for c in comp:
+                session.add(NivelOrganoCargo(
+                    nivel_organo_id=nuevo.id,
+                    cargo_id=c.cargo_id,
+                    orden_protocolario=c.orden_protocolario,
                 ))
-            creados += 1
+            copiados += 1
 
         await session.commit()
-        return creados
+        return copiados
+

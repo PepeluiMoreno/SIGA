@@ -177,7 +177,7 @@
                         <PencilIcon class="w-3.5 h-3.5" />
                       </button>
                       <ConfirmPopover
-                        v-if="!item.esInmutable && !catalogoActivo?.sistema"
+                        v-if="!item.esInmutable && !catalogoActivo?.sistema && !esFilaProtegida(item)"
                         titulo="Eliminar registro"
                         :mensaje="`¿Eliminar '${item.nombre}'? Esta acción no se puede deshacer.`"
                         variante="peligro"
@@ -381,6 +381,7 @@ import {
   ChevronDownIcon, ChevronRightIcon, LockClosedIcon,
 } from '@heroicons/vue/24/outline'
 import * as Q from '@/graphql/queries/catalogos.js'
+import * as OQ from '@/graphql/queries/organos.js'
 
 const router = useRouter()
 
@@ -407,6 +408,11 @@ onMounted(() => { grupoActivo.value = CATALOGOS.value[0]?.grupo ?? null })
 // flujo de trabajo, tipos de vinculación). Se siembran y son "read-mostly":
 // se ven y se pueden re-etiquetar/recolorar, pero NO crear ni borrar.
 const esCatalogoSistema = (key) => /^estados/.test(key) || key === 'tiposVinculacion'
+
+// Filas protegidas DENTRO de un catálogo editable: el catálogo se puede ampliar,
+// pero ciertos registros sembrados no se borran (p.ej. tipos de órgano con
+// `sistema: true`). El catálogo lo declara con `filaProtegida(item) => bool`.
+const esFilaProtegida = (item) => !!catalogoActivo.value?.filaProtegida?.(item)
 
 // ── Definición de catálogos ───────────────────────────────────────────────────
 const CATALOGOS = computed(() => [
@@ -953,6 +959,62 @@ const CATALOGOS = computed(() => [
           { name: 'activo', label: 'En uso', type: 'checkbox', default: true },
         ],
       },
+      // ── Órganos de gobierno: catálogos base ────────────────────────────
+      {
+        key: 'cargos', label: 'Cargos', labelSingular: 'Cargo',
+        createPrefix: 'Nuevo', editPrefix: 'Editar',
+        descripcion: 'Presidencia, Secretaría, Tesorería, Vocalía…',
+        queryName: 'cargos', query: OQ.GET_CARGOS,
+        mutations: { create: OQ.CREATE_CARGO, update: OQ.UPDATE_CARGO, delete: OQ.DELETE_CARGO },
+        columnas: [
+          { key: 'nombre',      label: 'Nombre' },
+          { key: 'descripcion', label: 'Descripción' },
+          { key: 'activo',      label: 'Activo', type: 'toggle' },
+        ],
+        campos: [
+          { name: 'nombre',      label: 'Nombre',      type: 'text',     required: true, maxLength: 150 },
+          { name: 'descripcion', label: 'Descripción', type: 'textarea' },
+          { name: 'activo',      label: 'En uso',      type: 'checkbox', default: true },
+        ],
+      },
+      {
+        key: 'tiposOrgano', label: 'Tipos de órgano', labelSingular: 'Tipo de órgano',
+        createPrefix: 'Nuevo', editPrefix: 'Editar',
+        descripcion: 'Junta Directiva, Asamblea General, Comisión… y cómo se componen',
+        queryName: 'tiposOrgano', query: OQ.GET_TIPOS_ORGANO,
+        mutations: { create: OQ.CREATE_TIPO_ORGANO, update: OQ.UPDATE_TIPO_ORGANO, delete: OQ.DELETE_TIPO_ORGANO },
+        // Los tipos sembrados por el sistema se editan pero NO se borran.
+        filaProtegida: item => item.sistema === true,
+        columnas: [
+          { key: 'nombre',      label: 'Nombre' },
+          { key: 'composicion', label: 'Composición',
+            format: item => item.composicion === 'PLENO' ? 'Pleno (abierta)' : 'Por cargos' },
+          { key: 'denominacion', label: 'Denominación',
+            format: item => item.denominacionSingular
+              ? `${item.denominacionSingular}${item.denominacionPlural ? ' / ' + item.denominacionPlural : ''}`
+              : '—' },
+          { key: 'activo',      label: 'Activo', type: 'toggle' },
+        ],
+        campos: [
+          { name: 'nombre',      label: 'Nombre',      type: 'text',     required: true, maxLength: 150 },
+          { name: 'descripcion', label: 'Descripción', type: 'textarea' },
+          { name: 'denominacionSingular', label: 'Denominación singular', type: 'text', maxLength: 150 },
+          { name: 'denominacionPlural',   label: 'Denominación plural',   type: 'text', maxLength: 150 },
+          {
+            name: 'composicion', label: 'Composición', type: 'select', required: true,
+            default: 'CARGOS',
+            // El motor lee `opt[optionValue]`/`opt[optionLabel]`: los declaramos
+            // explícitamente para poder usar pares {value,label}.
+            optionValue: 'value', optionLabel: 'label',
+            emptyLabel: 'Selecciona…',
+            optionsStatic: [
+              { value: 'CARGOS', label: 'Por cargos (composición cerrada)' },
+              { value: 'PLENO',  label: 'Pleno (todos los socios con voto)' },
+            ],
+          },
+          { name: 'activo', label: 'En uso', type: 'checkbox', default: true },
+        ],
+      },
     ],
   },
 ].map(g => ({
@@ -1216,7 +1278,7 @@ async function eliminarDirecto(item) {
     toast.success(`"${item.nombre}" eliminado`, {
       accion: { label: 'Deshacer', callback: () => toast.info('Restauración no disponible — contacta con soporte') },
     })
-    await cargarItems()
+    await cargarDatos()
   } catch (e) {
     toast.error(e?.response?.errors?.[0]?.message || `"${item.nombre}" está en uso. Desactívalo en su lugar.`)
   } finally {
