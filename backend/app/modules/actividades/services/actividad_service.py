@@ -64,7 +64,8 @@ class ActividadService:
     async def crear(
         self, *, nombre: str, tipo_actividad_id: uuid.UUID, estado_id: uuid.UUID,
         caracter: str = "PUNTUAL", descripcion=None, padre_id=None,
-        es_recurrente: bool = False, periodicidad=None, campania_id=None,
+        es_recurrente: bool = False, periodicidad=None, agrupacion_id=None,
+        campania_id=None,
         grupo_id=None, responsable_id=None, fecha_inicio=None, hora_inicio=None,
         fecha_fin=None, hora_fin=None, duracion_horas=None, duracion_dias=None,
         lugar=None, direccion=None, localidad=None, provincia=None, aforo=None,
@@ -79,7 +80,8 @@ class ActividadService:
         actividad = Actividad(
             nombre=nombre, tipo_actividad_id=tipo_actividad_id, estado_id=estado_id,
             descripcion=descripcion, padre_id=padre_id, es_recurrente=es_recurrente,
-            periodicidad=periodicidad, caracter=caracter, campania_id=campania_id,
+            periodicidad=periodicidad, caracter=caracter,
+            agrupacion_id=agrupacion_id, campania_id=campania_id,
             grupo_id=grupo_id, responsable_id=responsable_id,
             fecha_inicio=fecha_inicio, hora_inicio=hora_inicio,
             fecha_fin=fecha_fin, hora_fin=hora_fin,

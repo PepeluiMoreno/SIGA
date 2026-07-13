@@ -12,6 +12,7 @@ import strawberry
 from . import strawchemy
 from .auth import AuthQuery
 from .permissions import RequireTransaction, campo
+from .ambito_extension import FiltrarPorAmbito
 from .configuracion_resolvers import ConfiguracionOrganizacionQuery
 from .economico_resolvers import EconomicoQuery
 from .categoria_fiscal_resolvers import CategoriaFiscalQuery
@@ -96,7 +97,10 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
     plantillasEmail: list[PlantillaEmailType] = campo(filter_input=PlantillaEmailFilter)
 
     # === FINANCIERO - Tesorería ===
-    cuentasBancarias: list[CuentaBancariaType] = campo(permission_classes=[RequireTransaction("ECO_CUENTA_LISTAR")], filter_input=CuentaBancariaFilter)
+    cuentasBancarias: list[CuentaBancariaType] = campo(
+        permission_classes=[RequireTransaction("ECO_CUENTA_LISTAR")],
+        filter_input=CuentaBancariaFilter, extensions=[FiltrarPorAmbito()],
+    )
     apuntesCaja: list[ApunteCajaType] = campo(permission_classes=[RequireTransaction("ECO_CONCILIACION_LISTAR")], filter_input=ApunteCajaFilter)
     extractosBancarios: list[ExtractoBancarioType] = campo(permission_classes=[RequireTransaction("ECO_CONCILIACION_LISTAR")], filter_input=ExtractoBancarioFilter)
     movimientosTesoreria: list[MovimientoTesoreriaType] = campo(permission_classes=[RequireTransaction("ECO_CONCILIACION_LISTAR")], filter_input=MovimientoTesoreriaFilter)
@@ -138,7 +142,11 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
     motivosBaja: list[MotivoBajaType] = campo(filter_input=MotivoBajaFilter)
     motivosTraslado: list[MotivoTrasladoType] = campo(filter_input=MotivoTrasladoFilter)
     estadosTraslado: list[EstadoTrasladoCatalogoType] = campo(filter_input=EstadoTrasladoCatalogoFilter)
-    contactos: list[ContactoType] = campo(filter_input=ContactoFilter)
+    # El padrón se acota al territorio de quien lo pide: sin esto, una coordinadora
+    # local listaba a TODOS los socios de la organización (ver `ambito_extension`).
+    contactos: list[ContactoType] = campo(
+        filter_input=ContactoFilter, extensions=[FiltrarPorAmbito()],
+    )
 
     # === COORDINACIONES TERRITORIALES ===
     coordinacionesTerritoriales: list[CoordinacionTerritorialType] = campo(filter_input=CoordinacionTerritorialFilter)
@@ -158,7 +166,9 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
 
     # === CAMPAÑAS ===
     tiposCampania: list[TipoCampaniaType] = campo(filter_input=TipoCampaniaFilter)
-    campanias: list[CampaniaType] = campo(filter_input=CampaniaFilter)
+    campanias: list[CampaniaType] = campo(
+        filter_input=CampaniaFilter, extensions=[FiltrarPorAmbito()],
+    )
     # rolesParticipante / participantesCampania disueltos en Contacto + Participacion + Vinculacion.
     tiposMetaCampania: list[TipoMetaType] = campo(filter_input=TipoMetaFilter)
     tiposCanalDifusion: list[TipoCanalDifusionType] = campo(filter_input=TipoCanalDifusionFilter)
@@ -174,14 +184,18 @@ class Query(AuthQuery, ConfiguracionOrganizacionQuery, EconomicoQuery, Categoria
 
     # === ACTIVIDADES ===
     tiposActividad: list[TipoActividadType] = campo(filter_input=TipoActividadFilter)
-    actividades: list[ActividadType] = campo(filter_input=ActividadFilter)
+    actividades: list[ActividadType] = campo(
+        filter_input=ActividadFilter, extensions=[FiltrarPorAmbito()],
+    )
     tareas: list[TareaType] = campo(filter_input=TareaFilter)
     participaciones: list[ParticipacionType] = campo(filter_input=ParticipacionFilter)
 
     # === GRUPOS ===
     tiposGrupo: list[TipoGrupoType] = campo(filter_input=TipoGrupoFilter)
     rolesGrupo: list[RolGrupoType] = campo(filter_input=RolGrupoFilter)
-    gruposTrabajo: list[GrupoTrabajoType] = campo(filter_input=GrupoTrabajoFilter)
+    gruposTrabajo: list[GrupoTrabajoType] = campo(
+        filter_input=GrupoTrabajoFilter, extensions=[FiltrarPorAmbito()],
+    )
     miembrosGrupo: list[MiembroGrupoType] = campo(filter_input=MiembroGrupoFilter)
     gruposIniciativa: list[GrupoIniciativaType] = campo(filter_input=GrupoIniciativaFilter)
     reunionesGrupo: list[ReunionGrupoType] = campo()

@@ -352,7 +352,7 @@ class EnvioMensajeResultado:
 @strawberry.type
 class MembresiaResolverMutation:
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_VOLUNTARIO_GESTIONAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_VOLUNTARIO_GESTIONAR", objetivo=Objetivo.contacto("data", ruta="miembro_id"))])
     async def gestionar_perfil_voluntario(
         self,
         info: strawberry.Info,
@@ -362,13 +362,10 @@ class MembresiaResolverMutation:
 
         El voluntariado es una Vinculacion(VOLUNTARIO) con satélite Voluntario: se crea
         si `es_voluntario=True` y no existía, o se da de baja si `es_voluntario=False`.
-        profesion/nivel_estudios se guardan también en el Contacto. Aplica el guard de
-        ámbito territorial.
+        profesion/nivel_estudios se guardan también en el Contacto.
         """
-        from app.modules.acceso.services.ambito_territorial import assert_miembro_en_ambito
         session = info.context.session
         user = info.context.user
-        await assert_miembro_en_ambito(session, user.id, data.miembro_id)
 
         contacto = await _fetch_miembro(session, data.miembro_id)
         for field in ("profesion", "nivel_estudios_id"):
@@ -402,7 +399,7 @@ class MembresiaResolverMutation:
         await session.commit()
         return await _fetch_miembro(session, contacto.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_VOLUNTARIO_GESTIONAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_VOLUNTARIO_GESTIONAR", objetivo=Objetivo.contacto("miembro_id"))])
     async def asignar_habilidad_voluntario(
         self,
         info: strawberry.Info,
@@ -410,12 +407,9 @@ class MembresiaResolverMutation:
         habilidad_id: uuid.UUID,
         nivel_id: Optional[uuid.UUID] = None,
     ) -> bool:
-        """Asigna (o actualiza el nivel de) una habilidad a un socio, por delegación.
-        Con guard de ámbito territorial."""
-        from app.modules.acceso.services.ambito_territorial import assert_miembro_en_ambito
+        """Asigna (o actualiza el nivel de) una habilidad a un socio, por delegación."""
         from app.modules.membresia.models.habilidad import MiembroHabilidad
         session = info.context.session
-        await assert_miembro_en_ambito(session, info.context.user.id, miembro_id)
         # Las habilidades cuelgan de la extensión Voluntario: traducir contacto → voluntario.
         vinc = await _vinc_voluntario(session, miembro_id)
         if not vinc or not vinc.voluntario:
@@ -437,18 +431,16 @@ class MembresiaResolverMutation:
         await session.commit()
         return True
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_VOLUNTARIO_GESTIONAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_VOLUNTARIO_GESTIONAR", objetivo=Objetivo.contacto("miembro_id"))])
     async def quitar_habilidad_voluntario(
         self,
         info: strawberry.Info,
         miembro_id: uuid.UUID,
         habilidad_id: uuid.UUID,
     ) -> bool:
-        """Quita una habilidad de un socio, por delegación. Con guard de ámbito territorial."""
-        from app.modules.acceso.services.ambito_territorial import assert_miembro_en_ambito
+        """Quita una habilidad de un socio, por delegación."""
         from app.modules.membresia.models.habilidad import MiembroHabilidad
         session = info.context.session
-        await assert_miembro_en_ambito(session, info.context.user.id, miembro_id)
         # Las habilidades cuelgan de la extensión Voluntario: traducir contacto → voluntario.
         vinc = await _vinc_voluntario(session, miembro_id)
         if not vinc or not vinc.voluntario:

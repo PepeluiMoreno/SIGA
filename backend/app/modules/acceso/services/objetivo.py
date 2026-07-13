@@ -85,7 +85,18 @@ class Objetivo:
 
     @staticmethod
     def actividad(arg: str = "actividad_id", ruta: Optional[str] = None) -> "Objetivo":
+        """Actividad: lleva su propia `agrupacion_id` desde la migración `act1terr2ag3`.
+        Antes había que deducir el territorio por la campaña o el grupo —ambos opcionales—
+        y una actividad interna sin ninguno de los dos era inacotable."""
         return Objetivo(arg=arg, ruta=ruta, resolver=_agrupacion_de_actividad)
+
+    @staticmethod
+    def campania(arg: str = "campania_id", ruta: Optional[str] = None) -> "Objetivo":
+        return Objetivo(arg=arg, ruta=ruta, resolver=agrupacion_de_campania)
+
+    @staticmethod
+    def grupo_trabajo(arg: str = "grupo_id", ruta: Optional[str] = None) -> "Objetivo":
+        return Objetivo(arg=arg, ruta=ruta, resolver=agrupacion_de_grupo)
 
     @staticmethod
     def reunion(arg: str = "reunion_id", ruta: Optional[str] = None) -> "Objetivo":
@@ -153,6 +164,20 @@ async def _agrupacion_de_actividad(session: AsyncSession, actividad_id: uuid.UUI
     from app.modules.actividades.models.actividad import Actividad
     return (await session.execute(
         select(Actividad.agrupacion_id).where(Actividad.id == actividad_id)
+    )).scalar_one_or_none()
+
+
+async def agrupacion_de_campania(session: AsyncSession, campania_id: uuid.UUID):
+    from app.modules.actividades.models.campana import Campania
+    return (await session.execute(
+        select(Campania.agrupacion_id).where(Campania.id == campania_id)
+    )).scalar_one_or_none()
+
+
+async def agrupacion_de_grupo(session: AsyncSession, grupo_id: uuid.UUID):
+    from app.modules.actividades.models.grupo import GrupoTrabajo
+    return (await session.execute(
+        select(GrupoTrabajo.agrupacion_id).where(GrupoTrabajo.id == grupo_id)
     )).scalar_one_or_none()
 
 

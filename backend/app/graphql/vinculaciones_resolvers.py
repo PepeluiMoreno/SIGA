@@ -343,12 +343,16 @@ class VinculacionesMutation:
         )).scalar_one_or_none()
         if contacto is None:
             raise ValueError("Contacto no encontrado.")
-        # Fase 2: trasladar de unidad (cambiar agrupacion_id) exige que tanto el socio
-        # (unidad de origen) como la unidad de destino estén en el ámbito del gestor.
+        # Cambiar de agrupación toca DOS territorios, y el motor no lo cubre: un
+        # `Objetivo` ancla en un solo punto, y aquí hay que exigir origen *y* destino.
+        # Por eso este guard sobrevive al motor territorial (igual que los dos extremos
+        # del traslado, más abajo). Ver `docs/arquitectura/MOTOR_TERRITORIAL.md`.
         usuario = info.context.user
-        if usuario and data.agrupacion_id is not None and data.agrupacion_id != contacto.agrupacion_id:
-            await assert_miembro_en_ambito(session, usuario.id, contacto.id)
-            await assert_unidad_en_ambito(session, usuario.id, data.agrupacion_id)
+        if data.agrupacion_id is not None and data.agrupacion_id != contacto.agrupacion_id:
+            if usuario is None:
+                raise PermissionError("Cambiar de agrupación exige un usuario autenticado.")
+            await assert_miembro_en_ambito(session, usuario.id, contacto.id)   # origen
+            await assert_unidad_en_ambito(session, usuario.id, data.agrupacion_id)  # destino
         for field in _CONTACTO_FIELDS:
             val = getattr(data, field, None)
             if val is not None:
@@ -484,9 +488,6 @@ class VinculacionesMutation:
         vinc = await _vinculacion_activa(session, contacto_id, "SOCIO")
         if vinc is None:
             raise ValueError("El contacto no tiene una vinculación de socio vigente.")
-        usuario = info.context.user
-        if usuario:
-            await assert_miembro_en_ambito(session, usuario.id, contacto_id)
         if vinc.socio is not None:
             vinc.socio.estado_socio = "suspendido"
         vinc.estado = "inactiva"
@@ -508,9 +509,6 @@ class VinculacionesMutation:
         vinc = await _vinculacion_activa(session, contacto_id, "SOCIO")
         if vinc is None:
             raise ValueError("El contacto no tiene una vinculación de socio vigente.")
-        usuario = info.context.user
-        if usuario:
-            await assert_miembro_en_ambito(session, usuario.id, contacto_id)
         vinc.fecha_fin = fecha_baja or date.today()
         vinc.estado = "cerrada"
         if vinc.socio is not None:
@@ -531,9 +529,6 @@ class VinculacionesMutation:
         vinc = await _ultima_vinculacion(session, contacto_id, "SOCIO")
         if vinc is None:
             raise ValueError("El contacto no tiene ninguna vinculación de socio.")
-        usuario = info.context.user
-        if usuario:
-            await assert_miembro_en_ambito(session, usuario.id, contacto_id)
         if vinc.estado == "activa" and vinc.fecha_fin is None:
             raise ValueError("El socio ya está activo.")
         vinc.estado = "activa"
@@ -648,9 +643,13 @@ class VinculacionesMutation:
         aprobado, la solicitud pasa a APROBADO (lista para ejecutar)."""
         session = info.context.session
         sol = await _traslado_en_curso(session, solicitud_id)
+        # Cada extremo del traslado lo aprueba quien manda EN ESE extremo. El motor no
+        # lo cubre: un `Objetivo` ancla en un punto, y aquí el punto depende de la
+        # mutación. Por eso este guard sobrevive.
         usuario = info.context.user
-        if usuario:
-            await assert_unidad_en_ambito(session, usuario.id, sol.agrupacion_origen_id)
+        if usuario is None:
+            raise PermissionError("Aprobar un traslado exige un usuario autenticado.")
+        await assert_unidad_en_ambito(session, usuario.id, sol.agrupacion_origen_id)
         sol.aprobado_origen = True
         sol.fecha_aprobacion_origen = datetime.now()
         sol.coordinador_origen_id = usuario.id if usuario else None
@@ -667,9 +666,13 @@ class VinculacionesMutation:
         """Aprobación por el coordinador de DESTINO."""
         session = info.context.session
         sol = await _traslado_en_curso(session, solicitud_id)
+        # Cada extremo del traslado lo aprueba quien manda EN ESE extremo. El motor no
+        # lo cubre: un `Objetivo` ancla en un punto, y aquí el punto depende de la
+        # mutación. Por eso este guard sobrevive.
         usuario = info.context.user
-        if usuario:
-            await assert_unidad_en_ambito(session, usuario.id, sol.agrupacion_destino_id)
+        if usuario is None:
+            raise PermissionError("Aprobar un traslado exige un usuario autenticado.")
+        await assert_unidad_en_ambito(session, usuario.id, sol.agrupacion_destino_id)
         sol.aprobado_destino = True
         sol.fecha_aprobacion_destino = datetime.now()
         sol.coordinador_destino_id = usuario.id if usuario else None

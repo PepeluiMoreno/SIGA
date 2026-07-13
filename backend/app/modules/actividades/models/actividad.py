@@ -93,6 +93,15 @@ class Actividad(BaseModel):
         String(15), nullable=False, default="PUNTUAL", server_default="PUNTUAL", index=True,
     )
 
+    # Territorio al que pertenece la actividad. Es el ancla del motor territorial:
+    # sin ella, el territorio solo se deducía por caminos ambiguos y opcionales
+    # (campaña o grupo), y una actividad interna sin ninguno de los dos no tenía
+    # territorio en absoluto — nadie podía acotarla. NULL = actividad de la
+    # organización central (solo la alcanza un ámbito global).
+    agrupacion_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('unidades_organizativas.id'), nullable=True, index=True
+    )
+
     # Campaña (si presente → actividad de campaña externa)
     campania_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid, ForeignKey('campanias.id'), nullable=True, index=True

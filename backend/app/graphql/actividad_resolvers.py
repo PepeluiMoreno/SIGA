@@ -11,6 +11,10 @@ import strawberry
 from app.modules.actividades.services.actividad_service import ActividadService
 from app.graphql.types_auto import ActividadType, TareaType, ParticipacionType, GrupoTrabajoType
 from app.graphql.permissions import RequireTransaction
+from app.modules.acceso.services.objetivo import (
+    Objetivo, agrupacion_de_campania as _agrupacion_de_campania,
+    agrupacion_de_grupo as _agrupacion_de_grupo,
+)
 
 
 @strawberry.input
@@ -23,6 +27,10 @@ class ActividadCreateData:
     es_recurrente: bool = False
     periodicidad: Optional[str] = None
     caracter: str = "PUNTUAL"
+    # Territorio de la actividad. Si no se indica, se hereda de la campaña o del grupo
+    # (ver `_agrupacion_al_crear`). Sin él la actividad nacería sin territorio y quedaría
+    # fuera del alcance del motor: nadie podría acotarla.
+    agrupacion_id: Optional[uuid.UUID] = None
     campania_id: Optional[uuid.UUID] = None
     grupo_id: Optional[uuid.UUID] = None
     responsable_id: Optional[uuid.UUID] = None
@@ -119,16 +127,36 @@ class ParticipacionCreateData:
     horas_aportadas: Decimal = Decimal('0.00')
 
 
+async def _agrupacion_al_crear(session, data: ActividadCreateData):
+    """Territorio de una actividad nueva: el declarado o, si no, el heredado.
+
+    Una actividad de campaña pertenece al territorio de su campaña; una de grupo, al de
+    su grupo. Es la misma regla con que la migración `act1terr2ag3` rellenó las
+    existentes, y evita que el usuario tenga que repetir un dato que ya está implícito.
+    Si no hay ninguno de los tres, la actividad es de la organización central (NULL).
+    """
+    if data.agrupacion_id is not None:
+        return data.agrupacion_id
+    if data.campania_id is not None:
+        return await _agrupacion_de_campania(session, data.campania_id)
+    if data.grupo_id is not None:
+        return await _agrupacion_de_grupo(session, data.grupo_id)
+    return None
+
+
 @strawberry.type
 class ActividadResolverMutation:
 
     @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_CREAR")])
     async def crear_actividad(self, info: strawberry.Info, data: ActividadCreateData) -> ActividadType:
-        return await ActividadService(info.context.session).crear(
+        session = info.context.session
+        agrupacion_id = await _agrupacion_al_crear(session, data)
+        return await ActividadService(session).crear(
             nombre=data.nombre, tipo_actividad_id=data.tipo_actividad_id,
             estado_id=data.estado_id, caracter=data.caracter,
             descripcion=data.descripcion, padre_id=data.padre_id,
             es_recurrente=data.es_recurrente, periodicidad=data.periodicidad,
+            agrupacion_id=agrupacion_id,
             campania_id=data.campania_id, grupo_id=data.grupo_id,
             responsable_id=data.responsable_id, fecha_inicio=data.fecha_inicio,
             hora_inicio=data.hora_inicio, fecha_fin=data.fecha_fin, hora_fin=data.hora_fin,
@@ -141,7 +169,7 @@ class ActividadResolverMutation:
             presupuesto_estimado=data.presupuesto_estimado,
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_EDITAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_EDITAR", objetivo=Objetivo.actividad("data", ruta="id"))])
     async def actualizar_actividad(self, info: strawberry.Info, data: ActividadUpdateData) -> ActividadType:
         campos = {k: getattr(data, k) for k in [
             'nombre', 'tipo_actividad_id', 'estado_id', 'descripcion',
@@ -173,7 +201,8 @@ class ActividadResolverMutation:
         ]}
         return await ActividadService(info.context.session).actualizar_tarea(data.id, campos)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_PARTICIPANTE_GESTIONAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction(
+        "ACTIVIDAD_PARTICIPANTE_GESTIONAR", objetivo=Objetivo.actividad("data", ruta="actividad_id"))])
     async def crear_participacion(self, info: strawberry.Info, data: ParticipacionCreateData) -> ParticipacionType:
         return await ActividadService(info.context.session).crear_participacion(
             actividad_id=data.actividad_id, rol=data.rol, miembro_id=data.miembro_id,
@@ -182,14 +211,14 @@ class ActividadResolverMutation:
             horas_aportadas=data.horas_aportadas,
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_EDITAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_EDITAR", objetivo=Objetivo.actividad("id"))])
     async def transicionar_actividad(
         self, info: strawberry.Info,
         id: uuid.UUID, estado_id: uuid.UUID, notas: Optional[str] = None,
     ) -> ActividadType:
         return await ActividadService(info.context.session).transicionar_estado(id, estado_id, notas)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_APROBAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_APROBAR", objetivo=Objetivo.actividad("id"))])
     async def aprobar_actividad(
         self, info: strawberry.Info,
         id: uuid.UUID, estado_id: uuid.UUID, notas: Optional[str] = None,
@@ -217,7 +246,7 @@ class ActividadResolverMutation:
             campania_id=campania_id,
         )
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_EDITAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("ACTIVIDAD_EDITAR", objetivo=Objetivo.actividad("id"))])
     async def cerrar_actividad(
         self, info: strawberry.Info, id: uuid.UUID,
         valoracion: Optional[str] = None, objetivos_cumplidos: Optional[bool] = None,

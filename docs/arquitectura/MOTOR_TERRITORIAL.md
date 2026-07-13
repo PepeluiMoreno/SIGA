@@ -1,7 +1,10 @@
 # Motor territorial — que el permiso sepa *sobre qué* se ejerce
 
-> **Estado: DISEÑO, para revisión.** No se toca el motor hasta aprobarlo.
+> **Estado: IMPLEMENTADO y verificado contra la API real** (ver §8).
 > Complementa `GOBERNANZA.md` §5 (que fijó el principio; aquí va el *cómo*).
+>
+> Las secciones 1–7 son el diseño tal como se aprobó. La §8 recoge lo que finalmente se
+> construyó, lo que cambió por el camino y lo que queda abierto.
 
 ## 1. El agujero
 
@@ -242,3 +245,56 @@ y `docker exec siga_dev_db psql`. Login: `superadmin` / `admin_dev_2026`.
 - **`Actividad.agrupacion_id`**: se añade (migración con relleno desde campaña/grupo).
 - **Alcance**: escritura **y** lectura en esta entrega. El agujero se cierra por los
   dos lados.
+
+---
+
+## 8. Estado: implementado y verificado
+
+Verificado contra la API real con una presidenta de Madrid (rol NO de sistema, mandato
+en Madrid) frente a una socia de Sevilla:
+
+| | superadmin | presidenta de Madrid |
+|---|---|---|
+| Baja de una socia de Sevilla | permitido | **denegado** |
+| Baja de un socio de Madrid | permitido | permitido |
+| `socios` (resolver propio) | 17 filas | **2** (solo Madrid) |
+| `contactos` (campo strawchemy) | 30 filas | **7** (solo Madrid) |
+
+### Lo que se cableó
+
+- **Escritura**: `RequireTransaction(tx, objetivo=…)` en las mutaciones que tocan a una
+  persona (bajas, suspensiones, ediciones, voluntariado, traslados), al dinero
+  (movimientos de tesorería, conciliaciones, cuentas) y a las actividades (actividades,
+  campañas, participaciones).
+- **Lectura**: `FiltrarPorAmbito` (`graphql/ambito_extension.py`), una extensión de campo
+  que recorta el resultado de los campos de strawchemy —que generan su propio SQL y no
+  pasan por ningún resolver nuestro—. Aplicada a `contactos`, `actividades`, `campanias`,
+  `gruposTrabajo` y `cuentasBancarias`. Más los resolvers propios `socios` y
+  `contactosDotables`.
+- **`Actividad.agrupacion_id`**: migración `act1terr2ag3`, con relleno heredado de la
+  campaña o el grupo. Las creaciones nuevas lo heredan igual (`_agrupacion_al_crear`).
+
+### Guards manuales: qué se retiró y qué NO
+
+Se retiraron los redundantes (los que el motor ya cubre en la misma mutación). **Cuatro
+sobreviven, y deben sobrevivir**: los de **dos lados**, que un `Objetivo` no puede
+expresar porque ancla en un único punto.
+
+- `actualizar_contacto` cuando cambia de agrupación: exige origen **y** destino.
+- `aprobar_traslado_origen` / `aprobar_traslado_destino`: cada extremo lo aprueba quien
+  manda en *ese* extremo.
+
+De paso se cerró un `if usuario:` que los envolvía: sin usuario autenticado, el guard
+simplemente no se ejecutaba.
+
+### Pendiente
+
+- **`unidadesOrganizativas` no se filtra**: el árbol territorial es referencia común (el
+  selector de agrupación lo necesita entero, y ocultarlo rompería el propio traslado).
+- **Tareas** (`crear_tarea` / `actualizar_tarea`): cuelgan de una actividad **o** de un
+  grupo, ambos opcionales, y el update solo trae el id de la tarea. Necesitan un objetivo
+  con alternativa. El control efectivo hoy está en la actividad que las contiene.
+- **`CFG_TERRITORIO_*` está declarada GLOBAL pero sus resolvers llevan guard manual**.
+  Contradicción a resolver **en el dominio**: si el modelo distribuido exige que cada
+  nivel defina el territorio inferior, el ámbito correcto es TERRITORIAL, no GLOBAL. Los
+  guards se han dejado (protegen de más, no de menos).

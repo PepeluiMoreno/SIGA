@@ -323,16 +323,32 @@ async def _construir_socios(
 _BANK_FIELDS = ("iban", "swift_bic", "referencia_pago")
 
 
+async def _filtrar_por_ambito(info, socios):
+    """Deja solo los socios que caen en el ámbito territorial del usuario.
+
+    Hasta ahora la lectura no filtraba **nada**: una coordinadora local veía a todos los
+    socios de la organización (solo se le ocultaba el IBAN). El motor territorial cerró la
+    escritura —no puedes dar de baja a un socio de otro territorio— pero verlos seguía
+    siendo posible, y un padrón completo es justo lo que no debe salir de su agrupación.
+
+    Ámbito `None` = global (superadmin): ve todo. Ver `MOTOR_TERRITORIAL.md`.
+    """
+    ambito = await info.context.get_ambito()
+    if ambito is None:
+        return socios
+    # Falla CERRADO: si una fila no sabe decir a qué agrupación pertenece, no se muestra.
+    # Un `getattr(..., None)` permisivo convertiría el olvido de un campo en una fuga.
+    return [s for s in socios if getattr(s, "agrupacion_id", None) in ambito]
+
+
 async def _enmascarar_datos_bancarios(info, session, socios):
     """Oculta IBAN/SWIFT/referencia salvo al tesorero del ámbito del socio (o superior).
 
     Exige el permiso `MEMBRESIA_MIEMBRO_VER_IBAN` y que la agrupación del socio caiga en el
     ámbito territorial del usuario (o que su ámbito sea global = `None`).
     """
-    from app.modules.acceso.services.ambito_territorial import agrupaciones_en_ambito
-    user = getattr(info.context, "user", None)
-    puede = bool(user) and await info.context.check_permission("MEMBRESIA_MIEMBRO_VER_IBAN")
-    ambito = await agrupaciones_en_ambito(session, user.id) if puede else set()
+    puede = await info.context.check_permission("MEMBRESIA_MIEMBRO_VER_IBAN")
+    ambito = await info.context.get_ambito() if puede else set()
     for s in socios:
         visible = puede and (ambito is None or s.agrupacion_id in ambito)
         if not visible:
@@ -496,6 +512,7 @@ class SociosQuery:
             info.context.session, contacto_id=contacto_id, agrupacion_id=agrupacion_id,
             activo=activo, es_voluntario=es_voluntario, eliminado=eliminado,
         )
+        res = await _filtrar_por_ambito(info, res)
         return await _enmascarar_datos_bancarios(info, info.context.session, res)
 
     @strawberry.field
@@ -630,6 +647,7 @@ class SociosQuery:
           - texto: subcadena (case-insensitive) sobre nombre/apellidos/razón social.
         """
         session = info.context.session
-        return await _construir_contactos_dotables(
+        res = await _construir_contactos_dotables(
             session, tipo_vinculacion_id=tipo_vinculacion_id, texto=texto,
         )
+        return await _filtrar_por_ambito(info, res)
