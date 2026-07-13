@@ -57,15 +57,15 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
     transacciones=[
         FuncionalidadTransaccionDef("CAMPANA_LISTAR",  AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("CAMPANA_CREAR",   AmbitoTransaccion.TERRITORIAL),
-        FuncionalidadTransaccionDef("CAMPANA_EDITAR",  AmbitoTransaccion.PROPIO),
-        FuncionalidadTransaccionDef("CAMPANA_ELIMINAR", AmbitoTransaccion.PROPIO),
-        FuncionalidadTransaccionDef("CAMPANA_PUBLICAR", AmbitoTransaccion.PROPIO),
-        FuncionalidadTransaccionDef("CAMPANA_PROPONER_PRESUPUESTO", AmbitoTransaccion.PROPIO),
+        FuncionalidadTransaccionDef("CAMPANA_EDITAR",  AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("CAMPANA_ELIMINAR", AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("CAMPANA_PUBLICAR", AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("CAMPANA_PROPONER_PRESUPUESTO", AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("GRUPO_LISTAR",             AmbitoTransaccion.TERRITORIAL),
-        FuncionalidadTransaccionDef("GRUPO_CREAR",              AmbitoTransaccion.PROPIO),
-        FuncionalidadTransaccionDef("GRUPO_EDITAR",             AmbitoTransaccion.PROPIO),
-        FuncionalidadTransaccionDef("GRUPO_ASIGNAR_MIEMBRO",    AmbitoTransaccion.PROPIO),
-        FuncionalidadTransaccionDef("GRUPO_CONVOCAR_REUNION",   AmbitoTransaccion.PROPIO),
+        FuncionalidadTransaccionDef("GRUPO_CREAR",              AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("GRUPO_EDITAR",             AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("GRUPO_ASIGNAR_MIEMBRO",    AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("GRUPO_CONVOCAR_REUNION",   AmbitoTransaccion.TERRITORIAL),
     ],
 ))
 
@@ -77,9 +77,9 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
     transacciones=[
         FuncionalidadTransaccionDef("ACTIVIDAD_LISTAR",                 AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("ACTIVIDAD_CREAR",                  AmbitoTransaccion.TERRITORIAL),
-        FuncionalidadTransaccionDef("ACTIVIDAD_EDITAR",                 AmbitoTransaccion.PROPIO),
+        FuncionalidadTransaccionDef("ACTIVIDAD_EDITAR",                 AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("ACTIVIDAD_PROPONER",              AmbitoTransaccion.TERRITORIAL),
-        FuncionalidadTransaccionDef("ACTIVIDAD_PARTICIPANTE_GESTIONAR", AmbitoTransaccion.PROPIO),
+        FuncionalidadTransaccionDef("ACTIVIDAD_PARTICIPANTE_GESTIONAR", AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("ACTIVIDAD_CATALOGO_GESTIONAR",     AmbitoTransaccion.GLOBAL),
     ],
 ))
@@ -107,8 +107,8 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
     transacciones=[
         FuncionalidadTransaccionDef("EVENTO_LISTAR",   AmbitoTransaccion.GLOBAL),
         FuncionalidadTransaccionDef("EVENTO_CREAR",    AmbitoTransaccion.TERRITORIAL),
-        FuncionalidadTransaccionDef("EVENTO_EDITAR",   AmbitoTransaccion.PROPIO),
-        FuncionalidadTransaccionDef("EVENTO_PUBLICAR", AmbitoTransaccion.PROPIO),
+        FuncionalidadTransaccionDef("EVENTO_EDITAR",   AmbitoTransaccion.TERRITORIAL),
+        FuncionalidadTransaccionDef("EVENTO_PUBLICAR", AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("EVENTO_INSCRIBIR", AmbitoTransaccion.TERRITORIAL),
     ],
 ))

@@ -24,11 +24,23 @@ class RequireAuthenticated(strawberry.BasePermission):
         return ctx.is_authenticated
 
 
-def RequireTransaction(transaction_id: str) -> type:
-    """Devuelve una clase de permiso que verifica una transacción concreta.
+def RequireTransaction(transaction_id: str, objetivo: "Objetivo | None" = None) -> type:
+    """Clase de permiso que verifica una transacción **sobre un objetivo concreto**.
 
-    Strawberry necesita clases en permission_classes (no instancias).
-    Esta función actúa como factory para crear una clase anónima por cada código.
+    Sin `objetivo`, la comprobación es la de siempre: «¿tienes este permiso?».
+    Con `objetivo`, el motor además responde «¿lo tienes **sobre esto**?»:
+
+        RequireTransaction("MEMBRESIA_MIEMBRO_BAJA", objetivo=Objetivo.contacto("contacto_id"))
+
+    El guard toma el argumento indicado de la llamada (aquí, `contacto_id`), resuelve la
+    agrupación de esa entidad y comprueba que caiga en el ámbito territorial del usuario.
+    Ver `MOTOR_TERRITORIAL.md`.
+
+    El ámbito de la transacción (GLOBAL/TERRITORIAL/PROPIO) se declara en el `catalog.py`
+    del módulo y decide si el territorio se comprueba o no.
+
+    Strawberry necesita clases en permission_classes (no instancias): esta función es la
+    factory que crea una clase por cada código.
     """
 
     class _Perm(strawberry.BasePermission):
@@ -36,7 +48,16 @@ def RequireTransaction(transaction_id: str) -> type:
 
         async def has_permission(self, source: Any, info: Info, **kwargs: Any) -> bool:
             ctx: Context = info.context
-            return await ctx.check_permission(transaction_id)
+            # 1) ¿Tiene el permiso, en abstracto?
+            if not await ctx.check_permission(transaction_id):
+                return False
+            # 2) ¿Lo tiene SOBRE ESTO? (solo si la transacción es territorial)
+            if objetivo is None:
+                return True
+            ok, motivo = await ctx.check_ambito(transaction_id, objetivo, kwargs)
+            if not ok:
+                self.message = motivo
+            return ok
 
     _Perm.__name__ = f"Require_{transaction_id}"
     _Perm.__qualname__ = f"Require_{transaction_id}"

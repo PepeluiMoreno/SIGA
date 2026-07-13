@@ -140,3 +140,28 @@ class ModuleCatalog:
             for f in cls._funcionalidades.values()
             if any(ft.transaccion_codigo == codigo_transaccion for ft in f.transacciones)
         ]
+
+    @classmethod
+    def get_ambito_de_transaccion(cls, codigo_transaccion: str) -> AmbitoTransaccion:
+        """Ámbito de una transacción: GLOBAL, TERRITORIAL o PROPIO.
+
+        Si la transacción está declarada en varias funcionalidades con ámbitos distintos,
+        **gana el más restrictivo**: un permiso no se amplía por estar declarado dos
+        veces. Orden de restricción: PROPIO > TERRITORIAL > GLOBAL.
+
+        Una transacción que no está en ninguna funcionalidad se trata como TERRITORIAL
+        (el default del modelo): ante la duda, se restringe, no se abre.
+        """
+        ambitos = [
+            ft.ambito
+            for f in cls._funcionalidades.values()
+            for ft in f.transacciones
+            if ft.transaccion_codigo == codigo_transaccion
+        ]
+        if not ambitos:
+            return AmbitoTransaccion.TERRITORIAL
+        if AmbitoTransaccion.PROPIO in ambitos:
+            return AmbitoTransaccion.PROPIO
+        if AmbitoTransaccion.TERRITORIAL in ambitos:
+            return AmbitoTransaccion.TERRITORIAL
+        return AmbitoTransaccion.GLOBAL

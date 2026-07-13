@@ -32,6 +32,7 @@ from app.modules.membresia.models.historial_nombramiento import HistorialNombram
 from app.modules.membresia.models.historial_agrupacion import HistorialAgrupacion
 from app.modules.membresia.models.traslados.modelos import SolicitudTraslado, EstadoTraslado
 from app.graphql.permissions import RequireTransaction
+from app.modules.acceso.services.objetivo import Objetivo
 from app.graphql.types_auto import (
     VinculacionType, ContactoType, HistorialNombramientoType, SolicitudTrasladoType,
 )
@@ -472,7 +473,7 @@ class VinculacionesMutation:
         return await _fetch_vinculacion(session, vinc.id)
 
     # ── Ciclo de vida del socio (suspender / baja / reactivar) ───────────────
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_SUSPENDER")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_SUSPENDER", objetivo=Objetivo.contacto("contacto_id"))])
     async def suspender_socio(
         self, info: strawberry.Info, contacto_id: uuid.UUID,
     ) -> VinculacionType:
@@ -492,7 +493,7 @@ class VinculacionesMutation:
         await session.commit()
         return await _fetch_vinculacion(session, vinc.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_BAJA")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_BAJA", objetivo=Objetivo.contacto("contacto_id"))])
     async def dar_de_baja_socio(
         self, info: strawberry.Info, contacto_id: uuid.UUID,
         fecha_baja: Optional[date] = None,
@@ -519,7 +520,7 @@ class VinculacionesMutation:
         await session.commit()
         return await _fetch_vinculacion(session, vinc.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_BAJA")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_BAJA", objetivo=Objetivo.contacto("contacto_id"))])
     async def reactivar_socio(
         self, info: strawberry.Info, contacto_id: uuid.UUID,
     ) -> VinculacionType:
@@ -594,7 +595,7 @@ class VinculacionesMutation:
         return await _fetch_vinculacion(session, socio_vinc.id)
 
     # ── Traslados entre agrupaciones (máquina de estados) ────────────────────
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_SOLICITAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_SOLICITAR", objetivo=Objetivo.contacto("miembro_id"))])
     async def solicitar_traslado(
         self, info: strawberry.Info, miembro_id: uuid.UUID,
         agrupacion_destino_id: uuid.UUID, motivo_traslado_id: uuid.UUID,
@@ -677,7 +678,7 @@ class VinculacionesMutation:
         await session.commit()
         return await _fetch_traslado(session, sol.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_RECHAZAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_RECHAZAR", objetivo=Objetivo.solicitud_traslado())])
     async def rechazar_traslado(
         self, info: strawberry.Info, solicitud_id: uuid.UUID, motivo: str,
         lado: str = "origen",
@@ -691,7 +692,7 @@ class VinculacionesMutation:
         await session.commit()
         return await _fetch_traslado(session, sol.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_SOLICITAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_TRASLADO_SOLICITAR", objetivo=Objetivo.solicitud_traslado())])
     async def cancelar_traslado(
         self, info: strawberry.Info, solicitud_id: uuid.UUID,
     ) -> SolicitudTrasladoType:

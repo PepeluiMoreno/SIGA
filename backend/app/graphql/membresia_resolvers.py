@@ -20,6 +20,7 @@ from app.modules.membresia.models.tipo_vinculacion import TipoVinculacion
 from app.modules.acceso.services.acceso_service import AccesoService
 from app.graphql.types_auto import ContactoType
 from app.graphql.permissions import RequireTransaction, RequireAuthenticated
+from app.modules.acceso.services.objetivo import Objetivo
 from app.core.events import event_bus, MiembroPerfilIncompleto
 
 
@@ -509,7 +510,8 @@ class MembresiaResolverMutation:
 
         return await _fetch_miembro(session, contacto.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_EDITAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction(
+        "MEMBRESIA_MIEMBRO_EDITAR", objetivo=Objetivo.contacto("data", ruta="id"))])
     async def actualizar_miembro(
         self,
         info: strawberry.Info,
@@ -612,7 +614,8 @@ class MembresiaResolverMutation:
 
         return await _fetch_miembro(session, miembro.id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_EDITAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction(
+        "MEMBRESIA_MIEMBRO_EDITAR", objetivo=Objetivo.contacto("miembro_id"))])
     async def anonimizar_miembro(
         self,
         info: strawberry.Info,
@@ -742,7 +745,7 @@ class MembresiaResolverMutation:
         return base64.b64encode(buf.getvalue()).decode()
 
     # ── Aprobación de solicitudes de socio (SOCIO_ASPIRANTE → SOCIO) ──────────
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_VALIDAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_VALIDAR", objetivo=Objetivo.contacto("contacto_id"))])
     async def aprobar_solicitud_socio(
         self, info: strawberry.Info, contacto_id: uuid.UUID,
         numero_socio: Optional[str] = None,
@@ -781,7 +784,7 @@ class MembresiaResolverMutation:
         await session.commit()
         return await _fetch_miembro(session, contacto_id)
 
-    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_RECHAZAR")])
+    @strawberry.mutation(permission_classes=[RequireTransaction("MEMBRESIA_MIEMBRO_RECHAZAR", objetivo=Objetivo.contacto("contacto_id"))])
     async def rechazar_solicitud_socio(
         self, info: strawberry.Info, contacto_id: uuid.UUID,
         motivo: Optional[str] = None,
