@@ -170,8 +170,12 @@ class CompromisoPresupuestario(BaseModel):
     )
 
     # Exactamente uno de los dos debe estar presente:
-    campania_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, nullable=True, index=True)
-    actividad_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, nullable=True, index=True)
+    campania_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("campanias.id"), nullable=True, index=True
+    )
+    actividad_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("actividades.id"), nullable=True, index=True
+    )
 
     importe_comprometido: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     concepto: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)

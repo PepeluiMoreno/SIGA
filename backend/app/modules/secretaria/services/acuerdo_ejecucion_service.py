@@ -23,11 +23,14 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models.reunion import Acuerdo, AcuerdoNombramiento, PuntoOrdenDia, Reunion
+from ..models.reunion import (
+    Acuerdo, AcuerdoNombramiento, AcuerdoPresupuestoCampania, PuntoOrdenDia, Reunion,
+)
 from ..models.acta import Acta
 from ...acceso.models.cargo import CargoRol
 from ...acceso.models.usuario import Usuario, UsuarioRol
 from ...membresia.models.historial_nombramiento import HistorialNombramiento
+from ...economico.services.reserva_service import ReservaService, ResultadoReserva
 
 # `tipo_origen` del mandato: de dónde salió. Aquí, de un acuerdo de un órgano.
 ORIGEN_ACUERDO = 'ACUERDO'
@@ -190,6 +193,92 @@ class AcuerdoEjecucionService:
 
         payload.nombramiento_id = mandato.id   # traza qué mandato cerró (e impide repetir)
         return mandato
+
+    async def ejecutar_aprobacion_presupuesto(
+        self,
+        acuerdo_id: uuid.UUID,
+        *,
+        ejecutado_por_id: Optional[uuid.UUID] = None,
+        exigir_acta_aprobada: bool = True,
+    ) -> ResultadoReserva:
+        """Ejecuta un acuerdo de APROBACION_PRESUPUESTO: reserva fondos y aprueba la campaña.
+
+        Mismas garantías que un nombramiento (el patrón de esta casa): el acuerdo debe
+        existir con su payload, estar APROBADO, constar en acta aprobada y no haberse
+        ejecutado ya. Al ejecutarse:
+          - crea un `CompromisoPresupuestario` contra la partida anual (la reserva);
+          - marca la campaña como aprobada (estado PROGRAMADA + auditoría);
+          - cierra el círculo escribiendo `compromiso_id` en el payload (idempotencia).
+
+        Sobregiro: si el importe excede el disponible de la partida, se reserva igualmente
+        y el resultado lo indica (`sobregiro=True`) — política «avisa, no bloquea».
+        """
+        acuerdo = (await self.session.execute(
+            select(Acuerdo).where(
+                Acuerdo.id == acuerdo_id,
+                Acuerdo.eliminado == False,  # noqa: E712
+            )
+        )).scalar_one_or_none()
+        if acuerdo is None:
+            raise ValueError("Acuerdo no encontrado")
+
+        payload: Optional[AcuerdoPresupuestoCampania] = acuerdo.presupuesto_campania
+        if payload is None:
+            raise ValueError(
+                "El acuerdo no lleva datos de presupuesto (campaña, importe, partida). "
+                "Solo los acuerdos de tipo APROBACION_PRESUPUESTO se ejecutan así."
+            )
+
+        if not acuerdo.es_aprobado:
+            raise ValueError(
+                f"El acuerdo no está aprobado (resultado: {acuerdo.resultado or '—'}). "
+                "Un acuerdo no aprobado no reserva fondos."
+            )
+
+        if payload.ya_ejecutado:
+            raise ValueError("Este acuerdo ya se ejecutó: la reserva existe.")
+
+        if exigir_acta_aprobada:
+            await self._exigir_acta_aprobada(acuerdo)
+
+        # ── La reserva ────────────────────────────────────────────────────────
+        resultado = await ReservaService(self.session).reservar(
+            partida_id=payload.partida_id,
+            importe=payload.importe,
+            campania_id=payload.campania_id,
+            concepto=f"Presupuesto de campaña — acuerdo nº {acuerdo.numero}",
+        )
+
+        # Cierra el círculo (y bloquea una segunda ejecución).
+        payload.compromiso_id = resultado.compromiso.id
+
+        # ── La campaña queda aprobada ─────────────────────────────────────────
+        await self._aprobar_campania(payload.campania_id, ejecutado_por_id)
+
+        return resultado
+
+    async def _aprobar_campania(
+        self, campania_id: uuid.UUID, aprobado_por_id: Optional[uuid.UUID]
+    ) -> None:
+        """Marca la campaña como aprobada (estado PROGRAMADA + auditoría), en la misma
+        transacción del acuerdo (no usa CampaniaService.aprobar, que comitea aparte)."""
+        from ...actividades.models.campana import Campania
+        from ...configuracion.models.estados import EstadoCampania
+
+        campania = (await self.session.execute(
+            select(Campania).where(Campania.id == campania_id)
+        )).scalar_one_or_none()
+        if campania is None:
+            raise ValueError("La campaña del acuerdo no existe.")
+
+        estado = (await self.session.execute(
+            select(EstadoCampania).where(EstadoCampania.codigo == "PROGRAMADA")
+        )).scalar_one_or_none()
+        if estado is not None:
+            campania.estado_id = estado.id
+        campania.aprobado_por_id = aprobado_por_id
+        campania.fecha_aprobacion = date.today()
+        await self.session.flush()
 
     async def _exigir_acta_aprobada(self, acuerdo: Acuerdo) -> None:
         """Un acuerdo solo es ejecutable si consta en un acta aprobada."""

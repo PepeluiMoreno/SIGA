@@ -5,7 +5,6 @@ from ..acceso.services.registry import (
     FuncionalidadDef,
     FuncionalidadTransaccionDef,
     TransaccionDef,
-    FlujoAprobacionDef,
     AmbitoTransaccion,
 )
 
@@ -19,9 +18,7 @@ _TRANSACCIONES = [
     TransaccionDef("CAMPANA_PUBLICAR",           "Publicar campaña",                     "MUTACION"),
     TransaccionDef("CAMPANA_CERRAR",             "Cerrar campaña",                       "MUTACION"),
     TransaccionDef("CAMPANA_ELIMINAR",           "Eliminar campaña",                     "MUTACION"),
-    TransaccionDef("CAMPANA_PROPONER_PRESUPUESTO",  "Proponer presupuesto de campaña",   "MUTACION"),
     TransaccionDef("CAMPANA_APROBAR_PRESUPUESTO",   "Aprobar presupuesto de campaña",    "APROBACION"),
-    TransaccionDef("CAMPANA_RECHAZAR_PRESUPUESTO",  "Rechazar presupuesto de campaña",   "APROBACION"),
     TransaccionDef("CAMPANA_APROBAR",            "Aprobar campaña",                      "APROBACION"),
     # Grupos de trabajo
     TransaccionDef("GRUPO_LISTAR",              "Listar grupos de trabajo",             "CONSULTA"),
@@ -60,7 +57,6 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
         FuncionalidadTransaccionDef("CAMPANA_EDITAR",  AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("CAMPANA_ELIMINAR", AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("CAMPANA_PUBLICAR", AmbitoTransaccion.TERRITORIAL),
-        FuncionalidadTransaccionDef("CAMPANA_PROPONER_PRESUPUESTO", AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("GRUPO_LISTAR",             AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("GRUPO_CREAR",              AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("GRUPO_EDITAR",             AmbitoTransaccion.TERRITORIAL),
@@ -92,7 +88,6 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
     transacciones=[
         FuncionalidadTransaccionDef("CAMPANA_APROBAR",              AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("CAMPANA_APROBAR_PRESUPUESTO",  AmbitoTransaccion.TERRITORIAL),
-        FuncionalidadTransaccionDef("CAMPANA_RECHAZAR_PRESUPUESTO", AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("CAMPANA_CERRAR",               AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("ACTIVIDAD_APROBAR",            AmbitoTransaccion.TERRITORIAL),
         FuncionalidadTransaccionDef("ACTIVIDAD_RECHAZAR",           AmbitoTransaccion.TERRITORIAL),
@@ -113,20 +108,9 @@ ModuleCatalog.register_funcionalidad(FuncionalidadDef(
     ],
 ))
 
-# Flujo de aprobación de presupuesto de campaña
-ModuleCatalog.register_flujo(FlujoAprobacionDef(
-    codigo="FLUJO_PRESUPUESTO_CAMPANA",
-    nombre="Aprobación de presupuesto de campaña",
-    descripcion=(
-        "El diseñador propone un presupuesto; la junta directiva lo aprueba o rechaza"
-    ),
-    transaccion_inicio_codigo="CAMPANA_PROPONER_PRESUPUESTO",
-    transaccion_aprobacion_codigo="CAMPANA_APROBAR_PRESUPUESTO",
-    transaccion_rechazo_codigo="CAMPANA_RECHAZAR_PRESUPUESTO",
-    # Lo aprueba un ÓRGANO colegiado, no un rol. Antes declaraba
-    # `rol_aprobador_codigo="JUNTA_DIRECTIVA"`, un rol que no existía (ni debía):
-    # la junta es un colegiado. Por eso el flujo se descartaba en cada arranque y
-    # `flujos_aprobacion` llevaba 0 filas.
-    tipo_organo_aprobador_nombre="Junta Directiva",
-    entidad="PropuestaPresupuestoCampana",
-))
+# El presupuesto de campaña se aprueba por ACUERDO de un órgano (patrón secretaría:
+# AcuerdoPresupuestoCampania + AcuerdoEjecucionService.ejecutar_aprobacion_presupuesto),
+# no por un FlujoAprobacion declarativo. Aquel FLUJO_PRESUPUESTO_CAMPANA nunca tuvo motor
+# y apuntaba a una entidad inexistente; se retiró junto con las transacciones
+# PROPONER/RECHAZAR_PRESUPUESTO (huérfanas). La reserva la protege CAMPANA_APROBAR_PRESUPUESTO.
+# Ver docs/arquitectura/DESCENTRALIZACION.md y el plan de maduración de campañas.

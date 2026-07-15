@@ -6,6 +6,7 @@ según la Ley Orgánica 1/2002 de asociaciones.
 
 import uuid
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Optional
 from enum import Enum
 
@@ -293,6 +294,12 @@ class Acuerdo(BaseModel):
         'AcuerdoNombramiento', back_populates='acuerdo', uselist=False, lazy='selectin',
         cascade='all, delete-orphan',
     )
+    # Payload del acuerdo de aprobación de presupuesto de campaña. 1:1, presente solo
+    # si el tipo de acuerdo es APROBACION_PRESUPUESTO.
+    presupuesto_campania = relationship(
+        'AcuerdoPresupuestoCampania', back_populates='acuerdo', uselist=False, lazy='selectin',
+        cascade='all, delete-orphan',
+    )
 
     @property
     def es_aprobado(self) -> bool:
@@ -416,3 +423,53 @@ class AcuerdoNombramiento(BaseModel):
 
     def __repr__(self) -> str:
         return f"<AcuerdoNombramiento(miembro={self.miembro_id}, cargo={self.cargo_id})>"
+
+
+class AcuerdoPresupuestoCampania(BaseModel):
+    """Payload estructurado de un acuerdo de APROBACION_PRESUPUESTO de campaña.
+
+    El acuerdo genérico solo tiene texto; aquí vive lo que la máquina necesita para
+    **ejecutarlo**: qué campaña, cuánto se reserva y contra qué partida del presupuesto
+    anual. Tabla satélite (1:1), como `AcuerdoNombramiento`.
+
+    Al ejecutarse produce un `CompromisoPresupuestario` (la reserva) y marca la campaña
+    como aprobada. El `compromiso_id` se rellena al ejecutar: cierra el círculo y evita
+    reservar dos veces (idempotencia), igual que `nombramiento_id` en los nombramientos.
+    """
+
+    __tablename__ = 'sec_acuerdos_presupuesto_campania'
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+
+    acuerdo_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('sec_acuerdos.id', ondelete='CASCADE'),
+        nullable=False, unique=True, index=True,
+    )
+
+    campania_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('campanias.id', ondelete='RESTRICT'), nullable=False, index=True,
+    )
+    # Partida del presupuesto anual contra la que se reservan los fondos.
+    partida_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey('partidas_presupuestarias.id', ondelete='RESTRICT'),
+        nullable=False, index=True,
+    )
+    importe: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+
+    # Se rellena al EJECUTAR: el compromiso que produjo la reserva. Idempotencia.
+    compromiso_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('compromisos_presupuestarios.id', ondelete='SET NULL'),
+        nullable=True, index=True,
+    )
+
+    # Relaciones
+    acuerdo = relationship('Acuerdo', back_populates='presupuesto_campania')
+    campania = relationship('Campania', foreign_keys=[campania_id], lazy='selectin')
+    partida = relationship('PartidaPresupuestaria', foreign_keys=[partida_id], lazy='selectin')
+
+    @property
+    def ya_ejecutado(self) -> bool:
+        return self.compromiso_id is not None
+
+    def __repr__(self) -> str:
+        return f"<AcuerdoPresupuestoCampania(campania={self.campania_id}, importe={self.importe})>"

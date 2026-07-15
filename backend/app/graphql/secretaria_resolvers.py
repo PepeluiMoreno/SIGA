@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime
+from decimal import Decimal
 from typing import List, Optional
 
 import strawberry
@@ -14,7 +15,7 @@ from sqlalchemy import select
 
 from app.modules.secretaria.models.reunion import (
     TipoReunion, Reunion, AsistenteReunionSecretaria, PuntoOrdenDia, Acuerdo, VotacionAcuerdo,
-    TipoAcuerdo, AcuerdoNombramiento,
+    TipoAcuerdo, AcuerdoNombramiento, AcuerdoPresupuestoCampania,
 )
 from app.modules.secretaria.models.acta import Acta, CertificadoAcuerdo
 from app.modules.secretaria.models.libro_socios import LibroSociosSnapshot
@@ -693,6 +694,59 @@ class SecretariaResolverMutation:
     # El eslabón que da sentido a la gobernanza: un nombramiento no nace de un
     # botón, nace de un acuerdo de un órgano reflejado en un acta.
 
+    @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_APROBAR_PRESUPUESTO")])
+    async def fijar_presupuesto_de_acuerdo(
+        self,
+        info: strawberry.Info,
+        acuerdo_id: uuid.UUID,
+        campania_id: uuid.UUID,
+        partida_id: uuid.UUID,
+        importe: Decimal,
+    ) -> uuid.UUID:
+        """Adjunta a un acuerdo el payload de aprobación de presupuesto de campaña:
+        qué campaña, cuánto se reserva y contra qué partida anual.
+
+        Sin esto el acuerdo es solo texto y no se puede ejecutar. Al ejecutarlo se creará
+        la reserva (compromiso) y la campaña quedará aprobada. Devuelve el id del payload.
+        """
+        session = info.context.session
+        acuerdo = (await session.execute(
+            select(Acuerdo).where(Acuerdo.id == acuerdo_id, Acuerdo.eliminado == False)  # noqa: E712
+        )).scalar_one_or_none()
+        if acuerdo is None:
+            raise ValueError("Acuerdo no encontrado")
+        if importe <= 0:
+            raise ValueError("El importe a reservar debe ser positivo")
+
+        tipo = (await session.execute(
+            select(TipoAcuerdo).where(TipoAcuerdo.codigo == 'APROBACION_PRESUPUESTO')
+        )).scalar_one_or_none()
+        if tipo is None:
+            raise ValueError("Tipo de acuerdo APROBACION_PRESUPUESTO no existe en el catálogo")
+        acuerdo.tipo_acuerdo_id = tipo.id
+
+        existente = (await session.execute(
+            select(AcuerdoPresupuestoCampania).where(
+                AcuerdoPresupuestoCampania.acuerdo_id == acuerdo_id
+            )
+        )).scalar_one_or_none()
+        if existente is not None:
+            if existente.compromiso_id is not None:
+                raise ValueError("El acuerdo ya se ejecutó: su presupuesto no se puede cambiar")
+            existente.campania_id = campania_id
+            existente.partida_id = partida_id
+            existente.importe = importe
+            await session.commit()
+            return existente.id
+
+        payload = AcuerdoPresupuestoCampania(
+            acuerdo_id=acuerdo_id, campania_id=campania_id,
+            partida_id=partida_id, importe=importe,
+        )
+        session.add(payload)
+        await session.commit()
+        return payload.id
+
     @strawberry.mutation(permission_classes=[RequireTransaction("SEC_ACUERDO_CREAR")])
     async def fijar_nombramiento_de_acuerdo(
         self,
@@ -782,10 +836,10 @@ class SecretariaResolverMutation:
             raise ValueError("Acuerdo no encontrado")
 
         codigo = acuerdo.tipo_acuerdo.codigo if acuerdo.tipo_acuerdo else None
-        if codigo not in ('NOMBRAMIENTO', 'CESE'):
+        if codigo not in ('NOMBRAMIENTO', 'CESE', 'APROBACION_PRESUPUESTO'):
             raise ValueError(
                 f"Este acuerdo (tipo: {codigo or 'sin tipo'}) no es ejecutable. "
-                "Solo los de tipo NOMBRAMIENTO o CESE producen efecto automático."
+                "Solo NOMBRAMIENTO, CESE o APROBACION_PRESUPUESTO producen efecto automático."
             )
 
         svc = AcuerdoEjecucionService(session)
@@ -794,13 +848,21 @@ class SecretariaResolverMutation:
                 acuerdo_id, ejecutado_por_id=usuario_id,
                 exigir_acta_aprobada=exigir_acta_aprobada,
             )
-        else:
+            efecto_id = mandato.id
+        elif codigo == 'CESE':
             mandato = await svc.ejecutar_cese(
                 acuerdo_id, ejecutado_por_id=usuario_id,
                 exigir_acta_aprobada=exigir_acta_aprobada,
             )
+            efecto_id = mandato.id
+        else:  # APROBACION_PRESUPUESTO
+            resultado = await svc.ejecutar_aprobacion_presupuesto(
+                acuerdo_id, ejecutado_por_id=usuario_id,
+                exigir_acta_aprobada=exigir_acta_aprobada,
+            )
+            efecto_id = resultado.compromiso.id
         await session.commit()
-        return mandato.id
+        return efecto_id
 
     @strawberry.mutation(permission_classes=[RequireTransaction("SEC_ACUERDO_SEGUIMIENTO")])
     async def actualizar_seguimiento_acuerdo(

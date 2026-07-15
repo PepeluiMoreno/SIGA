@@ -194,6 +194,83 @@ class ResultadoEnvioNotificacion:
 
 
 @strawberry.type
+class RequisitoRecursoGQL:
+    id: uuid.UUID
+    especialidad_id: Optional[uuid.UUID]
+    especialidad_nombre: str
+    nivel_id: Optional[uuid.UUID]
+    nivel_nombre: str
+    horas_necesarias: float
+    horas_cubiertas: float
+    horas_pendientes: float
+
+
+@strawberry.type
+class GrupoCampaniaGQL:
+    id: uuid.UUID
+    nombre: str
+    num_miembros: int
+    requisitos: list[RequisitoRecursoGQL]
+
+
+@strawberry.type
+class CandidatoRequisitoGQL:
+    contacto_id: uuid.UUID
+    nombre: str
+    nivel_nombre: str
+    validado: bool
+
+
+@strawberry.type
+class CampaniaEquipoQuery:
+    @strawberry.field(permission_classes=[RequireTransaction("GRUPO_LISTAR")])
+    async def equipo_de_campania(
+        self, info: strawberry.Info, campania_id: uuid.UUID,
+    ) -> list[GrupoCampaniaGQL]:
+        """Los grupos de una campaña con miembros, requisitos y cobertura de horas."""
+        from app.modules.actividades.services.equipo_campania_service import EquipoCampaniaService
+        grupos = await EquipoCampaniaService(info.context.session).equipo(campania_id)
+        return [
+            GrupoCampaniaGQL(
+                id=g.id, nombre=g.nombre, num_miembros=g.num_miembros,
+                requisitos=[
+                    RequisitoRecursoGQL(
+                        id=r.id, especialidad_id=r.especialidad_id,
+                        especialidad_nombre=r.especialidad_nombre,
+                        nivel_id=r.nivel_id, nivel_nombre=r.nivel_nombre,
+                        horas_necesarias=r.horas_necesarias,
+                        horas_cubiertas=r.horas_cubiertas,
+                        horas_pendientes=r.horas_pendientes,
+                    )
+                    for r in g.requisitos
+                ],
+            )
+            for g in grupos
+        ]
+
+    @strawberry.field(permission_classes=[RequireTransaction("GRUPO_EDITAR")])
+    async def candidatos_para_requisito(
+        self, info: strawberry.Info, requisito_id: uuid.UUID,
+    ) -> list[CandidatoRequisitoGQL]:
+        """Voluntarios del ámbito que cumplen la habilidad+nivel de un requisito.
+
+        Acota al ámbito territorial del usuario (motor territorial): un coordinador de
+        Madrid solo ve candidatos de Madrid."""
+        from app.modules.actividades.services.equipo_campania_service import EquipoCampaniaService
+        ambito = await info.context.get_ambito()
+        cands = await EquipoCampaniaService(info.context.session).candidatos_para_requisito(
+            requisito_id, ambito=ambito,
+        )
+        return [
+            CandidatoRequisitoGQL(
+                contacto_id=c.contacto_id, nombre=c.nombre,
+                nivel_nombre=c.nivel_nombre, validado=c.validado,
+            )
+            for c in cands
+        ]
+
+
+@strawberry.type
 class CampaniaResolverMutation:
 
     @strawberry.mutation(permission_classes=[RequireTransaction("CAMPANA_CREAR")])

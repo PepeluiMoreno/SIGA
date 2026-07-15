@@ -79,7 +79,11 @@ class GrupoTrabajo(BaseModel):
 
     # Grupo efímero: se forma con ocasión de una campaña (campania_id) o de una
     # ACTIVIDAD (actividad_id). Ambos nullable; si están vacíos, es orgánico.
-    campania_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, nullable=True, index=True)
+    # `campania_id` es el vínculo CANÓNICO campaña↔grupo (deprecada la tabla puente
+    # `GrupoIniciativa`): con FK real desde la migración camp1madurez.
+    campania_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey('campanias.id'), nullable=True, index=True
+    )
     actividad_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid, ForeignKey('actividades.id'), nullable=True, index=True
     )
