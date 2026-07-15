@@ -55,6 +55,11 @@ _MAPPING: tuple[tuple[str, str, str], ...] = (
     ('org.denominacion_miembro',                'string', 'denominacion_miembro'),
     ('org.denominacion_miembro_plural',         'string', 'denominacion_miembro_plural'),
     ('org.multiterritorial',                    'bool',   'multiterritorial'),
+    # Descentralización de campañas. Creado por completitud del modelo (ver
+    # docs/arquitectura/DESCENTRALIZACION.md §2), pero su distribución NO se habilita
+    # hasta madurar el ciclo de campaña a nivel central (presupuesto, reserva de fondos,
+    # reclutamiento). Default false.
+    ('org.campanas_distribuida',                'bool',   'campanas_distribuida'),
     ('auth.modo',                               'string', 'auth_modo'),
     ('auth.authelia_url',                       'string', 'auth_authelia_url'),
     ('auth.oidc_issuer',                        'string', 'auth_oidc_issuer'),
@@ -265,6 +270,7 @@ class ConfiguracionService:
             'denominacion_miembro': 'miembro',
             'denominacion_miembro_plural': 'miembros',
             'multiterritorial': False,
+            'campanas_distribuida': False,
             'auth_modo': 'LOCAL', 'auth_authelia_url': '', 'auth_oidc_issuer': '',
             'smtp_host': '', 'smtp_port': '587', 'smtp_usuario': '',
             'smtp_password': '', 'smtp_from': '',

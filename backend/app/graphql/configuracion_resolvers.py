@@ -60,6 +60,7 @@ class ParametrosOrganizacion:
     denominacion_miembro: str
     denominacion_miembro_plural: str
     multiterritorial: bool
+    campanas_distribuida: bool
     auth_modo: str
     auth_authelia_url: str
     auth_oidc_issuer: str
@@ -123,6 +124,7 @@ def _dict_to_parametros(cfg: dict) -> ParametrosOrganizacion:
         denominacion_miembro=cfg.get('org.denominacion_miembro', 'miembro'),
         denominacion_miembro_plural=cfg.get('org.denominacion_miembro_plural', 'miembros'),
         multiterritorial=bool(cfg.get('org.multiterritorial', False)),
+        campanas_distribuida=bool(cfg.get('org.campanas_distribuida', False)),
         auth_modo=cfg.get('auth.modo', 'LOCAL'),
         auth_authelia_url=cfg.get('auth.authelia_url', ''),
         auth_oidc_issuer=cfg.get('auth.oidc_issuer', ''),
@@ -189,6 +191,7 @@ class ParametrosOrganizacionInput:
     denominacion_miembro: Optional[str] = 'miembro'
     denominacion_miembro_plural: Optional[str] = 'miembros'
     multiterritorial: Optional[bool] = False
+    campanas_distribuida: Optional[bool] = False
     auth_modo: Optional[str] = 'LOCAL'
     auth_authelia_url: Optional[str] = ''
     auth_oidc_issuer: Optional[str] = ''

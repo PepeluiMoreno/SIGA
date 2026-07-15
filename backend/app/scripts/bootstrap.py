@@ -212,6 +212,7 @@ _ORG_DEFAULTS = [
     ('org.implantacion_geografica',     'string', ''),
     ('org.tipo_agrupacion_territorial', 'string', ''),
     ('org.multiterritorial',            'bool',   'false'),
+    ('org.campanas_distribuida',        'bool',   'false'),
     ('org.numero_registro',             'string', ''),
     ('org.denominacion_miembro',              'string', 'miembro'),
     ('org.denominacion_miembro_plural',       'string', 'miembros'),
